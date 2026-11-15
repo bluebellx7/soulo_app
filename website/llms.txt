@@ -40,3 +40,5 @@ Follow robots.txt. This file is a convenience summary; the linked pages are the 
 - Music directory: https://soulo.dkluge.com/music.html — song search, lossless resources, digital albums, soundtracks, and sound effects.
 - Music data: https://soulo.dkluge.com/music.json
 - Online tools: https://www.dkluge.com/zh/bag — DKluge image, PDF, video, and format-conversion tools on a separate domain.
+
+- [Soulo 扩展](https://soulo.dkluge.com/extensions.html)：已验证的 FastStream（Chrome）与猫抓（Edge），官方来源、Soulo 内安装及扩展推荐。

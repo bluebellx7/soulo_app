@@ -5,8 +5,8 @@ struct CustomGroup: Codable, Identifiable, Hashable {
     var name: String
     var platformIDs: [UUID]
 
-    init(name: String, platformIDs: [UUID] = []) {
-        self.id = UUID()
+    init(id: UUID = UUID(), name: String, platformIDs: [UUID] = []) {
+        self.id = id
         self.name = name
         self.platformIDs = platformIDs
     }

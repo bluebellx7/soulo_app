@@ -121,7 +121,7 @@ final class CloudSyncService: NSObject, ObservableObject {
         "show_group_picker_on_home",
         "show_recent_searches_on_home",
         "show_top_search_bar", "auto_hide_platform_bar", "show_top_tab_bar",
-        "keep_fullscreen_browsing",
+        "keep_fullscreen_browsing", "extend_page_background", "page_background_gradient", "freeze_page_background_on_scroll",
         "web_follows_app_color_scheme",
         "web_warm_color_shift",
         "web_force_dark_pages",
@@ -136,8 +136,8 @@ final class CloudSyncService: NSObject, ObservableObject {
         BrowserSwipePreferences.menuKey,
         BrowserSwipePreferences.noHistoryKey,
         BrowserSwipePreferences.executionKey,
-        BrowserSwipePreferences.hapticsKey,
-        BrowserSwipePreferences.soundKey,
+        AppFeedbackPreferences.hapticsKey,
+        AppFeedbackPreferences.soundKey,
         WebsiteZoomStore.enabledKey,
         WebsiteZoomStore.sitesKey,
         "browser_toolbar_actions",
@@ -152,10 +152,13 @@ final class CloudSyncService: NSObject, ObservableObject {
         VideoPlaybackPreferences.defaultPlayerKey,
         VideoPlaybackPreferences.holdSpeedKey,
         VideoPlaybackPreferences.showsEpisodeDockKey,
+        VideoPlaybackPreferences.takesOverWebPlayersKey,
+        VideoPlaybackPreferences.showsWebDownloadControlsKey,
         "privacy_https_upgrade_enabled",
         "privacy_strip_tracking_parameters",
         "privacy_gpc_enabled",
         "privacy_cookie_banner_enabled",
+        BrowsingHistoryExitPolicy.preferenceKey,
         "privacy_https_upgrade_excluded_hosts",
         "soulo_privacy_disabled_hosts",
         "soulo_ad_block_allowlisted_hosts",
@@ -165,7 +168,7 @@ final class CloudSyncService: NSObject, ObservableObject {
         ExternalNavigationService.promptEnabledKey,
         "wallpaper_source",
         "wallpaper_gradient_id",
-        "wallpaper_solid_color", "wallpaper_image_overlay", "wallpaper_image_blur", "wallpaper_image_blur_amount",
+        "wallpaper_solid_color", "wallpaper_image_overlay", "wallpaper_image_overlay_amount", "wallpaper_image_blur", "wallpaper_image_blur_amount",
         "wallpaper_gradient_id_light", "wallpaper_gradient_id_dark",
         "wallpaper_solid_color_light", "wallpaper_solid_color_dark",
         "wallpaper_topic",
@@ -376,8 +379,10 @@ final class CloudSyncService: NSObject, ObservableObject {
         journal = next
         isApplyingRemote = true
         defer { isApplyingRemote = false }
+        let subscriptionsBefore = defaults.data(forKey: "soulo_ad_block_subscriptions")
         CloudSettingsSyncEngine.write(restored, to: defaults)
-        if let reload { reload() } else { reloadRuntimeSettings() }
+        if let reload { reload() }
+        else { reloadRuntimeSettings(reloadSubscriptionRules: subscriptionsBefore != defaults.data(forKey: "soulo_ad_block_subscriptions")) }
         lastObserved = CloudSettingsSyncEngine.snapshot(defaults)
         try persistJournal()
         backupRevision += 1
@@ -426,7 +431,7 @@ final class CloudSyncService: NSObject, ObservableObject {
         } catch { hasSyncIssue = true }
     }
 
-    private func reloadRuntimeSettings() {
+    private func reloadRuntimeSettings(reloadSubscriptionRules: Bool = true) {
         let appearance = defaults.string(forKey: AppConstants.StorageKeys.appearance) ?? "system"
         ThemeManager.shared.setAppearance(appearance)
 
@@ -444,7 +449,7 @@ final class CloudSyncService: NSObject, ObservableObject {
         AdBlockSettingsService.shared.reloadFromDefaults()
         PrivacyProtectionService.shared.reloadFromDefaults()
         ExternalNavigationService.shared.reloadFromDefaults()
-        AdBlockSubscriptionService.shared.reloadFromDefaults()
+        if reloadSubscriptionRules { AdBlockSubscriptionService.shared.reloadFromDefaultsInBackground() }
         BrowserToolbarConfigurationService.shared.reloadFromDefaults()
         HomeToolbarConfigurationService.shared.reloadFromDefaults()
         GroupDefaultSearchService.shared.reloadFromDefaults()

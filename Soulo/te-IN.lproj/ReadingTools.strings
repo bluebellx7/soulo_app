@@ -417,7 +417,7 @@
 "media_audio_tracks" = "ఆడియో ట్రాక్‌లు";
 "media_subtitles" = "ఉపశీర్షికలు";
 "media_track_off" = "ఆఫ్";
-"video_settings" = "వీడియో";
+"video_settings" = "వీడియో సెట్టింగ్‌లు";
 "video_show_tools" = "వీడియో సాధనాలను చూపించు";
 "video_show_tools_desc" = "ప్లేబ్యాక్ వేగం, డౌన్‌లోడ్‌లు మరియు పూర్తి స్క్రీన్ కోసం వెబ్ వీడియోలలో సాధనాలను చూపండి.";
 "video_default_player" = "డిఫాల్ట్ ప్లేయర్";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "మసక గాజు";
 "wallpaper_blur_amount" = "మసక తీవ్రత";
 
-"auto_hide_platform_bar_hint" = "శోధన ఫలితాన్ని తెరిచినప్పుడు ప్లాట్‌ఫారమ్ బార్ దాగుతుంది. ఫలితాలకు తిరిగి వెళ్తే లేదా కొత్త శోధన ప్రారంభిస్తే మళ్లీ కనిపిస్తుంది. ఈ మెనూలో దీనిని ఆఫ్ చేయవచ్చు.";
+"auto_hide_platform_bar_hint" = "వెబ్‌పేజీ కంటెంట్‌ను ట్యాప్ చేసిన తర్వాతే ప్లాట్‌ఫారమ్ బార్ దాగుతుంది. ఆటోమేటిక్ రీడైరెక్ట్‌లు లేదా స్క్రోలింగ్ దాన్ని దాచవు. మళ్లీ చూపడానికి శోధన ఫలితాలకు తిరిగి వెళ్లండి లేదా కొత్త శోధన ప్రారంభించండి.";
+
+"ad_subscription_add" = "ఫిల్టర్ జాబితాను జోడించండి";
+"ad_subscription_name" = "పేరు";
+"ad_subscription_url" = "చందా URL";
+"ad_subscription_invalid" = "పేరు మరియు చెల్లుబాటు అయ్యే HTTP లేదా HTTPS చందా URLను నమోదు చేయండి.";
+"ad_subscription_duplicate" = "ఈ చందా URL ఇప్పటికే జోడించబడింది.";
+
+"feedback_settings" = "ధ్వని మరియు వైబ్రేషన్";
+"feedback_settings_hint" = "యాప్ అంతటా వైబ్రేషన్, ఇంటర్‌ఫేస్ ధ్వనులను నియంత్రించండి. వెబ్‌పేజీ, వీడియో, ఆడియో ప్లేబ్యాక్ ప్రభావితం కాదు.";
+
+"home_display_settings" = "హోమ్ ప్రదర్శన";
+"browsing_display_settings" = "బ్రౌజింగ్ ప్రదర్శన";
+
+"web_video_download" = "వెబ్ వీడియో డౌన్‌లోడ్";
+"web_video_download_description" = "వెబ్‌పేజీలు, ఎపిసోడ్ జాబితాలు, ప్లేయర్‌లలో వీడియో డౌన్‌లోడ్ నియంత్రణలను చూపండి. ప్లేబ్యాక్, ఇప్పటికే ఉన్న డౌన్‌లోడ్‌లు మారవు.";
+"builtin_extension" = "అంతర్నిర్మిత పొడిగింపు";
+
+"wallpaper_overlay_amount" = "ఓవర్‌లే తీవ్రత";
+"feedback_contact_required" = "సమాధానం కోసం ఇమెయిల్ లేదా ఇతర సంప్రదింపు వివరాలను నమోదు చేయండి.";
+"torrent_incomplete" = "అసంపూర్ణం";
+"extend_page_background" = "వెబ్‌పేజీ నేపథ్యాన్ని పొడిగించు";
+"extend_page_background_desc" = "గ్రేడియంట్లతో సహా పేజీ పైన, కింద ఉన్న రంగులను బ్రౌజర్ అంచుల వరకు పొడిగిస్తుంది.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "సమూహాన్ని కుదించు";
+"tab_group_expand" = "సమూహాన్ని విస్తరించు";
+"freeze_page_background_on_scroll" = "ప్రారంభ రంగాలను ఉంచు";
+"freeze_page_background_on_scroll_desc" = "స్క్రోల్ చేసిన తర్వాత మొదట గుర్తించిన రంగాలను ఉంచు. కొత్త పేజీ రంగాలను మళ్లీ గుర్తిస్తారు.";
+"page_background_gradient" = "గ్రేడియంట్ పొడిగింపు";
+"page_background_gradient_desc" = "గుర్తించిన రంగులను గ్రేడియంట్‌గా కలపండి. ఆఫ్ చేసినప్పుడు ప్రతి అంచుకు ఒకే రంగు ఉంటుంది.";
+
+
+"gestures_feedback_settings" = "సంజ్ఞలు మరియు ప్రతిస్పందన";

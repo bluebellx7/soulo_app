@@ -2,6 +2,492 @@ import XCTest
 
 @MainActor
 final class HomeToolbarUITests: XCTestCase {
+    func testWebVideoDownloadExtensionTogglePersistsAndSharesItsDetailSetting() {
+        continueAfterFailure = false
+        let app = compactSettingsApp()
+        app.launch(); defer { app.terminate() }
+        func openModule() {
+            openCompactSettings(app)
+            let search = app.searchFields.firstMatch
+            XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Scripts")
+            let entry = app.buttons["settings.extensions"]
+            XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+            XCTAssertTrue(app.switches["extensions.video-download-toggle"].waitForExistence(timeout: 5))
+        }
+        func set(_ element: XCUIElement, _ enabled: Bool) {
+            XCTAssertTrue(element.waitForExistence(timeout: 5))
+            if (element.value as? String == "1") != enabled {
+                element.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+            }
+            XCTAssertEqual(element.value as? String, enabled ? "1" : "0")
+        }
+        openModule()
+        let toggle = app.switches["extensions.video-download-toggle"]
+        let original = toggle.value as? String == "1"
+        set(toggle, false)
+        compactSettingsCapture(app, name: "web-video-download-extension-disabled")
+        app.buttons["extensions.video-download-details"].tap()
+        let detail = app.switches["extensions.video-download-details-toggle"]
+        XCTAssertTrue(detail.waitForExistence(timeout: 5)); XCTAssertEqual(detail.value as? String, "0")
+        set(detail, true)
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        set(toggle, false)
+        app.terminate(); app.launch(); openModule()
+        XCTAssertEqual(toggle.value as? String, "0")
+        set(toggle, original)
+        compactSettingsCapture(app, name: "web-video-download-extension-restored")
+    }
+
+    func testCompactSettingsDisplayPagesKeepPreferencesAndNestedNavigation() {
+        continueAfterFailure = false
+        let app = compactSettingsApp()
+        app.launch(); defer { app.terminate() }
+        openCompactSettings(app)
+        XCTAssertFalse(app.buttons["settings.homeDisplay.title"].exists)
+        XCTAssertFalse(app.switches["settings.homeDisplay.bookmarks"].exists)
+        XCTAssertFalse(app.switches["settings.browsingDisplay.topSearchBar"].exists)
+        XCTAssertFalse(app.switches["settings.icloud-sync"].exists)
+        compactSettingsTap("settings.homeDisplay", app: app)
+        for id in ["bookmarks", "groups", "recentSearches", "liveActivity"] {
+            XCTAssertTrue(app.switches["settings.homeDisplay." + id].exists)
+        }
+        compactSettingsTap("settings.homeDisplay.title", app: app)
+        XCTAssertTrue(app.alerts.textFields.firstMatch.waitForExistence(timeout: 3))
+        app.alerts.buttons["Cancel"].tap()
+        compactSettingsTap("settings.homeDisplay.subtitle", app: app)
+        XCTAssertTrue(app.alerts.textFields.firstMatch.waitForExistence(timeout: 3))
+        app.alerts.buttons["Cancel"].tap()
+        let bookmarks = app.switches["settings.homeDisplay.bookmarks"]
+        let original = bookmarks.value as? String
+        bookmarks.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertNotEqual(bookmarks.value as? String, original)
+        compactSettingsCapture(app, name: "compact-settings-home-display")
+        app.navigationBars.buttons.firstMatch.tap()
+        compactSettingsTap("settings.browsingDisplay", app: app)
+        for id in ["topSearchBar", "fullscreen", "pageAboveToolbar"] {
+            XCTAssertTrue(app.switches["settings.browsingDisplay." + id].exists)
+        }
+        compactSettingsCapture(app, name: "compact-settings-browsing-display")
+        compactSettingsTap("settings.websiteZoom", app: app)
+        XCTAssertTrue(app.switches["settings.zoom.remember"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.switches["settings.browsingDisplay.topSearchBar"].waitForExistence(timeout: 5))
+        compactSettingsTap("settings.webAppearance", app: app)
+        XCTAssertTrue(app.navigationBars["Web Appearance"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.switches["settings.browsingDisplay.topSearchBar"].waitForExistence(timeout: 5))
+
+        app.terminate(); app.launch(); openCompactSettings(app)
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Home Display")
+        compactSettingsTap("settings.homeDisplay", app: app)
+        XCTAssertTrue(bookmarks.waitForExistence(timeout: 5))
+        XCTAssertNotEqual(bookmarks.value as? String, original, "Moving controls must preserve saved settings after relaunch")
+        bookmarks.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertEqual(bookmarks.value as? String, original)
+    }
+
+    func testCompactSettingsBackupsAboutAndFooter() {
+        continueAfterFailure = false
+        let app = compactSettingsApp()
+        app.launch(); defer { app.terminate() }
+        openCompactSettings(app)
+        XCTAssertFalse(app.buttons["settings.rate"].exists)
+        XCTAssertFalse(app.buttons["settings.feedback"].exists)
+        XCTAssertFalse(app.buttons["settings.url-schemes"].exists)
+        compactSettingsTap("settings.backups", app: app)
+        XCTAssertTrue(app.switches["settings.icloud-sync"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.switches["settings.icloud-sync"].value as? String, "0")
+        XCTAssertTrue(app.buttons["settings.backups.save"].exists)
+        compactSettingsCapture(app, name: "compact-settings-backups-with-sync")
+        app.navigationBars.buttons.firstMatch.tap()
+        let storage = app.buttons["settings.storage"]
+        compactSettingsReveal(storage, app: app)
+        XCTAssertTrue(storage.isHittable)
+        compactSettingsTap("settings.clearCache", app: app)
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 3))
+        app.alerts.buttons["Cancel"].tap()
+        let footer = app.staticTexts["settings.footer.version"]
+        compactSettingsReveal(footer, app: app)
+        XCTAssertNotNil(footer.label.range(of: "^Soulo [0-9]+\\.[0-9]+", options: .regularExpression))
+        let telegram = app.descendants(matching: .any)["settings.telegram"].firstMatch
+        XCTAssertTrue(telegram.exists && telegram.isHittable)
+        XCTAssertGreaterThan(telegram.frame.midY, app.buttons["settings.version"].frame.midY)
+        XCTAssertLessThan(telegram.frame.midY, footer.frame.midY)
+        compactSettingsCapture(app, name: "compact-settings-other-about-footer")
+        compactSettingsTap("settings.version", app: app)
+        XCTAssertTrue(app.buttons["version.website"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any)["version.telegram"].firstMatch.exists)
+        compactSettingsTap("settings.rate", app: app)
+        XCTAssertTrue(app.descendants(matching: .any)["review.write"].firstMatch.waitForExistence(timeout: 5))
+        app.navigationBars.buttons.firstMatch.tap()
+        compactSettingsTap("settings.url-schemes", app: app)
+        XCTAssertTrue(app.buttons["scheme.copy.scheme_home"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons.firstMatch.tap()
+        compactSettingsTap("settings.feedback", app: app)
+        XCTAssertTrue(app.descendants(matching: .any)["feedback.telegram"].firstMatch.waitForExistence(timeout: 5))
+        app.buttons["Cancel"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["settings.rate"].waitForExistence(timeout: 5))
+        compactSettingsCapture(app, name: "compact-settings-about-support")
+    }
+
+    func testFeedbackRequiresContactBeforeSubmission() {
+        continueAfterFailure = false
+        let app = compactSettingsApp(); app.launch(); defer { app.terminate() }
+        openCompactSettings(app)
+        compactSettingsTap("settings.version", app: app)
+        compactSettingsTap("settings.feedback", app: app)
+        let content = app.textViews["feedback.content"]
+        XCTAssertTrue(content.waitForExistence(timeout: 5)); content.tap(); content.typeText("Required contact UI fixture")
+        app.buttons["feedback.keyboard.done"].tap()
+        let submit = app.buttons["feedback.submit"]
+        XCTAssertTrue(submit.exists)
+        XCTAssertFalse(submit.isEnabled)
+        let contact = app.textFields["feedback.contact"]
+        compactSettingsReveal(contact, app: app)
+        contact.tap(); contact.typeText("qa@example.test")
+        app.buttons["feedback.keyboard.done"].tap()
+        compactSettingsReveal(submit, app: app)
+        XCTAssertTrue(submit.isEnabled)
+        compactSettingsCapture(app, name: "feedback-contact-required-valid")
+        contact.tap()
+        contact.press(forDuration: 1.2)
+        let selectAll = app.menuItems.matching(NSPredicate(format: "label IN %@", ["Select All", "全选", "全選"])).firstMatch
+        XCTAssertTrue(selectAll.waitForExistence(timeout: 3), app.debugDescription)
+        selectAll.tap()
+        contact.typeText(XCUIKeyboardKey.delete.rawValue)
+        app.buttons["feedback.keyboard.done"].tap()
+        XCTAssertTrue(submit.exists)
+        XCTAssertFalse(submit.isEnabled, "Contact must be empty: \(String(describing: contact.value))")
+    }
+
+    func testSettingsSearchFindsWebpageBackgroundExtension() {
+        continueAfterFailure = false
+        let app = compactSettingsApp()
+        app.launch(); defer { app.terminate() }
+        openCompactSettings(app)
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap()
+        for character in "Background" { search.typeText(String(character)) }
+        XCTAssertEqual(search.value as? String, "Background")
+        compactSettingsTap("settings.browsingDisplay", app: app)
+        XCTAssertTrue(app.switches["settings.browsingDisplay.backgroundExtension"].waitForExistence(timeout: 5))
+    }
+
+    func testFreezingPageColorsIsConditionalAndPersists() {
+        continueAfterFailure = false
+        let app = compactSettingsApp()
+        app.launch(); defer { app.terminate() }
+        func openDisplay() { openCompactSettings(app); compactSettingsTap("settings.browsingDisplay", app: app) }
+        func set(_ toggle: XCUIElement, _ enabled: Bool) {
+            compactSettingsReveal(toggle, app: app)
+            if (toggle.value as? String == "1") != enabled { toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
+        }
+        openDisplay()
+        let extensionToggle = app.switches["settings.browsingDisplay.backgroundExtension"]
+        let freeze = app.switches["settings.browsingDisplay.freezeBackgroundOnScroll"]
+        let gradient = app.switches["settings.browsingDisplay.backgroundGradient"]
+        set(extensionToggle, false)
+        XCTAssertFalse(freeze.exists)
+        XCTAssertFalse(gradient.exists)
+        set(extensionToggle, true)
+        let done = app.buttons["browsing-guide.done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5)); done.tap()
+        XCTAssertTrue(freeze.waitForExistence(timeout: 5))
+        XCTAssertTrue(gradient.exists)
+        XCTAssertEqual(gradient.value as? String, "0")
+        XCTAssertEqual(gradient.frame.minX, freeze.frame.minX, accuracy: 1)
+        XCTAssertEqual(gradient.frame.maxX, freeze.frame.maxX, accuracy: 1)
+        set(gradient, true)
+        set(freeze, true)
+        compactSettingsCapture(app, name: "page-background-keep-initial-colors-setting")
+        app.terminate(); app.launch(); openDisplay()
+        XCTAssertEqual(extensionToggle.value as? String, "1")
+        XCTAssertEqual(freeze.value as? String, "1")
+        XCTAssertEqual(gradient.value as? String, "1")
+        set(gradient, false)
+        set(freeze, false); set(extensionToggle, false)
+        XCTAssertFalse(freeze.exists)
+    }
+
+    func testBrowsingDisplayExamplesAndRenderedPageBackgroundExtension() async throws {
+        continueAfterFailure = false
+        let html = """
+        <meta name='viewport' content='width=device-width,initial-scale=1'>
+        <style>html,body{margin:0;background:white}header,footer{position:fixed;left:0;right:0;height:70px}header{top:0;background:#d91c2c}footer{bottom:0;background:#195bcc}main{padding:110px 20px;min-height:1300px}button{font-size:22px}</style>
+        <header></header><main><h1>Browser edge fixture</h1><button onclick="document.querySelector('header').style.background='#112233';document.querySelector('footer').style.background='#eebc22'">Change edge colors</button></main><footer></footer>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/edge-colors": Data(html.utf8)])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let app = compactSettingsApp()
+        if let index = app.launchArguments.firstIndex(of: "-wallpaper_source") { app.launchArguments[index + 1] = "solid" }
+        app.launchArguments += ["-wallpaper_solid_color_light", "#E6F0FF", "-wallpaper_solid_color_dark", "#111111", "-freeze_page_background_on_scroll", "NO"]
+        app.launch(); defer { app.terminate() }
+        openCompactSettings(app)
+        compactSettingsTap("settings.browsingDisplay", app: app)
+        for (id, name) in [("topSearchBar", "topSearch"), ("fullscreen", "fullscreen"), ("backgroundExtension", "background"), ("pageAboveToolbar", "aboveToolbar")] {
+            let toggle = app.switches["settings.browsingDisplay." + id].firstMatch
+            compactSettingsReveal(toggle, app: app)
+            if toggle.value as? String == "1" { toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+            let done = app.buttons["browsing-guide.done"]
+            XCTAssertTrue(done.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertEqual(app.switches["browsing-guide.enabled"].firstMatch.value as? String, "1")
+            compactSettingsCapture(app, name: "browsing-example-" + name)
+            done.tap()
+            XCTAssertTrue(done.waitForNonExistence(timeout: 3))
+            if id == "topSearchBar" || id == "fullscreen" { toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
+        }
+        app.navigationBars.buttons.firstMatch.tap()
+        let settingsDone = app.navigationBars["Settings"].buttons["Done"]
+        XCTAssertTrue(settingsDone.waitForExistence(timeout: 5)); settingsDone.tap()
+        var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
+        route.queryItems = [URLQueryItem(name: "url", value: root.appendingPathComponent("edge-colors").absoluteString)]
+        app.open(try XCTUnwrap(route.url))
+        XCTAssertTrue(app.webViews.staticTexts["Browser edge fixture"].firstMatch.waitForExistence(timeout: 12))
+        func rgb(_ image: UIImage, x: CGFloat, y: CGFloat) -> (Double, Double, Double) {
+            let sx = CGFloat(image.cgImage?.width ?? 0) / max(1, app.frame.width)
+            let sy = CGFloat(image.cgImage?.height ?? 0) / max(1, app.frame.height)
+            guard let source = image.cgImage?.cropping(to: CGRect(x: x * sx, y: y * sy, width: 1, height: 1)) else { return (0,0,0) }
+            var pixel = [UInt8](repeating: 0, count: 4)
+            pixel.withUnsafeMutableBytes { bytes in
+                let context = CGContext(data: bytes.baseAddress, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                                        space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+                context.draw(source, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+            }
+            return (Double(pixel[0])/255, Double(pixel[1])/255, Double(pixel[2])/255)
+        }
+        func checkEdges(dark: Bool) async {
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                let image = XCUIScreen.main.screenshot().image
+                let top = rgb(image, x: 8, y: 25), bottom = rgb(image, x: 8, y: app.frame.height - 8)
+                return dark ? (top.0 < 0.2 && top.2 < 0.3 && bottom.0 > 0.7 && bottom.1 > 0.5)
+                            : (top.0 > 0.6 && top.1 < 0.3 && bottom.2 > 0.5 && bottom.0 < 0.3)
+            }, object: nil)
+            await fulfillment(of: [ready], timeout: 10)
+        }
+        await checkEdges(dark: false)
+        compactSettingsCapture(app, name: "browser-page-background-red-top-blue-bottom")
+        app.webViews.buttons["Change edge colors"].firstMatch.tap()
+        await checkEdges(dark: true)
+        compactSettingsCapture(app, name: "browser-page-background-dynamic-dark-top-gold-bottom")
+        app.buttons["Home Screen"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 5))
+        let homeColor = rgb(XCUIScreen.main.screenshot().image, x: 8, y: app.frame.height * 0.35)
+        XCTAssertEqual(homeColor.0, 230.0 / 255, accuracy: 0.04)
+        XCTAssertEqual(homeColor.1, 240.0 / 255, accuracy: 0.04)
+        XCTAssertEqual(homeColor.2, 1, accuracy: 0.04)
+        compactSettingsCapture(app, name: "home-wallpaper-unchanged-after-dark-web-chrome")
+        openCompactSettings(app)
+        compactSettingsTap("settings.browsingDisplay", app: app)
+        let background = app.switches["settings.browsingDisplay.backgroundExtension"].firstMatch
+        compactSettingsReveal(background, app: app)
+        background.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertEqual(background.value as? String, "0")
+        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars["Settings"].buttons["Done"].tap()
+        app.open(try XCTUnwrap(route.url))
+        XCTAssertTrue(app.webViews.staticTexts["Browser edge fixture"].firstMatch.waitForExistence(timeout: 12))
+        let originalChrome = rgb(XCUIScreen.main.screenshot().image, x: 8, y: 25)
+        XCTAssertTrue(originalChrome.1 > 0.3, "Disabling extension must stop using the webpage's red header")
+        compactSettingsCapture(app, name: "browser-background-extension-disabled")
+    }
+
+    private func compactSettingsApp() -> XCUIApplication {
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchEnvironment["OS_ACTIVITY_MODE"] = "disable"
+        app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-wallpaper_source", "gradient",
+            "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES"]
+        return app
+    }
+
+    private func openCompactSettings(_ app: XCUIApplication) {
+        app.open(URL(string: "soulo://")!)
+        let menu = app.buttons["home.menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 10)); menu.tap()
+        app.buttons["Settings"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+    }
+
+    private func compactSettingsReveal(_ element: XCUIElement, app: XCUIApplication) {
+        for _ in 0..<6 {
+            if element.exists && element.isHittable { return }
+            app.swipeUp()
+        }
+        XCTAssertTrue(element.exists && element.isHittable, app.debugDescription)
+    }
+
+    private func compactSettingsTap(_ id: String, app: XCUIApplication) {
+        let element = app.buttons[id]
+        compactSettingsReveal(element, app: app); element.tap()
+    }
+
+    private func compactSettingsCapture(_ app: XCUIApplication, name: String) {
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = name; shot.lifetime = .keepAlways; add(shot)
+    }
+
+    func testGlobalFeedbackSettingsPersistAndAreSharedWithGestures() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchEnvironment["OS_ACTIVITY_MODE"] = "disable"
+        app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-wallpaper_source", "gradient",
+            "-wallpaper_refresh_interval", "0", "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES"]
+        app.launch(); defer { app.terminate() }
+        func openSettings(search query: String, entry: String) {
+            app.open(URL(string: "soulo://")!)
+            let menu = app.buttons["home.menu"]
+            XCTAssertTrue(menu.waitForExistence(timeout: 10)); menu.tap()
+            app.buttons["Settings"].firstMatch.tap()
+            let search = app.searchFields.firstMatch
+            XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText(query)
+            let link = app.buttons[entry]
+            XCTAssertTrue(link.waitForExistence(timeout: 5)); link.tap()
+        }
+        func set(_ toggle: XCUIElement, enabled: Bool) {
+            XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+            if (toggle.value as? String == "1") != enabled {
+                toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+            }
+            XCTAssertEqual(toggle.value as? String, enabled ? "1" : "0")
+        }
+        openSettings(search: "Haptics", entry: "settings.feedbackPreferences")
+        let haptics = app.switches["settings.feedback.haptics"]
+        let sound = app.switches["settings.feedback.sound"]
+        XCTAssertTrue(haptics.waitForExistence(timeout: 5))
+        let originalHaptics = haptics.value as? String == "1"
+        let originalSound = sound.value as? String == "1"
+        set(haptics, enabled: false); set(sound, enabled: false)
+        XCTAssertFalse(app.buttons["settings.feedback.preview"].isEnabled)
+        set(sound, enabled: true)
+        XCTAssertTrue(app.buttons["settings.feedback.preview"].isEnabled)
+        app.buttons["settings.feedback.preview"].tap()
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "global-sounds-and-haptics"; shot.lifetime = .keepAlways; add(shot)
+
+        app.terminate(); app.launch()
+        openSettings(search: "Webpage Gestures", entry: "settings.gestures")
+        let feedback = app.buttons["settings.gestures.feedback"]
+        for _ in 0..<5 where !feedback.isHittable { app.swipeUp() }
+        XCTAssertTrue(feedback.waitForExistence(timeout: 5)); feedback.tap()
+        XCTAssertTrue(haptics.waitForExistence(timeout: 5))
+        XCTAssertEqual(haptics.value as? String, "0")
+        XCTAssertEqual(sound.value as? String, "1")
+        set(haptics, enabled: originalHaptics); set(sound, enabled: originalSound)
+    }
+
+    func testGesturesAndFeedbackGroupOpensAllThreeSettings() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-appearance", "dark", "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO"]
+        app.launch(); defer { app.terminate() }
+        app.open(URL(string: "soulo://")!)
+        XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10)); app.buttons["home.menu"].tap()
+        app.buttons["Settings"].firstMatch.tap()
+        let entry = app.buttons["settings.interaction"]
+        for _ in 0..<5 where !entry.isHittable { app.swipeUp() }
+        XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+        for (id, ready) in [("shake", "settings.shake.direction"), ("gestures", "settings.gestures.enabled"), ("feedback", "settings.feedback.haptics")] {
+            let row = app.buttons["settings.interaction." + id]
+            XCTAssertTrue(row.waitForExistence(timeout: 5)); row.tap()
+            XCTAssertTrue(app.descendants(matching: .any)[ready].firstMatch.waitForExistence(timeout: 5))
+            let done = app.buttons["Done"].firstMatch
+            if done.exists { done.tap() } else { app.navigationBars.buttons.firstMatch.tap() }
+            XCTAssertTrue(row.waitForExistence(timeout: 5))
+        }
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "gestures-feedback-group"; shot.lifetime = .keepAlways; add(shot)
+    }
+
+    func testAdFilteringDestinationsRemainResponsiveOnRepeatedNavigation() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-wallpaper_source", "gradient",
+            "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES", "-ad_block_enabled", "NO"]
+        app.launch(); defer { app.terminate() }
+        app.open(URL(string: "soulo://")!)
+        XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout:10)); app.buttons["home.menu"].tap()
+        app.buttons["Settings"].firstMatch.tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout:5)); search.tap(); search.typeText("Ad Blocking")
+        app.buttons["Ad Blocking"].firstMatch.tap()
+        let routes = [("domainAllowlist","Trusted domains"),("manualRules","Marked ads"),
+            ("builtInRules","Built-in rules"),("subscriptions","Filter lists"),("allowedSites","Allowed Sites")]
+        for pass in 0..<2 {
+            for (id, title) in routes {
+                let entry = app.buttons["adBlock." + id]
+                for _ in 0..<4 where !entry.isHittable { app.swipeUp() }
+                for _ in 0..<4 where !entry.isHittable { app.swipeDown() }
+                XCTAssertTrue(entry.waitForExistence(timeout:5)); entry.tap()
+                XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout:5), app.debugDescription)
+                let done = app.buttons["Done"].firstMatch
+                if done.exists { done.tap() } else { app.navigationBars.buttons.firstMatch.tap() }
+                XCTAssertTrue(app.buttons["adBlock." + id].waitForExistence(timeout:5), "Return from \(id), pass \(pass)")
+            }
+        }
+    }
+
+    func testCustomAdFilterListCanBeAddedValidatedRestoredAndDeleted() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchEnvironment["OS_ACTIVITY_MODE"] = "disable"
+        app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-wallpaper_source", "gradient",
+            "-wallpaper_refresh_interval", "0", "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES",
+            "-ad_block_enabled", "NO"]
+        app.launch(); defer { app.terminate() }
+        func openLists() {
+            app.open(URL(string: "soulo://")!)
+            let menu = app.buttons["home.menu"]
+            XCTAssertTrue(menu.waitForExistence(timeout: 10)); menu.tap()
+            app.buttons["Settings"].firstMatch.tap()
+            let search = app.searchFields.firstMatch
+            XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Ad Blocking")
+            let filtering = app.buttons["Ad Blocking"].firstMatch
+            XCTAssertTrue(filtering.waitForExistence(timeout: 5)); filtering.tap()
+            let lists = app.buttons["adBlock.subscriptions"]
+            for _ in 0..<4 where !lists.isHittable { app.swipeUp() }
+            XCTAssertTrue(lists.waitForExistence(timeout: 5)); lists.tap()
+            XCTAssertTrue(app.buttons["adBlock.addSubscription"].waitForExistence(timeout: 5))
+        }
+        openLists()
+        let name = "Personal QA " + UUID().uuidString.prefix(6)
+        let address = "https://filters-qa.example/" + UUID().uuidString + ".txt"
+        app.buttons["adBlock.addSubscription"].tap()
+        let nameField = app.textFields["adBlock.subscription.name"]
+        let urlField = app.textFields["adBlock.subscription.url"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5)); nameField.tap(); nameField.typeText(name)
+        urlField.tap(); urlField.typeText("not-a-link")
+        let save = app.buttons["adBlock.subscription.save"]
+        save.tap()
+        XCTAssertTrue(app.staticTexts["adBlock.subscription.error"].waitForExistence(timeout: 3))
+        urlField.tap()
+        urlField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "not-a-link".count) + address)
+        XCTAssertFalse(app.staticTexts["adBlock.subscription.error"].exists, "Editing the input clears the previous validation error")
+        let editorShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        editorShot.name = "custom-filter-list-editor"; editorShot.lifetime = .keepAlways; add(editorShot)
+        save.tap()
+        XCTAssertTrue(save.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts[name].waitForExistence(timeout: 5))
+
+        app.buttons["adBlock.addSubscription"].tap()
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5)); nameField.tap(); nameField.typeText("Duplicate QA")
+        urlField.tap(); urlField.typeText(address + "#duplicate")
+        save.tap()
+        XCTAssertTrue(app.staticTexts["This subscription URL has already been added."].waitForExistence(timeout: 3))
+        app.buttons["Cancel"].firstMatch.tap()
+
+        app.terminate(); app.launch(); openLists()
+        XCTAssertTrue(app.staticTexts[name].waitForExistence(timeout: 5), "Custom subscriptions must survive restarting the app")
+        let listShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        listShot.name = "custom-filter-list-persisted"; listShot.lifetime = .keepAlways; add(listShot)
+        let row = app.cells.containing(.staticText, identifier: name).firstMatch
+        XCTAssertTrue(row.exists); row.swipeLeft()
+        let delete = app.buttons["Delete"].firstMatch
+        XCTAssertTrue(delete.waitForExistence(timeout: 3)); delete.tap()
+        XCTAssertTrue(app.staticTexts[name].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["EasyList"].exists, "Deleting a custom list must preserve built-in lists")
+    }
+
     func testWallpaperAppearanceOutlinesRemainVisibleOnBothCards() throws {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
@@ -212,6 +698,15 @@ final class HomeToolbarUITests: XCTestCase {
         overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
         let changed = overlay.value as? String
         XCTAssertNotEqual(initial, changed)
+        if changed == "0" { overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
+        let overlaySlider = app.sliders["wallpaper.overlay-amount"]
+        XCTAssertTrue(overlaySlider.waitForExistence(timeout: 5))
+        overlaySlider.adjust(toNormalizedSliderPosition: 0.65)
+        let overlayAmount = overlaySlider.value as? String
+        overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertFalse(overlaySlider.exists)
+        overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertEqual(overlaySlider.value as? String, overlayAmount)
         if originalBlur == "0" { blur.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
         let slider = app.sliders["wallpaper.blur-amount"]
         XCTAssertTrue(slider.waitForExistence(timeout: 5)); slider.adjust(toNormalizedSliderPosition: 0.75)
@@ -219,16 +714,42 @@ final class HomeToolbarUITests: XCTestCase {
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         shot.name = "wallpaper-mask-and-adjustable-frosted-glass"; shot.lifetime = .keepAlways; add(shot)
         app.terminate(); app.launch(); settings()
-        XCTAssertEqual(overlay.value as? String, changed)
+        XCTAssertEqual(overlay.value as? String, "1")
+        XCTAssertEqual(overlaySlider.value as? String, overlayAmount)
         XCTAssertEqual(blur.value as? String, "1")
         XCTAssertEqual(slider.value as? String, amount)
-        overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        if initial == "0" { overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
         if originalBlur == "0" { blur.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
         app.scrollViews["wallpaper.sources"].swipeLeft()
         app.buttons["wallpaper.source.solid"].tap()
-        XCTAssertFalse(overlay.exists); XCTAssertFalse(blur.exists); XCTAssertFalse(slider.exists)
+        XCTAssertFalse(overlay.exists); XCTAssertFalse(overlaySlider.exists); XCTAssertFalse(blur.exists); XCTAssertFalse(slider.exists)
         app.buttons["wallpaper.source.gradient"].tap()
-        XCTAssertFalse(overlay.exists); XCTAssertFalse(blur.exists); XCTAssertFalse(slider.exists)
+        XCTAssertFalse(overlay.exists); XCTAssertFalse(overlaySlider.exists); XCTAssertFalse(blur.exists); XCTAssertFalse(slider.exists)
+    }
+
+    func testRemoteWallpaperSourceThumbnailCentersAndLabelsRemainSelectable() {
+        continueAfterFailure = false
+        let app = compactSettingsApp()
+        app.launchArguments += ["-wallpaper_source", "pixabay", "-wallpaper_refresh_interval", "0",
+            "-wallpaper_only_favorites", "NO", "-wallpaper_image_overlay", "YES",
+            "-wallpaper_image_blur", "YES", "-wallpaper_image_blur_amount", "0.75"]
+        app.launch(); defer { app.terminate() }
+        openCompactSettings(app)
+        let entry = app.buttons["settings.wallpaper"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+        let sources = app.scrollViews["wallpaper.sources"]
+        XCTAssertTrue(sources.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["wallpaper.source.pixabay"].isSelected)
+        for (source, y) in [("pexels", 0.35), ("bing", 0.35), ("pixabay", 0.35),
+                            ("pexels", 0.9), ("bing", 0.9), ("pixabay", 0.9)] {
+            let tile = app.buttons["wallpaper.source." + source]
+            XCTAssertTrue(tile.isHittable)
+            tile.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: y)).tap()
+            let selected = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in tile.isSelected }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [selected], timeout: 3), .completed, "Tapping \(source) must select that source")
+        }
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "wallpaper-remote-sources-thumbnail-hit-regions"; shot.lifetime = .keepAlways; add(shot)
     }
 
     func testWallpaperSettingsSwitchSourcesAndApplyGradient() throws {
@@ -271,8 +792,9 @@ final class HomeToolbarUITests: XCTestCase {
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
         defer { app.terminate() }
         app.launchEnvironment["SOULO_BROWSER_TRACE"] = "1"
-        for wallpaper in ["gradient", "bing"] {
-            app.launchArguments = ["-app_language", "en-US", "-is_incognito", "NO",
+        for wallpaper in ["gradient", "bing", "photo"] {
+            app.launchArguments = ["-app_language", "en-US", "-is_incognito", "NO", "-appearance", "light",
+                "-wallpaper_current_cache_file", "startup-qa.image", "-wallpaper_current_cache_id", "startup-qa",
                 "-wallpaper_source", wallpaper, "-wallpaper_refresh_interval", "0", "-icloud_sync_enabled", "NO",
                 "-review.requestedOnce", "YES",
                 "-soulo_ad_block_subscription_auto_update_check", "0", "-privacy_https_upgrade_enabled", "NO",
@@ -280,6 +802,8 @@ final class HomeToolbarUITests: XCTestCase {
             app.launch()
             let menu = app.buttons["home.menu"]
             XCTAssertTrue(menu.waitForExistence(timeout: 10), app.debugDescription)
+            let homeShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            homeShot.name = "startup-home-" + wallpaper; homeShot.lifetime = .keepAlways; add(homeShot)
             menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             let settings = app.buttons["Settings"].firstMatch
             XCTAssertTrue(settings.waitForExistence(timeout: 3), "The first home menu tap must work")
@@ -295,13 +819,14 @@ final class HomeToolbarUITests: XCTestCase {
             XCTAssertTrue(app.webViews.staticTexts[title].firstMatch.waitForExistence(timeout: 15))
             app.buttons["Home Screen"].firstMatch.tap()
             XCTAssertTrue(menu.waitForExistence(timeout: 5))
+            let initialMenuWidth = menu.frame.width
             XCUIDevice.shared.press(.home)
             app.activate()
             XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
             // runningForeground precedes the SpringBoard activation animation.
             // Its transient AX frames can still be scaled to the app preview.
             let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                menu.isHittable && menu.frame.width >= 40
+                menu.exists && menu.frame.width >= max(1, initialMenuWidth * 0.95)
             }, object: nil)
             guard XCTWaiter.wait(for: [ready], timeout: 3) == .completed else {
                 XCTFail("Home controls must become ready after the system activation transition")
@@ -382,6 +907,36 @@ final class HomeToolbarUITests: XCTestCase {
         app.buttons["Bookmarks"].firstMatch.tap()
     }
 
+    func testTelegramFeedbackPageShowsLinkAndExternalOpenInBothAppearances() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        defer { app.terminate() }
+        for (appearance, language, settings) in [("light", "zh-Hans", "设置"), ("dark", "en-US", "Settings")] {
+            app.launchArguments = ["-app_language", language, "-appearance", appearance,
+                "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO"]
+            app.launch(); app.open(URL(string: "soulo://")!)
+            XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
+            app.buttons["home.menu"].tap()
+            app.buttons[settings].firstMatch.tap()
+            let entry = app.buttons["settings.telegram"]
+            reveal(entry, in: app)
+            // XCTest marks a partly visible bottom row as hittable even when
+            // its center is behind the sheet's bottom safe area on iPhone.
+            for _ in 0..<3 where entry.frame.maxY > app.frame.maxY - 80 { app.swipeUp() }
+            entry.tap()
+            let link = app.staticTexts["settings.telegram.link"]
+            XCTAssertTrue(link.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertEqual(link.label, "https://t.me/soulobrowser")
+            let open = app.buttons["settings.telegram.open"]
+            XCTAssertTrue(open.isHittable, "The page must offer an explicit external app action")
+            let image = XCTAttachment(screenshot: app.screenshot())
+            image.name = "telegram-feedback-\(appearance)"; image.lifetime = .keepAlways; add(image)
+            app.navigationBars.buttons.firstMatch.tap()
+            XCTAssertTrue(entry.waitForExistence(timeout: 5), "Back must return to the bottom of Settings")
+            app.terminate()
+        }
+    }
+
     func testIllustratedReviewPageReturnsToSettingsAndVersionInBothAppearances() throws {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
@@ -393,6 +948,8 @@ final class HomeToolbarUITests: XCTestCase {
             XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
             app.buttons["home.menu"].tap()
             app.buttons[settings].firstMatch.tap()
+            let version = app.buttons["settings.version"]
+            reveal(version, in: app); version.tap()
             let rate = app.buttons["settings.rate"]
             reveal(rate, in: app); rate.tap()
             let store = app.descendants(matching: .any)["review.write"].firstMatch
@@ -402,9 +959,7 @@ final class HomeToolbarUITests: XCTestCase {
             let review = XCTAttachment(screenshot: app.screenshot())
             review.name = "illustrated-review-\(appearance)"; review.lifetime = .keepAlways; add(review)
             app.navigationBars.buttons.firstMatch.tap()
-            XCTAssertTrue(app.buttons["settings.rate"].waitForExistence(timeout: 5), "Back must return to Settings")
-            let version = app.buttons["settings.version"]
-            reveal(version, in: app); version.tap()
+            XCTAssertTrue(app.buttons["settings.rate"].waitForExistence(timeout: 5), "Back must return to About & Support")
             XCTAssertTrue(app.descendants(matching: .any)["version.website"].firstMatch.waitForExistence(timeout: 5))
             let about = XCTAttachment(screenshot: app.screenshot())
             about.name = "illustrated-version-\(appearance)"; about.lifetime = .keepAlways; add(about)
@@ -518,9 +1073,12 @@ final class HomeToolbarUITests: XCTestCase {
         app.alerts.buttons["删除"].tap()
         XCTAssertTrue(app.buttons[identifier].waitForNonExistence(timeout: 3))
         app.navigationBars.buttons.firstMatch.tap()
+        let version = app.buttons["settings.version"]
+        reveal(version, in: app)
+        capture("Settings other and support icon columns")
+        version.tap()
         let feedback = app.buttons["settings.feedback"]
         reveal(feedback, in: app)
-        capture("Settings other and support icon columns")
         feedback.tap()
         let telegram = app.descendants(matching: .any)["feedback.telegram"].firstMatch
         XCTAssertTrue(telegram.waitForExistence(timeout: 5))
@@ -528,8 +1086,6 @@ final class HomeToolbarUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["加入群组，交流问题与建议。"].exists)
         capture("Feedback Telegram group entry")
         app.navigationBars["用户反馈"].buttons["取消"].tap()
-        let version = app.buttons["settings.version"]
-        reveal(version, in: app); version.tap()
         let versionTelegram = app.descendants(matching: .any)["version.telegram"].firstMatch
         XCTAssertTrue(versionTelegram.waitForExistence(timeout: 5))
         XCTAssertTrue(versionTelegram.isHittable)

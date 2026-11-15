@@ -1,0 +1,142 @@
+{
+  "date": "2026-11-13",
+  "version": "1.2.14",
+  "build": 54,
+  "requirements": [
+    {
+      "id": 0,
+      "request": "TYTY 0.6.6 compatibility",
+      "status": "implemented_and_verified",
+      "details": [
+        "Pin adaptation to the original worker SHA256 and preserve its original backup in the private installed copy.",
+        "Convert template literal syntax using reproducible Babel-generated edits; use a nonpersistent document background with the original crypto library.",
+        "Expand unsupported regex alternatives into equivalent rules, keep stable IDs and serialize native rule transactions.",
+        "Expose the existing native browser.runtime as chrome.runtime only on the allowed TYTY origins and route its known Chrome ID to the installed context without changing storage identity.",
+        "Bound startup waits and ignore late completion after cancellation."
+      ],
+      "verification": "Real supplied package: fixed-Chrome-ID ping/version, a real local proxy HTTP request, 10 compiled rules, sharing switch removes/reinstates rules, disable blocks messaging, re-enable restores it."
+    },
+    {
+      "id": 1,
+      "request": "Feedback contact information required",
+      "status": "implemented_and_verified",
+      "details": [
+        "Nonempty trimmed contact required in both the form and request builder.",
+        "Required marker and localized reply instructions; Submit stays disabled for an empty contact.",
+        "Keyboard Done control and contact return-key dismissal let users reach the contact field."
+      ],
+      "verification": "Request validation and stubbed successful/error responses passed; iOS 16 UI verified empty -> disabled, entered -> enabled, Select All/Delete -> disabled. No real feedback submitted."
+    },
+    {
+      "id": 2,
+      "request": "Immediate cached home wallpaper and responsive home controls",
+      "status": "implemented_and_verified",
+      "details": [
+        "Restore a small decoded first-frame preview synchronously, decode the display image off-main, and write preview files atomically.",
+        "Legacy caches can supply a small first-frame preview; photo/remote images retain their original export data.",
+        "Remove the fixed 600 ms startup delay and 0.8 s image fade; decorative wallpaper does not receive touches.",
+        "A cached selected wallpaper no longer fetches candidates merely to enter Home; settings can still load its gallery.",
+        "Home resolves its appearance from the App preference and system style, with an explicit override for its wallpaper rendering. Browser chrome appearance cannot choose another home photo/gradient/solid preset."
+      ],
+      "verification": "Cold photo restore and light/dark switching have a synchronous image; cached legacy remote first frame passed; browser-rendering theme changes do not switch the home photo or write it. iOS 16 UI verified first menu tap, first search input and return from background for gradient, cached remote image and photo."
+    },
+    {
+      "id": 3,
+      "request": "Torrent progress and misleading preallocated file size",
+      "status": "implemented_and_verified",
+      "details": [
+        "Compute selected completion from the native per-file progress instead of requiring wanted totals to equal logical selected bytes.",
+        "Retain the last verified progress during checking and persist per-file checkpoints.",
+        "Show one decimal in percentages and downloaded/total bytes.",
+        "File library marks unfinished torrent entries Incomplete and displays their actual completion percentage and completed/total bytes.",
+        "Native sparse/preallocated file sizes are preserved; a full logical length is not treated as completed data."
+      ],
+      "verification": "17 torrent tests passed, including real local peer transfer, metadata-only import, excluded-file selection, seeking verified pieces, pause/resume/restart, checking snapshots and sparse-file presentation."
+    },
+    {
+      "id": 4,
+      "request": "Optional webpage background extension above Avoid Overlap",
+      "status": "implemented_and_verified",
+      "default": false,
+      "details": [
+        "The setting is above Avoid Overlap in Browsing Display, participates in settings backup/iCloud keys and defaults off.",
+        "When on, sample the rendered top/bottom page strips, reject foreground-text outliers and retain three horizontal color stops at each edge.",
+        "Extend those colors smoothly behind the status/platform bars and bottom chrome. Native rendering includes CSS gradients, images and embedded content.",
+        "Throttle captures, wait for scrolling to settle, bound snapshot completion and reject old-navigation results. Disabling stops sampling/observation and ignores the palette.",
+        "Browser chrome contrast is independent of the requested webpage appearance. No wallpaper source, image, preset or overlay setting is written by webpage sampling."
+      ],
+      "verification": "Native rendered gradient/top-bottom/dynamic-color tests passed. iOS 16 screenshot pixel assertions verified red top/blue bottom, dynamic dark top/gold bottom, the original light Home background after leaving dark browser chrome, and restored browser background after switching this option off."
+    },
+    {
+      "id": 5,
+      "request": "Illustrated explanations when browsing switches are enabled",
+      "status": "implemented_and_verified",
+      "details": [
+        "Show Top Search Bar, Keep Full-Screen Browsing, Extend Page Background and Avoid Overlap each show their own native illustration when enabled.",
+        "Each explanation includes the setting description, its live switch and the Settings -> Browsing Display route."
+      ],
+      "verification": "All four guide sheets were opened and screenshots reviewed on iOS 16; illustration borders/text were complete."
+    },
+    {
+      "id": 6,
+      "request": "Version 1.2.14 and generated App Store metadata JSON",
+      "status": "implemented_and_verified",
+      "details": [
+        "All three project targets use marketing version 1.2.14 and build 54; project regenerated with xcodegen.",
+        "Reviewed all six metadata source fields in all 50 locale folders; retained accurate existing names, subtitles, promotions, descriptions and keywords.",
+        "Updated all 50 release note sources and regenerated fastlane/app_store_metadata.json with scripts/export_metadata_json.py.",
+        "All 50 runtime ReadingTools localizations include required-contact, incomplete-file and background-extension text."
+      ],
+      "verification": "Strict localization check passed: 881 base keys, 493 ReadingTools keys, 81 FeatureImprovements keys across 50 locales. Metadata --check and plutil on 50 ReadingTools files passed. No zero-width warnings emitted."
+    }
+  ],
+  "validation": {
+    "distinct_unit_and_local_integration_cases": 57,
+    "suites": {
+      "torrent": 17,
+      "extension_lifecycle": 6,
+      "extension_audit": 2,
+      "feedback": 4,
+      "wallpaper": 24,
+      "webpage_edges": 4
+    },
+    "unit_evidence": [
+      "/tmp/soulo-four-fixes-20261113/regression-all.xcresult",
+      "/tmp/soulo-four-fixes-20261113/final-unit.xcresult",
+      "/tmp/soulo-four-fixes-20261113/wallpaper-complete.xcresult"
+    ],
+    "ui_cases": 3,
+    "ui_evidence": {
+      "home_startup_and_foreground": "/tmp/soulo-four-fixes-20261113/ui-final-ios16.xcresult (this case passed; two other earlier harness cases failed in that bundle)",
+      "browsing_guides_colors_and_home_isolation": "/tmp/soulo-four-fixes-20261113/ui-background-isolation.xcresult",
+      "required_feedback_contact": "/tmp/soulo-four-fixes-20261113/ui-feedback-contact-final.xcresult"
+    },
+    "simulator_build": "passed; build-complete.log",
+    "generic_ios_device_build": "passed with CODE_SIGNING_ALLOWED=NO; device-complete.log",
+    "visual_review": [
+      "Native colored browser chrome and status bar",
+      "Four browsing guide diagrams",
+      "Photo wallpaper on Home",
+      "Feedback required contact control"
+    ],
+    "earlier_failed_runs": "Preserved in artifacts. Corrected fixture startup/async result handling, simulator-specific AX hit points, nested text-editor scrolling, caret-based partial deletion and Chinese system Select All menu labeling. Final UI assertions still require actual page colors and actual contact-field state."
+  },
+  "tyty_original": {
+    "path": "/Users/shunfei.z/Downloads/tyty.v0.6.6.crx",
+    "sha256": "676fc17589eb40a32e1eb461e23d735d482eb494a5a25724c7e1dba589a9faa6",
+    "modified": false,
+    "patch_generator": "scripts/generate_tyty_template_patches.mjs",
+    "reproducibility": "479 generated edits reproduced byte-for-byte with Babel core 8.1.2 and template plugin 8.0.1."
+  },
+  "limits": [
+    "Simulator verification and unsigned device compilation; no physical-device run.",
+    "Native TYTY extension execution requires iOS 18.4+. No account credentials were used and real cloud login/file transfer/upload/delete operations were not exercised."
+  ],
+  "artifacts": "/tmp/soulo-four-fixes-20261113/",
+  "qa_fixture_cleanup": "Original owned iOS 16 simulator wallpaper files restored.",
+  "paid_api_calls": 0,
+  "committed": false,
+  "pushed": false,
+  "follow_up_audit": "2026-11-13-follow-up-audit.json",
+  "follow_up_status": "verified_in_simulators_and_unsigned_device_build"
+}

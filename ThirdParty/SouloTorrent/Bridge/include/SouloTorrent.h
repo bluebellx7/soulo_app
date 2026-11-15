@@ -4,6 +4,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface SLTorrentEngine : NSObject
 - (instancetype)initWithCertificateFile:(NSString *)certificateFile discoveryEnabled:(BOOL)discoveryEnabled;
 @property (nonatomic, readonly) NSInteger listeningPort;
+/// Bounded public discovery hints. Private metainfo never uses these entries.
+- (void)updatePublicTrackers:(NSArray<NSString *> *)trackers;
+- (NSArray<NSString *> *)trackerURLs:(NSString *)identifier;
 - (void)connectIdentifier:(NSString *)identifier host:(NSString *)host port:(NSInteger)port;
 + (nullable NSDictionary<NSString *, id> *)inspectData:(NSData *)data error:(NSError **)error;
 + (nullable NSDictionary<NSString *, id> *)inspectMagnet:(NSString *)magnet error:(NSError **)error;

@@ -1,6 +1,7 @@
 import UIKit
 import WebKit
 import Combine
+import ImageIO
 import NaturalLanguage
 import SwiftUI
 
@@ -49,21 +50,45 @@ struct WebDomainNavigationConfirmation: Identifiable {
 final class WebViewModel: ObservableObject {
 
     // MARK: - Published State
+    @Published var pageEdgePalette: WebPageEdgePalette?
+    var pageEdgesHaveScrolled = false
 
-    @Published private(set) var hasNavigatedFromPlatformSearch = false
+    @Published private(set) var platformBarHiddenByPageTap = false
+    private var platformSearchHasLeftRoot = false
     private var tracksPlatformSearch = false
     private var platformSearchRootURL: URL?
 
     func beginPlatformSearchTracking() {
         tracksPlatformSearch = true
         platformSearchRootURL = nil
-        hasNavigatedFromPlatformSearch = false
+        platformSearchHasLeftRoot = false
+        resetPlatformBarAutoHide()
     }
 
     func resetPlatformSearchTracking() {
         tracksPlatformSearch = false
         platformSearchRootURL = nil
-        hasNavigatedFromPlatformSearch = false
+        platformSearchHasLeftRoot = false
+        resetPlatformBarAutoHide()
+    }
+
+    func resetPlatformBarAutoHide() {
+        if platformBarHiddenByPageTap { platformBarHiddenByPageTap = false }
+    }
+
+    /// Called only for a trusted click from our isolated content world. A
+    /// touchstart may become a scroll, and URL changes may be automatic.
+    func recordPlatformPageTap(autoHideEnabled: Bool) {
+        guard tracksPlatformSearch, autoHideEnabled, !platformBarHiddenByPageTap else { return }
+        // The site may have redirected itself since the search finished. Use
+        // the document the user actually tapped as the return-to-results root.
+        if let currentURL {
+            var parts = URLComponents(url: currentURL, resolvingAgainstBaseURL: false)
+            parts?.fragment = nil
+            platformSearchRootURL = parts?.url
+            platformSearchHasLeftRoot = false
+        }
+        platformBarHiddenByPageTap = true
     }
 
     private func updatePlatformSearchNavigation(finished: Bool = false) {
@@ -78,7 +103,8 @@ final class WebViewModel: ObservableObject {
             platformSearchRootURL = documentURL(currentURL)
         }
         let leftRoot = documentURL(currentURL) != platformSearchRootURL
-        if hasNavigatedFromPlatformSearch != leftRoot { hasNavigatedFromPlatformSearch = leftRoot }
+        if platformSearchHasLeftRoot && !leftRoot { resetPlatformBarAutoHide() }
+        platformSearchHasLeftRoot = leftRoot
     }
 
     @Published var currentURL: URL?
@@ -91,6 +117,11 @@ final class WebViewModel: ObservableObject {
     var currentDocumentHasUserInteraction = false
     @Published var estimatedProgress: Double = 0.0
     @Published var canGoBack: Bool = false
+    /// A standalone extension application can return to its source browser tab
+    /// without destroying either document or an ongoing merge/download.
+    var returnToSourceTab: (() -> Bool)? {
+        didSet { updateCanGoBack(webView?.canGoBack ?? false) }
+    }
     @Published var canGoForward: Bool = false
     @Published var errorMessage: String?
     @Published private(set) var failedNavigationURL: URL?
@@ -160,6 +191,7 @@ final class WebViewModel: ObservableObject {
     private var snapshotGeneration = UUID()
     @Published private(set) var snapshotRevision = 0
     private var isLoadingSnapshot = false
+    private var snapshotReadRequest: TabSnapshotReadRequest?
     private var isCapturingSnapshot = false
     private var snapshotNeedsRefresh = false
     private var snapshotWaitsForScreenUpdates = false
@@ -356,7 +388,7 @@ final class WebViewModel: ObservableObject {
         if let webView {
             applyPageZoom(to: webView)
         }
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        HapticsManager.light()
     }
 
     private var usesPrivatePageZoom: Bool {
@@ -404,6 +436,10 @@ final class WebViewModel: ObservableObject {
 
     func goBack() {
         guard canGoBack else { return }
+        if webView?.canGoBack != true, let action = returnToSourceTab {
+            if !action() { returnToSourceTab = nil }
+            return
+        }
         resolveDomainNavigationConfirmation(allowed: false)
         guard let webView else { return }
         errorMessage = nil
@@ -631,7 +667,10 @@ final class WebViewModel: ObservableObject {
         }
     }
 
-    func updateCanGoBack(_ value: Bool) { if canGoBack != value { canGoBack = value } }
+    func updateCanGoBack(_ value: Bool) {
+        let available = value || returnToSourceTab != nil
+        if canGoBack != available { canGoBack = available }
+    }
     func updateCanGoForward(_ value: Bool) { if canGoForward != value { canGoForward = value } }
 
     func updateDownloadState(activeCount: Int, fileName: String? = nil) {
@@ -661,6 +700,8 @@ final class WebViewModel: ObservableObject {
     }
 
     func beginPageNavigation() {
+        pageEdgePalette = nil
+        pageEdgesHaveScrolled = false
         clearVideoHoldSpeed()
         cancelScheduledSnapshot()
         snapshotDocumentGeneration = UUID()
@@ -881,22 +922,29 @@ final class WebViewModel: ObservableObject {
 
     /// Decode only the visible cards. Private tabs use compressed memory data;
     /// normal tabs keep durable previews independently of WebKit and its cache.
-    func loadSnapshotIfNeeded(forRestoration: Bool = false) async {
+    func loadSnapshotIfNeeded(forRestoration: Bool = false, maximumPixelSize: Int = 2048) async {
         guard !Task.isCancelled, snapshot == nil, !isLoadingSnapshot, let id = snapshotPersistenceID else { return }
         isLoadingSnapshot = true
+        let request = TabSnapshotReadRequest()
+        snapshotReadRequest = request
+        defer {
+            if snapshotReadRequest === request { snapshotReadRequest = nil; isLoadingSnapshot = false }
+        }
         let generation = snapshotGeneration
         let url = currentURL
         while true {
             let revision = snapshotRevision
             let memoryData = memorySnapshotData
             let canReadDisk = allowsSnapshotPersistence
-            let image = await withCheckedContinuation { continuation in
+            let image: UIImage? = await withCheckedContinuation { continuation in
                 Self.snapshotWriteQueue.async {
-                    continuation.resume(returning: memoryData.flatMap(UIImage.init(data:))
-                        ?? (canReadDisk ? Self.loadSnapshot(id: id) : nil))
+                    guard !request.isCancelled else { continuation.resume(returning: nil); return }
+                    let image = memoryData.flatMap { Self.decodedSnapshot(data: $0, maximumPixelSize: maximumPixelSize) }
+                        ?? (canReadDisk ? Self.loadSnapshot(id: id, maximumPixelSize: maximumPixelSize) : nil)
+                    continuation.resume(returning: request.isCancelled ? nil : image)
                 }
             }
-            guard snapshotGeneration == generation else { return }
+            guard snapshotGeneration == generation, !request.isCancelled else { return }
             // A capture can finish while this read is still pending. Its
             // durable write is queued before the revision changes; re-read
             // instead of publishing an earlier cache miss or stale preview.
@@ -916,6 +964,7 @@ final class WebViewModel: ObservableObject {
 
     func releaseSnapshotMemory() {
         guard snapshot != nil || isLoadingSnapshot || isCapturingSnapshot else { return }
+        snapshotReadRequest?.cancel(); snapshotReadRequest = nil
         snapshotGeneration = UUID()
         snapshotRevision &+= 1
         isLoadingSnapshot = false
@@ -938,8 +987,8 @@ final class WebViewModel: ObservableObject {
 
     /// Only visible cards decode cached images. Existing foreground content can
     /// refresh after rotation without activating or reloading suspended tabs.
-    func prepareOverviewSnapshot(viewport: CGSize) async {
-        await loadSnapshotIfNeeded()
+    func prepareOverviewSnapshot(viewport: CGSize, maximumPixelSize: Int = 2048) async {
+        await loadSnapshotIfNeeded(maximumPixelSize: maximumPixelSize)
         guard UIDevice.current.userInterfaceIdiom == .pad, !Task.isCancelled else { return }
         overviewSnapshotViewport = viewport
         guard errorMessage != nil || webView?.window != nil else { return }
@@ -948,7 +997,8 @@ final class WebViewModel: ObservableObject {
         let actual = webView?.window != nil ? webView?.bounds.size : viewport
         guard let actual, actual.width > 1, actual.height > 1 else { return }
         let scale = webView?.window?.screen.scale ?? UIScreen.main.scale
-        if TabSnapshotQuality.needsRefresh(snapshot, viewport: actual, displayScale: scale, isPad: true) {
+        if TabSnapshotQuality.needsRefresh(snapshot, viewport: actual, displayScale: scale, isPad: true,
+                                          maximumPixelSize: maximumPixelSize) {
             await captureSnapshot(afterScreenUpdates: true)
         }
     }
@@ -1075,6 +1125,7 @@ final class WebViewModel: ObservableObject {
     }
 
     func deletePersistedSnapshot() {
+        snapshotReadRequest?.cancel(); snapshotReadRequest = nil
         snapshotGeneration = UUID()
         memorySnapshotData = nil
         snapshot = nil
@@ -1089,6 +1140,7 @@ final class WebViewModel: ObservableObject {
     /// A cache clear invalidates queued reads and captures, while leaving the
     /// tab eligible to save a new preview after its next explicit capture.
     func clearSnapshotCache() {
+        snapshotReadRequest?.cancel(); snapshotReadRequest = nil
         cancelScheduledSnapshot()
         snapshotGeneration = UUID()
         snapshotDocumentGeneration = UUID()
@@ -1152,11 +1204,26 @@ final class WebViewModel: ObservableObject {
 
     private static let snapshotWriteQueue = DispatchQueue(label: "com.dkluge.Soulo.tab-snapshots", qos: .utility)
 
-    nonisolated private static func loadSnapshot(id: String) -> UIImage? {
+    nonisolated private static func decodedSnapshot(data: Data, maximumPixelSize: Int) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        return decodedSnapshot(source: source, maximumPixelSize: maximumPixelSize)
+    }
+
+    nonisolated private static func decodedSnapshot(source: CGImageSource, maximumPixelSize: Int) -> UIImage? {
+        // Decode on the snapshot queue, not on the render thread during a drag.
+        let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true, kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: min(2048, max(128, maximumPixelSize))]
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary).map { UIImage(cgImage: $0) }
+    }
+
+    nonisolated private static func loadSnapshot(id: String, maximumPixelSize: Int) -> UIImage? {
         let url = snapshotURL(id: id)
-        if let image = UIImage(contentsOfFile: url.path) { return image }
+        if let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+           let image = decodedSnapshot(source: source, maximumPixelSize: maximumPixelSize) { return image }
         let legacy = legacySnapshotURL(id: id)
-        guard let image = UIImage(contentsOfFile: legacy.path) else { return nil }
+        guard let source = CGImageSourceCreateWithURL(legacy as CFURL, nil),
+              let image = decodedSnapshot(source: source, maximumPixelSize: maximumPixelSize) else { return nil }
         try? FileManager.default.createDirectory(at: snapshotDirectory, withIntermediateDirectories: true)
         try? FileManager.default.moveItem(at: legacy, to: url)
         return image
@@ -1185,6 +1252,13 @@ final class WebViewModel: ObservableObject {
 
 
 /// Bound decoded memory while providing Retina pixels for 720-point iPad cards.
+private final class TabSnapshotReadRequest: @unchecked Sendable {
+    private let lock = NSLock()
+    private var cancelled = false
+    var isCancelled: Bool { lock.lock(); defer { lock.unlock() }; return cancelled }
+    func cancel() { lock.lock(); cancelled = true; lock.unlock() }
+}
+
 enum TabSnapshotQuality {
     static func captureWidth(viewport: CGSize, isPad: Bool) -> CGFloat {
         isPad ? min(720, max(1, viewport.width)) : 430
@@ -1197,12 +1271,16 @@ enum TabSnapshotQuality {
     static func matches(_ lhs: CGSize, _ rhs: CGSize) -> Bool {
         abs(lhs.width - rhs.width) < 1 && abs(lhs.height - rhs.height) < 1
     }
-    static func needsRefresh(_ image: UIImage?, viewport: CGSize, displayScale: CGFloat, isPad: Bool) -> Bool {
+    static func needsRefresh(_ image: UIImage?, viewport: CGSize, displayScale: CGFloat, isPad: Bool, maximumPixelSize: Int? = nil) -> Bool {
         guard let image, viewport.width > 1, viewport.height > 1 else { return true }
         let width = image.size.width * image.scale, height = image.size.height * image.scale
         guard width > 1, height > 1 else { return true }
         let expectedWidth = captureWidth(viewport: viewport, isPad: isPad) * displayScale
-        let expected = pixelSize(CGSize(width: expectedWidth, height: expectedWidth * viewport.height / viewport.width), isPad: isPad)
+        var expected = pixelSize(CGSize(width: expectedWidth, height: expectedWidth * viewport.height / viewport.width), isPad: isPad)
+        if let maximumPixelSize {
+            let ratio = min(1, CGFloat(maximumPixelSize) / max(expected.width, expected.height))
+            expected = CGSize(width: expected.width * ratio, height: expected.height * ratio)
+        }
         return abs(width / height - viewport.width / viewport.height) > 0.02 || width < expected.width * 0.95
     }
 }

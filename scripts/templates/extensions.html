@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-resolved-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{{page_title}}</title>
+    <meta name="description" content="{{page_description}}" />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+    <meta name="theme-color" content="#111217" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)" />
+    <link rel="canonical" href="https://soulo.dkluge.com/{{kind}}.html" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030" />
+    <link rel="apple-touch-icon" href="app-icon.png?v=1.1.4" />
+    <link rel="alternate" type="text/plain" href="llms.txt" title="Soulo 网站摘要" />
+    <meta property="og:site_name" content="Soulo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:title" content="{{page_title}}" />
+    <meta property="og:description" content="{{page_description}}" />
+    <meta property="og:url" content="https://soulo.dkluge.com/{{kind}}.html" />
+    <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:image:alt" content="Soulo 图标" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="{{page_title}}" />
+    <meta name="twitter:description" content="{{page_description}}" />
+    <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+    <meta name="twitter:image:alt" content="Soulo 图标" />
+    <script>
+      (() => {
+        let theme = 'dark';
+        try { const saved = localStorage.getItem('soulo-theme'); if (saved === 'light' || saved === 'dark') theme = saved; } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.resolvedTheme = theme;
+      })();
+    </script>
+    <link rel="stylesheet" href="home.css" />
+    <link rel="stylesheet" href="extensions.css" />
+    <link rel="stylesheet" href="navigation.css" />
+    <script type="application/ld+json">{{structured_data}}</script>
+    <script id="directory-locales" type="application/json">{{page_locales}}</script>
+    <script src="site-ui.js" defer></script>
+    <script src="extensions.js" defer></script>
+
+    <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?bdc8ea6c501e6ff0d7b16dc13b09b991";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+      })();
+    </script>
+  </head>
+  <body class="extensions-page">
+    <a class="skip-link" href="#main-content" data-text-zh="跳到扩展列表" data-text-en="Skip to extensions">跳到扩展列表</a>
+    {{navigation}}
+    <main class="catalog-wrap" id="main-content">
+      <header class="catalog-intro">
+        <h1 data-text-zh="Soulo 扩展" data-text-en="Soulo Extensions">Soulo 扩展</h1>
+        <p data-text-zh="为手机浏览挑选，已经在 Soulo 中验证。" data-text-en="Selected for mobile browsing. Tested in Soulo.">为手机浏览挑选，已经在 Soulo 中验证。</p>
+        <a class="recommend-link" href="#recommend" data-text-zh="推荐一个扩展" data-text-en="Recommend an extension">推荐一个扩展</a>
+      </header>
+      <div class="extension-list">{{catalog}}</div>
+      <aside class="install-help">
+        <h2 data-text-zh="在 Soulo 中安装" data-text-en="Install in Soulo">在 Soulo 中安装</h2>
+        <p data-text-zh="点击条目中的安装按钮，打开 Soulo 的安装确认页。确认前不会下载或安装扩展。" data-text-en="Use an extension’s install button to open Soulo’s confirmation screen. Nothing downloads or installs before you confirm.">点击条目中的安装按钮，打开 Soulo 的安装确认页。确认前不会下载或安装扩展。</p>
+        <p data-text-zh="安装包由对应的官方商店提供，仍需网络可达。本站不提供安装包镜像。请使用 iOS 18.4 及以上系统、Soulo 1.2.15 或更高版本。" data-text-en="Packages come from their official stores, which must be reachable. This page does not host package mirrors. Requires iOS 18.4 or later and Soulo 1.2.15 or later.">安装包由对应的官方商店提供，仍需网络可达。本站不提供安装包镜像。请使用 iOS 18.4 及以上系统、Soulo 1.2.15 或更高版本。</p>
+      </aside>
+      <section class="recommend-section" id="recommend" aria-labelledby="recommend-title">
+        <h2 id="recommend-title" data-text-zh="推荐扩展" data-text-en="Recommend an extension">推荐扩展</h2>
+        <p data-text-zh="有适合 Soulo 的扩展？告诉我们，验证后手动收录。" data-text-en="Know an extension that works well in Soulo? Tell us. We review and test recommendations before listing them.">有适合 Soulo 的扩展？告诉我们，验证后手动收录。</p>
+        <form id="recommend-form">
+          <label for="extension-name" data-text-zh="扩展名称" data-text-en="Extension name">扩展名称</label>
+          <input id="extension-name" name="name" required maxlength="80" autocomplete="off" />
+          <label for="extension-url" data-text-zh="商店或项目链接（选填）" data-text-en="Store or project link (optional)">商店或项目链接（选填）</label>
+          <input id="extension-url" name="url" type="url" inputmode="url" maxlength="1024" placeholder="https://" autocapitalize="none" spellcheck="false" />
+          <label for="extension-reason" data-text-zh="推荐理由（选填）" data-text-en="Why do you recommend it? (optional)">推荐理由（选填）</label>
+          <textarea id="extension-reason" name="reason" maxlength="500" rows="3"></textarea>
+          <label for="extension-contact" data-text-zh="联系方式（必填）" data-text-en="Contact information (required)">联系方式（必填）</label>
+          <input id="extension-contact" name="contact" required maxlength="160" autocomplete="off" />
+          <p class="form-disclosure"><span data-text-zh="提交内容、联系方式与页面语言将发送给 DKluge，用于审核和回复。" data-text-en="Your recommendation, contact information, and page language are sent to DKluge for review and replies.">提交内容、联系方式与页面语言将发送给 DKluge，用于审核和回复。</span> <a href="privacy.html" data-text-zh="隐私政策" data-text-en="Privacy policy">隐私政策</a></p>
+          <button class="catalog-button primary" id="recommend-submit" type="submit" data-text-zh="提交推荐" data-text-en="Send recommendation">提交推荐</button>
+          <p id="recommend-status" role="status" aria-live="polite" tabindex="-1"></p>
+        </form>
+      </section>
+      <p class="catalog-attribution" data-text-zh="扩展及商店商标属于各自所有者。验证范围为上方列出的版本与功能，不代表全部网站或后续版本均可用。" data-text-en="Extension and store marks belong to their owners. Testing covers the versions and features listed above; individual websites and future releases may differ.">扩展及商店商标属于各自所有者。验证范围为上方列出的版本与功能，不代表全部网站或后续版本均可用。</p>
+    </main>
+    <footer class="site-footer wrap"><div><a class="footer-brand" href="./">Soulo</a><span>© 2026 DKluge</span></div><div class="footer-links"></div></footer>
+  </body>
+</html>

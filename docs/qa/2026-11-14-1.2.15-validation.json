@@ -1,0 +1,280 @@
+{
+  "date": "2026-11-14",
+  "version": "1.2.15",
+  "build": 55,
+  "status": "Native SDK27 production Release and documented targeted acceptance passed; hardware-dependent scope limits retained.",
+  "plan": "2026-11-13-1.2.15-plan.json",
+  "artifacts": "/tmp/soulo-1.2.15-20261113",
+  "environment": {
+    "macOS": "26.3.1",
+    "Xcode": "26.2 (17C52)",
+    "iOS_SDK": "26.2",
+    "simulators": [
+      "iPhone iOS 26.2",
+      "iPadOS 26.2",
+      "iPhone iOS 16.4"
+    ],
+    "required_for_iOS27": "Matching native SDK27 environment now available in the isolated VM; host SDK26.2 binary does not include compiler-gated branches.",
+    "reference": "https://developer.apple.com/xcode/system-requirements",
+    "native_SDK27_validation": "Isolated macOS26.6.2 VM, Xcode27.2 (27B52), Swift6.4.2, iOS27.2 SDK/runtime. Host remains Xcode26.2; no Gatekeeper/quarantine bypass or signing keys copied."
+  },
+  "items": [
+    {
+      "id": 1,
+      "name": "iOS 27 WebKit 兼容层",
+      "status": "native27_cookie_and_closed_shadow_verified",
+      "detail": "112/118同轮原生27 scoped Cookie及closed-shadow world验收通过。",
+      "previous_report": {
+        "id": 1,
+        "name": "iOS 27 WebKit 兼容层",
+        "status": "implemented_sdk_validation_pending",
+        "detail": "Public iOS 27 URL-scoped cookies, alternate navigation requests, and retained native media content worlds added behind Swift 6.4/iOS 27 guards. These paths are excluded from Xcode 26.2 builds. Third-party extension worlds and permissions are unchanged."
+      }
+    },
+    {
+      "id": 2,
+      "name": "iOS 26 后台媒体合并与导出",
+      "status": "implemented_physical_background_and_export_regressions_passed",
+      "detail": "Physical iPad accepted and completed native continued-processing work after entering background with progress0.985. Separate real HLS/finalization/cancellation and four native media regressions passed. System expiration timing remains controlled by iOS; this is not unlimited-background certification.",
+      "previous_report": {
+        "id": 2,
+        "name": "iOS 26 后台媒体合并与导出",
+        "status": "implemented_native_media_regressions_passed",
+        "detail": "Continuous background coordinator covers native separated-track merges, HLS finalization and the full offline MP4 conversion pipeline, reporting actual progress. Cancellation retains originals; interrupted separated-track merges retain completed tracks. Real-device OS scheduling/expiration validation remains pending."
+      }
+    },
+    {
+      "id": 3,
+      "name": "iPad 多窗口与菜单操作",
+      "status": "implemented_physical_window_workflow_passed",
+      "detail": "Two real iPad multi-window UI tests passed; the same WKWebView, live DOM sentinel and navigation history moved without another page GET. Focused-window menus and touch entries retained.",
+      "previous_report": {
+        "id": 3,
+        "name": "iPad 多窗口与菜单操作",
+        "status": "implemented_simulator_validation_passed",
+        "detail": "Focused-window menus and touch entries move a live tab only after the destination scene claims it. The original WKWebView, document state and back history are preserved. An unused destination placeholder is removed. Native tests and the real iPad multi-window UI workflow passed without an extra page request."
+      }
+    },
+    {
+      "id": 4,
+      "name": "SpeechAnalyzer 设备端语音输入",
+      "status": "implemented_physical_microphone_and_transcription_passed",
+      "detail": "Real iPad microphone buffers and cancellation passed; installed Chinese model transcribed the fixture. Normal non-XCTest app launch confirmed analyzer start/stop. Legacy authorization/locale/cancellation nine cases passed; installed English model fixture previously passed on physical phone.",
+      "previous_report": {
+        "id": 4,
+        "name": "SpeechAnalyzer 设备端语音输入",
+        "status": "implemented_device_transcription_validation_pending",
+        "detail": "SpeechAnalyzer uses supported, already-installed locale models; otherwise the existing recognizer remains available. Input buffers are converted to the required format, pending starts/results are cancellation-scoped, and audio is deactivated only by its owner. Permission/locale/cancellation regressions passed; microphone/model execution needs eligible hardware."
+      }
+    },
+    {
+      "id": 5,
+      "name": "Liquid Glass 与辅助功能适配",
+      "status": "implemented_physical_accessibility_validation_passed",
+      "detail": "Light/dark native materials visually reviewed. Actual iPad system Reduce Transparency, Increase Contrast and Reduce Motion switches were toggled; app reflected all three and original settings restored.",
+      "previous_report": {
+        "id": 5,
+        "name": "Liquid Glass 与辅助功能适配",
+        "status": "implemented_visual_validation_passed",
+        "detail": "Top tabs and options reuse browser Glass modifiers. Solid accessible surfaces apply when Reduce Transparency is enabled; contrast and tab-motion preferences are respected. Light/dark and high-contrast renderings reviewed on iPhone and iPad; system Reduce Transparency was not toggled in the visual fixture."
+      }
+    },
+    {
+      "id": 6,
+      "name": "Foundation Models 本地网页摘要",
+      "status": "implemented_unavailable_fallback_passed_eligible_model_pending",
+      "detail": "Actual Foundation Models reports deviceNotEligible on both connected devices. Fallback, bounded-input and cancellation tests passed without sending page content externally. Actual generation was skipped, not claimed passed. Device settings were not changed to force eligibility.",
+      "previous_report": {
+        "id": 6,
+        "name": "Foundation Models 本地网页摘要",
+        "status": "implemented_model_execution_validation_pending",
+        "detail": "The webpage tools menu now opens a selectable/copyable summary sheet. Supported Foundation Models run locally with bounded input sessions, no external provider, and deterministic fallback/cancellation. Fallback tests passed. The Mac model probe reported deviceNotEligible; actual local generation needs eligible hardware."
+      }
+    },
+    {
+      "id": 7,
+      "name": "Siri 网页实体与收藏操作",
+      "status": "implemented_physical_intent_perform_and_entity_tests_passed",
+      "detail": "Actual SaveWebPageIntent.perform and WebPageLinkIntent.perform passed on device, together with entity lookup/privacy/idempotency checks. Full spoken Siri interaction and cross-process production app-group opening are outside isolated-QA validation; QA has no access to production group data.",
+      "previous_report": {
+        "id": 7,
+        "name": "Siri 网页实体与收藏操作",
+        "status": "implemented_entities_validated_siri_conversation_pending",
+        "detail": "Webpage entities support bookmark lookup, opening, explicit saving and returning a shareable URL to Shortcuts. Current eligible pages carry an NSUserActivity entity identifier. Private/local/credential-bearing pages are not donated. Entity queries and idempotent saves passed; complete Siri conversations require a supported device/system/language."
+      }
+    },
+    {
+      "id": 8,
+      "name": "iOS 27 生成字幕与字幕样式",
+      "status": "native27_late_tracks_verified",
+      "detail": "112/118原生SDK27字幕轨道晚加载后系统菜单更新通过。",
+      "previous_report": {
+        "id": 8,
+        "name": "iOS 27 生成字幕与字幕样式",
+        "status": "implemented_sdk_validation_pending",
+        "detail": "AVPlayer fullscreen controls have a public system subtitle/style menu on iOS 27, behind the Swift 6.4 guard. The system determines generated subtitle languages and availability; existing AVPlayer selections and VLC controls remain. This new menu is not compiled or run with Xcode 26.2."
+      }
+    },
+    {
+      "id": 9,
+      "name": "通用扩展兼容性完善",
+      "status": "implemented_real_package_regressions_passed",
+      "detail": "Added generic downloads.getFileIcon with callback/Promise support, actual 16/32px file icons, extension-owned ID checks and MIME data. Real Cat Catch popup/media/downloads, online merge/cache capture, TYTY website messaging/proxy/download toggles and native permission regressions passed. No claim of every Chrome API being supported."
+    },
+    {
+      "id": 10,
+      "name": "1.2.15 版本与 50 个语言的商店元数据",
+      "status": "completed",
+      "detail": "All targets use 1.2.15 (55). All six metadata fields in all 50 source directories reviewed; localized release notes updated. Three runtime strings translated across 50 locales. JSON regenerated with the exporter, project regenerated from project.yml, strict localization and metadata checks passed."
+    }
+  ],
+  "test_runs": [
+    {
+      "name": "regression-iphone",
+      "result": "Passed",
+      "passedTests": 58,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-1.2.15-20261113/regression-iphone.xcresult"
+    },
+    {
+      "name": "regression-ipad",
+      "result": "Passed",
+      "passedTests": 10,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-1.2.15-20261113/regression-ipad.xcresult"
+    },
+    {
+      "name": "regression-ios16",
+      "result": "Passed",
+      "passedTests": 15,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-1.2.15-20261113/regression-ios16.xcresult"
+    },
+    {
+      "name": "final-iphone",
+      "result": "Passed",
+      "passedTests": 9,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-1.2.15-20261113/final-iphone.xcresult"
+    },
+    {
+      "name": "final-ipad",
+      "result": "Passed",
+      "passedTests": 2,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-1.2.15-20261113/final-ipad.xcresult"
+    },
+    {
+      "name": "move-window-ui-ipad",
+      "result": "Passed",
+      "passedTests": 1,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-1.2.15-20261113/move-window-ui-ipad.xcresult"
+    },
+    {
+      "name": "acceptance-iphone",
+      "result": "Passed",
+      "passedTests": 16,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-1.2.15-20261113/acceptance-iphone.xcresult"
+    },
+    {
+      "name": "acceptance-ipad",
+      "result": "Passed",
+      "passedTests": 7,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-1.2.15-20261113/acceptance-ipad.xcresult"
+    },
+    {
+      "name": "delivery-ios16",
+      "result": "Passed",
+      "passedTests": 7,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-1.2.15-20261113/delivery-ios16.xcresult"
+    },
+    {
+      "name": "speech-final-iphone",
+      "result": "Passed",
+      "passedTests": 9,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-1.2.15-20261113/speech-final-iphone.xcresult"
+    },
+    {
+      "name": "export-final-iphone",
+      "result": "Passed",
+      "passedTests": 4,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-1.2.15-20261113/export-final-iphone.xcresult"
+    }
+  ],
+  "visual_review": {
+    "reviewed": "Reviewed iPhone/iPad light/standard and dark/high-contrast fixtures, latest 680pt-wide iPad summary layout, and the real iPad moved-window screenshot. The new window shows the modified live DOM and a single tab.",
+    "latest_renderings": "/tmp/soulo-1.2.15-20261113/acceptance-ipad.xcresult",
+    "earlier_renderings": "/tmp/soulo-1.2.15-20261113/final-iphone-screens",
+    "window_screenshot": "/tmp/soulo-1.2.15-20261113/move-window-ui-ipad-screens/F72757FF-9320-4D62-BA28-882302830A54.png"
+  },
+  "local_model_probe": {
+    "log": "/tmp/soulo-1.2.15-20261113/summary-probe.log",
+    "availability": "unavailable(deviceNotEligible)",
+    "generation_executed": false
+  },
+  "checks": {
+    "simulator_build": "release-build.log: TEST BUILD SUCCEEDED",
+    "unsigned_device_build": "release-device-build.log: BUILD SUCCEEDED",
+    "localization": "881 Localizable, 500 ReadingTools, 84 FeatureImprovements keys across 50 locales; strict check passed",
+    "metadata": "exported and --check passed for all 50 locales; app.version=1.2.15",
+    "metadata_source_review": "/tmp/soulo-1.2.15-20261113/metadata-source-review.json",
+    "source_fields_reviewed": 300,
+    "source_fields_updated": "50 release_notes.txt files; the other current product fields were reviewed and retained.",
+    "icon": "Compiled primary SouloGlass; no alternate icon entries.",
+    "whitespace": "git diff --check passed",
+    "progress_reporting": "Background batches retain the completed work units when jobs leave the queue, so completed jobs do not make reported progress regress."
+  },
+  "fixture_cleanup": {
+    "record": "/tmp/soulo-1.2.15-20261113/fixtures/cleanup.json",
+    "package_files_restored_or_removed": 6,
+    "behavior": "Current containers resolved via simctl for booted devices or the unique matching MCM bundle-identifier metadata for shutdown devices. Previous package bytes restored; newly staged files removed only after hash checks. No app uninstall or data erase."
+  },
+  "limitations": [
+    "Both physical devices report FoundationModels deviceNotEligible; fallback accepted, actual local model generation not claimed.",
+    "Full spoken Siri and production app-group cross-process opening are outside the isolated QA validation.",
+    "Native export/background execution was tested on real iPad; OS scheduling/expiration remains system controlled.",
+    "Latest phone smoke build153 succeeded but run159 could not bootstrap while locked; prior physical iOS27.2.1 evidence is retained."
+  ],
+  "notable_test_corrections": [
+    "Preserved the SummarySheetView shell used by the existing performance audit when wiring the live summary feature.",
+    "Cookie fixture now omits the Secure attribute for ordinary cookies instead of passing the string FALSE, and retains its ephemeral data store.",
+    "Read-only SwiftUI accessibility environment values were replaced with actual UIKit high-contrast trait overrides in the rendering fixture."
+  ],
+  "baseline": "/tmp/soulo-1.2.15-20261113/baseline-files.tar.gz",
+  "paid_API_used": false,
+  "committed_or_pushed": false,
+  "baseline_comparison": "/tmp/soulo-1.2.15-20261113/baseline-comparison.json",
+  "test_execution_total": 138,
+  "test_execution_total_note": "Counts passing executions across regression and follow-up runs, not unique test cases.",
+  "follow_up_review": "2026-11-14-import-adblock-home-review.json",
+  "superseded_validation_scope": {
+    "latest_report": "2026-11-14-device-acceptance.json",
+    "note": "Historical failures and limitations retained below. Later physical iOS27.2.1/iPad26.6.1 tests supersede statements that no hardware testing occurred; SDK27-specific and eligible-model limits remain explicit in latest report."
+  },
+  "latest_checks": {
+    "localization": "883 Localizable +500 ReadingTools +92 Feature keys across50 locales strictPASS",
+    "metadata": "export_metadata_json.py --check PASS50, version1.2.15",
+    "whitespace": "git diff --check PASS",
+    "native27": "112/118 scoped cookies+closed shadow; late subtitles83/112/118;138 source tab nativeID/back/direct media/platform UI;165 original package MP4/HLS/DASH/Bili playback plus decode/download and generic module paths3/3 PASS",
+    "faststream_actual_touch": "164 original previously installed record, no QA.PING/no trace: real fingerdrag+fullscreen enter/exit17.619sec, independent save+completion+file18.876sec,2/2PASS",
+    "release": "SDK27 Release166 minimum16 generic iOS BUILD SUCCEEDED",
+    "common_regression": "16762passed1opt-in network skipped0failed; storeflow109 independently passed"
+  }
+}

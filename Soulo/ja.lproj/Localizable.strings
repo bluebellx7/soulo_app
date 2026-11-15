@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "1回の入力で40以上のサービス";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "検索またはURLを入力";
 "privacy_search_placeholder" = "プライベート検索または URL を入力してください";
 "search" = "検索";
@@ -354,7 +354,7 @@
 "voice_stop" = "停止";
 "voice_record" = "録音";
 "batch_import" = "一括インポート";
-"batch_import_format" = "以下の形式でJSONを貼り付けてください";
+"batch_import_format" = "ここにJSONを貼り付け";
 "batch_import_group" = "グループに追加（任意）";
 "batch_import_group_placeholder" = "例：映画";
 "batch_import_film_entry" = "ムービープラットフォームのプリセットを開く";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "拡張機能をインストールできませんでした";
 "extension_permissions_summary" = "%d 権限 · %d ウェブサイト ルール";
 "extension_untitled" = "無題の拡張機能";
-"web_extension_install_footer" = "対応するストアのリンクからインストールするか、CRX、XPI、ZIP、拡張機能フォルダを読み込めます。権限と互換性を確認してください。一部のデスクトップ機能は利用できません。";
+"web_extension_install_footer" = "インストール後、拡張機能の管理画面で権限を変更できます。";
 "web_extension_install_store_link" = "ストアリンクからインストール…";
 "web_extension_browse_sources" = "拡張機能ストアを参照する";
 "web_extension_browse_sources_footer" = "Store Get ボタンは、独自のデスクトップ ブラウザーのみをサポートします。拡張機能の詳細ページのリンクをコピーし、Soulo のストア リンクからインストールを使用します。";
 "web_extension_store_install_title" = "ストア拡張機能をインストールする";
 "extension_page_banner_title" = "Soulo でインストールします";
-"extension_page_banner_desc" = "互換性と権限を確認してインストールします。";
-"web_extension_store_install_desc" = "Chrome、Edge、Firefox の拡張機能詳細ページのリンクを貼り付け、互換性と権限を確認してからインストールしてください。";
+"extension_page_banner_desc" = "インストール後、拡張機能の管理画面で権限を変更できます。";
+"web_extension_store_install_desc" = "インストール後、拡張機能の管理画面で権限を変更できます。";
 "web_extension_store_link_placeholder" = "拡張機能ページのリンクまたは Chrome 拡張機能 ID";
 "web_extension_store_invalid_link" = "Chrome、Edge、Firefox の拡張機能の詳細ページのリンク、Chrome 拡張機能 ID、または CRX、XPI、または ZIP の直接リンクを貼り付けます。";
 "web_extension_store_https_required" = "拡張パッケージは安全な HTTPS リンクを使用する必要があります。";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "ホーム画面の Soulo アイコンを長押しすると、ここで設定したショートカットを使えます。";
 
 "ad_block_scope_hint" = "Web広告、宣伝用オーバーレイ、意図せず開くポップアップを除去します。サイトが正常に動作しない場合は、そのサイトだけフィルタリングをオフにできます。";
+
+"privacy_clear_browsing_on_exit" = "終了時に閲覧履歴を消去";
+"privacy_clear_browsing_on_exit_desc" = "バックグラウンド移行時や再起動時に閲覧履歴を消去します。検索語は保持します。";

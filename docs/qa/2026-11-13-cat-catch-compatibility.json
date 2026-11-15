@@ -1,0 +1,174 @@
+{
+  "date": "2026-11-13",
+  "feature": "Generic WebExtension runtime, popup rendering and Cat Catch compatibility",
+  "status": "Core workflows verified; not full Chrome API or full Cat Catch certification",
+  "package": {
+    "name": "Cat Catch",
+    "version": "2.7.4",
+    "store_id": "oohmdefbjalncfplafanlagojlakmjci",
+    "store_package_sha256": "789df97eb3b9f21607b5257a504b9e46fd834887b63d6ab83beb85178f1461ea",
+    "store_package_bytes": 643763,
+    "matches_official_edge_release_byte_for_byte": true,
+    "release": "https://github.com/xifangczy/cat-catch/releases/tag/2.7.4",
+    "publisher_javascript_rewritten": false
+  },
+  "changes": [
+    "Retain native API wrapper owners and bind i18n methods so detached and Proxy calls remain translated across script loads and later interactions.",
+    "Keep the publisher HTML/CSS and explicitly apply the app appearance to the native popup host.",
+    "Present the official action.popupWebView in a shared bounded UIKit container. Preserve publisher HTML/CSS and native popup API identity; avoid intrinsic-size clipping of fixed controls. No publisher-specific CSS patch is shipped.",
+    "Preserve native WKUIDelegate callbacks while supporting window.close, owner-specific dismissal, fresh documents on reopen, duplicate action requests and interactive dismissal. Restore the native delegate on close.",
+    "Conservatively prepare classic workers with initial literal imports as event pages; preserve import order, package boundaries and startup readiness. Dynamic imports, modules and worker-only programs retain the native worker path.",
+    "Provide missing webRequest option enum containers and an event-driven main-frame same-document history fallback.",
+    "Normalize Chrome tab ID 0 missing-tab callbacks through the native error scope; preserve valid IDs, Promise rejection and argument validation.",
+    "Bridge declared/granted HTTP(S) downloads to the existing native queue with cookies, user agent and Referer; provide owned download IDs, search, cancellation and observed creation/completion/removal events.",
+    "Use a dedicated native event port and throttled native observations instead of JavaScript download polling; unload disconnects ports without canceling accepted transfers."
+  ],
+  "validation": {
+    "simulator_build": "build-for-testing succeeded",
+    "regression": {
+      "result": "/tmp/soulo-catcatch-20261113/completed-regression.xcresult",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 0,
+      "coverage": [
+        "Actual Cat Catch store package",
+        "Actual pinned Tampermonkey script lifecycle",
+        "Actual TYTY 0.6.6 messaging/request proxy",
+        "Private-tab isolation",
+        "Permission rejection",
+        "Background preparation/idempotence",
+        "Generic i18n and tab error semantics",
+        "Generic fixture fixed-footer pixels are painted",
+        "Native UI alert callback forwarding",
+        "window.close dismisses its own popup",
+        "Reopening has fresh JavaScript document state",
+        "Duplicate action request retains the open document",
+        "Disabling another extension does not dismiss this popup; disabling the owner does"
+      ]
+    },
+    "ipad_light": {
+      "result": "/tmp/soulo-catcatch-20261113/completed-ipad.xcresult",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    "native_download": {
+      "received_bytes": 57685,
+      "expected_bytes": 57685,
+      "cookie_required_by_fixture": true,
+      "complete_event_observed": true,
+      "test_only_clipboard_policy": "readText rejected in the popup harness; no user clipboard read or production clipboard changes"
+    },
+    "inline_preview": "Actual MP4 reached readyState >= 2 with duration 8 seconds",
+    "media_control": {
+      "iphone_actual_page_playback_rate": 1.5,
+      "ipad_actual_page_playback_rate": 1.5,
+      "native_missing_tab_error": "Invalid call to tabs.get(). Tab not found."
+    },
+    "supplied_page": {
+      "url": "https://m.bilibili.com/video/BV15cs96zEvi",
+      "iphone_captured": "43131012024-1-16.mp4, 10443763 bytes reported by response",
+      "ipad_popup_captured": [
+        "43131012024-1-30216.m4s",
+        "43131012024-1-30033.m4s",
+        "43131012024-1-30011.m4s"
+      ],
+      "note": "Resources differ with the site response/device. Captures are actual publisher-background results, not injected fixture rows.",
+      "iphone_captured_names": [
+        "43131012024-1-16.mp4"
+      ],
+      "ipad_captured_names": [
+        "43131012024-1-30033.m4s",
+        "43131012024-1-30216.m4s",
+        "43131012024-1-30011.m4s"
+      ]
+    },
+    "popup_layout": {
+      "iphone_dark": true,
+      "iphone_width_and_scroll_width": [
+        402,
+        402
+      ],
+      "ipad_light": true,
+      "ipad_width_and_scroll_width": [
+        640,
+        640
+      ],
+      "reviewed_screenshots": [
+        "/tmp/soulo-catcatch-20261113/completed-ipad-render.png",
+        "/tmp/soulo-catcatch-20261113/completed-iphone-popup.png",
+        "/tmp/soulo-catcatch-20261113/completed-iphone-generic-footer.png"
+      ],
+      "manual_system_screenshot": "/tmp/soulo-catcatch-20261113/bounded-popup-system.png",
+      "fixed_footer": "Verified by rendered blue pixel count > 500 in the generic fixture and visual review of the actual Cat Catch footer."
+    },
+    "generic_device_build": "Succeeded with CODE_SIGNING_ALLOWED=NO: /tmp/soulo-catcatch-20261113/completed-device-build.log; no physical-device execution",
+    "localization": "check_localization.py --strict passed: 881 + 499 + 81 keys across 50 locales",
+    "metadata": "export_metadata_json.py --check passed for all 50 locales; version unchanged in this task",
+    "diff_check": "git diff --check passed",
+    "source_validation": "Current production source passed 44 regression cases plus 2 iPad cases, 0 failures, 0 skips. Early failures are retained in artifacts; corrected native lastError handling, API wrapper lifetime and popup self-sizing/lifecycle rather than relaxing the functional assertions."
+  },
+  "limitations": [
+    "Native extension runtime requires iOS/iPadOS 18.4 or later. No physical-device run in this audit.",
+    "This does not certify every Cat Catch feature, arbitrary sites, extension packages or service workers.",
+    "Online FFmpeg merging, encrypted-stream workflows, cache/deep capture and full parser/segment-download chains were not verified end to end.",
+    "Blob/data download URLs are not implemented by this native download bridge. It supports HTTP(S) GET/POST; advanced Chrome download operations and complete search filters are not implemented.",
+    "getDisplayMedia and showSaveFilePicker were undefined in the tested popup runtime.",
+    "The generic history fallback reports main-frame same-document changes, not complete subframe history coverage.",
+    "Cat Catch hides some advanced injection controls by its own Chrome/Firefox UA version checks; these checks were not rewritten to advertise unverified capabilities."
+  ],
+  "library_research": {
+    "recommendation": "Continue WKWebExtension + WKWebView with targeted generic API compatibility. No vetted drop-in iOS library found that implements the full Chrome extension runtime.",
+    "sources": [
+      "https://webkit.org/blog/16574/webkit-features-in-safari-18-4/",
+      "https://github.com/mozilla/webextension-polyfill",
+      "https://wxt.dev/guide/introduction.html",
+      "https://help.kagi.com/orion/browser-extensions/ios-ipados-extensions.html"
+    ]
+  },
+  "artifacts": "/tmp/soulo-catcatch-20261113",
+  "paid_api_calls": 0,
+  "pushed": false,
+  "cleanup": [
+    {
+      "device": "iphone",
+      "fixture": "removed seeded QA fixture",
+      "owned_fixture_downloads_moved_to_artifacts": [
+        "movie 4.mp4",
+        "movie 5.mp4",
+        "movie 7.mp4",
+        "movie 6.mp4",
+        "movie 2.mp4",
+        "movie 3.mp4",
+        "movie 1.mp4",
+        "movie 8.mp4",
+        "movie 9.mp4",
+        "movie 10.mp4",
+        "movie.mp4"
+      ]
+    },
+    {
+      "device": "ipad",
+      "fixture": "removed seeded QA fixture",
+      "owned_fixture_downloads_moved_to_artifacts": [
+        "movie 4.mp4",
+        "movie 2.mp4",
+        "movie 3.mp4",
+        "movie 1.mp4",
+        "movie.mp4"
+      ]
+    }
+  ],
+  "implementation_scope": "Generic bindings, popup host, classic-worker preparation, navigation and downloads apply by API/manifest features rather than Cat Catch name or version. Previously pinned Tampermonkey/TYTY migrations remain narrowly scoped and retain their existing regression coverage.",
+  "follow_up": {
+    "report": "2026-11-13-extension-advanced-downloads-and-telegram.json",
+    "resolved": [
+      "Blob/data URL downloads",
+      "Online FFmpeg merge",
+      "Cache capture direct export",
+      "Cache capture using FFmpeg",
+      "Extension command access on iPhone/iPad"
+    ],
+    "note": "The limitations below describe the initial audit; the follow-up supplies later implementation and end-to-end evidence for these items."
+  }
+}

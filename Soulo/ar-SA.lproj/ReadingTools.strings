@@ -417,7 +417,7 @@
 "media_audio_tracks" = "المسارات الصوتية";
 "media_subtitles" = "ترجمات";
 "media_track_off" = "إيقاف";
-"video_settings" = "فيديو";
+"video_settings" = "إعدادات الفيديو";
 "video_show_tools" = "إظهار أدوات الفيديو";
 "video_show_tools_desc" = "عرض الأدوات على مقاطع فيديو الويب لسرعة التشغيل والتنزيلات وملء الشاشة.";
 "video_default_player" = "اللاعب الافتراضي";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "زجاج ضبابي";
 "wallpaper_blur_amount" = "قوة التمويه";
 
-"auto_hide_platform_bar_hint" = "يختفي شريط المنصات عند فتح نتيجة بحث. عُد إلى النتائج أو ابدأ بحثًا جديدًا لإظهاره مجددًا. يمكنك إيقاف ذلك من هذه القائمة.";
+"auto_hide_platform_bar_hint" = "يختفي شريط المنصات فقط بعد النقر على محتوى الصفحة. لا يخفيه التمرير أو إعادة التوجيه التلقائية. عُد إلى نتائج البحث أو ابدأ بحثًا جديدًا لإظهاره.";
+
+"ad_subscription_add" = "إضافة قائمة تصفية";
+"ad_subscription_name" = "الاسم";
+"ad_subscription_url" = "رابط الاشتراك";
+"ad_subscription_invalid" = "أدخل اسمًا ورابط اشتراك HTTP أو HTTPS صالحًا.";
+"ad_subscription_duplicate" = "تمت إضافة رابط الاشتراك هذا بالفعل.";
+
+"feedback_settings" = "الأصوات والاهتزاز";
+"feedback_settings_hint" = "تحكّم في الاهتزاز وأصوات الواجهة في التطبيق بأكمله. لا يؤثر ذلك في تشغيل صفحات الويب والفيديو والصوت.";
+
+"home_display_settings" = "عرض الصفحة الرئيسية";
+"browsing_display_settings" = "عرض التصفح";
+
+"web_video_download" = "تنزيل فيديو الويب";
+"web_video_download_description" = "إظهار عناصر تنزيل الفيديو في صفحات الويب وقوائم الحلقات والمشغلات. لا يتغير التشغيل أو التنزيلات الحالية.";
+"builtin_extension" = "إضافة مضمّنة";
+
+"wallpaper_overlay_amount" = "شدة التعتيم";
+"feedback_contact_required" = "أدخل بريدك الإلكتروني أو وسيلة اتصال أخرى حتى نتمكن من الرد.";
+"torrent_incomplete" = "غير مكتمل";
+"extend_page_background" = "تمديد خلفية الصفحة";
+"extend_page_background_desc" = "مدّ ألوان أعلى الصفحة وأسفلها إلى واجهة التصفح، بما في ذلك التدرجات.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "طي المجموعة";
+"tab_group_expand" = "توسيع المجموعة";
+"freeze_page_background_on_scroll" = "الاحتفاظ بالألوان الأولى";
+"freeze_page_background_on_scroll_desc" = "بعد التمرير، احتفظ بالألوان المكتشفة أولاً. تؤخذ عينات جديدة عند فتح صفحة جديدة.";
+"page_background_gradient" = "تمديد متدرج";
+"page_background_gradient_desc" = "امزج الألوان الملتقطة كتدرج. عند الإيقاف، يستخدم كل طرف لونًا واحدًا.";
+
+
+"gestures_feedback_settings" = "الإيماءات والاستجابة";

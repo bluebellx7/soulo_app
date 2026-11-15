@@ -81,3 +81,58 @@
 "Website cache" = "இணையதள தற்காலிக சேமிப்பு";
 "Website icons" = "இணையதள சின்னங்கள்";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "அமைப்புகள் மாறுவதற்கு முன் iCloud ஒத்திசைவு காப்புப்பிரதியைச் சேமிக்கும். சமீபத்திய %lld பிரதிகளும் ஆரம்பப் பிரதியும் வைக்கப்படும்.";
+
+"Move tab to new window" = "புதிய சாளரத்திற்கு நகர்த்து";
+
+"Save webpage" = "வலைப்பக்கத்தைச் சேமி";
+
+"Webpage" = "வலைப்பக்கம்";
+
+"Website data" = "இணையதளத் தரவு";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "சேமித்த கட்டுரைகள், புத்தக அட்டவணை, அட்டைகள், வாசிப்பு முன்னேற்றம் ஆகியவை அடங்கும். புத்தகக் கோப்புகள் பதிவிறக்கிய கோப்புகளில் கணக்கிடப்படுகின்றன.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "அளவுகள் மதிப்பீடுகள். IndexedDB இல் தரவுத்தளங்களும் ஊடகக் கோப்புகளும் அடங்கும். கிடைக்காத அளவு — எனக் காட்டப்படும்.";
+"Extension temporary cache" = "நீட்டிப்பின் தற்காலிகத் தேக்கம்";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "நீட்டிப்புகளின் தற்காலிக ஊடகத்தை நீக்கும். அமைப்புகள், ஸ்கிரிப்ட்கள், முன்னேற்றம், பதிவிறக்கிய கோப்புகள் பாதுகாக்கப்படும். முதலில் நீட்டிப்பு மற்றும் காணொளிப் பக்கங்களை மூடி பதிவிறக்கங்களை முடிக்கவும்.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "தற்காலிகத் தரவு இன்னும் பயன்பாட்டில் உள்ளது. நீட்டிப்பு மற்றும் காணொளிப் பக்கங்களை மூடி பதிவிறக்கங்களை முடித்தபின் மீண்டும் முயலவும்.";
+"Deleting website data can sign you out and remove offline content." = "தளத் தரவை நீக்குவது வெளியேற்றத்தையும் ஆஃப்லைன் உள்ளடக்க இழப்பையும் ஏற்படுத்தலாம்.";
+
+"Extension startup timed out." = "நீட்டிப்பைத் தொடங்குவதற்கான நேரம் முடிந்தது.";
+
+"soulo_extensions" = "Soulo நீட்டிப்புகள்";
+
+"Add to Quick Links" = "விரைவு இணைப்புகளில் சேர்";
+"Remove from Quick Links" = "விரைவு இணைப்புகளிலிருந்து நீக்கு";
+"Mark bookmarks with a heart to show them here." = "இங்கே காட்ட புக்மார்க்கை அழுத்திப் பிடித்து இதயக் குறியிடவும்.";
+
+"Type %@ to confirm." = "உறுதிப்படுத்த %@ எனத் தட்டச்சு செய்யவும்.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "சாதனங்களில் உள்ள புக்மார்க்குகள் இணைக்கப்படும். வெளிப்படையாக நீக்கினால் மட்டுமே உருப்படிகள் அகற்றப்படும்.";
+"This deletion also syncs to your other devices." = "இந்த நீக்கம் உங்கள் மற்ற சாதனங்களுக்கும் ஒத்திசைக்கப்படும்.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "இந்தப் புராம்ப்டை நகலெடுத்து தேவைகளைச் சேர்த்து AI-க்கு அனுப்பவும். பிறகு அதன் JSON-ஐ இங்கே ஒட்டி இறக்குமதி செய்யவும்.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "JSON-இல் உள்ள குழுப் பெயர்களுக்கு முன்னுரிமை. ஒரே பெயருள்ள குழுக்கள் தற்போதைய தளங்களை நீக்காமல் இணைக்கப்படும்.";
+"Imported %1$d platforms into %2$d groups." = "%1$d தளங்கள் %2$d குழுக்களில் இறக்குமதி செய்யப்பட்டன.";
+"No new platforms or group entries." = "புதிய தளங்களோ குழுப் பதிவுகளோ இல்லை.";
+
+"App size" = "செயலி அளவு";
+"App data" = "செயலி தரவு";
+"Wallpaper cache" = "வால்பேப்பர் தற்காலிக சேமிப்பு";
+"Other caches" = "பிற தற்காலிக சேமிப்புகள்";
+"Temporary files" = "தற்காலிகக் கோப்புகள்";
+"Download task data" = "பதிவிறக்கப் பணி தரவு";
+"Settings and records" = "அமைப்புகளும் பதிவுகளும்";
+"Shared app data" = "பகிரப்பட்ட செயலி தரவு";
+"Other app data" = "பிற செயலி தரவு";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "செயலி தரவில் நிறுவப்பட்ட நிரல் சேராது. வட்டு அளவுகள் iOS அமைப்புகளிலிருந்து மாறுபடலாம்.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "சேமித்த உள்ளடக்கத்தை அதன் பட்டியலில் நீக்கவும். பயன்பாட்டிலுள்ள தற்காலிகக் கோப்புகளும் கணினி தற்காலிக சேமிப்புத் தரவுத்தளங்களும் பாதுகாப்பான நேரத்தில் விடுவிக்கப்படும்.";
+
+"Current platforms" = "தற்போதைய தளங்கள்";
+"Import mode" = "இறக்குமதி முறை";
+"Append" = "சேர்க்கவும்";
+"Replace all" = "அனைத்தையும் மாற்று";
+"Replace all platforms?" = "அனைத்துத் தளங்களையும் மாற்றவா?";
+"A settings backup is saved before replacement." = "மாற்றுவதற்கு முன் அமைப்புகளின் காப்புப்பிரதி சேமிக்கப்படும்.";
+
+"Take over web players" = "இணைய பிளேயர்களைக் கட்டுப்படுத்து";
+"Only takes over website fullscreen. Extension players stay independent." = "இணையதளத்தின் முழுத்திரை பிளேயரை மட்டும் மாற்றும். நீட்டிப்புகளின் பிளேயர்கள் தனியாக இயங்கும்.";
+
+"App size is the installed program and resources, not the App Store download size." = "ஆப் அளவு என்பது நிறுவப்பட்ட நிரல் மற்றும் வளங்களின் அளவு; App Store பதிவிறக்க அளவு அல்ல.";
+"App data is the total of the categories below." = "ஆப் தரவு என்பது கீழுள்ள பிரிவுகளின் மொத்தம்.";

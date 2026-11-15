@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Zvočni posnetki";
 "media_subtitles" = "Podnapisi";
 "media_track_off" = "Izključeno";
-"video_settings" = "Video";
+"video_settings" = "Nastavitve videa";
 "video_show_tools" = "Prikaži video orodja";
 "video_show_tools_desc" = "Pokažite orodja na spletnih videoposnetkih za hitrost predvajanja, prenose in celozaslonski način.";
 "video_default_player" = "Privzeti predvajalnik";
@@ -497,4 +497,38 @@
 "wallpaper_image_blur" = "Motno steklo";
 "wallpaper_blur_amount" = "Moč zameglitve";
 
-"auto_hide_platform_bar_hint" = "Vrstica platform se skrije, ko odprete rezultat iskanja. Vrnite se na rezultate ali začnite novo iskanje, da se spet prikaže. To lahko izklopite v tem meniju.";
+"auto_hide_platform_bar_hint" = "Vrstica platform se skrije šele, ko se dotaknete vsebine strani. Samodejne preusmeritve in pomikanje je ne skrijejo. Vrnite se na rezultate ali začnite novo iskanje, da se znova prikaže.";
+
+"ad_subscription_add" = "Dodaj seznam filtrov";
+"ad_subscription_name" = "Ime";
+"ad_subscription_url" = "URL naročnine";
+"ad_subscription_invalid" = "Vnesite ime in veljaven URL naročnine HTTP ali HTTPS.";
+"ad_subscription_duplicate" = "Ta URL naročnine je že dodan.";
+
+"feedback_settings" = "Zvoki in vibriranje";
+"feedback_settings_hint" = "Upravljajte vibriranje in zvoke vmesnika v celotni aplikaciji. Ne vpliva na predvajanje spletnih strani, videa ali zvoka.";
+
+"home_display_settings" = "Prikaz začetne strani";
+"browsing_display_settings" = "Prikaz brskanja";
+
+"web_video_download" = "Prenosi spletnih videov";
+"web_video_download_description" = "Prikaži gumbe za prenos videa na spletnih straneh, seznamih epizod in v predvajalnikih. Predvajanje in obstoječi prenosi ostanejo nespremenjeni.";
+"builtin_extension" = "Vgrajena razširitev";
+
+"wallpaper_overlay_amount" = "Jakost prekrivanja";
+"feedback_contact_required" = "Vnesite e-pošto ali drug stik, da vam lahko odgovorimo.";
+"torrent_incomplete" = "Nedokončano";
+"extend_page_background" = "Razširi ozadje strani";
+"extend_page_background_desc" = "Razširi zgornje in spodnje barve strani na robove brskalnika, vključno s prelivi.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Strni skupino";
+"tab_group_expand" = "Razširi skupino";
+"freeze_page_background_on_scroll" = "Ohrani začetne barve";
+"freeze_page_background_on_scroll_desc" = "Po pomikanju ohrani prve zaznane barve. Nove strani se znova analizirajo.";
+"page_background_gradient" = "Razširitev s prelivom";
+"page_background_gradient_desc" = "Združi zaznane barve v preliv. Ko je izklopljeno, ima vsak rob eno enotno barvo.";
+
+
+
+"gestures_feedback_settings" = "Poteze in odziv";

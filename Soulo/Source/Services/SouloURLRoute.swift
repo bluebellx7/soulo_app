@@ -7,6 +7,7 @@ enum SouloURLRoute: Equatable {
     case search(String?)
     case open(URL)
     case download(URL)
+    case installExtension(URL)
     case scan
     case files
     case bookmarks
@@ -46,6 +47,11 @@ enum SouloURLRoute: Equatable {
             return argument(["url"]).flatMap(webURL).map(Self.open)
         case "download":
             return argument(["url"]).flatMap(webURL).map(Self.download)
+        case "install-extension":
+            guard let value = argument(["url"]), let target = webURL(value),
+                  target.user == nil, target.password == nil,
+                  (try? WebExtensionStoreLinkResolver.resolve(target.absoluteString)) != nil else { return nil }
+            return .installExtension(target)
         case "qrcode", "scan": return .scan
         case "files", "books", "bookshelf": return .files
         case "bookmarks": return .bookmarks

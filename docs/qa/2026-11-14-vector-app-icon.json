@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-14",
+  "version": "1.2.15 (55)",
+  "status": "hollow_vector_and_white_center_native_renders_and_builds_passed",
+  "request": {
+    "default_background": "pure white",
+    "larger_ring": "122% vector scale",
+    "clear_logo": "replace extracted PNG with vector contours across dark/clear/tinted"
+  },
+  "source": "docs/design/assets/soulo-ring-vector.svg",
+  "reference": "docs/design/assets/soulo-icon-original.png",
+  "reference_sha256": "958479601cd58cc5f45b2fdbd597c26c1da732383cec821d1ff537d972e48762",
+  "package": "Soulo/Resources/AppIcons/SouloGlass.icon",
+  "generator": "scripts/generate_app_icon_variants.py",
+  "changes": [
+    "Reference PNG preserved unchanged. Default locally removes neutral gray background cast from source; center and exterior RGB255; original gold contours preserved; native1.22scale",
+    "Dark/Mono vector ribbons contain true transparent channels between brush strands and tapered split tails; no opaque center",
+    "All highlight strokes outlined as closed filled vector contours, avoiding nativeSVG importer filling open stroke shapes",
+    "Only primary SouloGlass icon; no alternatives/picker reintroduced"
+  ],
+  "validation": {
+    "native_renditions": [
+      "Default",
+      "Dark",
+      "ClearLight",
+      "ClearDark",
+      "TintedLight",
+      "TintedDark"
+    ],
+    "renderer": "Apple Icon Composer ictool; 1024px and 60px reviewed",
+    "signed_device_build": "/tmp/soulo-20261114-device-acceptance/qa-device-build-6.log: TEST BUILD SUCCEEDED",
+    "device": "Isolated acceptance bundle installed by XCTest on iPad Air M3 / iPadOS 26.6.1",
+    "compiled_primary_icon": "SouloGlass for iPhone and iPad",
+    "legacy_icon": "Compiled SouloGlass76x76@2x~ipad.png decoded and visually reviewed",
+    "localization": "python3 scripts/check_localization.py --strict passed",
+    "metadata": "python3 scripts/export_metadata_json.py --check: 50 locales passed",
+    "editor": "Formal project SouloGlass.icon opened and default native appearance visually inspected; scratch ComposerTemplate.icon closed",
+    "release_build": "/tmp/soulo-20261114-device-acceptance/production-release-final-22.log: BUILD SUCCEEDED",
+    "current_native_renders": "/tmp/soulo-icon-vector-20261114/grooves-revision",
+    "current_build": "qa-device-build-20.log TEST BUILD SUCCEEDED; physical iPad browser-control and earlier picker tests passed"
+  },
+  "preview": "docs/design/assets/soulo-icon-vector-appearances.png",
+  "limits": [
+    "Current six appearances and60px sizes reviewed throughnativeictool; HomeScreen styles notchanged",
+    "Default preserves original soft gold paint texture while neutral background is white; other appearances vector",
+    "Native SVGopenstrokes producedsolid wedges during iteration; final source hasonlyoutlined filledpaths, checkedbygenerator"
+  ],
+  "reference_thread": "01a1d436-0823-7533-9a57-769f4b03675c",
+  "reference_implementation": "WeiShuNotes/AppIcon.icon: original default and native glass SVG dark/Mono groups with appearance-specific visibility"
+}

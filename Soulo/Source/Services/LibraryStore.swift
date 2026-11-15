@@ -24,9 +24,18 @@ final class LibraryStore {
         }
         description.shouldAddStoreAsynchronously = false
         container.persistentStoreDescriptions = [description]
+        let importMarker: Bool?
+        if description.type == NSSQLiteStoreType, let url = description.url {
+            importMarker = try Self.migrateBookmarkFavoritesIfNeeded(at: url)
+        } else { importMarker = nil }
         var loadingError: Error?
         container.loadPersistentStores { _, error in loadingError = error }
         if let loadingError { throw loadingError }
+        if let importMarker, let store = container.persistentStoreCoordinator.persistentStores.first {
+            var metadata = container.persistentStoreCoordinator.metadata(for: store)
+            metadata[Self.legacyImportKey] = importMarker
+            container.persistentStoreCoordinator.setMetadata(metadata, for: store)
+        }
         configure(mainContext)
         if !inMemory, (url == nil || legacyURL != nil), #available(iOS 17.0, *) {
             let source = legacyURL ?? ModelConfiguration().url
@@ -110,7 +119,30 @@ final class LibraryStore {
         }
     }
 
-    static let model: NSManagedObjectModel = {
+    static let model = makeModel()
+
+    /// The previous model was built in code and has no .mom version in the
+    /// bundle. Supply it explicitly for the one-time inferred migration.
+    private static func migrateBookmarkFavoritesIfNeeded(at url: URL) throws -> Bool? {
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(ofType: NSSQLiteStoreType, at: url)
+        guard !model.isConfiguration(withName: nil, compatibleWithStoreMetadata: metadata) else { return nil }
+        guard let previous = [makeModel(includeFavorite: false, includeOrder: false), makeModel(includeOrder: false)]
+            .first(where: { $0.isConfiguration(withName: nil, compatibleWithStoreMetadata: metadata) }) else { return nil }
+        let directory = url.deletingLastPathComponent().appendingPathComponent("SouloBookmarkMigration-\(UUID())")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let migrated = directory.appendingPathComponent("library.sqlite")
+        let mapping = try NSMappingModel.inferredMappingModel(forSourceModel: previous, destinationModel: model)
+        let migration = NSMigrationManager(sourceModel: previous, destinationModel: model)
+        try migration.migrateStore(from: url, sourceType: NSSQLiteStoreType, options: nil,
+            with: mapping, toDestinationURL: migrated, destinationType: NSSQLiteStoreType, destinationOptions: nil)
+        try NSPersistentStoreCoordinator(managedObjectModel: model).replacePersistentStore(at: url,
+            destinationOptions: nil, withPersistentStoreFrom: migrated, sourceOptions: nil, ofType: NSSQLiteStoreType)
+        return metadata[legacyImportKey] as? Bool
+    }
+
+    static func makeModel(includeFavorite: Bool = true, includeOrder: Bool = true) -> NSManagedObjectModel {
         func attribute(_ name: String, _ type: NSAttributeType, optional: Bool = false) -> NSAttributeDescription {
             let attribute = NSAttributeDescription()
             attribute.name = name
@@ -138,6 +170,16 @@ final class LibraryStore {
             attribute("urlString", .stringAttributeType), attribute("platformName", .stringAttributeType, optional: true),
             attribute("dateAdded", .dateAttributeType), attribute("folderID", .UUIDAttributeType, optional: true), favicon
         ])
+        if includeFavorite {
+            let favorite = attribute("isFavorite", .booleanAttributeType)
+            favorite.defaultValue = false
+            bookmarks.properties.append(favorite)
+        }
+        if includeOrder {
+            let order = attribute("sortOrder", .integer64AttributeType)
+            order.defaultValue = 0
+            bookmarks.properties.append(order)
+        }
         let folders = entity(BookmarkFolderRecord.entityName, BookmarkFolderRecord.self, [
             attribute("id", .UUIDAttributeType), attribute("title", .stringAttributeType),
             attribute("parentID", .UUIDAttributeType, optional: true), attribute("dateAdded", .dateAttributeType)
@@ -145,7 +187,7 @@ final class LibraryStore {
         let model = NSManagedObjectModel()
         model.entities = [history, bookmarks, folders]
         return model
-    }()
+    }
 }
 
 protocol LibraryRecord: NSManagedObject, Identifiable where ID == UUID {
@@ -192,6 +234,8 @@ final class BookmarkRecord: NSManagedObject, LibraryRecord {
     @NSManaged var dateAdded: Date
     @NSManaged var folderID: UUID?
     @NSManaged var faviconData: Data?
+    @NSManaged var isFavorite: Bool
+    @NSManaged var sortOrder: Int64
 
     convenience init(title: String, urlString: String, platformName: String? = nil) {
         self.init(entity: LibraryStore.model.entitiesByName[Self.entityName]!, insertInto: nil)
@@ -200,6 +244,8 @@ final class BookmarkRecord: NSManagedObject, LibraryRecord {
         self.urlString = urlString
         self.platformName = platformName
         dateAdded = Date()
+        isFavorite = false
+        sortOrder = 0
     }
 
     var url: URL? { URL(string: urlString) }

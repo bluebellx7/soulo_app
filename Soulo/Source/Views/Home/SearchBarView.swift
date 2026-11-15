@@ -28,6 +28,9 @@ struct SearchBarView: View {
     @State private var focusRequest = 0
     @State private var animateGlow = false
     @State private var showSearchActions = false
+    @State private var showAutoHidePlatformHint = false
+    @State private var autoHidePlatformHintTask: Task<Void, Never>?
+    @AppStorage("auto_hide_platform_bar") private var autoHidePlatformBar = false
 
     private var isLight: Bool {
         !isCompact && wallpaperManager.prefersDarkForeground(for: WallpaperAppearance(colorScheme))
@@ -76,7 +79,7 @@ struct SearchBarView: View {
                         isIncognito ? "privacy_exit_incognito" : "privacy_enter_incognito"
                     )
                 )
-                .popover(isPresented: $showSearchActions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+                .compatiblePopover(isPresented: $showSearchActions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
                     searchActionsPanel(onIncognitoTap: onIncognitoTap, onScanTap: onScanTap)
                         .compatiblePopoverAdaptation()
                 }
@@ -189,7 +192,6 @@ struct SearchBarView: View {
                         Capsule().stroke(.white.opacity(isFocused ? 0.3 : 0.12), lineWidth: 0.5)
                     }
                 }
-                .shadow(color: isLight ? .black.opacity(0.04) : .black.opacity(0.2), radius: 16, x: 0, y: 4)
             }
         }
         .compatibleFocusFeedback(trigger: focusFeedback, enabled: !reduceMotion && !isCompact)
@@ -197,6 +199,10 @@ struct SearchBarView: View {
             if focused && !isCompact && !reduceMotion { focusFeedback &+= 1 }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isFocused)
+        .alert(ToolText.text("auto_hide_platform_bar"), isPresented: $showAutoHidePlatformHint) {
+            Button(ToolText.text("done"), role: .cancel) { }
+        } message: { Text(ToolText.text("auto_hide_platform_bar_hint")) }
+        .onDisappear { autoHidePlatformHintTask?.cancel() }
     }
 
     private func searchActionsPanel(
@@ -264,6 +270,26 @@ struct SearchBarView: View {
                     }
                 }
                 .frame(maxHeight: 190)
+
+                Divider()
+                Toggle(ToolText.text("auto_hide_platform_bar"), isOn: Binding(
+                    get: { autoHidePlatformBar },
+                    set: { enabled in
+                        autoHidePlatformBar = enabled
+                        for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
+                        autoHidePlatformHintTask?.cancel()
+                        guard enabled else { return }
+                        showSearchActions = false
+                        autoHidePlatformHintTask = Task { @MainActor in
+                            do { try await Task.sleep(for: .milliseconds(350)) } catch { return }
+                            guard !Task.isCancelled, autoHidePlatformBar else { return }
+                            showAutoHidePlatformHint = true
+                        }
+                    }
+                ))
+                .font(.subheadline)
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                .accessibilityIdentifier("home.auto-hide-platforms")
 
                 if let onPlatformManagementTap {
                     Divider()

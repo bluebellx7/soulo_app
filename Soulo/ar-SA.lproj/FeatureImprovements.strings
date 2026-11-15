@@ -81,3 +81,58 @@
 "Website cache" = "ذاكرة التخزين المؤقت لموقع الويب";
 "Website icons" = "أيقونات الموقع";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "تحفظ مزامنة iCloud نسخة احتياطية قبل تغيير الإعدادات. يتم الاحتفاظ بأحدث %lld نسخة إضافةً إلى النسخة الأولية.";
+
+"Move tab to new window" = "نقل إلى نافذة جديدة";
+
+"Save webpage" = "حفظ صفحة الويب";
+
+"Webpage" = "صفحة ويب";
+
+"Website data" = "بيانات المواقع";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "تشمل المقالات المحفوظة وفهرس الكتب والأغلفة وتقدم القراءة. تُحتسب ملفات الكتب ضمن الملفات المحمّلة.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "الأحجام تقديرية. يتضمن IndexedDB قواعد البيانات وملفات الوسائط. يظهر الحجم غير المتاح بالرمز —.";
+"Extension temporary cache" = "ذاكرة الإضافات المؤقتة";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "يحذف وسائط الإضافات المؤقتة ويحفظ الإعدادات والنصوص البرمجية والتقدم والملفات المحمّلة. أغلق صفحات الإضافات والفيديو وأكمل التنزيلات أولاً.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "البيانات المؤقتة ما زالت قيد الاستخدام. أغلق صفحات الإضافات والفيديو وأكمل التنزيلات ثم أعد المحاولة.";
+"Deleting website data can sign you out and remove offline content." = "قد يؤدي حذف البيانات إلى تسجيل خروجك وإزالة المحتوى المتاح دون اتصال.";
+
+"Extension startup timed out." = "انتهت مهلة بدء الإضافة.";
+
+"soulo_extensions" = "إضافات Soulo";
+
+"Add to Quick Links" = "إضافة إلى الروابط السريعة";
+"Remove from Quick Links" = "إزالة من الروابط السريعة";
+"Mark bookmarks with a heart to show them here." = "اضغط مطولاً على إشارة مرجعية ثم علّمها بقلب لعرضها هنا.";
+
+"Type %@ to confirm." = "اكتب %@ للتأكيد.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "تُدمج الإشارات المرجعية بين الأجهزة. لا تُحذف إلا بعملية حذف صريحة.";
+"This deletion also syncs to your other devices." = "تتم مزامنة هذا الحذف مع أجهزتك الأخرى أيضاً.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "انسخ هذا الطلب وأضف متطلباتك وأرسله إلى ذكاء اصطناعي، ثم الصق JSON الناتج هنا لاستيراده.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "تُعتمد أسماء المجموعات في JSON. تُدمج المجموعات المتطابقة دون إزالة المنصات الحالية.";
+"Imported %1$d platforms into %2$d groups." = "تم استيراد %1$d منصة إلى %2$d مجموعة.";
+"No new platforms or group entries." = "لا توجد منصات أو عناصر مجموعات جديدة.";
+
+"App size" = "حجم التطبيق";
+"App data" = "بيانات التطبيق";
+"Wallpaper cache" = "ذاكرة الخلفيات";
+"Other caches" = "ذاكرات مؤقتة أخرى";
+"Temporary files" = "ملفات مؤقتة";
+"Download task data" = "بيانات مهام التنزيل";
+"Settings and records" = "الإعدادات والسجلات";
+"Shared app data" = "بيانات التطبيق المشتركة";
+"Other app data" = "بيانات تطبيق أخرى";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "لا تشمل بيانات التطبيق البرنامج المثبت. قد تختلف الأحجام على القرص عن إعدادات iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "احذف المحتوى المحفوظ من قائمته. تُحرر الملفات المؤقتة النشطة وقواعد ذاكرة النظام عندما يكون ذلك آمنًا.";
+
+"Current platforms" = "المنصات الحالية";
+"Import mode" = "طريقة الاستيراد";
+"Append" = "إضافة";
+"Replace all" = "استبدال الكل";
+"Replace all platforms?" = "استبدال جميع المنصات؟";
+"A settings backup is saved before replacement." = "تُحفظ نسخة احتياطية من الإعدادات قبل الاستبدال.";
+
+"Take over web players" = "تولي مشغلات الويب";
+"Only takes over website fullscreen. Extension players stay independent." = "يستبدل مشغل الموقع في وضع ملء الشاشة فقط. تبقى مشغلات الإضافات مستقلة.";
+
+"App size is the installed program and resources, not the App Store download size." = "حجم التطبيق هو حجم البرنامج والموارد المثبتة، وليس حجم التنزيل من App Store.";
+"App data is the total of the categories below." = "بيانات التطبيق هي مجموع الفئات أدناه.";

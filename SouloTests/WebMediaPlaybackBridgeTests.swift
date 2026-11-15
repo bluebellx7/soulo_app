@@ -5,6 +5,42 @@ import UIKit
 @testable import Soulo
 
 @MainActor final class WebMediaPlaybackBridgeTests: XCTestCase {
+    func testEpisodeInspectionFindsTheCurrentOpaqueHLSControllerSource() async throws {
+        let web = WKWebView()
+        let stream = "https://media.example/hls/getM3u8?time=123&url=selected.m3u8"
+        web.loadHTMLString("""
+        <meta name="referrer" content="no-referrer"><video id="v"></video>
+        <script>v.src=URL.createObjectURL(new Blob([]));window.Artplayer={instances:[{hls:{media:v,url:'\(stream)'}}]};
+        window.__souloObservedHLSManifests={'\(stream)':'#EXTM3U\\n#EXT-X-ENDLIST'};window.qaReady=true;</script>
+        """, baseURL: URL(string: "https://player.example/frame"))
+        for _ in 0..<100 {
+            if (try? await web.evaluateJavaScript("window.qaReady")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let snapshot = try await WebResourceInspectionService.inspect(webView: web)
+        XCTAssertEqual(snapshot.configuredVideos.map(\.url.absoluteString), [stream])
+        XCTAssertEqual(snapshot.configuredVideos.first?.delivery, .hls)
+        let context = await VideoPlaybackRequestContext.load(url: URL(string: stream)!, pageURL: snapshot.pageURL, webView: web)
+        XCTAssertTrue(context.omitsReferrer); XCTAssertNotNil(context.manifests[URL(string: stream)!])
+    }
+
+    func testMediaReferrerPolicyFollowsTheSelectedFrameAndRedirectContext() async throws {
+        let web = WKWebView()
+        let stream = URL(string: "https://video.example/stream.m3u8?token=fresh")!
+        let page = URL(string: "https://player.example/frame")!
+        WebMediaManifestCache.rememberPolicy("no-referrer", urls: [stream], webView: web)
+        let context = await VideoPlaybackRequestContext.load(url: stream, pageURL: page, webView: web)
+        XCTAssertTrue(context.omitsReferrer)
+        XCTAssertNil(context.resourceRequest(for: stream, referrer: page).value(forHTTPHeaderField: "Referer"))
+        XCTAssertNil(context.resourceRequest(for: URL(string: "https://redirect.example/part.ts")!, referrer: stream).value(forHTTPHeaderField: "Referer"))
+        let destination = WKWebView()
+        WebMediaManifestCache.copy(from: web, to: destination)
+        let copied = await VideoPlaybackRequestContext.load(url: stream, pageURL: page, webView: destination)
+        XCTAssertTrue(copied.omitsReferrer)
+        let ordinary = await VideoPlaybackRequestContext.load(url: URL(string: "https://video.example/other.m3u8")!, pageURL: page, webView: web)
+        XCTAssertEqual(ordinary.resourceRequest(for: ordinary.url, referrer: page).value(forHTTPHeaderField: "Referer"), "https://player.example/")
+    }
+
     func testAuxiliaryPlayUsesVideoBoxStyleFollowsScrollAndYieldsToNormalTools() async throws {
         let web = try await page("""
         <meta name='viewport' content='width=device-width,initial-scale=1'>
@@ -808,4 +844,17 @@ extension WebMediaPlaybackBridgeTests {
         XCTAssertEqual(fallback?.token, "blob-main")
         XCTAssertEqual(fallback?.resource.url, selected?.url)
     }
+    func testOwnedExtensionMediaSourceResolvesBlobWithoutGuessingNetworkURLs() async throws {
+        let web = try await page("<video id='v' data-soulo-media-id='owned-source' src='blob:https://www.example.com/current'></video>")
+        _ = try await web.evaluateJavaScript("""
+            window.__souloNativeMediaSource = video => video.id === 'v'
+                ? {url:'https://media.example/current',mime:'application/vnd.apple.mpegurl',referrer:'https://www.example.com/watch/1'} : null;
+            window.__souloObservedResourceURLs=['https://ad.example/unrelated.mp4']; null;
+            """)
+        let selected = await WebResourceInspectionService.currentVideoResource(webView: web, frame: nil, token: "owned-source")
+        XCTAssertEqual(selected?.url.absoluteString, "https://media.example/current")
+        XCTAssertEqual(selected?.delivery, .hls)
+        XCTAssertEqual(selected?.sourcePageURL?.absoluteString, "https://www.example.com/watch/1")
+    }
+
 }

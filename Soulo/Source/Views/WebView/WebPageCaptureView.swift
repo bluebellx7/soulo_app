@@ -695,11 +695,11 @@ struct WebPageCapturePreview: View {
                 try await WebPageCaptureService.saveToPhotoLibrary(result.image)
                 saveSucceeded = true
                 saveMessage = LanguageManager.shared.localizedString("web_capture_saved_desc")
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                HapticsManager.success()
             } catch {
                 saveSucceeded = false
                 saveMessage = error.localizedDescription
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                HapticsManager.error()
             }
             isSaving = false
         }

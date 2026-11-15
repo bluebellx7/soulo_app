@@ -449,11 +449,12 @@ final class WebResourceDownloadService {
                 : AppConstants.mobileWebViewUserAgent,
             forHTTPHeaderField: "User-Agent"
         )
-        if let pageURL, let referrer = Self.referrerHeader(pageURL: pageURL, resourceURL: url) {
+        let omitReferrer = webView.map { WebMediaManifestCache.omitsReferrer(for: url, webView: $0) } ?? false
+        if !omitReferrer, let pageURL, let referrer = Self.referrerHeader(pageURL: pageURL, resourceURL: url) {
             request.setValue(referrer, forHTTPHeaderField: "Referer")
         }
         if let webView {
-            let cookies = await allCookies(in: webView)
+            let cookies = await WebKitCookieAccess.cookies(for: url, in: webView.configuration.websiteDataStore.httpCookieStore)
             for (field, value) in HTTPCookie.requestHeaderFields(with: Self.matchingCookies(from: cookies, for: url)) {
                 request.setValue(value, forHTTPHeaderField: field)
             }

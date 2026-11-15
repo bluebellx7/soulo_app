@@ -81,3 +81,58 @@
 "Website cache" = "Website cache";
 "Website icons" = "Website icons";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy.";
+
+"Move tab to new window" = "Move tab to new window";
+
+"Save webpage" = "Save webpage";
+
+"Webpage" = "Webpage";
+
+"Website data" = "Website data";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —.";
+"Extension temporary cache" = "Extension temporary cache";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again.";
+"Deleting website data can sign you out and remove offline content." = "Deleting website data can sign you out and remove offline content.";
+
+"Extension startup timed out." = "Extension startup timed out.";
+
+"soulo_extensions" = "Soulo Extensions";
+
+"Add to Quick Links" = "Add to Quick Links";
+"Remove from Quick Links" = "Remove from Quick Links";
+"Mark bookmarks with a heart to show them here." = "Press and hold a bookmark, then mark it with a heart to show it here.";
+
+"Type %@ to confirm." = "Type %@ to confirm.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Bookmarks merge across devices. Only explicit deletions remove items.";
+"This deletion also syncs to your other devices." = "This deletion also syncs to your other devices.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Group names in JSON take priority. Matching groups merge without removing existing platforms.";
+"Imported %1$d platforms into %2$d groups." = "Imported %1$d platforms into %2$d groups.";
+"No new platforms or group entries." = "No new platforms or group entries.";
+
+"App size" = "App size";
+"App data" = "App data";
+"Wallpaper cache" = "Wallpaper cache";
+"Other caches" = "Other caches";
+"Temporary files" = "Temporary files";
+"Download task data" = "Download task data";
+"Settings and records" = "Settings and records";
+"Shared app data" = "Shared app data";
+"Other app data" = "Other app data";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "App data excludes the installed program. Disk sizes may differ from iOS Settings.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Manage saved content in its own list. Active temporary files and system cache databases are released when safe.";
+
+"Current platforms" = "Current platforms";
+"Import mode" = "Import mode";
+"Append" = "Append";
+"Replace all" = "Replace all";
+"Replace all platforms?" = "Replace all platforms?";
+"A settings backup is saved before replacement." = "A settings backup is saved before replacement.";
+
+"Take over web players" = "Take over web players";
+"Only takes over website fullscreen. Extension players stay independent." = "Only takes over website fullscreen. Extension players stay independent.";
+
+"App size is the installed program and resources, not the App Store download size." = "App size is the installed program and resources, not the App Store download size.";
+"App data is the total of the categories below." = "App data is the total of the categories below.";

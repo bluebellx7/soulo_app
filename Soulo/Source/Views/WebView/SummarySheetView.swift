@@ -1,85 +1,64 @@
 import SwiftUI
 
+struct PageSummaryView: View {
+    @ObservedObject var viewModel: WebViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var summary = ""
+    @State private var loading = true
+
+    var body: some View {
+        SummarySheetView(summary: summary, pageTitle: viewModel.pageTitle, isLoading: loading, onDismiss: { dismiss() })
+        .task(id: viewModel.currentURL) {
+            loading = true; summary = ""
+            let sourceURL = viewModel.currentURL
+            do {
+                guard let webView = viewModel.webView else { loading = false; return }
+                let text = try await webView.evaluateJavaScript("(document.querySelector('article') || document.querySelector('main') || document.body)?.innerText?.slice(0,120000) || ''") as? String ?? ""
+                let result = try await PageSummaryService.summarizeLocally(text: text, locale: LanguageManager.shared.locale)
+                try Task.checkCancellation()
+                guard viewModel.currentURL == sourceURL else { return }
+                summary = result; loading = false
+            } catch {
+                guard !Task.isCancelled, viewModel.currentURL == sourceURL else { return }
+                summary = error.localizedDescription; loading = false
+            }
+        }
+    }
+}
+
 struct SummarySheetView: View {
     let summary: String
     let pageTitle: String
     let isLoading: Bool
     var onDismiss: () -> Void
-
-    @State private var didCopy = false
-
     var body: some View {
-        VStack(spacing: 20) {
-            // Drag handle
-            Capsule()
-                .fill(Color.secondary.opacity(0.3))
-                .frame(width: 36, height: 4)
-                .padding(.top, 12)
-
-            // Icon + title
-            VStack(spacing: 10) {
-                Image(systemName: "link.circle.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(Color.themePrimary)
-
-                Text(LanguageManager.shared.localizedString("link_copied"))
-                    .font(.system(size: 17, weight: .semibold))
-
-                if !pageTitle.isEmpty {
-                    Text(pageTitle)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(pageTitle).font(.headline)
+                    if isLoading {
+                        ProgressView(LanguageManager.shared.localizedString("summarizing"))
+                            .frame(maxWidth: .infinity, minHeight: 160)
+                    } else {
+                        Text(summary).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
-            }
-
-            // Link text
-            Text(summary)
-                .font(.system(size: 14, design: .monospaced))
-                .foregroundStyle(Color.themePrimary)
-                .lineLimit(3)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
+                .frame(maxWidth: 680, alignment: .leading)
+                .padding(20)
                 .frame(maxWidth: .infinity)
-                .background(Color(UIColor.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
-                .padding(.horizontal, 20)
-
-            // Copy button
-            Button {
-                UIPasteboard.general.string = summary
-                didCopy = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { didCopy = false }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: didCopy ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 14))
-                    Text(didCopy ? LanguageManager.shared.localizedString("copied") : LanguageManager.shared.localizedString("copy_link"))
-                        .font(.system(size: 14, weight: .medium))
+            }
+            .navigationTitle(LanguageManager.shared.localizedString("summary_title"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(LanguageManager.shared.localizedString("done")) { onDismiss() }
                 }
-                .foregroundStyle(didCopy ? .green : Color.themePrimary)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(
-                    (didCopy ? Color.green : Color.themePrimary).opacity(0.1),
-                    in: Capsule()
-                )
+                ToolbarItem(placement: .confirmationAction) {
+                    Button { UIPasteboard.general.string = summary } label: { Image(systemName: "doc.on.doc") }
+                        .accessibilityLabel(LanguageManager.shared.localizedString("copy_summary"))
+                        .disabled(isLoading || summary.isEmpty)
+                }
             }
-
-            Spacer()
-
-            // Done
-            Button {
-                onDismiss()
-            } label: {
-                Text(LanguageManager.shared.localizedString("done"))
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.bottom, 20)
         }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.hidden)
     }
 }

@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Hangsávok";
 "media_subtitles" = "Feliratok";
 "media_track_off" = "Ki";
-"video_settings" = "Videó";
+"video_settings" = "Videóbeállítások";
 "video_show_tools" = "Videóeszközök megjelenítése";
 "video_show_tools_desc" = "Eszközök megjelenítése a webvideókon a lejátszási sebességhez, a letöltésekhez és a teljes képernyőhöz.";
 "video_default_player" = "Alapértelmezett játékos";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Matt üveg";
 "wallpaper_blur_amount" = "Elmosás erőssége";
 
-"auto_hide_platform_bar_hint" = "A platformsáv elrejtőzik egy keresési találat megnyitásakor. A találatokhoz visszatérve vagy új kereséskor ismét megjelenik. Ebben a menüben kikapcsolhatod.";
+"auto_hide_platform_bar_hint" = "A platformsáv csak a weboldal tartalmának megérintése után rejtőzik el. Az automatikus átirányítás és a görgetés nem rejti el. Visszatérés a találatokhoz vagy új keresés ismét megjeleníti.";
+
+"ad_subscription_add" = "Szűrőlista hozzáadása";
+"ad_subscription_name" = "Név";
+"ad_subscription_url" = "Feliratkozási URL";
+"ad_subscription_invalid" = "Adjon meg egy nevet és egy érvényes HTTP vagy HTTPS feliratkozási URL-t.";
+"ad_subscription_duplicate" = "Ez a feliratkozási URL már hozzá lett adva.";
+
+"feedback_settings" = "Hangok és rezgés";
+"feedback_settings_hint" = "A rezgés és a kezelőfelület hangjainak vezérlése az egész alkalmazásban. A weboldalak, videók és hanganyagok lejátszását nem érinti.";
+
+"home_display_settings" = "Kezdőlap megjelenítése";
+"browsing_display_settings" = "Böngészési megjelenítés";
+
+"web_video_download" = "Webvideók letöltése";
+"web_video_download_description" = "Videóletöltési vezérlők megjelenítése weboldalakon, epizódlistákban és lejátszókban. A lejátszás és a meglévő letöltések nem változnak.";
+"builtin_extension" = "Beépített bővítmény";
+
+"wallpaper_overlay_amount" = "Fedőréteg erőssége";
+"feedback_contact_required" = "Adj meg e-mail-címet vagy más elérhetőséget a válaszhoz.";
+"torrent_incomplete" = "Befejezetlen";
+"extend_page_background" = "Weboldalhátteret kiterjeszt";
+"extend_page_background_desc" = "Az oldal felső és alsó színeit a böngésző széléig terjeszti, színátmenetekkel együtt.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Csoport összecsukása";
+"tab_group_expand" = "Csoport kibontása";
+"freeze_page_background_on_scroll" = "Kezdeti színek megtartása";
+"freeze_page_background_on_scroll_desc" = "Görgetés után az elsőként felismert színek maradnak meg. Új oldalon a színek felismerése újraindul.";
+"page_background_gradient" = "Színátmenetes kiterjesztés";
+"page_background_gradient_desc" = "A felismert színek átmenetet alkotnak. Kikapcsolva minden szél egyszínű.";
+
+
+"gestures_feedback_settings" = "Gesztusok és visszajelzés";

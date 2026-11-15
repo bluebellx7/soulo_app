@@ -17,7 +17,7 @@ struct RegionTabBar: View {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             selectedRegion = region
                         }
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        HapticsManager.light()
                     }
                 }
             }

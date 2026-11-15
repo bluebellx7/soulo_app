@@ -119,6 +119,10 @@ import UniformTypeIdentifiers
         sourceURL = url
         self.resourceLease = resourceLease
         self.requestContext = requestContext
+        #if SOULO_ACCEPTANCE
+        DeviceAcceptanceRun.shared.recordMediaPlayback(stage: "soulo", url: url, pageURL: requestContext?.referrer,
+            userAgent: requestContext?.userAgent, cookies: requestContext?.cookies.count ?? 0)
+        #endif
         persistsPosition = persistPosition
         lastSavedSecond = -1
         let requested = startAt ?? (persistPosition ? UserDefaults.standard.double(forKey: MediaSession.positionKey(url)) : 0)
@@ -128,6 +132,8 @@ import UniformTypeIdentifiers
         reportedEnd = false
         error = nil; elapsed = 0; duration = 0; buffering = true
         hasVideo = UTType(filenameExtension: url.pathExtension)?.conforms(to: .audio) != true
+        let kind = (resourceLease as? SouloMediaPlaybackSource)?.native.webMediaContext?.resource.kind
+        let expectsVideo = kind.map { $0 == .video } ?? hasVideo
         do {
             let audio = AVAudioSession.sharedInstance()
             try audio.setCategory(.playback, mode: .moviePlayback)
@@ -139,6 +145,11 @@ import UniformTypeIdentifiers
             let media = VLCMedia(url: url)
             media.addOption(":network-caching=1500")
             media.addOption(":no-video-title-show")
+            if (resourceLease as? SouloMediaPlaybackSource)?.native.webMediaContext?.resource.delivery == .hls {
+                // Extensionless playlist APIs may respond as text/plain. Choose
+                // the HLS demuxer from the inspected media kind, not its suffix.
+                media.addOption(":demux=adaptive")
+            }
             try requestContext?.apply(to: media)
             player.media = media
             player.rate = rate
@@ -155,7 +166,10 @@ import UniformTypeIdentifiers
                     guard let self, let player = self.player else { return }
                     let playing = self.wantsPlayback && player.isPlaying && player.state != .ended && player.state != .stopped
                     if self.playing != playing { self.playing = playing }
-                    let buffering = self.wantsPlayback && (self.waitingForSurface || !player.isPlaying && (player.state == .opening || player.state == .buffering))
+                    let frameReady = (player.media?.statistics.displayedPictures ?? 0) > 0
+                    let buffering = self.wantsPlayback && self.error == nil && (self.waitingForSurface
+                        || (expectsVideo && !frameReady && !startup.completed)
+                        || !player.isPlaying && (player.state == .opening || player.state == .buffering))
                     if self.buffering != buffering { self.buffering = buffering }
                     if player.state != .stopped { self.hasSeenRunningState = true }
                     let clock = max(0, Double(player.time.intValue) / 1000)
@@ -164,13 +178,13 @@ import UniformTypeIdentifiers
                     // position so an unexpected stop is still diagnosed.
                     let actual = player.state == .stopped && self.wantsPlayback && !self.reportedEnd ? lastProgress : clock
                     if let pending = self.pendingSeek, !pending.isPending(actual: actual) { self.pendingSeek = nil }
-                    self.elapsed = self.pendingStart?.seconds ?? self.pendingSeek?.target ?? actual
+                    let elapsed = self.pendingStart?.seconds ?? self.pendingSeek?.target ?? actual
+                    if self.elapsed != elapsed { self.elapsed = elapsed }
                     let duration = max(0, Double(player.media?.length.intValue ?? 0) / 1000)
                     if self.duration != duration { self.duration = duration }
-                    let frameReady = (player.media?.statistics.displayedPictures ?? 0) > 0
                     let warning = startup.update(now: Date.timeIntervalSinceReferenceDate,
                         requested: self.wantsPlayback && self.hasVisibleSurface && UIApplication.shared.applicationState == .active,
-                        ready: frameReady || (!self.hasVideo && actual > 0.1))
+                        ready: frameReady || (!expectsVideo && actual > 0.1))
                     let message = warning ? ToolText.text("media_start_timeout") : nil
                     if self.startupWarning != message { self.startupWarning = message }
                     self.layoutVideo()
@@ -496,6 +510,7 @@ struct FileVideoPlaylist {
     var asynchronous = false
     var resolvingID: String?
     var failure: String?
+    var retry: (() -> Void)? = nil
     var select: (String) -> Void
 }
 
@@ -508,10 +523,12 @@ struct FileVideoOptions: Equatable {
     var requestAirPlay: ((Double, Bool) -> Void)?
     var requestPictureInPicture: ((Double, Bool) -> Void)?
     var download: (() -> Void)?
+    var downloadIsVideo = true
     var airPlayPresentation: Binding<Bool>?
     var fullscreenChanged: ((Bool) -> Void)?
     var closePlayback: (() -> Void)?
     var showsEpisodesOnAppear = false
+    var fullscreenOnly = false
     var shareURL: URL?
     var selectPlayer: (Bool, Double, Bool) -> Void
     static func == (lhs: Self, rhs: Self) -> Bool {
@@ -524,12 +541,15 @@ struct FileVideoOptions: Equatable {
             && lhs.playlist?.selectedSourceID == rhs.playlist?.selectedSourceID
             && lhs.playlist?.resolvingID == rhs.playlist?.resolvingID
             && lhs.playlist?.failure == rhs.playlist?.failure
+            && (lhs.playlist?.retry != nil) == (rhs.playlist?.retry != nil)
             && (lhs.requestAirPlay != nil) == (rhs.requestAirPlay != nil)
             && (lhs.requestPictureInPicture != nil) == (rhs.requestPictureInPicture != nil)
             && (lhs.download != nil) == (rhs.download != nil)
+            && lhs.downloadIsVideo == rhs.downloadIsVideo
             && (lhs.airPlayPresentation != nil) == (rhs.airPlayPresentation != nil)
             && (lhs.closePlayback != nil) == (rhs.closePlayback != nil)
             && lhs.showsEpisodesOnAppear == rhs.showsEpisodesOnAppear
+            && lhs.fullscreenOnly == rhs.fullscreenOnly
             && lhs.shareURL == rhs.shareURL
     }
 }
@@ -548,14 +568,14 @@ struct MediaPlayerMenu: View {
         .accessibilityLabel(ToolText.text("media_player"))
         .accessibilityValue(options.usesSystem ? ToolText.text("media_player_system") : "Soulo")
         .accessibilityIdentifier("media.file.player")
-        .popover(isPresented: $presented) {
+        .compatiblePopover(isPresented: $presented) {
             VStack(spacing: 0) {
                 choice("Soulo", system: false, enabled: options.souloAvailable)
                 Divider().padding(.leading, 44)
                 choice(ToolText.text("media_player_system"), system: true, enabled: options.systemAvailable)
             }
             .frame(width: 220).padding(.vertical, 6).buttonStyle(.plain)
-            .compatiblePopoverAdaptation()
+            .compatiblePopoverAdaptation().videoPopoverSurface()
             .onDisappear {
                 guard let pending else { return }
                 self.pending = nil
@@ -618,7 +638,7 @@ struct FileVideoMenus: View {
             .accessibilityLabel(ToolText.text("video_speed"))
             .accessibilityValue(String(format: "%g×", rate))
             .accessibilityIdentifier("media.file.speed")
-            .popover(isPresented: $speedPresented) {
+            .compatiblePopover(isPresented: $speedPresented) {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach([Float(0.5), 0.75, 1, 1.25, 1.5, 1.75, 2, 3, 4], id: \.self) { value in
@@ -630,7 +650,7 @@ struct FileVideoMenus: View {
                             }.accessibilityIdentifier("media.file.rate.\(value)")
                         }
                     }.padding(.vertical, 6)
-                }.frame(width: 180, height: 280).buttonStyle(.plain).compatiblePopoverAdaptation()
+                }.frame(width: 180, height: 280).buttonStyle(.plain).compatiblePopoverAdaptation().videoPopoverSurface()
             }
             .onCompatibleChange(of: speedPresented) { _, shown in menuInteraction?(shown) }
             Spacer(minLength: 0)
@@ -663,6 +683,7 @@ struct FileVideoMenus: View {
 }
 
 struct MatroskaPlayerView: View {
+    @AppStorage(VideoPlaybackPreferences.showsWebDownloadControlsKey) private var showsVideoDownloadControls = true
     let url: URL
     var resourceLease: AnyObject?
     var requestContext: VideoPlaybackRequestContext?
@@ -742,21 +763,10 @@ struct MatroskaPlayerView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 if !expanded, let options = playbackOptions {
-                    Menu {
-                        PlaybackSleepTimerMenu()
-                        if let request = options.requestPictureInPicture {
-                            Button { request(playback.elapsed, playback.playing) } label: {
-                                Label(ToolText.text("media_pip"), systemImage: "pip.enter")
-                            }.disabled(!options.systemAvailable)
-                                .accessibilityIdentifier("media.picture-in-picture")
-                        }
-                        if let download = options.download {
-                            Button(action: download) { Label(LanguageManager.shared.localizedString("download"), systemImage: "arrow.down.circle") }
-                        }
-                        if let url = options.shareURL { ShareLink(item: url) { Label(ToolText.text("share_media"), systemImage: "square.and.arrow.up") } }
-                        Button { settingsVisible = true } label: { Label(LanguageManager.shared.localizedString("settings"), systemImage: "gearshape") }
-                    } label: { Image(systemName: "ellipsis") }
-                    .accessibilityIdentifier("media.options")
+                    MatroskaOptionsMenu(options: options, playback: playback,
+                        settingsVisible: $settingsVisible, showsVideoDownloadControls: showsVideoDownloadControls,
+                        language: LanguageManager.shared.currentLanguage)
+                        .equatable()
                 }
             }
         }
@@ -786,6 +796,38 @@ struct MatroskaPlayerView: View {
                 ToolbarItem(placement: .confirmationAction) { Button(ToolText.text("done")) { settingsVisible = false } }
             } }
         }
+    }
+}
+
+/// The native menu only changes when its available actions change. Decoding
+/// ticks must not repeatedly replace and animate a menu the user is tapping.
+private struct MatroskaOptionsMenu: View, Equatable {
+    let options: FileVideoOptions
+    let playback: MatroskaPlayback
+    @Binding var settingsVisible: Bool
+    let showsVideoDownloadControls: Bool
+    let language: String
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.options == rhs.options && lhs.playback === rhs.playback
+            && lhs.showsVideoDownloadControls == rhs.showsVideoDownloadControls && lhs.language == rhs.language
+    }
+    var body: some View {
+        Menu {
+            PlaybackSleepTimerMenu()
+            if let request = options.requestPictureInPicture {
+                Button { request(playback.elapsed, playback.playing) } label: {
+                    Label(ToolText.text("media_pip"), systemImage: "pip.enter")
+                }.disabled(!options.systemAvailable)
+                    .accessibilityIdentifier("media.picture-in-picture")
+            }
+            if let download = options.download, showsVideoDownloadControls || !options.downloadIsVideo {
+                Button(action: download) { Label(LanguageManager.shared.localizedString("download"), systemImage: "arrow.down.circle") }
+                    .accessibilityIdentifier("media.compact.download")
+            }
+            if let url = options.shareURL { ShareLink(item: url) { Label(ToolText.text("share_media"), systemImage: "square.and.arrow.up") } }
+            Button { settingsVisible = true } label: { Label(LanguageManager.shared.localizedString("settings"), systemImage: "gearshape") }
+        } label: { Image(systemName: "ellipsis") }
+        .accessibilityIdentifier("media.options")
     }
 }
 
@@ -989,7 +1031,7 @@ private struct MatroskaFullscreenPresenter: UIViewControllerRepresentable {
             sharedHost = nil; presentedURL = nil; presentedOptions = nil; handingOff = false
             selection?.wrappedValue = false
             options?.fullscreenChanged?(false)
-            if reason == .closePlayback { options?.closePlayback?() }
+            if reason == .closePlayback || options?.fullscreenOnly == true { options?.closePlayback?() }
         }
         func teardown() {
             presentationRetry?.cancel(); presentationRetry = nil
@@ -1163,7 +1205,9 @@ struct FileMediaPlaybackView: View {
             let asset = AVURLAsset(url: playlist)
             let source = DownloadPlaybackSource(asset: asset, pageURL: nil, webView: nil, persistPosition: persistPosition)
             source.resourceLease = resourceLease
-            return (asset, true, try await SouloMediaPlaybackSource.prepare(native: source, originalURL: url))
+            let soulo = try await SouloMediaPlaybackSource.prepare(native: source, originalURL: url)
+            let system = try? await soulo.systemAsset()
+            return (system, system != nil, soulo)
         }
         if url.isFileURL, ["movpkg", OfflineHLSReference.fileExtension].contains(url.pathExtension.lowercased()) {
             let asset = try url.pathExtension.lowercased() == "movpkg"

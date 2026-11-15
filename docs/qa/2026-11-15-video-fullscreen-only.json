@@ -1,0 +1,28 @@
+{
+  "status": "verified",
+  "request": "Remove the URL-bearing web video preview page; enter fullscreen directly and retain portrait/landscape fullscreen, episodes and close",
+  "after_prior_requests": "docs/qa/2026-11-15-platform-storage-episodes.json",
+  "constraints": [
+    "simulator only",
+    "preserve audio/local-file preview behavior unless needed by this web-video request",
+    "no commit/push/upload"
+  ],
+  "pending": [],
+  "implementation": [
+    "Direct fullscreen entry for web video; close ends playback; no URL-bearing intermediate page.",
+    "Portrait and landscape fullscreen share the same decoder and use a logical-canvas fallback for iPad windows.",
+    "Loading/error overlays do not consume timeline layout; time and slider moved down eight points without shifting the bottom action row.",
+    "Unknown duration shows an empty disabled timeline instead of 100 percent.",
+    "Video tool handoff always applies, regardless of the automatic embedded-player takeover switch.",
+    "Selecting an episode immediately closes its drawer and uses the centered loading indicator; failure reopens the drawer with retry."
+  ],
+  "evidence": [
+    "/tmp/soulo-video-fullscreen-only-20261115/ipad4.log",
+    "/tmp/soulo-ui-followups-20261115/phone9.log",
+    "/tmp/soulo-ui-followups-20261115/mtyy16.log",
+    "/tmp/soulo-ui-followups-20261115/mtyy-ipad21.log",
+    "/tmp/soulo-ui-followups-20261115/menu22.log",
+    "/tmp/soulo-ui-followups-20261115/ios16-arm-build22.log",
+    "/tmp/soulo-ui-followups-20261115/episode-loading25.log"
+  ]
+}

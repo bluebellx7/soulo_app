@@ -81,3 +81,58 @@
 "Website cache" = "Кеш сайту";
 "Website icons" = "Веб-сайт іконки";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "Синхронізація iCloud зберігає копію перед зміною налаштувань. Зберігаються останні %lld копій і початкова копія.";
+
+"Move tab to new window" = "Перемістити в нове вікно";
+
+"Save webpage" = "Зберегти сторінку";
+
+"Webpage" = "Вебсторінка";
+
+"Website data" = "Дані сайтів";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Містять збережені статті, індекс книг, обкладинки й поступ читання. Файли книг враховуються серед завантажених файлів.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Розміри приблизні. IndexedDB включає бази даних і медіафайли. Недоступний розмір позначено як —.";
+"Extension temporary cache" = "Тимчасовий кеш розширень";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Видаляє тимчасові медіафайли розширень. Зберігає налаштування, скрипти, поступ і завантажені файли. Спочатку закрийте сторінки розширень і відео та завершіть завантаження.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Тимчасові дані ще використовуються. Закрийте сторінки розширень і відео, завершіть завантаження й повторіть спробу.";
+"Deleting website data can sign you out and remove offline content." = "Видалення даних може призвести до виходу з облікового запису й видалення офлайн-вмісту.";
+
+"Extension startup timed out." = "Перевищено час запуску розширення.";
+
+"soulo_extensions" = "Розширення Soulo";
+
+"Add to Quick Links" = "До швидких посилань";
+"Remove from Quick Links" = "Прибрати зі швидких посилань";
+"Mark bookmarks with a heart to show them here." = "Утримуйте закладку та позначте її серцем, щоб показати тут.";
+
+"Type %@ to confirm." = "Введіть %@ для підтвердження.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Закладки об’єднуються між пристроями. Лише явне видалення прибирає елементи.";
+"This deletion also syncs to your other devices." = "Це видалення синхронізується й з іншими вашими пристроями.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Скопіюйте запит, додайте вимоги та надішліть ШІ. Потім вставте отриманий JSON сюди для імпорту.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Назви груп у JSON мають пріоритет. Однойменні групи об’єднуються без видалення наявних платформ.";
+"Imported %1$d platforms into %2$d groups." = "Імпортовано %1$d платформ до %2$d груп.";
+"No new platforms or group entries." = "Немає нових платформ або записів груп.";
+
+"App size" = "Розмір програми";
+"App data" = "Дані програми";
+"Wallpaper cache" = "Кеш шпалер";
+"Other caches" = "Інший кеш";
+"Temporary files" = "Тимчасові файли";
+"Download task data" = "Дані завдань завантаження";
+"Settings and records" = "Параметри та записи";
+"Shared app data" = "Спільні дані програми";
+"Other app data" = "Інші дані програми";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Дані не включають установлену програму. Розмір на диску може відрізнятися від Параметрів iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Видаляйте збережений вміст у його списку. Використовувані тимчасові файли та системні бази кешу звільняються, коли це безпечно.";
+
+"Current platforms" = "Поточні платформи";
+"Import mode" = "Режим імпорту";
+"Append" = "Додати";
+"Replace all" = "Замінити все";
+"Replace all platforms?" = "Замінити всі платформи?";
+"A settings backup is saved before replacement." = "Перед заміною зберігається резервна копія налаштувань.";
+
+"Take over web players" = "Перехоплювати вебплеєри";
+"Only takes over website fullscreen. Extension players stay independent." = "Перехоплює лише повноекранне відтворення сайтів. Плеєри розширень працюють незалежно.";
+
+"App size is the installed program and resources, not the App Store download size." = "Розмір застосунку охоплює встановлену програму та ресурси, а не завантаження з App Store.";
+"App data is the total of the categories below." = "Дані застосунку — сума категорій нижче.";

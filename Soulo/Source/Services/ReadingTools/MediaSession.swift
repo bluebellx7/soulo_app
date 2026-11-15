@@ -249,6 +249,10 @@ final class MediaSession: ObservableObject {
         RecentLocalPlaybackStore.shared.beginPlayback(url: url,
             persistPosition: persistsPosition && !UserDefaults.standard.bool(forKey: "is_incognito"))
         self.pageURL = pageURL
+        #if SOULO_ACCEPTANCE
+        DeviceAcceptanceRun.shared.recordMediaPlayback(stage: "native", url: url, pageURL: pageURL,
+            userAgent: webView?.customUserAgent, cookies: 0)
+        #endif
         let savedRate = UserDefaults.standard.float(forKey: "media.rate")
         if Self.validRate(savedRate) { rate = savedRate }
         elapsed = 0; duration = 0; error = nil; lastSavedSecond = -1
@@ -693,10 +697,13 @@ final class MediaSession: ObservableObject {
     }
     func updateSouloState(_ playback: MatroskaPlayback) {
         guard soulo === playback else { return }
-        elapsed = playback.elapsed; duration = playback.duration; playing = playback.playing
-        hasVideo = playback.hasVideo; rate = playback.rate
+        if elapsed != playback.elapsed { elapsed = playback.elapsed }
+        if duration != playback.duration { duration = playback.duration }
+        if playing != playback.playing { playing = playback.playing }
+        if hasVideo != playback.hasVideo { hasVideo = playback.hasVideo }
+        if rate != playback.rate { rate = playback.rate }
         wantsPlayback = playback.isPlaybackRequested
-        error = playback.error
+        if error != playback.error { error = playback.error }
         updateNowPlaying()
         pauseVideoIfBackgrounded()
     }

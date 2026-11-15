@@ -6,6 +6,124 @@ import SwiftUI
 
 @MainActor
 final class ExtensionManagementTests: XCTestCase {
+    func testMediaStartupCoverEndsForReadyMediaAndNeverKeepsRealNoSourceErrorsHidden() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Native WebExtensions") }
+        let root = try temporaryRoot(), service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let record = try await service.installWebExtension(from: package(root))
+        defer { service.deleteWebExtension(record.id) }
+        let native = try context(record.id)
+        let markup = "document.body.innerHTML='<video style=\"position:fixed;inset:0;width:100vw;height:100vh\"></video><p id=\"no-source\">No source loaded</p>';true"
+        let readyPage = try await extensionPage(native)
+        let normalPage = try await readyPage.evaluateJavaScript("document.querySelector('[data-soulo-media-startup]')===null") as? Bool
+        XCTAssertEqual(normalPage, true,
+                       "Ordinary extension forms must stay visible")
+        _ = try await readyPage.evaluateJavaScript(markup)
+        try await eventually { (try? await readyPage.evaluateJavaScript("!!document.querySelector('[data-soulo-media-startup]')")) as? Bool == true }
+        _ = try await readyPage.evaluateJavaScript("document.querySelector('video').dispatchEvent(new Event('loadedmetadata'));true")
+        try await eventually { (try? await readyPage.evaluateJavaScript("document.querySelector('[data-soulo-media-startup]')===null")) as? Bool == true }
+        let emptyPage = try await extensionPage(native)
+        _ = try await emptyPage.evaluateJavaScript(markup)
+        try await eventually { (try? await emptyPage.evaluateJavaScript("!!document.querySelector('[data-soulo-media-startup]')")) as? Bool == true }
+        try await Task.sleep(for: .milliseconds(4200))
+        let visible = try await emptyPage.evaluateJavaScript("!document.querySelector('[data-soulo-media-startup]')&&document.getElementById('no-source').textContent==='No source loaded'")
+        XCTAssertEqual(visible as? Bool, true, "The startup grace period must end and leave genuine publisher diagnostics intact")
+    }
+
+    func testOptionalClipboardReadsRespectGrantAndRevocationWithoutChangingCopy() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root=try temporaryRoot(),source=try package(root)
+        let manifestURL=source.appendingPathComponent("manifest.json")
+        var manifest=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:manifestURL)) as? [String:Any])
+        manifest["optional_permissions"]=["clipboardRead"]
+        try JSONSerialization.data(withJSONObject:manifest).write(to:manifestURL)
+        let service=BrowserExtensionService(extensionRoot:root.appendingPathComponent("store"))
+        let record=try await service.installWebExtension(from:source);defer{service.deleteWebExtension(record.id)}
+        let native=try context(record.id)
+        let page=try await extensionPage(native,bootstrap:#"""
+        globalThis.clipboardNativeReads=0;globalThis.clipboardWrites=[];
+        Object.defineProperty(navigator,'clipboard',{configurable:true,value:{
+          readText:()=>{clipboardNativeReads++;return Promise.resolve('fixture-only clipboard');},
+          read:()=>{clipboardNativeReads++;return Promise.resolve([]);},
+          writeText:value=>{clipboardWrites.push(value);return Promise.resolve();}
+        }});
+        """#)
+        let denied=try await page.callAsyncJavaScript("try{await navigator.clipboard.readText();return 'unexpected';}catch(error){await navigator.clipboard.writeText('copy fixture');return error.name;}",arguments:[:],in:nil,contentWorld:.page)
+        XCTAssertEqual(denied as? String,"NotAllowedError")
+        let initialReads=try await page.evaluateJavaScript("clipboardNativeReads") as? Int
+        XCTAssertEqual(initialReads,0,"An unrelated button must not invoke the native paste prompt")
+        let writes=try await page.evaluateJavaScript("JSON.stringify(clipboardWrites)") as? String
+        XCTAssertEqual(writes,"[\"copy fixture\"]")
+        _ = try await page.evaluateJavaScript("chrome.permissions.onRemoved.addListener(e=>{if(e.permissions.includes('clipboardRead'))window.clipboardRevoked=true;});true")
+        native.setPermissionStatus(.grantedExplicitly,for:.init(rawValue:"clipboardRead"))
+        try await eventually("clipboard permission grant") {
+            (try? await page.callAsyncJavaScript("return await navigator.clipboard.readText();",arguments:[:],in:nil,contentWorld:.page)) as? String == "fixture-only clipboard"
+        }
+        native.setPermissionStatus(.unknown,for:.init(rawValue:"clipboardRead"))
+        try await eventually("clipboard permission revocation") { (try? await page.evaluateJavaScript("window.clipboardRevoked===true")) as? Bool == true }
+        let revoked=try await page.callAsyncJavaScript("try{await navigator.clipboard.readText();return false;}catch(error){return error.name==='NotAllowedError';}",arguments:[:],in:nil,contentWorld:.page)
+        XCTAssertEqual(revoked as? Bool,true)
+        let finalReads=try await page.evaluateJavaScript("clipboardNativeReads") as? Int
+        XCTAssertEqual(finalReads,1)
+    }
+
+    func testTemporaryCacheMaintenanceSharesInstalledOriginAndKeepsScriptsSettingsAndOtherExtensions() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = try temporaryRoot(), service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let first = try await service.installWebExtension(from: package(root, identity: "cache-first@soulo.test"))
+        let second = try await service.installWebExtension(from: package(root, identity: "cache-second@soulo.test"))
+        defer { service.deleteWebExtension(first.id); service.deleteWebExtension(second.id) }
+        let firstPage = try await extensionPage(context(first.id)), secondPage = try await extensionPage(context(second.id))
+        let seed = #"""
+        await chrome.storage.local.set({fixtureSetting:'keep'});
+        const save=name=>new Promise((resolve,reject)=>{
+          const r=indexedDB.open(name,1);
+          r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onerror=()=>reject(r.error);
+          r.onsuccess=()=>{const db=r.result,t=db.transaction('files','readwrite');t.objectStore('files').put(new Blob(['fixture-media']), 'keep');t.oncomplete=()=>{db.close();resolve();};};
+        });
+        await save('faststream-temp-123456789-1234');
+        await save('faststream-progress');await save('user-authored-scripts');
+        if(globalThis.caches){const c=await caches.open('fixture-media');await c.put('https://fixture.invalid/movie',new Response('cached-media'));}
+        return (await indexedDB.databases()).map(v=>v.name);
+        """#
+        for page in [firstPage,secondPage] {
+            let names = try await page.callAsyncJavaScript(seed, arguments: [:], in: nil, contentWorld: .page) as? [String]
+            XCTAssertTrue(names?.contains("faststream-temp-123456789-1234") == true)
+        }
+        let storageBefore=await WebsiteStorageService.entries()
+        let firstSize=try XCTUnwrap(storageBefore.first{$0.domain.lowercased()==first.id.uuidString.lowercased()}?.indexedDBBytes)
+        XCTAssertGreaterThan(firstSize,0,"Real extension IndexedDB files must be attributed and measured")
+        try await WebExtensionTemporaryCacheProbe.clear(identifiers: [first.id])
+        let check = "return {names:(await indexedDB.databases()).map(v=>v.name),setting:(await chrome.storage.local.get('fixtureSetting')).fixtureSetting,caches:globalThis.caches?await caches.keys():[]};"
+        let cleaned = try await firstPage.callAsyncJavaScript(check, arguments: [:], in: nil, contentWorld: .page) as? [String:Any]
+        let untouched = try await secondPage.callAsyncJavaScript(check, arguments: [:], in: nil, contentWorld: .page) as? [String:Any]
+        XCTAssertFalse((cleaned?["names"] as? [String] ?? []).contains("faststream-temp-123456789-1234"))
+        XCTAssertTrue((cleaned?["names"] as? [String] ?? []).contains("faststream-progress"))
+        XCTAssertTrue((cleaned?["names"] as? [String] ?? []).contains("user-authored-scripts"))
+        XCTAssertEqual(cleaned?["setting"] as? String,"keep")
+        XCTAssertEqual(cleaned?["caches"] as? [String],[])
+        XCTAssertTrue((untouched?["names"] as? [String] ?? []).contains("faststream-temp-123456789-1234"))
+        XCTAssertEqual(untouched?["setting"] as? String,"keep")
+        XCTAssertEqual(service.webExtensions.first(where:{$0.id == first.id})?.version,"1.0")
+        let storageAfter=await WebsiteStorageService.entries()
+        let cleanedSize=try XCTUnwrap(storageAfter.first{$0.domain.lowercased()==first.id.uuidString.lowercased()}?.indexedDBBytes)
+        XCTAssertLessThan(cleanedSize,firstSize,"Removing a disposable database must lower the displayed disk estimate")
+    }
+
+    func testTemporaryCacheMaintenanceDoesNotForceCloseAnActiveDatabase() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = try temporaryRoot(), service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let record = try await service.installWebExtension(from: package(root))
+        defer { service.deleteWebExtension(record.id) }
+        let page = try await extensionPage(context(record.id))
+        _ = try await page.callAsyncJavaScript("return await new Promise(resolve=>{const r=indexedDB.open('faststream-temp-123-456',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>{globalThis.busyDB=r.result;resolve(true);};});",arguments:[:],in:nil,contentWorld:.page)
+        do { try await WebExtensionTemporaryCacheProbe.clear(identifiers:[record.id]);XCTFail("Open media buffers must report that they are in use") }
+        catch is WebExtensionTemporaryCacheError { }
+        let writable = try await page.callAsyncJavaScript("return await new Promise((resolve,reject)=>{const t=busyDB.transaction('files','readwrite');t.objectStore('files').put('still playing','media');t.oncomplete=()=>resolve(true);t.onerror=()=>reject(t.error);});",arguments:[:],in:nil,contentWorld:.page)
+        XCTAssertEqual(writable as? Bool,true)
+        _ = try await page.evaluateJavaScript("busyDB.close();busyDB=null;true")
+        try await WebExtensionTemporaryCacheProbe.clear(identifiers:[record.id])
+    }
+
     private func temporaryRoot() throws -> URL {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -31,6 +149,55 @@ final class ExtensionManagementTests: XCTestCase {
     @available(iOS 18.4, *)
     private func context(_ id: UUID) throws -> WKWebExtensionContext {
         try XCTUnwrap(NativeWebExtensionRuntime.shared.controller.extensionContexts.first { $0.uniqueIdentifier == id.uuidString })
+    }
+
+    func testCancellingStoreDownloadInterruptsRealPendingNetworkBeforeAnyInstall() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: ["/pending.crx": Data("fixture".utf8)], heldPaths: ["/pending.crx"])
+        let address = try await server.start(); defer { server.releaseDownloads(); server.stop() }
+        let package = WebExtensionRemotePackage(store: .direct, downloadURL: address.appendingPathComponent("pending.crx"), fileExtension: "crx")
+        let request = Task { try await WebExtensionStoreInstallService.shared.downloadPackage(package) }
+        defer { request.cancel() }
+        for _ in 0..<200 {
+            if server.receivedRequests.contains(where: { $0.path == "/pending.crx" }) { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        XCTAssertTrue(server.receivedRequests.contains { $0.path == "/pending.crx" })
+        let started = ProcessInfo.processInfo.systemUptime
+        request.cancel()
+        do { let file = try await request.value; try? FileManager.default.removeItem(at: file); XCTFail("Canceled transport must not stage a package") }
+        catch { XCTAssertTrue(error is CancellationError || (error as? URLError)?.code == .cancelled, String(describing: error)) }
+        XCTAssertLessThan(ProcessInfo.processInfo.systemUptime-started, 2.5, "Cancel must interrupt the request rather than waiting for its network timeout")
+    }
+
+    func testIdempotentPermissionUpdatesAndRejectedPersistenceSettleWithoutReinjectionLoop() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Native WebExtensions") }
+        let root = try temporaryRoot(), service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let record = try await service.installWebExtension(from: package(root))
+        defer { service.deleteWebExtension(record.id) }
+        let native = try context(record.id), counter = PermissionNotificationCounter()
+        let names: [Notification.Name] = [WKWebExtensionContext.permissionsWereGrantedNotification,
+            WKWebExtensionContext.permissionsWereDeniedNotification, WKWebExtensionContext.grantedPermissionsWereRemovedNotification,
+            WKWebExtensionContext.deniedPermissionsWereRemovedNotification, WKWebExtensionContext.permissionMatchPatternsWereGrantedNotification,
+            WKWebExtensionContext.permissionMatchPatternsWereDeniedNotification, WKWebExtensionContext.grantedPermissionMatchPatternsWereRemovedNotification,
+            WKWebExtensionContext.deniedPermissionMatchPatternsWereRemovedNotification]
+        let observers = names.map { name in NotificationCenter.default.addObserver(forName: name, object: native, queue: .main) { _ in counter.increment() } }
+        defer { observers.forEach(NotificationCenter.default.removeObserver) }
+        try await Task.sleep(for: .milliseconds(100))
+        let initial = counter.value
+        for _ in 0..<10 { NativeWebExtensionRuntime.shared.applyAccess(service.webExtensionAccess(record.id), id: record.id, context: native) }
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(counter.value, initial, "Equal grants must emit no changes and inject no scripts")
+        let store = root.appendingPathComponent("store/extensions.json")
+        let originalStore = try Data(contentsOf: store)
+        defer { try? FileManager.default.removeItem(at: store); try? originalStore.write(to: store) }
+        try FileManager.default.removeItem(at: store)
+        try FileManager.default.createDirectory(at: store, withIntermediateDirectories: true)
+        native.setPermissionStatus(.deniedExplicitly, for: .tabs)
+        try await eventually { native.hasPermission(.tabs) }
+        let settled = counter.value
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertEqual(counter.value, settled, "Rollback after a failed write must settle instead of feeding its own notifications")
+        XCTAssertLessThan(counter.value-initial, 12)
     }
 
     func testPreviewDoesNotLoadAndCancelRemovesStagedResources() async throws {
@@ -95,6 +262,9 @@ final class ExtensionManagementTests: XCTestCase {
         try service.setWebExtensionAccess(access, id: record.id)
         let open = try await page.callAsyncJavaScript("return await chrome.offscreen.hasDocument();", in: nil, contentWorld: .page)
         XCTAssertEqual(open as? Bool, false)
+        let unrelatedPage = try await extensionPage(context)
+        let leakedRole = try await unrelatedPage.evaluateJavaScript("globalThis.__souloOffscreenWorkerReceiver===true") as? Bool
+        XCTAssertEqual(leakedRole,false,"Offscreen setup must not leak through a shared content controller into other extension pages")
         let invalidPaths = try await page.callAsyncJavaScript("""
         const paths=['https://example.com/a.html','../offscreen.html','%2e%2e/offscreen.html','content.js'];
         return await Promise.all(paths.map(async url=>{try{await chrome.offscreen.createDocument({url,reasons:['DOM_PARSER'],justification:'Invalid path'});return false;}catch(_){return true;}}));
@@ -250,6 +420,38 @@ final class ExtensionManagementTests: XCTestCase {
         try await eventually { !service.loadingWebExtensions.contains(first.id) }
         XCTAssertFalse(try context(first.id).hasPermission(.tabs))
         XCTAssertFalse(try context(first.id).hasAccess(to: URL(string: "https://private.example/")!))
+    }
+
+    func testURLPermissionRetryReusesExistingGrantWithoutRenewingIt() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = try temporaryRoot(), service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let record = try await service.installWebExtension(from: package(root))
+        defer { service.deleteWebExtension(record.id) }
+        let native = try context(record.id), runtime = NativeWebExtensionRuntime.shared
+        let publicURL = URL(string: "https://public.example/video.mp4")!
+        let privateURL = URL(string: "https://private.example/video.mp4")!
+        let deadline = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970) + 120)
+        var access = service.webExtensionAccess(record.id)
+        access.sites = ["<all_urls>": deadline]; access.blockedHosts = ["private.example"]
+        try service.setWebExtensionAccess(access, id: record.id)
+        var callbackRan = false
+        runtime.webExtensionController(runtime.controller, promptForPermissionToAccess: [publicURL, privateURL],
+                                       in: nil, for: native) { urls, expiration in
+            callbackRan = true
+            XCTAssertEqual(urls, [publicURL]); XCTAssertEqual(expiration, deadline)
+        }
+        XCTAssertTrue(callbackRan, "Previously approved sites should not open another permission prompt")
+        XCTAssertEqual(service.webExtensionAccess(record.id), access)
+        XCTAssertTrue(NativeWebExtensionRuntime.existingURLAccess([publicURL], context: native,
+                                                                 now: deadline.addingTimeInterval(1)).urls.isEmpty)
+        access.setSite("https://public.example/*", allowed: false)
+        try service.setWebExtensionAccess(access, id: record.id)
+        XCTAssertTrue(NativeWebExtensionRuntime.existingURLAccess([publicURL, privateURL], context: native).urls.isEmpty)
+        callbackRan = false
+        runtime.webExtensionController(runtime.controller, promptForPermissionToAccess:[publicURL,privateURL], in:nil, for:native) { urls, _ in
+            callbackRan = true; XCTAssertTrue(urls.isEmpty)
+        }
+        XCTAssertTrue(callbackRan,"A denied site's automatic CORS retry must not open another prompt")
     }
 
     func testStorageIsAtomicAndFailedPersistenceDoesNotBroadcast() throws {
@@ -495,9 +697,51 @@ final class ExtensionManagementTests: XCTestCase {
         }
     }
 
+    func testInjectedMediaLayoutPreservesRatioAndHonorsExternalAndFixedFrames() async throws {
+        let html = #"""
+        <meta name="viewport" content="width=device-width"><style>
+        body{margin:0;width:360px}.ratio{position:relative;width:100%;height:0;padding-top:56.25%}
+        .zero{height:0}.original{position:absolute;inset:0;width:100%;height:100%}
+        </style><div class="ratio"><div class="zero"><video class="original"></video></div></div>
+        """#
+        let server = try DownloadPlaybackHTTPFixture(files:["/index.html":Data(html.utf8),"/blank.html":Data("<body>external frame</body>".utf8)])
+        let base = try await server.start();server.releaseDownloads();defer{server.stop()}
+        let web=WKWebView(frame:CGRect(x:0,y:0,width:640,height:700))
+        let scene=try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap{$0 as? UIWindowScene}.first)
+        let previous=scene.keyWindow,window=UIWindow(windowScene:scene)
+        window.rootViewController=UIViewController();window.rootViewController?.view.addSubview(web);window.makeKeyAndVisible()
+        defer{web.stopLoading();window.isHidden=true;window.rootViewController=nil;previous?.makeKeyAndVisible()}
+        web.load(URLRequest(url:base.appendingPathComponent("index.html")))
+        try await eventually { (try? await web.evaluateJavaScript("document.querySelector('video')?.getBoundingClientRect().height>200")) as? Bool == true }
+        _ = try await web.evaluateJavaScript("globalThis.chrome={runtime:{getURL:path=>'webkit-extension://layout-fixture/'+path}};")
+        _ = try await web.evaluateJavaScript(WebExtensionPackagePreparer.mediaLayoutSourceForTesting)
+        let originalHeight = try await web.evaluateJavaScript("document.querySelector('video').getBoundingClientRect().height") as? Double
+        XCTAssertEqual(originalHeight ?? 0,202.5,accuracy:1)
+        _ = try await web.callAsyncJavaScript("window.old=document.querySelector('.zero');window.frame=document.createElement('iframe');frame.src=url;frame.style='position:relative;width:360px;height:100px;border:0';old.replaceWith(frame);return true;",arguments:["url":base.appendingPathComponent("blank.html").absoluteString],in:nil,contentWorld:.page)
+        try await Task.sleep(for:.milliseconds(80))
+        let externalHeight=try await web.evaluateJavaScript("frame.getBoundingClientRect().height") as? Double
+        XCTAssertEqual(externalHeight ?? 0,100,accuracy:1,"Unrelated HTTP frames must retain their own layout")
+        _ = try await web.evaluateJavaScript("frame.replaceWith(old);frame=document.createElement('iframe');frame.src='webkit-masked-url://hidden/';frame.style='position:relative;width:360px;height:100px;border:0';old.replaceWith(frame);true")
+        try await eventually("initial replacement") { (try? await web.evaluateJavaScript("Math.abs(frame.getBoundingClientRect().height-202.5)<1")) as? Bool == true }
+        _ = try await web.evaluateJavaScript("document.body.style.width='480px';true")
+        try await eventually("responsive replacement") { (try? await web.evaluateJavaScript("Math.abs(frame.getBoundingClientRect().height-270)<1&&frame.getBoundingClientRect().width===480")) as? Bool == true }
+        _ = try await web.evaluateJavaScript("for(const[k,v]of Object.entries({position:'fixed',width:'200px',height:'120px'}))frame.style.setProperty(k,v,'important');true")
+        try await Task.sleep(for:.milliseconds(80))
+        let floatingHeight=try await web.evaluateJavaScript("frame.getBoundingClientRect().height") as? Double
+        XCTAssertEqual(floatingHeight ?? 0,120,accuracy:1,"A publisher's floating/full-window layout must take precedence")
+        _ = try await web.evaluateJavaScript("frame.style.setProperty('position','relative','important');true")
+        try await eventually("leave floating layout") { (try? await web.evaluateJavaScript("frame.getBoundingClientRect().height===270")) as? Bool == true }
+        _ = try await web.callAsyncJavaScript("frame.src=url;return true;",arguments:["url":base.appendingPathComponent("blank.html").absoluteString],in:nil,contentWorld:.page)
+        try await eventually("release external navigation") { (try? await web.evaluateJavaScript("frame.style.position==='relative'&&frame.getBoundingClientRect().height===100")) as? Bool == true }
+        _ = try await web.evaluateJavaScript("frame.replaceWith(old);true")
+        let restoredHeight=try await web.evaluateJavaScript("document.querySelector('video').getBoundingClientRect().height") as? Double
+        XCTAssertEqual(restoredHeight ?? 0,270,accuracy:1,"The original page layout must remain unchanged when the frame is removed")
+    }
+
     @available(iOS 18.4, *)
-    private func extensionPage(_ context: WKWebExtensionContext) async throws -> WKWebView {
+    private func extensionPage(_ context: WKWebExtensionContext, bootstrap: String? = nil) async throws -> WKWebView {
         let configuration = try XCTUnwrap(context.webViewConfiguration)
+        if let bootstrap { configuration.userContentController.addUserScript(WKUserScript(source:bootstrap,injectionTime:.atDocumentStart,forMainFrameOnly:true,in:.page)) }
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 400, height: 600), configuration: configuration)
         web.load(URLRequest(url: context.baseURL.appendingPathComponent("page.html")))
         try await eventually { (try? await web.evaluateJavaScript("!!document.getElementById('ready') && typeof browser !== 'undefined'")) as? Bool == true }
@@ -512,4 +756,11 @@ final class ExtensionManagementTests: XCTestCase {
         XCTFail("Condition did not become true: " + label)
         throw URLError(.timedOut)
     }
+}
+
+private final class PermissionNotificationCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+    var value: Int { lock.withLock { count } }
+    func increment() { lock.withLock { count += 1 } }
 }

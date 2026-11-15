@@ -591,13 +591,19 @@ enum WebViewScripts {
         message: String,
         installButton: String,
         installingButton: String,
-        logoDataURL: String
+        logoDataURL: String,
+        installedButton: String = "Installed",
+        collapseLabel: String = "Less",
+        expandLabel: String = "More"
     ) -> String {
         let escapedTitle = title.escapedForJavaScriptString
         let escapedMessage = message.escapedForJavaScriptString
         let escapedInstallButton = installButton.escapedForJavaScriptString
         let escapedInstallingButton = installingButton.escapedForJavaScriptString
         let escapedLogoDataURL = logoDataURL.escapedForJavaScriptString
+        let escapedInstalledButton = installedButton.escapedForJavaScriptString
+        let escapedCollapseLabel = collapseLabel.escapedForJavaScriptString
+        let escapedExpandLabel = expandLabel.escapedForJavaScriptString
         return """
     (function() {
         if (window.__souloExtensionInstallBridgeInstalled) return;
@@ -631,27 +637,29 @@ enum WebViewScripts {
             var handler = window.webkit && window.webkit.messageHandlers
                 && window.webkit.messageHandlers.souloExtensionInstaller;
             if (!handler || !supportedExtensionPage()) return;
-            if (button) {
-                var originalLabel = String(button.textContent || '');
-                button.disabled = true;
-                button.textContent = '\(escapedInstallingButton)';
-                window.setTimeout(function() {
-                    button.disabled = false;
-                    button.textContent = originalLabel || '\(escapedInstallButton)';
-                }, 1200);
-            }
             handler.postMessage({ pageURL: String(location.href || '') });
         }
 
+        var installButton, collapsed = false, lastPageURL = '';
+        window.__souloSetExtensionInstallStatus = function(pageURL, installed) {
+            if (pageURL !== location.href || !installButton) return;
+            installButton.disabled = !!installed;
+            installButton.textContent = installed ? '\(escapedInstalledButton)' : '\(escapedInstallButton)';
+            installButton.dataset.installed = String(!!installed);
+        };
+        function queryStatus() {
+            var handler = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.souloExtensionInstaller;
+            if (handler && supportedExtensionPage()) handler.postMessage({action:'status', pageURL:location.href});
+        }
         function addInstallBar() {
             if (!supportedExtensionPage() || document.getElementById('__soulo-extension-install-host')) return;
             var host = document.createElement('div');
             host.id = '__soulo-extension-install-host';
-            host.style.cssText = 'all:initial;position:fixed;z-index:2147483647;left:12px;right:12px;top:max(10px,env(safe-area-inset-top));pointer-events:auto;';
+            host.style.cssText = 'all:initial;position:fixed;z-index:2147483647;left:12px;right:12px;top:max(10px,env(safe-area-inset-top));pointer-events:none;';
             var shadow = host.attachShadow ? host.attachShadow({mode:'closed'}) : host;
             var bar = document.createElement('div');
             bar.setAttribute('role', 'banner');
-            bar.style.cssText = 'box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;max-width:760px;margin:0 auto;padding:10px 11px 10px 14px;border:1px solid rgba(128,128,128,.24);border-radius:16px;color:#111;background:rgba(250,250,252,.94);box-shadow:0 8px 28px rgba(0,0,0,.16);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;';
+            bar.style.cssText = 'box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;max-width:760px;margin:0 auto;padding:10px 11px 10px 14px;border:1px solid rgba(128,128,128,.24);border-radius:16px;color:#111;background:rgba(250,250,252,.94);box-shadow:0 8px 28px rgba(0,0,0,.16);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;pointer-events:auto;';
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 bar.style.color = '#f5f5f7';
                 bar.style.background = 'rgba(35,35,38,.94)';
@@ -672,6 +680,7 @@ enum WebViewScripts {
             message.textContent = '\(escapedMessage)';
             message.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;opacity:.66;font-size:11px;font-weight:450;line-height:15px;';
             var button = document.createElement('button');
+            installButton = button;
             button.type = 'button';
             button.textContent = '\(escapedInstallButton)';
             button.style.cssText = 'all:unset;box-sizing:border-box;flex:0 0 auto;min-height:34px;padding:0 14px;border-radius:10px;color:white;background:\(AppTheme.accentCSS(for: .light));cursor:pointer;font-size:13px;font-weight:700;text-align:center;-webkit-tap-highlight-color:transparent;';
@@ -683,11 +692,49 @@ enum WebViewScripts {
                 event.stopPropagation();
                 requestInstall(button);
             });
+            var toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.style.cssText = 'all:unset;box-sizing:border-box;flex:0 0 34px;width:34px;height:34px;cursor:pointer;text-align:center;font-size:20px;touch-action:none;';
+            toggle.textContent = '−';
+            toggle.setAttribute('aria-label', '\(escapedCollapseLabel)');
+            toggle.setAttribute('aria-expanded', 'true');
+            var drag = null, moved = false;
+            toggle.addEventListener('pointerdown', function(e) {
+                drag = {x:e.clientX,y:e.clientY,left:host.getBoundingClientRect().left,top:host.getBoundingClientRect().top};
+                moved = false;
+                toggle.setPointerCapture(e.pointerId);
+            });
+            toggle.addEventListener('pointermove', function(e) {
+                if (!drag) return;
+                var dx = e.clientX-drag.x, dy = e.clientY-drag.y;
+                if (Math.abs(dx)+Math.abs(dy)>6) moved = true;
+                if (!moved) return;
+                var width = bar.getBoundingClientRect().width;
+                host.style.right = 'auto'; host.style.width = width+'px';
+                host.style.left = Math.max(8, Math.min(innerWidth-width-8,drag.left+dx))+'px';
+                host.style.top = Math.max(8, Math.min(innerHeight-bar.offsetHeight-8,drag.top+dy))+'px';
+            });
+            toggle.addEventListener('pointerup', function(){drag=null;});
+            toggle.addEventListener('pointercancel', function(){drag=null;moved=true;});
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();e.stopPropagation();
+                if (moved) {moved=false;return;}
+                collapsed = !collapsed;
+                for (var el of [icon,copy,button]) el.style.display = collapsed ? 'none' : '';
+                bar.style.gap = collapsed ? '0' : '12px';
+                bar.style.padding = collapsed ? '5px' : '10px 11px 10px 14px';
+                host.style.right = collapsed ? 'auto' : '12px';
+                host.style.left = '12px'; host.style.width = collapsed ? '44px' : 'auto';
+                toggle.textContent = collapsed ? '+' : '−';
+                toggle.setAttribute('aria-label', collapsed ? '\(escapedExpandLabel)' : '\(escapedCollapseLabel)');
+                toggle.setAttribute('aria-expanded', String(!collapsed));
+            });
             copy.appendChild(title);
             copy.appendChild(message);
             bar.appendChild(icon);
             bar.appendChild(copy);
             bar.appendChild(button);
+            bar.appendChild(toggle);
             shadow.appendChild(bar);
             (document.documentElement || document.body).appendChild(host);
         }
@@ -698,10 +745,16 @@ enum WebViewScripts {
                 if (host) host.remove();
                 return;
             }
-            if (!host) addInstallBar();
+            if (!host) { addInstallBar(); lastPageURL = ''; }
+            if (lastPageURL !== location.href) {
+                lastPageURL = location.href;
+                window.__souloSetExtensionInstallStatus(location.href, false);
+                queryStatus();
+            }
         }
 
         document.addEventListener('click', function(event) {
+            if (event.composedPath().some(function(el){return el && el.id === '__soulo-extension-install-host';})) return;
             var target = event.target;
             if (target && target.nodeType !== 1) target = target.parentElement;
             var control = target && target.closest ? target.closest('button, a, [role="button"]') : null;
@@ -730,6 +783,7 @@ enum WebViewScripts {
                 window.clearTimeout(routeTimer);
                 routeTimer = window.setTimeout(syncInstallBar, 80);
             };
+            window.addEventListener('pageshow', queryStatus);
             window.addEventListener('popstate', scheduleSync);
             window.addEventListener('hashchange', scheduleSync);
             var root = document.body || document.documentElement;
@@ -1165,6 +1219,48 @@ enum WebViewScripts {
         var observedMediaResponseSet = new Set();
         window.__souloObservedMediaResponses = observedMediaResponses;
 
+        // Keep already-authorized playlists for native handoff. Some signed
+        // manifest endpoints expire before the user can open video tools.
+        var hlsManifests = Object.create(null), hlsOrder = [], hlsSize = 0;
+        window.__souloObservedHLSManifests = hlsManifests;
+        function maybeHLS(url, mime) { return /mpegurl/i.test(mime || '') || /\.m3u8(?:$|[?#&])/i.test(url || ''); }
+        function rememberHLS(url, text) {
+            if (typeof text !== 'string' || text.length > 1024 * 1024 || !text.trimStart().startsWith('#EXTM3U')) return;
+            try { url = new URL(url, document.baseURI).href; } catch (_) { return; }
+            if (!/^https?:/.test(url)) return;
+            if (hlsManifests[url]) { hlsSize -= hlsManifests[url].length; hlsOrder = hlsOrder.filter(x=>x!==url); }
+            hlsManifests[url] = text; hlsSize += text.length; hlsOrder.push(url);
+            while (hlsOrder.length > 8 || hlsSize > 1024 * 1024) { var old = hlsOrder.shift(); hlsSize -= hlsManifests[old].length; delete hlsManifests[old]; }
+        }
+        var nativeHLSPending = new Set();
+        function rememberNativeHLS(event) {
+            var video = event && event.target;
+            if (!(video instanceof HTMLMediaElement)) return;
+            var url = video.currentSrc || video.src || '';
+            if (!maybeHLS(url, video.querySelector('source')?.type) || hlsManifests[url] || nativeHLSPending.has(url)) return;
+            nativeHLSPending.add(url);
+            // Native WebKit media requests do not pass through fetch/XHR.
+            // Capture this small playlist while its signed endpoint is valid.
+            pageFetch.call(window, url, {credentials:video.crossOrigin === 'use-credentials'?'include':'same-origin'})
+                .then(response=>rememberFetchHLS(response,url)).catch(()=>{}).finally(()=>nativeHLSPending.delete(url));
+        }
+        document.addEventListener('loadstart', rememberNativeHLS, true);
+        document.addEventListener('loadedmetadata', rememberNativeHLS, true);
+
+        async function rememberFetchHLS(response, url) {
+            if (!maybeHLS(url, response.headers.get('Content-Type')) || Number(response.headers.get('Content-Length')) > 1024 * 1024) return;
+            var copy = response.clone(), reader = copy.body?.getReader();
+            if (!reader) return;
+            var decoder = new TextDecoder(), length = 0, text = '';
+            try {
+                while (true) { var part = await reader.read(); if (part.done) break;
+                    length += part.value.byteLength; if (length > 1024 * 1024) return;
+                    text += decoder.decode(part.value,{stream:true});
+                }
+                rememberHLS(response.url || url, text + decoder.decode());
+            } finally { reader.cancel().catch(()=>{}); }
+        }
+
         function rememberMediaResponse(value, contentType) {
             var mime = String(contentType || '').split(';')[0].trim().toLowerCase();
             if (!/^(?:video\/(?:mp4|webm|quicktime)|audio\/(?:mpeg|mp4|aac|ogg|webm)|application\/(?:vnd\.apple\.mpegurl|x-mpegurl|dash\+xml))$/.test(mime)) return;
@@ -1414,6 +1510,7 @@ enum WebViewScripts {
                         try {
                             rememberMediaResponse(response.url || value,
                                 response.headers && response.headers.get('content-type'));
+                            rememberFetchHLS(response, response.url || value).catch(function() {});
                         } catch (_) {}
                     }).catch(function() {});
                     if (isYouTubePage && /\/youtubei\/v1\/(?:player|next)(?:[?\/]|$)/i.test(value)) {
@@ -1439,6 +1536,8 @@ enum WebViewScripts {
                             try {
                                 rememberMediaResponse(this.responseURL || value,
                                     this.getResponseHeader('Content-Type'));
+                                if (maybeHLS(this.responseURL || value, this.getResponseHeader('Content-Type'))
+                                    && (!this.responseType || this.responseType === 'text')) rememberHLS(this.responseURL || value, this.responseText);
                             } catch (_) {}
                         }, { once: true });
                         if (isYouTubePage && /\/youtubei\/v1\/(?:player|next)(?:[?\/]|$)/i.test(value)) {

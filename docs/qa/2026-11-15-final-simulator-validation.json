@@ -1,0 +1,60 @@
+{
+  "date": "2026-11-15",
+  "version": "1.2.15",
+  "build": 55,
+  "status": "completed_with_documented_simulator_only_limits",
+  "execution_policy": {
+    "latest_instruction": "Only simulators; no physical device connection or operation",
+    "commit_push_upload": false,
+    "paid_api_calls": 0
+  },
+  "release": {
+    "result": "passed_final_native_SDK27_270",
+    "minimum_iOS": "16.0",
+    "bundles": [
+      "Soulo.app",
+      "SouloWidgetExtension.appex",
+      "SouloShareExtension.appex"
+    ],
+    "all_versions": "1.2.15 (55)",
+    "log": "/tmp/soulo-faststream-compat-20261114/native-release-270-final.log"
+  },
+  "checks": {
+    "localization": "50 locales, 103 FeatureImprovements + 500 ReadingTools + Localizable strict checks passed 262",
+    "metadata": "export_metadata_json.py --check passed all50; app.version1.2.15",
+    "website": "build_website.py --check passed; no publishing",
+    "git_diff": "git diff --check passed",
+    "batch_import": "22 functional import audits + real AI prompt copy/named group import: iPad23446.053s, phone25753.294s, iOS16 25745.118s. Compact cards, collapsed example, visible editor, pinned import.",
+    "bookmark_sync": "9 merge and actual save-observer/file transport/database pipeline checks passed Host248 and Native251. Offline changes, first-opt-in deletion, account isolation, empty peers and favicon cache exclusions. Real iCloud service transport unverified.",
+    "bookmark_drag": "Actual Library and NTP shared order+menu: Host255/261 and Native26199.067s passed. UICollectionViewController separate legacy long-press reordering recognizer disabled.",
+    "bookmark_actions": "Actual hearts/filter/rename/newtab quick links258 passed; title/subtitle reset257 and iOS16 passed.",
+    "many_tabs": "36 real pages, fast scrolling, collapse/reopen groups and view switches257120.906s passed.",
+    "library_navigation": "Native259 folder retention119.350s, ReadingList27.181s, swipe/tap selection73.720s passed; no lazy navigation registration warnings.",
+    "storage_legacy": "iOS16 independent hosts at every storage management level, no unused value destinations. Storage→all five populated rule routes265165.437s and six category routes26753.916s passed. Earlier genuine layout freezes and unsuccessful capture/nil experiments retained in results. Final root destination isolation269 also passed on iOS16 build270:161.565s, all five populated rule pages and returns.",
+    "storage_modern": "Native266 six categories57.261s passed. Native266/268 manual list did not navigate; center-coordinate tapping disproved a simple hitpoint issue. Root destination builder captured all SettingsView state. Extracted SettingsDestinationView with only route/stable references, dismissal and version; Native269 actual manual Storage→all five populated rule pages147.545s passed. Strong Storage navigation-bar assertion retained. Final Native269 result PASS147.545s; no failed current software check remains.",
+    "authenticated_HLS": "Scoped HTTP direct-to-disk fallback; ordinary/private/AES/pause-resume/offline tests Host235+Native236 passed. fMP4 Range and alternate audio saved/offline decoded250+Native259; real cancellation/HTML error rejection with fixed retry bound253+Native251 passed. Production local HLS system-player serving255 passed.",
+    "home_cold_start": "Native251 six actual home entrances passed. Driver measurements include XCTest synchronization and are not raw tap latency."
+  },
+  "performance": {
+    "fixture": "Debug simulator UIHostingController layout, 5000 bookmarks, median of3",
+    "library_before_ms": 546.3,
+    "library_after_ms": 203.2,
+    "latest_result": "layout-performance-259.xcresult",
+    "description": "Only reached pages instantiate and then retain state; zero lazy navigation warnings. Bundle lookup caching and bounded quick-link filtering. Not a GPU/physical-device FPS measurement."
+  },
+  "limits": [
+    "Real two-device iCloud transfer not tested under simulator-only instruction.",
+    "Eligible on-device Foundation Models generation cannot be exercised here; availability/fallback checks are separate.",
+    "Simulator iOS27.2 does not certify every iOS27.2.1 device behavior.",
+    "No claim of universally bug-free software or all future third-party extensions being compatible."
+  ],
+  "source_integrity": "Final native/host SHA256 match for SettingsView, StorageUsageView, NewTabPageView, BookmarkCloudSyncService and LibraryView.",
+  "source_hashes": {
+    "Soulo/Source/Views/Settings/SettingsView.swift": "e6f7a629e489e7d302d759f93e7a426f5be2129fdcada4daf490b9bd914e67db",
+    "Soulo/Source/Views/Settings/StorageUsageView.swift": "d19e5aca71f1d6639aa31f99c2d06b44207cf0386879f9c7b79b98868cdc3010",
+    "Soulo/Source/Views/WebView/NewTabPageView.swift": "3b8a1c87ff56cfef8b57284e75855448c2904432fcf069b5bbc508955cd4d6c8",
+    "Soulo/Source/Services/BookmarkCloudSyncService.swift": "7c93fa09ccb693363935d944f0d0d760d15ec7bd637e5ba3b835f749259d1f3f",
+    "Soulo/Source/Views/Shared/LibraryView.swift": "b2bc41f181a02ed30473b6bc21bc1799b8d07474037b27164eef1aa49bc76fdc"
+  },
+  "remaining_required_software_work": []
+}

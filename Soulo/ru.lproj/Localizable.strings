@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Один запрос — более 40 платформ";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Поиск или введите URL";
 "privacy_search_placeholder" = "Частный поиск или введите URL";
 "search" = "Поиск";
@@ -354,7 +354,7 @@
 "voice_stop" = "Стоп";
 "voice_record" = "Запись";
 "batch_import" = "Пакетный импорт";
-"batch_import_format" = "Вставьте JSON в формате ниже";
+"batch_import_format" = "Вставьте JSON сюда";
 "batch_import_group" = "Добавить в группу (необязательно)";
 "batch_import_group_placeholder" = "напр. Фильмы";
 "batch_import_film_entry" = "Открытые настройки киноплатформы";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Расширение не может быть установлено";
 "extension_permissions_summary" = "%d разрешения · %d правила веб-сайта";
 "extension_untitled" = "Расширение без названия";
-"web_extension_install_footer" = "Устанавливайте совместимые расширения по ссылке на магазин или импортируйте CRX, XPI, ZIP либо папку расширения. Проверьте разрешения и совместимость; некоторые функции для компьютера недоступны.";
+"web_extension_install_footer" = "После установки разрешения можно изменить на странице управления расширением.";
 "web_extension_install_store_link" = "Установить по ссылке в магазине…";
 "web_extension_browse_sources" = "Просмотр магазинов расширений";
 "web_extension_browse_sources_footer" = "Кнопки «Получить» из магазина поддерживают только собственные настольные браузеры. Скопируйте ссылку на страницу сведений о расширении, а затем используйте ссылку «Установить из магазина» в Soulo.";
 "web_extension_store_install_title" = "Установите расширение магазина";
 "extension_page_banner_title" = "Установить с помощью Soulo";
-"extension_page_banner_desc" = "Перед установкой проверьте совместимость и разрешения.";
-"web_extension_store_install_desc" = "Вставьте ссылку на страницу расширения Chrome, Edge или Firefox и проверьте совместимость и разрешения перед подтверждением установки.";
+"extension_page_banner_desc" = "После установки разрешения можно изменить на странице управления расширением.";
+"web_extension_store_install_desc" = "После установки разрешения можно изменить на странице управления расширением.";
 "web_extension_store_link_placeholder" = "Ссылка на страницу расширения или идентификатор расширения Chrome";
 "web_extension_store_invalid_link" = "Вставьте ссылку на страницу сведений о расширении из Chrome, Edge или Firefox, идентификатор расширения Chrome или прямую ссылку CRX, XPI или ZIP.";
 "web_extension_store_https_required" = "Пакеты расширений должны использовать безопасную ссылку HTTPS.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Нажмите и удерживайте значок Soulo на экране «Домой», чтобы использовать настроенные здесь быстрые действия.";
 
 "ad_block_scope_hint" = "Фильтрует рекламу на сайтах, рекламные наложения и нежелательные всплывающие окна. Если сайт не работает, можно отключить фильтрацию только для него.";
+
+"privacy_clear_browsing_on_exit" = "Очищать историю при выходе";
+"privacy_clear_browsing_on_exit_desc" = "Удалять посещённые страницы при переходе в фон или повторном запуске. Поисковые запросы сохраняются.";

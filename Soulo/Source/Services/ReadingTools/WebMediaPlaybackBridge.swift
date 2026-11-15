@@ -1,35 +1,13 @@
 import WebKit
 
 enum WebVideoOrientationRuntime {
-    static let world = WKContentWorld.world(name: "SouloVideoOrientation")
+    static let world = WebKitNativeContentWorld.media(name: "SouloVideoOrientation")
     static let handler = "souloVideoOrientation"
-
-    /// Route site-owned native video buttons into the same player as files.
-    /// The isolated listener must accept the request during a real user gesture;
-    /// otherwise the original WebKit method remains responsible for it.
-    static let fullscreenRequests = #"""
-    (()=>{
-      const prototype=HTMLVideoElement.prototype;
-      for(const name of ['webkitEnterFullscreen','webkitEnterFullScreen','requestFullscreen','webkitRequestFullscreen']) {
-        const original=prototype[name];
-        if(typeof original!=='function'||original.__souloUnifiedPlayer)continue;
-        const request=function(...args){
-          if(!this.mediaKeys) {
-            const accepted=!this.dispatchEvent(new CustomEvent('soulo-video-fullscreen-request',{bubbles:true,composed:true,cancelable:true}));
-            if(accepted)return /requestFullscreen/i.test(name)?Promise.resolve():undefined;
-          }
-          return original.apply(this,args);
-        };
-        request.__souloUnifiedPlayer=true;
-        try{Object.defineProperty(prototype,name,{configurable:true,writable:true,value:request});}catch(_){}
-      }
-    })();
-    """#
 
     @MainActor static func script() -> String {
         let label = (try? JSONSerialization.data(withJSONObject: [ToolText.text("video_fullscreen"), ToolText.text("video_speed"), LanguageManager.shared.localizedString("download"), ToolText.text("video_tools"), ToolText.text("episodes"), ToolText.text("video_tools_collapse"), LanguageManager.shared.localizedString("settings")]))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[\"Fullscreen\"]"
-        return "window.__souloVideoToolsEnabled=\(VideoPlaybackPreferences.showsTools());\n" + WebOverlayControlsRuntime.source + "\n" + source + WebVideoHoldSpeedRuntime.source + "\nwindow.__souloVideoHoldSpeed.setRate(\(VideoPlaybackPreferences.holdSpeed()));\nwindow.__souloVideoOrientation.setLabels(\(label));\nwindow.__souloVideoOrientation.setToolsEnabled(\(VideoPlaybackPreferences.showsTools()));\nwindow.__souloVideoOrientation.setPrefersSoulo(\(!VideoPlaybackPreferences.usesSystemPlayer()));"
+        return "window.__souloVideoToolsEnabled=\(VideoPlaybackPreferences.showsTools());window.__souloVideoDownloadControlsVisible=\(VideoPlaybackPreferences.showsWebDownloadControls());\n" + WebOverlayControlsRuntime.source + "\n" + source + WebVideoHoldSpeedRuntime.source + "\nwindow.__souloVideoHoldSpeed.setRate(\(VideoPlaybackPreferences.holdSpeed()));\nwindow.__souloVideoOrientation.setLabels(\(label));\nwindow.__souloVideoOrientation.setToolsEnabled(\(VideoPlaybackPreferences.showsTools()));\nwindow.__souloVideoOrientation.setPrefersSoulo(\(!VideoPlaybackPreferences.usesSystemPlayer()));window.__souloVideoOrientation.setDownloadControlsVisible(\(VideoPlaybackPreferences.showsWebDownloadControls()));"
     }
 
     // Inject into every frame in an isolated world, so cross-origin embedded
@@ -41,22 +19,12 @@ enum WebVideoOrientationRuntime {
       const nativeFullscreenVideos = new WeakSet();
       const overlay = window.__souloOverlayControls, controlSize = 40;
       let labels = ['Fullscreen', 'Speed', 'Download', 'Video tools', 'Episodes', 'Close', 'Settings'], frame = 0, scanTimer = 0, active = null, expandedGroup = null, toolsEnabled = window.__souloVideoToolsEnabled !== false;
-      let bottomControls = {needed:false}, episodesAvailable = false, prefersSoulo = false;
+      let bottomControls = {needed:false}, episodesAvailable = false, prefersSoulo = false, downloadControlsVisible = window.__souloVideoDownloadControlsVisible !== false;
       let reportedViewportScale = null;
-      let lastFullscreenGesture=0;
       let fallback = null, inlineControlsSeen = false;
-      for(const type of ['pointerup','touchend','click'])window.addEventListener(type,event=>{
-        if(event.isTrusted)lastFullscreenGesture=performance.now();
-      },{capture:true,passive:true});
-      window.addEventListener('soulo-video-fullscreen-request',event=>{
-        const video=event.composedPath().find(node=>node instanceof HTMLVideoElement);
-        if(!video||!video.isConnected||video.mediaKeys||!lastFullscreenGesture||performance.now()-lastFullscreenGesture>1500)return;
-        if(!videos.has(video))add(video);
-        event.preventDefault();event.stopImmediatePropagation();
-        send('fullscreenPlayer',video.getAttribute('data-soulo-media-id')||'',
-          {landscape:!video.videoWidth||video.videoWidth>video.videoHeight,system:!prefersSoulo});
-      },true);
-      const expandedWidth = () => (episodesAvailable ? 6 : 5) * controlSize;
+      // Website/extension fullscreen APIs keep their original behavior. Only
+      // the visible Soulo tool buttons send an explicit player request.
+      const expandedWidth = () => ((episodesAvailable ? 6 : 5) - (downloadControlsVisible ? 0 : 1)) * controlSize;
       const observationOptions = () => toolsEnabled ? {childList:true,subtree:true,attributes:true,attributeFilter:['class','style','hidden']} : {childList:true,subtree:true};
       function send(action, token, details = {}) {
         try { window.webkit.messageHandlers.souloVideoOrientation.postMessage({action, token, ...details}); } catch (_) {}
@@ -310,6 +278,7 @@ enum WebVideoOrientationRuntime {
         });
       }
       function showAction(action, visible) {
+        if (action.hasAttribute('data-video-download') && !downloadControlsVisible) visible = false;
         action.style.setProperty('display', visible ? 'flex' : 'none', 'important');
         action.style.setProperty('opacity', visible ? '1' : '0', 'important');
         action.style.setProperty('transform', visible ? 'translateX(0)' : 'translateX(6px)', 'important');
@@ -432,6 +401,7 @@ enum WebVideoOrientationRuntime {
           send('fullscreenPlayer',button.dataset.souloMediaID,{landscape:true,system:!prefersSoulo,play:true});
         };
         const download = document.createElement('button'); download.type = 'button'; download.style.cssText = controlStyle;
+        download.setAttribute('data-video-download','');
         download.setAttribute('aria-label', labels[2]); download.title = labels[2];
         download.innerHTML = svg('<path d="M12 3v12m-4-4 4 4 4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>');
         download.__souloVideoAction = event => {
@@ -552,6 +522,16 @@ enum WebVideoOrientationRuntime {
           collapse(); controls.forEach(button=>{resize.unobserve(button);button.remove()});controls.clear();
           if(frame)cancelAnimationFrame(frame);frame=0;reportBottomControls(false);
         } else { scan();visibleVideos.forEach(createControl);schedule(); }
+      },setDownloadControlsVisible(value) {
+        const visible = value === true;
+        if (downloadControlsVisible === visible) return;
+        downloadControlsVisible = visible;
+        controls.forEach(group => {
+          const download = group.querySelector('[data-video-download]');
+          if (download) showAction(download, group === expandedGroup);
+        });
+        if (expandedGroup) expandedGroup.style.setProperty('width',expandedWidth()+'px','important');
+        schedule();
       },setPageScale(value,zoom = 1) {
         const scaleChanged=overlay.setPageScale(value),zoomChanged=overlay.setContentZoom(zoom);
         if(scaleChanged||zoomChanged)schedule();
@@ -573,6 +553,18 @@ enum WebVideoOrientationRuntime {
         showAction(expandedGroup.querySelector('[data-video-episodes]'),episodesAvailable);
         expandedGroup.style.setProperty('width',expandedWidth()+'px','important');
         schedule();
+      },nativeFullscreenState(token) {
+        for (const video of videos) if (video.getAttribute('data-soulo-media-id') === token && video.isConnected) {
+          const full = document.fullscreenElement || video.getRootNode()?.fullscreenElement;
+          return !!(video.webkitDisplayingFullscreen || video.webkitPresentationMode === 'fullscreen'
+            || (full && (full === video || full.contains(video))));
+        }
+        return null;
+      },resumeAfterPlayerFailure(token,playing) {
+        for (const video of videos) if (video.getAttribute('data-soulo-media-id') === token && video.isConnected) {
+          if (playing) Promise.resolve(video.play()).catch(()=>{});
+          return;
+        }
       },async exitForPlayer(token) {
         for (const video of videos) if (video.getAttribute('data-soulo-media-id') === token && video.isConnected) {
           const time = video.currentTime;
@@ -845,7 +837,7 @@ struct WebMediaPlaybackHandoff {
 /// for frames (including cross-origin players); private tabs never write these to disk.
 @MainActor final class WebMediaSession: NSObject, WKScriptMessageHandler {
     static let handler = "souloMediaSession"
-    static let world = WKContentWorld.world(name: "SouloMediaSession")
+    static let world = WebKitNativeContentWorld.media(name: "SouloMediaSession")
     weak var webView: WKWebView? {
         didSet {
             guard oldValue !== webView else { return }
@@ -860,12 +852,21 @@ struct WebMediaPlaybackHandoff {
     private(set) var navigationWasCancelled = false
     private var suspensionApplied = false
     private var frames: [String: WKFrameInfo] = [:]
+    private var liveMediaFrames = Set<String>()
     private weak var installedController: WKUserContentController?
     private var pendingRestoration: [String: [[String: Any]]] = [:]
     private var mainDocumentKey: String?
     private var generation = 0
     private(set) var checkpoints: [String: [[String: Any]]] = [:]
     private var playbackHandoff: WebMediaPlaybackHandoff?
+
+    /// Replacement players own MediaSource buffers inside an extension frame.
+    /// A checkpoint cannot recreate that publisher-owned runtime after eviction.
+    var hasLiveExtensionMedia: Bool {
+        webView != nil && liveMediaFrames.contains { key in
+            frames[key]?.securityOrigin.protocol.lowercased() == "webkit-extension"
+        }
+    }
 
     func install(on controller: WKUserContentController) {
         controller.removeScriptMessageHandler(forName: Self.handler, contentWorld: Self.world)
@@ -882,7 +883,7 @@ struct WebMediaPlaybackHandoff {
 
     func reset() {
         generation += 1
-        checkpoints.removeAll(); pendingRestoration.removeAll(); frames.removeAll()
+        checkpoints.removeAll(); pendingRestoration.removeAll(); frames.removeAll(); liveMediaFrames.removeAll()
         mainDocumentKey = nil
         playbackHandoff = nil
     }
@@ -892,7 +893,7 @@ struct WebMediaPlaybackHandoff {
     }
     func detach() {
         generation += 1
-        frames.removeAll(); webView = nil; mainDocumentKey = nil
+        frames.removeAll(); liveMediaFrames.removeAll(); webView = nil; mainDocumentKey = nil
     }
 
     func setActive(_ active: Bool) {
@@ -975,14 +976,22 @@ struct WebMediaPlaybackHandoff {
         guard message.webView === webView, message.world.name == Self.world.name,
               let body = message.body as? [String: Any], let key = body["url"] as? String,
               let items = body["items"] as? [[String: Any]] else { return }
+        if body["retired"] as? Bool == true {
+            liveMediaFrames.remove(key); frames.removeValue(forKey: key)
+            save(items, for: key)
+            return
+        }
         if message.frameInfo.isMainFrame {
             if let mainDocumentKey, mainDocumentKey != key {
                 generation += 1
-                frames.removeAll(); checkpoints.removeAll(); pendingRestoration.removeAll()
+                frames.removeAll(); liveMediaFrames.removeAll(); checkpoints.removeAll(); pendingRestoration.removeAll()
             }
             mainDocumentKey = key
         }
         if frames.count < 24 || frames[key] != nil { frames[key] = message.frameInfo }
+        if frames[key] != nil, items.contains(where: { !($0["src"] as? String ?? "").isEmpty }) {
+            liveMediaFrames.insert(key)
+        } else { liveMediaFrames.remove(key) }
         if body["ready"] as? Bool == true, let webView = message.webView {
             let saved = pendingRestoration.removeValue(forKey: key) ?? []
             webView.callAsyncJavaScript("window.__souloMediaRestore?.(items);", arguments: ["items": saved],
@@ -1025,9 +1034,9 @@ struct WebMediaPlaybackHandoff {
             }));
         }
         window.__souloMediaCheckpoint = snapshot;
-        function send(ready = false) {
+        function send(ready = false, retired = false) {
             lastSent = Date.now();
-            try { window.webkit.messageHandlers.souloMediaSession.postMessage({url:frameKey,items:snapshot(),ready:ready === true}); } catch (_) {}
+            try { window.webkit.messageHandlers.souloMediaSession.postMessage({url:frameKey,items:snapshot(),ready:ready === true,retired:retired === true}); } catch (_) {}
         }
         window.__souloMediaRestore = items => {
             if (restorationResolved) return;
@@ -1118,10 +1127,12 @@ struct WebMediaPlaybackHandoff {
         const pause = HTMLMediaElement.prototype.pause;
         const play = HTMLMediaElement.prototype.play;
         function prune() {
+            const count = tracked.size;
             for (const media of tracked) if (!media.isConnected) {
                 try { pause.call(media); } catch (_) {}
                 tracked.delete(media);
             }
+            if (tracked.size !== count) send();
         }
         const observer = new MutationObserver(records => {
             // A parent record already covers its newly inserted descendants.
@@ -1147,7 +1158,7 @@ struct WebMediaPlaybackHandoff {
         window.__souloMediaResume = send;
         // WebKit owns BFCache restoration and media teardown. Do not clear
         // src/srcObject or call load() while a native navigation is in flight.
-        window.addEventListener('pagehide', send);
+        window.addEventListener('pagehide', () => send(false, true));
         window.addEventListener('pageshow', send);
     })();
     """#

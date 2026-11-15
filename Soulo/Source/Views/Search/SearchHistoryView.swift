@@ -28,6 +28,7 @@ struct SearchHistoryContentView: View {
 
     @ObservedObject var searchVM: SearchViewModel
     var onOpen: ((String) -> Void)? = nil
+    var embeddedInLibrary = false
     @ObservedObject private var platformStore = PlatformDataStore.shared
     @State private var filterText = ""
     @State private var showClearAlert = false
@@ -137,7 +138,7 @@ struct SearchHistoryContentView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .mediaPlayerNavigation()
+        .mediaPlayerNavigation(enabled: !embeddedInLibrary)
         .compatibleListSectionSpacing(20)
         .compatibleScrollTopMargin(24)
         .toolbar {

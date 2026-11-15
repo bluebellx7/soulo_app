@@ -490,6 +490,9 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
         context.coordinator.selection = $isPresented
         context.coordinator.onDismiss = onDismiss
         context.coordinator.options = options
+        #if SOULO_ACCEPTANCE
+        NSLog("[SouloEpisodeSource] native options %@", options?.playlist?.selectedSourceID ?? "none")
+        #endif
         context.coordinator.synchronize(host)
     }
     static func dismantleUIViewController(_ host: Host, coordinator: Presenter) { coordinator.dismiss() }
@@ -574,7 +577,7 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
             MediaSession.shared.endTemporaryRate()
             options?.fullscreenChanged?(false)
             selection?.wrappedValue = false; onDismiss?()
-            if reason == .closePlayback { options?.closePlayback?() }
+            if reason == .closePlayback || options?.fullscreenOnly == true { options?.closePlayback?() }
         }
     }
 }
@@ -587,6 +590,30 @@ private struct NativeFullscreenContent: View {
     @ObservedObject private var pip = MediaSession.shared.pictureInPicture
     @StateObject private var controls = VideoControlsVisibility()
     @State private var buffering = false
+    @State private var retryTask: Task<Void, Never>?
+    private var waitingForPlayback: Bool {
+        retryTask != nil || (session.isPlaybackRequested && session.error == nil && (buffering
+            || session.webMediaContext?.resource.kind == .video && session.pictureInPicture.surface?.playerLayer.isReadyForDisplay != true))
+    }
+
+    private func retryPlayback() {
+        guard retryTask == nil, let source = session.playbackTransferSource(), let url = session.url else { return }
+        let title = session.title, page = session.pageURL, reservation = session.reservePreparation()
+        let context = source.webMediaContext
+        let resource = context?.resource
+        retryTask = Task { @MainActor in
+            defer { retryTask = nil }
+            let asset: AVURLAsset
+            if let resource { asset = await WebResourceMediaService.asset(for: resource, webView: source.webView) }
+            else { asset = source.asset }
+            guard !Task.isCancelled, session.ownsPreparation(reservation) else { return }
+            let fresh = DownloadPlaybackSource(asset: asset, pageURL: source.pageURL, webView: source.webView, persistPosition: source.persistsPosition)
+            fresh.resourceLease = source.resourceLease; fresh.webMediaContext = context
+            session.open(url: url, title: title, pageURL: page, asset: asset, webView: source.webView,
+                reservation: reservation, persistPosition: source.persistsPosition, downloadSource: fresh,
+                startAt: 0, autoplay: true)
+        }
+    }
     @State private var audioGroup: AVMediaSelectionGroup?
     @State private var subtitleGroup: AVMediaSelectionGroup?
     @State private var selectedAudio: Int?
@@ -597,8 +624,8 @@ private struct NativeFullscreenContent: View {
             .overlay { NativeVideoHoldSpeedFeedback() }
             .modifier(VideoFullscreenChrome(visibility: controls, title: session.title,
                 elapsed: session.seekPreview ?? session.elapsed, duration: session.duration, rate: session.rate,
-                playing: session.playing, buffering: buffering && session.isPlaybackRequested, error: session.error ?? session.startupWarning,
-                identifier: "media.native", closeIdentifier: "media.fullscreen.close", options: options,
+                playing: session.playing, buffering: waitingForPlayback, error: retryTask == nil ? (session.error ?? session.startupWarning) : nil,
+                identifier: "media.native", closeIdentifier: "media.fullscreen.close", options: options, retry: retryPlayback, subtitlePlayer: session.player,
                 close: close, exitFullscreen: exitFullscreen, toggle: session.toggle, seek: session.seek, setRate: { _ = session.setRate($0) },
                 holdBegan: session.beginTemporaryRate, holdEnded: session.endTemporaryRate) {
                     if let audioGroup { trackMenu(audioGroup, title: ToolText.text("media_audio_tracks"), selected: $selectedAudio) }
@@ -610,6 +637,7 @@ private struct NativeFullscreenContent: View {
             let waiting = status == .waitingToPlayAtSpecifiedRate
             if buffering != waiting { buffering = waiting }
         }
+        .onDisappear { retryTask?.cancel() }
         .onCompatibleChange(of: pip.active) { _, active in if active { close() } }
         .task(id: session.player.currentItem.map(ObjectIdentifier.init)) {
             audioGroup = nil; subtitleGroup = nil; selectedAudio = nil; selectedSubtitle = nil
@@ -659,7 +687,7 @@ struct MediaControls: View {
                         Label(ToolText.text("media_pip"), systemImage: pip.active ? "pip.exit" : "pip.enter")
                             .font(.subheadline.weight(.medium)).frame(minHeight: 44)
                     }
-                    .disabled(!pip.possible && !pip.active)
+                    .disabled(pip.launching)
                     .accessibilityIdentifier("media.picture-in-picture")
                     .accessibilityHint(ToolText.text("media_pip_hint"))
                     }
@@ -880,14 +908,14 @@ struct MediaMiniPlayer: View {
                                     else { pip.requestStart() }
                                 } label: {
                                     Group {
-                                        if session.souloSystemAvailabilityPending { ProgressView().controlSize(.small) }
+                                        if session.souloSystemAvailabilityPending || pip.launching { ProgressView().controlSize(.small) }
                                         else { Image(systemName: "pip.enter").font(.system(size: 17)) }
                                     }.frame(width: 44, height: 44)
                                 }.buttonStyle(.plain)
                                     .accessibilityLabel(ToolText.text("media_pip"))
                                     .accessibilityValue(session.souloSystemAvailabilityPending ? ToolText.text("loading") : "")
                                     .accessibilityIdentifier("media.mini.picture-in-picture")
-                                    .disabled(session.soulo != nil && !session.souloSystemAvailable)
+                                    .disabled(pip.launching || (session.soulo != nil && !session.souloSystemAvailable))
                             }
                             Button { session.toggle() } label: {
                                 CompactIconLabel(systemImage: session.playing ? "pause.fill" : "play.fill")
@@ -913,6 +941,9 @@ struct MediaMiniPlayer: View {
                             .allowsHitTesting(false)
                     }
                 }
+                .alert(ToolText.text("media_pip"), isPresented: Binding(
+                    get: { pip.errorMessage != nil }, set: { if !$0 { pip.dismissError() } }
+                )) { Button(ToolText.text("done")) { pip.dismissError() } } message: { Text(pip.errorMessage ?? "") }
                 .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
                 .position(x: center, y: MiniPlayerDocking.verticalPosition(offset: y, height: geometry.size.height))
                 .offset(drag)
@@ -1026,11 +1057,15 @@ struct AirPlayRoutePicker: UIViewRepresentable {
 // Present from the visible page so expanding the floating player preserves
 // the user's directory and the existing back stack.
 private struct MediaPlayerNavigation: ViewModifier {
+    var enabled: Bool
     @Environment(\.libraryPageIsActive) private var libraryPageIsActive
     @ObservedObject private var session = MediaSession.shared
     @StateObject private var presentation = MediaPlayerNavigationContext()
     @State private var showingPlayer = false
-    func body(content: Content) -> some View {
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOS 17.0, *), !enabled { content } else { presenting(content) }
+    }
+    private func presenting(_ content: Content) -> some View {
         content
             .background { MediaPlayerNavigationAnchor(context: presentation).allowsHitTesting(false) }
             .task(id: session.expanded && libraryPageIsActive) {
@@ -1099,7 +1134,7 @@ private struct MediaPlayerNavigationAnchor: UIViewRepresentable {
 }
 
 extension View {
-    func mediaPlayerNavigation() -> some View { modifier(MediaPlayerNavigation()) }
+    func mediaPlayerNavigation(enabled: Bool = true) -> some View { modifier(MediaPlayerNavigation(enabled: enabled)) }
 }
 
 private struct NativePlayerDestination: ViewModifier {
@@ -1126,10 +1161,13 @@ private struct LegacyPlayerPage: View {
     }
 }
 
-private struct InlineVideoSurface: UIViewRepresentable {
+struct InlineVideoSurface: UIViewRepresentable {
     @ObservedObject private var session = MediaSession.shared
     var countsAsPlayerSurface = true
     var onTap: (() -> Void)?
+    init(countsAsPlayerSurface: Bool = true, onTap: (() -> Void)? = nil) {
+        self.countsAsPlayerSurface = countsAsPlayerSurface; self.onTap = onTap
+    }
     final class Host: UIView {
         let attachment = UUID()
         var countsAsPlayerSurface = true
@@ -1138,6 +1176,12 @@ private struct InlineVideoSurface: UIViewRepresentable {
         private var lastDoubleTap: CFTimeInterval = 0
         weak var video: MediaPictureInPicture.Surface?
         var verticalGesture: VideoVerticalGestureHandler?
+        func mountVideoIfNeeded() {
+            guard window != nil, video == nil,
+                  let surface = MediaSession.shared.pictureInPicture.attach(id: attachment, primary: countsAsPlayerSurface) else { return }
+            video = surface; addSubview(surface); setNeedsLayout()
+            MediaSession.shared.pictureInPicture.didMount()
+        }
         @objc func handleHold(_ gesture: UILongPressGestureRecognizer) {
             if gesture.state == .began { MediaSession.shared.beginTemporaryRate() }
             else if [.ended, .cancelled, .failed].contains(gesture.state) { MediaSession.shared.endTemporaryRate() }
@@ -1157,6 +1201,7 @@ private struct InlineVideoSurface: UIViewRepresentable {
         }
         override func didMoveToWindow() {
             super.didMoveToWindow()
+            mountVideoIfNeeded()
             MediaSession.shared.pictureInPicture.didMount()
         }
     }
@@ -1192,7 +1237,10 @@ private struct InlineVideoSurface: UIViewRepresentable {
         }
         return host
     }
-    func updateUIView(_ view: Host, context: Context) { view.onTap = onTap; view.doubleTap?.isEnabled = onTap != nil; view.setNeedsLayout() }
+    func updateUIView(_ view: Host, context: Context) {
+        view.onTap = onTap; view.doubleTap?.isEnabled = onTap != nil
+        view.mountVideoIfNeeded(); view.setNeedsLayout()
+    }
     static func dismantleUIView(_ view: Host, coordinator: Void) {
         // The session keeps the source layer alive while system PiP is active.
         if view.video?.superview === view { view.video?.removeFromSuperview() }
@@ -1232,6 +1280,7 @@ struct MediaPlaybackContent: View {
     var initialSouloSource: DownloadPlaybackSource?
     var restoredSoulo: MatroskaPlayback?
     var initialFullscreen = false
+    var fullscreenOnly = false
     var initialSystemPlayer = false
     var initialEpisodes = false
     var initialTitle: String?
@@ -1240,6 +1289,8 @@ struct MediaPlaybackContent: View {
     var playerSelection: Binding<Bool>?
     var onFullscreenClose: (() -> Void)?
     var downloadAction: (() -> Void)?
+    var downloadIsVideo = true
+    @AppStorage(VideoPlaybackPreferences.showsWebDownloadControlsKey) private var showsVideoDownloadControls = true
     @AppStorage(VideoPlaybackPreferences.defaultPlayerKey) private var defaultPlayer = "soulo"
     @ObservedObject private var session = MediaSession.shared
     @ObservedObject private var pip = MediaSession.shared.pictureInPicture
@@ -1282,6 +1333,8 @@ struct MediaPlaybackContent: View {
             videoOptions.fullscreenChanged = { preserveFullscreen = $0; notify?($0) }
             if pip.supported, session.hasVideo { videoOptions.requestPictureInPicture = { _, _ in pip.requestStart() } }
             videoOptions.download = downloadAction
+            videoOptions.downloadIsVideo = downloadIsVideo
+            videoOptions.fullscreenOnly = fullscreenOnly || videoOptions.fullscreenOnly
             return videoOptions
         }
         let source = session.playbackTransferSource()
@@ -1293,9 +1346,11 @@ struct MediaPlaybackContent: View {
         result.fullscreenChanged = { preserveFullscreen = $0 }
         result.shareURL = session.url
         result.showsEpisodesOnAppear = initialEpisodes
+        result.fullscreenOnly = fullscreenOnly
         result.closePlayback = onFullscreenClose
         result.airPlayPresentation = airPlayRequested ?? $ownAirPlayRequest
         result.download = downloadAction
+        result.downloadIsVideo = downloadIsVideo
         if pip.supported, session.hasVideo { result.requestPictureInPicture = { _, _ in pip.requestStart() } }
         return result
     }
@@ -1376,8 +1431,10 @@ struct MediaPlaybackContent: View {
         }
         result.fullscreenChanged = { preserveFullscreen = $0 }
         result.closePlayback = onFullscreenClose
+        result.fullscreenOnly = fullscreenOnly
         result.shareURL = transfer.originalURL
         result.download = downloadAction
+        result.downloadIsVideo = downloadIsVideo
         return result
     }
     private func restoreSystem(_ transfer: ExtendedMediaTransfer, time: Double, playing: Bool) {
@@ -1429,6 +1486,17 @@ struct MediaPlaybackContent: View {
                 }
             }
         }
+        .overlay(alignment: .top) {
+            if pip.launching {
+                HStack(spacing: 8) { ProgressView(); Text(ToolText.text("media_pip")) }
+                    .font(.subheadline).padding(12).background(.regularMaterial, in: Capsule())
+                    .padding(12).allowsHitTesting(false)
+                    .accessibilityIdentifier("media.pip.preparing")
+            }
+        }
+        .alert(ToolText.text("media_pip"), isPresented: Binding(
+            get: { pip.errorMessage != nil }, set: { if !$0 { pip.dismissError() } }
+        )) { Button(ToolText.text("done")) { pip.dismissError() } } message: { Text(pip.errorMessage ?? "") }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 if transfer == nil, let options, options.usesSystem {
@@ -1445,8 +1513,9 @@ struct MediaPlaybackContent: View {
                                 ToolMenuLabel(key: "media_pip", symbol: "pip.enter")
                             }.accessibilityIdentifier("media.picture-in-picture")
                         }
-                        if let downloadAction {
+                        if let downloadAction, showsVideoDownloadControls || !downloadIsVideo {
                             Button(action: downloadAction) { Label(LanguageManager.shared.localizedString("download"), systemImage: "arrow.down.circle") }
+                                .accessibilityIdentifier("media.compact.download")
                         }
                         if session.hasVideo {
                             Toggle(isOn: $session.loop) { ToolMenuLabel(key: "loop", symbol: "repeat.1") }

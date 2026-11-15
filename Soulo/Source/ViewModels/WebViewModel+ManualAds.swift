@@ -111,7 +111,7 @@ extension WebViewModel {
                 else { self.failMarkingAdvertisement(); return }
                 self.cancelMarkingAdvertisement()
                 self.manualAdSavedRuleID = rule.id
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                HapticsManager.success()
             } catch {
                 if self.manualAdSelection?.token == selection.token { self.failMarkingAdvertisement() }
             }

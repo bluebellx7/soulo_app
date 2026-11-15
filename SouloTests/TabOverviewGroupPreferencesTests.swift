@@ -36,6 +36,37 @@ final class TabOverviewGroupPreferencesTests: XCTestCase {
         return (storageKey, manager)
     }
 
+    func testCollapsingPersistsWithoutChangingTabsAndOlderPreferencesStayExpanded() throws {
+        let (key, manager) = makeManager()
+        for index in 0..<36 { manager.createTab(url: URL(string: "https://example.com/\(index)")) }
+        let order = manager.tabs.map(\.id), active = manager.activeTab?.id
+        manager.renameOverviewGroup("host:example.com", to: "Saved group")
+        manager.togglePinnedOverviewGroup("host:example.com")
+        manager.toggleCollapsedOverviewGroup("host:example.com")
+        manager.toggleCollapsedOverviewGroup("host:missing.test")
+        XCTAssertEqual(manager.collapsedOverviewGroupIDs, ["host:example.com"])
+        XCTAssertEqual(manager.tabs.map(\.id), order); XCTAssertEqual(manager.activeTab?.id, active)
+        XCTAssertTrue(manager.tabs.allSatisfy { $0.webViewModel.webView == nil })
+        manager.saveToDisk()
+        let (_, restored) = makeManager(restoring: key)
+        XCTAssertEqual(restored.collapsedOverviewGroupIDs, manager.collapsedOverviewGroupIDs)
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(UserDefaults.standard.data(forKey: key + ".overview_groups"))) as? [String: Any])
+        legacy.removeValue(forKey: "collapsedIDs")
+        UserDefaults.standard.set(try JSONSerialization.data(withJSONObject: legacy), forKey: key + ".overview_groups")
+        let (_, older) = makeManager(restoring: key)
+        XCTAssertTrue(older.collapsedOverviewGroupIDs.isEmpty)
+        XCTAssertEqual(older.overviewGroupNames["host:example.com"], "Saved group")
+        XCTAssertEqual(older.pinnedOverviewGroupIDs, ["host:example.com"])
+        UserDefaults.standard.set(true, forKey: "is_incognito")
+        XCTAssertTrue(manager.synchronizePrivacyMode())
+        XCTAssertTrue(manager.collapsedOverviewGroupIDs.isEmpty)
+        manager.createTab(url: URL(string: "https://secret.test/private"))
+        manager.toggleCollapsedOverviewGroup("host:secret.test")
+        UserDefaults.standard.set(false, forKey: "is_incognito")
+        XCTAssertTrue(manager.synchronizePrivacyMode())
+        XCTAssertTrue(manager.collapsedOverviewGroupIDs.isEmpty, "Private choices must not replace the older ordinary preferences")
+    }
+
     func testNamesAndPinningRestoreWithoutChangingTabsOrOpeningWebViews() throws {
         let (key, manager) = makeManager()
         manager.createTab(url: URL(string: "https://example.com/one"))

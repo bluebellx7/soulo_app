@@ -81,3 +81,58 @@
 "Website cache" = "网页缓存";
 "Website icons" = "网站图标";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "开启 iCloud 设置同步后，会在设置变更前自动备份。保留最近 %lld 份备份和 1 份初始备份。";
+
+"Move tab to new window" = "移至新窗口";
+
+"Save webpage" = "收藏网页";
+
+"Webpage" = "网页";
+
+"Website data" = "网站数据";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "阅读数据包含离线文章、书库索引、封面和阅读进度。书籍文件计入下载文件。";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "网站用量为估算值。IndexedDB 包括数据库文件和媒体数据；无法统计的用量显示为 —。";
+"Extension temporary cache" = "扩展临时缓存";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "清理扩展的视频临时数据，保留设置、脚本、播放进度和已下载文件。请先关闭扩展和视频页面，并完成下载。";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "扩展临时数据仍在使用。请关闭扩展和视频页面、完成下载后重试。";
+"Deleting website data can sign you out and remove offline content." = "删除网站数据可能会退出登录，并移除离线内容。";
+
+"Extension startup timed out." = "扩展启动超时。";
+
+"soulo_extensions" = "Soulo 扩展";
+
+"Add to Quick Links" = "加入快速链接";
+"Remove from Quick Links" = "移出快速链接";
+"Mark bookmarks with a heart to show them here." = "长按收藏并标记爱心，即可在这里和新标签页中快速访问。";
+
+"Type %@ to confirm." = "输入 %@ 以确认。";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "合并各设备的收藏；只有明确的删除操作才会移除内容。";
+"This deletion also syncs to your other devices." = "此删除操作也会同步到你的其他设备。";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "复制提示词并补充需求，发给 AI，再将生成的 JSON 粘贴到此处导入。";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "优先使用 JSON 中的组名；同名组追加合并，保留已有平台。";
+"Imported %1$d platforms into %2$d groups." = "已将 %1$d 个平台导入 %2$d 个分组。";
+"No new platforms or group entries." = "没有新增平台或分组内容。";
+
+"App size" = "应用大小";
+"App data" = "应用数据";
+"Wallpaper cache" = "壁纸缓存";
+"Other caches" = "其它缓存";
+"Temporary files" = "临时文件";
+"Download task data" = "下载任务数据";
+"Settings and records" = "设置与记录";
+"Shared app data" = "共享应用数据";
+"Other app data" = "其它应用数据";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "应用数据不包含安装包。按磁盘实际占用统计，可能与 iOS 设置中的大小不同。";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "已保存内容请进入对应列表删除。正在使用的临时文件和系统缓存数据库会在安全时释放。";
+
+"Current platforms" = "当前平台";
+"Import mode" = "导入方式";
+"Append" = "追加";
+"Replace all" = "全部覆盖";
+"Replace all platforms?" = "覆盖全部平台？";
+"A settings backup is saved before replacement." = "覆盖前会保存一份设置备份。";
+
+"Take over web players" = "接管网页播放器";
+"Only takes over website fullscreen. Extension players stay independent." = "开启后接管网页全屏播放；扩展播放器不受影响。";
+
+"App size is the installed program and resources, not the App Store download size." = "应用大小是已安装的程序及资源大小，不是 App Store 下载大小。";
+"App data is the total of the categories below." = "应用数据是下方各分类的合计。";

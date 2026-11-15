@@ -81,3 +81,58 @@
 "Website cache" = "വെബ്സൈറ്റ് കാഷെ";
 "Website icons" = "വെബ്സൈറ്റ് ഐക്കണുകൾ";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "ക്രമീകരണങ്ങൾ മാറ്റുന്നതിനുമുമ്പ് iCloud സമന്വയം ബാക്കപ്പ് സൂക്ഷിക്കുന്നു. ആദ്യ പകർപ്പിനൊപ്പം ഏറ്റവും പുതിയ %lld ബാക്കപ്പുകൾ നിലനിർത്തും.";
+
+"Move tab to new window" = "പുതിയ വിൻഡോയിലേക്ക് മാറ്റുക";
+
+"Save webpage" = "വെബ്പേജ് സംരക്ഷിക്കുക";
+
+"Webpage" = "വെബ്പേജ്";
+
+"Website data" = "വെബ്‌സൈറ്റ് ഡാറ്റ";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "സൂക്ഷിച്ച ലേഖനങ്ങൾ, പുസ്തക സൂചിക, പുറംചട്ടകൾ, വായനയുടെ പുരോഗതി എന്നിവ ഉൾപ്പെടുന്നു. പുസ്തക ഫയലുകൾ ഡൗൺലോഡ് ചെയ്ത ഫയലുകളിൽ എണ്ണുന്നു.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "വലുപ്പം ഏകദേശമാണ്. IndexedDB-യിൽ ഡാറ്റാബേസും മീഡിയ ഫയലുകളും ഉൾപ്പെടുന്നു. ലഭ്യമല്ലാത്ത വലുപ്പം — ആയി കാണിക്കും.";
+"Extension temporary cache" = "എക്സ്റ്റൻഷന്റെ താൽക്കാലിക കാഷെ";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "എക്സ്റ്റൻഷന്റെ താൽക്കാലിക മീഡിയ നീക്കുന്നു. ക്രമീകരണങ്ങൾ, സ്ക്രിപ്റ്റുകൾ, പുരോഗതി, ഡൗൺലോഡ് ഫയലുകൾ സൂക്ഷിക്കുന്നു. ആദ്യം എക്സ്റ്റൻഷൻ, വീഡിയോ പേജുകൾ അടച്ച് ഡൗൺലോഡുകൾ പൂർത്തിയാക്കുക.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "താൽക്കാലിക ഡാറ്റ ഇപ്പോഴും ഉപയോഗത്തിലാണ്. എക്സ്റ്റൻഷൻ, വീഡിയോ പേജുകൾ അടച്ച് ഡൗൺലോഡുകൾ പൂർത്തിയാക്കിയ ശേഷം വീണ്ടും ശ്രമിക്കുക.";
+"Deleting website data can sign you out and remove offline content." = "വെബ്‌സൈറ്റ് ഡാറ്റ നീക്കുന്നത് സൈൻ ഔട്ട് ചെയ്യുകയും ഓഫ്‌ലൈൻ ഉള്ളടക്കം നീക്കുകയും ചെയ്തേക്കാം.";
+
+"Extension startup timed out." = "വിപുലീകരണം ആരംഭിക്കാനുള്ള സമയം കഴിഞ്ഞു.";
+
+"soulo_extensions" = "Soulo വിപുലീകരണങ്ങൾ";
+
+"Add to Quick Links" = "ദ്രുത ലിങ്കുകളിൽ ചേർക്കുക";
+"Remove from Quick Links" = "ദ്രുത ലിങ്കുകളിൽ നിന്ന് നീക്കുക";
+"Mark bookmarks with a heart to show them here." = "ഇവിടെ കാണിക്കാൻ ബുക്ക്‌മാർക്ക് അമർത്തിപ്പിടിച്ച് ഹൃദയചിഹ്നം നൽകുക.";
+
+"Type %@ to confirm." = "സ്ഥിരീകരിക്കാൻ %@ ടൈപ്പ് ചെയ്യുക.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "ഉപകരണങ്ങളിലെ ബുക്ക്‌മാർക്കുകൾ ലയിപ്പിക്കുന്നു. വ്യക്തമായി ഇല്ലാതാക്കിയവ മാത്രമേ നീക്കം ചെയ്യൂ.";
+"This deletion also syncs to your other devices." = "ഈ ഇല്ലാതാക്കൽ മറ്റ് ഉപകരണങ്ങളിലേക്കും സമന്വയിപ്പിക്കും.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "ഈ പ്രോംപ്റ്റ് പകർത്തി ആവശ്യങ്ങൾ ചേർത്ത് AI-ക്ക് അയയ്ക്കുക. തുടർന്ന് അതിന്റെ JSON ഇവിടെ ഒട്ടിച്ച് ഇറക്കുമതി ചെയ്യുക.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "JSON-ലെ ഗ്രൂപ്പ് പേരുകൾക്ക് മുൻഗണനയുണ്ട്. നിലവിലെ പ്ലാറ്റ്‌ഫോമുകൾ നീക്കാതെ പൊരുത്തപ്പെടുന്ന ഗ്രൂപ്പുകൾ ലയിപ്പിക്കും.";
+"Imported %1$d platforms into %2$d groups." = "%1$d പ്ലാറ്റ്‌ഫോമുകൾ %2$d ഗ്രൂപ്പുകളിലേക്ക് ഇറക്കുമതി ചെയ്തു.";
+"No new platforms or group entries." = "പുതിയ പ്ലാറ്റ്‌ഫോമുകളോ ഗ്രൂപ്പ് എൻട്രികളോ ഇല്ല.";
+
+"App size" = "ആപ്പിന്റെ വലുപ്പം";
+"App data" = "ആപ്പ് ഡാറ്റ";
+"Wallpaper cache" = "വാൾപേപ്പർ കാഷെ";
+"Other caches" = "മറ്റ് കാഷെകൾ";
+"Temporary files" = "താൽക്കാലിക ഫയലുകൾ";
+"Download task data" = "ഡൗൺലോഡ് ടാസ്‌ക് ഡാറ്റ";
+"Settings and records" = "ക്രമീകരണങ്ങളും രേഖകളും";
+"Shared app data" = "പങ്കിട്ട ആപ്പ് ഡാറ്റ";
+"Other app data" = "മറ്റ് ആപ്പ് ഡാറ്റ";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "ആപ്പ് ഡാറ്റയിൽ ഇൻസ്റ്റാൾ ചെയ്ത പ്രോഗ്രാം ഉൾപ്പെടുന്നില്ല. ഡിസ്കിലെ വലുപ്പം iOS ക്രമീകരണങ്ങളിൽ നിന്ന് വ്യത്യസ്തമാകാം.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "സംരക്ഷിച്ച ഉള്ളടക്കം അതിന്റെ പട്ടികയിൽ നിന്ന് നീക്കുക. ഉപയോഗത്തിലുള്ള താൽക്കാലിക ഫയലുകളും സിസ്റ്റം കാഷെ ഡാറ്റാബേസുകളും സുരക്ഷിതമാകുമ്പോൾ ഒഴിവാക്കും.";
+
+"Current platforms" = "നിലവിലെ പ്ലാറ്റ്‌ഫോമുകൾ";
+"Import mode" = "ഇറക്കുമതി രീതി";
+"Append" = "ചേർക്കുക";
+"Replace all" = "എല്ലാം മാറ്റുക";
+"Replace all platforms?" = "എല്ലാ പ്ലാറ്റ്‌ഫോമുകളും മാറ്റണോ?";
+"A settings backup is saved before replacement." = "മാറ്റുന്നതിന് മുമ്പ് ക്രമീകരണങ്ങളുടെ ബാക്കപ്പ് സൂക്ഷിക്കും.";
+
+"Take over web players" = "വെബ് പ്ലെയറുകൾ ഏറ്റെടുക്കുക";
+"Only takes over website fullscreen. Extension players stay independent." = "വെബ്‌സൈറ്റിന്റെ പൂർണ്ണസ്ക്രീൻ പ്ലെയർ മാത്രം മാറ്റുന്നു. എക്സ്റ്റൻഷൻ പ്ലെയറുകൾ സ്വതന്ത്രമായി പ്രവർത്തിക്കും.";
+
+"App size is the installed program and resources, not the App Store download size." = "ആപ്പിന്റെ വലുപ്പം ഇൻസ്റ്റാൾ ചെയ്ത പ്രോഗ്രാമും റിസോഴ്‌സുകളുമാണ്, App Store ഡൗൺലോഡിന്റെ വലുപ്പമല്ല.";
+"App data is the total of the categories below." = "ആപ്പ് ഡാറ്റ താഴെയുള്ള വിഭാഗങ്ങളുടെ ആകെ തുകയാണ്.";

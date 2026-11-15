@@ -6,6 +6,45 @@ import UIKit
 
 @MainActor
 final class ExtensionAuditTests: XCTestCase {
+    @MainActor
+    func testStockTampermonkeyStartsWithoutDiagnosticPublisherEdits() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Native WebExtensions") }
+        let documents=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0]
+        let file=documents.appendingPathComponent("tampermonkey-compatibility-qa.crx")
+        try XCTSkipUnless(FileManager.default.fileExists(atPath:file.path),"Opt-in official package")
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent("tm-stock-"+UUID().uuidString)
+        let service=BrowserExtensionService(extensionRoot:root)
+        defer{try? FileManager.default.removeItem(at:root)}
+        let preview=try await service.previewWebExtension(from:file)
+        try Data("<html><head></head><body id='stock-ready'>Stock package probe</body></html>".utf8).write(to:preview.resourceURL.appendingPathComponent("stock-probe.html"))
+        let record=try await service.installWebExtension(preview,access:preview.access)
+        defer{service.deleteWebExtension(record.id)}
+        XCTAssertEqual(record.version,"5.5.1")
+        XCTAssertTrue(record.isEnabled)
+        let context=try XCTUnwrap(NativeWebExtensionRuntime.shared.controller.extensionContexts.first{$0.uniqueIdentifier==record.id.uuidString})
+        let page=WKWebView(frame:CGRect(x:0,y:0,width:390,height:600),configuration:try XCTUnwrap(context.webViewConfiguration))
+        page.load(URLRequest(url:context.baseURL.appendingPathComponent("stock-probe.html")))
+        for _ in 0..<150 {
+            if (try? await page.evaluateJavaScript("!!document.getElementById('stock-ready')")) as? Bool == true {break}
+            try await Task.sleep(for:.milliseconds(30))
+        }
+        defer{page.stopLoading()}
+        let code="// ==UserScript==\n// @name Stock startup probe\n// @namespace soulo.qa.stock\n// @version 1.0\n// @match https://example.com/stock/*\n// @grant none\n// ==/UserScript==\ndocument.documentElement.dataset.souloStock='ready';"
+        let response=try await page.callAsyncJavaScript("return await chrome.runtime.sendMessage({method:'saveScript',uuid:'qa-stock',new_script:true,code,reload:false,origin:'options'});",arguments:["code":code],in:nil,contentWorld:.page) as? [String:Any]
+        XCTAssertEqual(response?["installed"] as? Bool,true,"An actual publisher request must succeed without logging instrumentation")
+        let diagnostics=XCTAttachment(string:context.errors.map(\.localizedDescription).joined(separator:";"));diagnostics.name="stock-background-capability-probes";diagnostics.lifetime = .keepAlways;add(diagnostics)
+    }
+
+    @MainActor
+    func testCurrentEdgeStorePackageDownloadsThroughTheProductionTransport() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_INSTALL_QA"] == "1", "Opt-in current official store transport")
+        let file = try await WebExtensionStoreInstallService.shared.downloadPackage(from: "https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd")
+        defer { try? FileManager.default.removeItem(at: file) }
+        let data = try Data(contentsOf: file)
+        XCTAssertTrue(data.starts(with: Data("Cr24".utf8)))
+        XCTAssertGreaterThan(data.count, 100_000)
+    }
+
     func testUserScriptDetectionHandlesStoreFilenamesAndRejectsErrorResponses() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -21,6 +60,113 @@ final class ExtensionAuditTests: XCTestCase {
             try Data(body.utf8).write(to: errorFile)
             XCTAssertNil(BrowserExtensionInstallCandidate.detect(fileURL: errorFile, sourceURL: source))
         }
+    }
+
+    func testNativeI18nBindingsSupportDetachedProxyAndCallbackCallsWithoutChangingResults() throws {
+        let context = try XCTUnwrap(JSContext())
+        context.evaluateScript("""
+        var globalThis=this;
+        var api={getMessage:function(key,subs){if(this!==api)return undefined;return key==='hello'?'Hello '+subs[0]:'';},
+          getUILanguage:function(){return this===api?'en-US':undefined;},
+          getAcceptLanguages:function(callback){if(this===api)callback(['en-US']);}};
+        var chrome={i18n:api},browser=chrome;
+        """)
+        context.evaluateScript(WebExtensionPackagePreparer.nativeBindingsSourceForTesting)
+        XCTAssertNil(context.exception)
+        context.evaluateScript("var first=api.getMessage;var detached=first('hello',['world']);var proxy=new Proxy(first,{})('hello',['proxy']);var languages;api.getAcceptLanguages(v=>languages=v);var missing=api.getMessage('absent',[]);")
+        XCTAssertNil(context.exception)
+        XCTAssertEqual(context.evaluateScript("detached")?.toString(), "Hello world")
+        XCTAssertEqual(context.evaluateScript("proxy")?.toString(), "Hello proxy")
+        XCTAssertEqual(context.evaluateScript("languages[0]")?.toString(), "en-US")
+        XCTAssertEqual(context.evaluateScript("missing")?.toString(), "")
+        context.evaluateScript(WebExtensionPackagePreparer.nativeBindingsSourceForTesting)
+        XCTAssertTrue(context.evaluateScript("api.getMessage===first")!.toBool(), "Re-preparing an installed extension must not nest wrappers")
+    }
+
+    func testNavigationBindingReportsSameDocumentChangesAndRetainsFilters() async throws {
+        let context = try XCTUnwrap(JSContext())
+        let parseURL: @convention(block) (String) -> NSDictionary = { raw in
+            let url = URL(string: raw)!
+            return ["protocol": (url.scheme ?? "") + ":", "hostname": url.host ?? "", "origin": "\(url.scheme ?? "")://\(url.host ?? "")", "pathname": url.path, "search": url.query.map { "?" + $0 } ?? "", "port": url.port.map(String.init) ?? ""]
+        }
+        context.setObject(parseURL, forKeyedSubscript: "__parseURL" as NSString)
+        context.evaluateScript("""
+        var globalThis=this,changed,committed,removed;
+        function URL(value){Object.assign(this,__parseURL(value));}
+        var frame={url:'https://example.test/start',documentId:'document-one'};
+        var chrome={tabs:{query:()=>Promise.resolve([{id:1}]),onUpdated:{addListener:fn=>changed=fn},onRemoved:{addListener:fn=>removed=fn}},
+          webNavigation:{getFrame:()=>Promise.resolve({...frame}),onCommitted:{addListener:fn=>committed=fn}},webRequest:{}};
+        """)
+        context.evaluateScript(WebExtensionPackagePreparer.nativeBindingsSourceForTesting)
+        XCTAssertNil(context.exception)
+        context.evaluateScript("var events=[];var listener=d=>events.push(d);chrome.webNavigation.onHistoryStateUpdated.addListener(listener,{url:[{hostEquals:'example.test',pathPrefix:'/next'}]});")
+        try await Task.sleep(for: .milliseconds(20))
+        context.evaluateScript("frame.url='https://example.test/next/1';changed(1,{url:frame.url});")
+        try await Task.sleep(for: .milliseconds(20))
+        XCTAssertNil(context.exception)
+        XCTAssertEqual(context.evaluateScript("events.length")?.toInt32(), 1)
+        XCTAssertEqual(context.evaluateScript("events[0].documentId")?.toString(), "document-one")
+        context.evaluateScript("frame.url='https://example.test/ignored';changed(1,{url:frame.url});")
+        try await Task.sleep(for: .milliseconds(20))
+        context.evaluateScript("frame={url:'https://example.test/next/2',documentId:'document-two'};changed(1,{url:frame.url});")
+        try await Task.sleep(for: .milliseconds(20))
+        XCTAssertEqual(context.evaluateScript("events.length")?.toInt32(), 1, "Filters and full document navigations must not produce false history events")
+        context.evaluateScript("chrome.webNavigation.onHistoryStateUpdated.removeListener(listener);removed(1);")
+        XCTAssertFalse(context.evaluateScript("chrome.webNavigation.onHistoryStateUpdated.hasListeners()")!.toBool())
+        XCTAssertTrue(context.evaluateScript("chrome.webRequest.OnBeforeSendHeadersOptions.EXTRA_HEADERS===undefined")!.toBool())
+        XCTAssertEqual(context.evaluateScript("chrome.webRequest.OnBeforeSendHeadersOptions.REQUEST_HEADERS")?.toString(), "requestHeaders")
+    }
+
+    func testReservedZeroTabIDUsesErrorCallbackWithoutChangingValidCallsOrValidation() async throws {
+        let context = try XCTUnwrap(JSContext())
+        context.evaluateScript("""
+        var globalThis=this,seen='pending',sync=true;
+        var chrome={runtime:{},tabs:{get:function(id,callback){
+          if(this!==chrome.tabs)throw Error('receiver');
+          if(id===0)throw Error('Tab 0 does not exist');
+          if(id===Number.MAX_SAFE_INTEGER){Promise.resolve().then(()=>{chrome.runtime.lastError={message:'Tab does not exist'};try{callback(undefined);}finally{delete chrome.runtime.lastError;}});return;}
+          if(typeof id!=='number')throw Error('Invalid type');
+          if(callback)callback({id});else return Promise.resolve({id});
+        }}};
+        """)
+        context.evaluateScript(WebExtensionPackagePreparer.nativeBindingsSourceForTesting)
+        context.evaluateScript("var first=chrome.tabs.get;chrome.tabs.get(0,value=>{seen={sync,error:chrome.runtime.lastError.message,value};});sync=false;")
+        try await Task.sleep(for: .milliseconds(20))
+        XCTAssertNil(context.exception)
+        XCTAssertFalse(context.evaluateScript("seen.sync")!.toBool())
+        XCTAssertEqual(context.evaluateScript("seen.error")?.toString(), "Tab does not exist")
+        XCTAssertTrue(context.evaluateScript("chrome.runtime.lastError===undefined&&seen.value===undefined")!.toBool())
+        context.evaluateScript("var promiseError;chrome.tabs.get(0).catch(error=>promiseError=error.message);var valid;chrome.tabs.get(42,value=>valid=value.id);var invalid;try{chrome.tabs.get('wrong',()=>{});}catch(error){invalid=error.message;}")
+        try await Task.sleep(for: .milliseconds(20))
+        XCTAssertEqual(context.evaluateScript("promiseError")?.toString(), "Tab 0 does not exist")
+        XCTAssertEqual(context.evaluateScript("valid")?.toInt32(), 42)
+        XCTAssertEqual(context.evaluateScript("invalid")?.toString(), "Invalid type")
+        context.evaluateScript(WebExtensionPackagePreparer.nativeBindingsSourceForTesting)
+        XCTAssertTrue(context.evaluateScript("chrome.tabs.get===first")!.toBool())
+    }
+
+    func testStaticClassicBackgroundPreservesProgramAndPermissionsWithoutVersionSpecificEdits() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("source"), script = "/* Initial imports */\nif(typeof Settings === 'undefined'){importScripts('/js/library.js');}\nvar result=Settings.answer;"
+        try FileManager.default.createDirectory(at: source.appendingPathComponent("js"), withIntermediateDirectories: true)
+        try Data(script.utf8).write(to: source.appendingPathComponent("js/worker.js"))
+        try Data("var Settings={answer:42};".utf8).write(to: source.appendingPathComponent("js/library.js"))
+        let manifest: [String: Any] = ["manifest_version":3,"name":"Generic background fixture","version":"1.0", "permissions":["storage"], "background":["service_worker":"js/worker.js"]]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: source.appendingPathComponent("manifest.json"))
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("installed"), withIntermediateDirectories: true)
+        let prepared = try WebExtensionPackagePreparer.prepare(sourceURL: source, in: root.appendingPathComponent("installed"))
+        let manifestURL = prepared.appendingPathComponent("manifest.json")
+        let first = try Data(contentsOf: manifestURL)
+        let result = try XCTUnwrap(JSONSerialization.jsonObject(with: first) as? [String: Any])
+        let background = try XCTUnwrap(result["background"] as? [String: Any])
+        XCTAssertNil(background["service_worker"])
+        XCTAssertEqual((background["scripts"] as? [String])?.suffix(2), ["js/library.js","js/worker.js"])
+        XCTAssertEqual(result["permissions"] as? [String], ["storage"], "Basic bindings must not add nativeMessaging access")
+        XCTAssertEqual(try String(contentsOf: prepared.appendingPathComponent("js/worker.js"), encoding: .utf8), script)
+        XCTAssertEqual(try String(contentsOf: source.appendingPathComponent("js/worker.js"), encoding: .utf8), script)
+        try WebExtensionPackagePreparer.installCompatibilityLayer(in: prepared)
+        XCTAssertEqual(try Data(contentsOf: manifestURL), first)
     }
 
     private func context(grants: [String], storedValues: [String: String] = [:]) throws -> JSContext {
@@ -271,6 +417,9 @@ final class ExtensionAuditTests: XCTestCase {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let source = try package(root: root)
+        // This regression covers migration of native worker wrappers. A worker
+        // without imports retains that path rather than becoming an event page.
+        try Data("globalThis.__workerAnswer=42;".utf8).write(to: source.appendingPathComponent("background/worker.js"))
         let prepared = try WebExtensionPackagePreparer.prepare(sourceURL: source, in: root.appendingPathComponent("installed"))
         let manifestURL = prepared.appendingPathComponent("manifest.json")
         var manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
@@ -334,20 +483,15 @@ final class ExtensionAuditTests: XCTestCase {
         let source = try package(root: root)
         let prepared = try WebExtensionPackagePreparer.prepare(sourceURL: source, in: root.appendingPathComponent("installed"))
         let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: prepared.appendingPathComponent("manifest.json"))) as? [String: Any])
-        let path = try XCTUnwrap((manifest["background"] as? [String: Any])?["service_worker"] as? String)
-        let entryURL = prepared.appendingPathComponent(path)
-        XCTAssertEqual(entryURL.deletingLastPathComponent().lastPathComponent, "background")
+        let scripts = try XCTUnwrap((manifest["background"] as? [String: Any])?["scripts"] as? [String])
+        XCTAssertEqual(Array(scripts.suffix(2)), ["background/helper.js", "background/worker.js"])
         let context = try XCTUnwrap(JSContext())
-        context.evaluateScript("var chrome={runtime:{}}; var console={error:function(){}};")
-        let load: @convention(block) (String) -> Void = { [weak context] path in
-            guard let context else { return }
-            let url = URL(string: path, relativeTo: entryURL)!.absoluteURL
-            do { context.evaluateScript(try String(contentsOf: url, encoding: .utf8)) }
-            catch { context.exception = JSValue(newErrorFromMessage: "Missing relative import: \(path)", in: context) }
+        let resolve: @convention(block) (String, String) -> String = { path, base in
+            URL(string: path, relativeTo: URL(string: base))?.absoluteURL.absoluteString ?? ""
         }
-        context.setObject(load, forKeyedSubscript: "__load" as NSString)
-        context.evaluateScript("function importScripts(){for(var i=0;i<arguments.length;i++)__load(arguments[i]);}")
-        context.evaluateScript(try String(contentsOf: entryURL, encoding: .utf8))
+        context.setObject(resolve, forKeyedSubscript: "__resolve" as NSString)
+        context.evaluateScript("function URL(path,base){this.href=__resolve(path,base)};var chrome={runtime:{getURL:path=>'webkit-extension://fixture/'+path}};var console={error:function(){}};")
+        for path in scripts { context.evaluateScript(try String(contentsOf: prepared.appendingPathComponent(path), encoding: .utf8)) }
         XCTAssertNil(context.exception)
         XCTAssertEqual(context.evaluateScript("globalThis.__workerAnswer")?.toInt32(), 42)
     }
@@ -442,7 +586,7 @@ final class ExtensionAuditTests: XCTestCase {
         let object = try await WKWebExtension(resourceBaseURL: root)
         let context = WKWebExtensionContext(for: object)
         let host = WebExtensionCompatibilityHost()
-        for api in ["notifications", "audio"] {
+        for api in ["notifications", "audio", "downloads"] {
             var failure: Error?
             var replied = false
             XCTAssertTrue(host.handle(message: ["souloCompatibility":1,"api":api,"operation":"stop"], applicationIdentifier: WebExtensionCompatibilityHost.applicationIdentifier, context: context, resourceURL: root) { _, error in replied=true; failure=error })
@@ -482,6 +626,10 @@ extension ExtensionAuditTests {
         let pathPrefix = "tm-" + UUID().uuidString.lowercased()
         let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: preview.resourceURL.appendingPathComponent("manifest.json"))) as? [String: Any])
         XCTAssertFalse((manifest["permissions"] as? [String] ?? []).contains("userScripts"))
+        let background = try XCTUnwrap(manifest["background"] as? [String: Any])
+        XCTAssertEqual(background["scripts"] as? [String], ["__soulo_blob_background.js", "__soulo_webextension_compatibility.js", "background.js"])
+        XCTAssertEqual(background["persistent"] as? Bool, false)
+        XCTAssertNil(background["service_worker"])
         XCTAssertEqual((manifest["content_scripts"] as? [[String: Any]])?.filter { $0["js"] as? [String] == ["page.js", "content.js"] }.count, 1)
         let worker = preview.resourceURL.appendingPathComponent("background.js")
         let source = try String(contentsOf: worker, encoding: .utf8)
@@ -572,6 +720,18 @@ extension ExtensionAuditTests {
         let finalLog = try await page.callAsyncJavaScript("return {log:(await chrome.storage.local.get('__souloQALog')).__souloQALog||[]};", in: nil, contentWorld: .page)
         print("TAMPERMONKEY INJECTION " + String(describing: finalLog) + " visits=" + String(describing: visits))
         XCTAssertEqual(visits, "1")
+        let installRules = try await page.callAsyncJavaScript("return await chrome.declarativeNetRequest.getSessionRules();", in: nil, contentWorld: .page) as? [[String: Any]]
+        XCTAssertGreaterThan(installRules?.count ?? 0, 1, "The publisher's actual script-install rules must compile")
+        for enabled in [false, true] {
+            _ = try await page.callAsyncJavaScript("return await chrome.runtime.sendMessage({method:'setOption',name:'scriptUrlDetection',value:mode,origin:'options'});", arguments: ["mode": enabled ? "auto" : "manual"], in: nil, contentWorld: .page)
+            var count = 0
+            for _ in 0..<100 {
+                count = (try await page.callAsyncJavaScript("return (await chrome.declarativeNetRequest.getSessionRules()).filter(r=>r.action.type==='redirect').length;", in: nil, contentWorld: .page) as? Int) ?? 0
+                if (count > 0) == enabled { break }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            XCTAssertEqual(count > 0, enabled, "Changing the publisher setting must remove and restore its actual rules")
+        }
         let injected = visits == "1"
         var network: String?
         for _ in 0..<100 {
@@ -693,6 +853,57 @@ extension ExtensionAuditTests {
         let verifiedAttachment = XCTAttachment(data: verifiedData, uniformTypeIdentifier: "public.json"); verifiedAttachment.lifetime = .keepAlways; add(verifiedAttachment)
     }
 
+    func testTampermonkeyDomainExclusionsKeepMethodsProvidersAndHeaderRules() throws {
+        let js = try XCTUnwrap(JSContext())
+        js.evaluateScript(WebExtensionTampermonkeyAdapter.javaScript)
+        js.evaluateScript(#"""
+        var original=[
+          {id:1,priority:3,condition:{regexFilter:'^https?://.*\\.user\\.js$',excludedRequestDomains:['excluded.test','provider.test'],requestMethods:['get'],resourceTypes:['main_frame']},action:{type:'redirect',redirect:{url:'https://install.test/general'}}},
+          {id:2,priority:3,condition:{regexFilter:'^https?://.*\\.user\\.js$',requestDomains:['provider.test'],requestMethods:['get'],resourceTypes:['main_frame']},action:{type:'redirect',redirect:{url:'https://install.test/provider'}}},
+          {id:3,priority:1,condition:{resourceTypes:['main_frame']},action:{type:'modifyHeaders',responseHeaders:[{header:'content-security-policy',operation:'remove'}]}}
+        ];
+        var next=100,compiled=__souloCompileTampermonkeyRules(original,()=>next++);
+        function decision(rules,url,method){
+          const host=url.match(/^https?:\/\/([^/:]+)/)[1],domain=d=>host===d||host.endsWith('.'+d);
+          const matching=rules.filter(r=>r.action.type!=='modifyHeaders'&&(!r.condition.regexFilter||new RegExp(r.condition.regexFilter).test(url))&&(!r.condition.requestDomains||r.condition.requestDomains.some(domain))&&(!r.condition.excludedRequestDomains||!r.condition.excludedRequestDomains.some(domain))&&(!r.condition.requestMethods||r.condition.requestMethods.includes(method))).sort((a,b)=>b.priority-a.priority);
+          return matching[0]?.action.type==='redirect'?matching[0].action.redirect.url:null;
+        }
+        var equivalent=['custom.test','excluded.test','sub.excluded.test','provider.test','sub.provider.test'].every(host=>['get','post'].every(method=>decision(original,'https://'+host+'/a.user.js',method)===decision(compiled,'https://'+host+'/a.user.js',method)));
+        var headersRemainActive=compiled.filter(r=>r.action.type==='modifyHeaders').every(r=>r.priority>Math.max(...compiled.filter(r=>r.action.type==='allow').map(r=>r.priority)));
+        var prioritiesRestore=compiled.every(r=>__souloTampermonkeyRulePriority(r.priority)===(r.action.type==='modifyHeaders'?1:3));
+        """#)
+        XCTAssertNil(js.exception)
+        XCTAssertEqual(js.evaluateScript("equivalent")?.toBool(), true)
+        XCTAssertEqual(js.evaluateScript("headersRemainActive")?.toBool(), true)
+        XCTAssertEqual(js.evaluateScript("prioritiesRestore")?.toBool(), true)
+    }
+
+    func testTampermonkeyPublisherInstallRulesPreserveMatchingAndCompileInWebKit() async throws {
+        let js = try XCTUnwrap(JSContext())
+        js.evaluateScript(WebExtensionTampermonkeyAdapter.javaScript)
+        js.evaluateScript(##"""
+        var patterns=[
+          '^https?://userscripts\\.org/scripts/(source|version)/([0-9]{1,9})\\.user\\.js(?:$|\\?|\\#)',
+          '^https?://openuserjs\\.org/install/([^/]+)+/(.+?)(?:\\.min)?\\.user\\.js(?:$|\\?|\\#)',
+          '^https?://gitlab\\.com/([^/]+)(?:/([^/]+))?/([^/-]{1,1}[^/]+)/?(?:-/)?(snippets/[^/]+/)?(raw|wikis)/(?:[^/]+/)?(.*?)\\.user\\.js(?:$|\\?|\\#)'
+        ];
+        var next=100;
+        var rules=patterns.flatMap((pattern,index)=>__souloCompileTampermonkeyRules([{id:index+1,condition:{regexFilter:pattern},action:{type:'redirect',redirect:{regexSubstitution:'https://example.com/#url=\\0'}}}],()=>next++));
+        var samples=['https://userscripts.org/scripts/source/1.user.js','http://userscripts.org/scripts/version/123456789.user.js?x=1','https://userscripts.org/scripts/source/1234567890.user.js','https://userscripts.org/scripts/other/12.user.js','https://userscripts.org/scripts/source/1.user.js/invalid','https://openuserjs.org/install/author/script.min.user.js#anchor','https://gitlab.com/author/project/-/raw/main/script.user.js','https://gitlab.com/author/project/-/raw/main/other.js'];
+        var equivalent=samples.every(url=>patterns.some(pattern=>new RegExp(pattern).test(url))===rules.some(rule=>new RegExp(rule.condition.regexFilter).test(url)));
+        """##)
+        XCTAssertNil(js.exception)
+        XCTAssertEqual(js.evaluateScript("equivalent")?.toBool(), true)
+        let patterns = try XCTUnwrap(js.evaluateScript("rules.map(rule=>rule.condition.regexFilter)")?.toArray() as? [String])
+        let store = try XCTUnwrap(WKContentRuleListStore.default())
+        for pattern in patterns {
+            let id = "soulo-publisher-install-rule-" + UUID().uuidString
+            let encoded = String(decoding: try JSONSerialization.data(withJSONObject: [["trigger": ["url-filter": pattern], "action": ["type": "block"]]]), as: UTF8.self)
+            _ = try await store.compileContentRuleList(forIdentifier: id, encodedContentRuleList: encoded)
+            try await store.removeContentRuleList(forIdentifier: id)
+        }
+    }
+
     func testTampermonkeyRuleAlternativesPreserveMatchingAndCompileInWebKit() async throws {
         let js = try XCTUnwrap(JSContext())
         js.evaluateScript(WebExtensionTampermonkeyAdapter.javaScript)
@@ -775,5 +986,99 @@ extension ExtensionAuditTests {
         let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
         attachment.name = "tampermonkey-capability-audit"; attachment.lifetime = .keepAlways; add(attachment)
         print("TAMPERMONKEY CAPABILITY AUDIT " + String(decoding: data, as: UTF8.self))
+    }
+
+    func testWildcardPortsAreNormalizedWithoutBroadeningFixedPortsOrChangingSource() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let source = root.appendingPathComponent("source")
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let patterns = ["http://localhost:*/*", "https://192.168.0.2:*/*", "*://*.example.com:*/allowed/*",
+                        "https://example.com:8443/*", "https://example.com/*", "ftp://example.com:*/*"]
+        let manifest: [String: Any] = ["manifest_version": 3, "name": "Port fixture", "version": "1.0",
+                                      "permissions": ["storage"], "externally_connectable": ["matches": patterns]]
+        let sourceData = try JSONSerialization.data(withJSONObject: manifest)
+        let sourceManifest = source.appendingPathComponent("manifest.json")
+        try sourceData.write(to: sourceManifest)
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("store"), withIntermediateDirectories: true)
+        let prepared = try WebExtensionPackagePreparer.prepare(sourceURL: source, in: root.appendingPathComponent("store"))
+        let preparedManifest = prepared.appendingPathComponent("manifest.json")
+        let first = try Data(contentsOf: preparedManifest)
+        let result = try XCTUnwrap(JSONSerialization.jsonObject(with: first) as? [String: Any])
+        XCTAssertEqual((result["externally_connectable"] as? [String: Any])?["matches"] as? [String],
+                       ["http://localhost/*", "https://192.168.0.2/*", "*://*.example.com/allowed/*",
+                        "https://example.com:8443/*", "https://example.com/*", "ftp://example.com:*/*"])
+        XCTAssertEqual(result["permissions"] as? [String], ["storage"])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: prepared.appendingPathComponent("__soulo_webextension_compatibility.js").path))
+        try WebExtensionPackagePreparer.installCompatibilityLayer(in: prepared)
+        XCTAssertEqual(try Data(contentsOf: preparedManifest), first)
+        XCTAssertEqual(try Data(contentsOf: sourceManifest), sourceData)
+    }
+
+    func testNormalizedWildcardPortAllowsNativeExternalMessaging() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let package = root.appendingPathComponent("package")
+        try FileManager.default.createDirectory(at: package, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let manifest: [String: Any] = ["manifest_version": 3, "name": "External message fixture", "version": "1.0", "permissions": ["storage"],
+            "host_permissions": ["http://localhost/*"],
+            "background": ["scripts": ["background.js"], "persistent": false],
+            "externally_connectable": ["matches": ["http://localhost:*/*"]]]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: package.appendingPathComponent("manifest.json"))
+        try Data("chrome.runtime.onMessageExternal.addListener((message,sender,reply)=>{reply({pong:message.ping});});chrome.storage.local.set({ready:true});".utf8)
+            .write(to: package.appendingPathComponent("background.js"))
+        try Data("<html><body id='ready'>Extension peer</body></html>".utf8).write(to: package.appendingPathComponent("peer.html"))
+        let service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let record = try await service.installWebExtension(from: package)
+        defer { service.deleteWebExtension(record.id) }
+        let runtime = NativeWebExtensionRuntime.shared
+        let context = try XCTUnwrap(runtime.controller.extensionContexts.first { $0.uniqueIdentifier == record.id.uuidString })
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene); window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let peer = WKWebView(frame: CGRect(x: 0, y: 0, width: 600, height: 600), configuration: try XCTUnwrap(context.webViewConfiguration))
+        window.rootViewController?.view.addSubview(peer)
+        peer.load(URLRequest(url: context.baseURL.appendingPathComponent("peer.html")))
+        defer { peer.stopLoading() }
+        let started = expectation(description: "Native background starts")
+        context.loadBackgroundContent { error in XCTAssertNil(error); started.fulfill() }
+        await fulfillment(of: [started], timeout: 5)
+        var ready = false
+        for _ in 0..<100 {
+            if (try? await peer.evaluateJavaScript("!!document.getElementById('ready')")) as? Bool == true,
+               let state = try? await peer.callAsyncJavaScript("return (await chrome.storage.local.get('ready')).ready;", arguments: [:], in: nil, contentWorld: .page),
+               state as? Bool == true { ready = true; break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertTrue(ready, "Background listener must be installed before sending a message")
+
+        let server = try DownloadPlaybackHTTPFixture(files: ["/external.html": Data("<html><body id='ready'>External peer</body></html>".utf8)])
+        let address = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        var components = try XCTUnwrap(URLComponents(url: address.appendingPathComponent("external.html"), resolvingAgainstBaseURL: false))
+        components.host = "localhost"
+        let configuration = WKWebViewConfiguration(); configuration.webExtensionController = runtime.controller
+        let external = WKWebView(frame: peer.frame, configuration: configuration)
+        window.rootViewController?.view.addSubview(external)
+        runtime.register(external)
+        defer { external.stopLoading(); runtime.unregister(external) }
+        external.load(URLRequest(url: try XCTUnwrap(components.url)))
+        for _ in 0..<100 {
+            if (try? await external.evaluateJavaScript("!!document.getElementById('ready')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let reply = try await external.callAsyncJavaScript("""
+            const api=globalThis.chrome?.runtime||globalThis.browser?.runtime;
+            const request=new Promise((resolve,reject)=>{
+                api.sendMessage(identifier,{ping:'native-roundtrip'},reply=>{
+                    if(api.lastError)reject(Error(api.lastError.message));else resolve(reply);
+                });
+            });
+            try{return {reply:await Promise.race([request,new Promise((_,reject)=>setTimeout(()=>reject(Error('message timeout')),5000))])};}
+            catch(e){return {error:String(e)};}
+            """, arguments: ["identifier": context.uniqueIdentifier], in: nil, contentWorld: .page) as? [String: Any]
+        XCTAssertEqual((reply?["reply"] as? [String: Any])?["pong"] as? String, "native-roundtrip", String(describing: reply))
     }
 }

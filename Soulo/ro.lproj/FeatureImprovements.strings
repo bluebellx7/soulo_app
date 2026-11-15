@@ -81,3 +81,58 @@
 "Website cache" = "Cache-ul site-ului web";
 "Website icons" = "Pictogramele site-ului web";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "Sincronizarea iCloud salvează o copie înainte de modificarea configurărilor. Se păstrează ultimele %lld copii și copia inițială.";
+
+"Move tab to new window" = "Mută într-o fereastră nouă";
+
+"Save webpage" = "Salvează pagina";
+
+"Webpage" = "Pagină web";
+
+"Website data" = "Datele site-urilor";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Include articole salvate, indexul cărților, coperți și progresul lecturii. Cărțile sunt numărate la fișiere descărcate.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Dimensiunile sunt estimate. IndexedDB include baze de date și conținut media. Dimensiunile indisponibile apar ca —.";
+"Extension temporary cache" = "Cache temporar al extensiilor";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Elimină conținutul media temporar al extensiilor. Păstrează setările, scripturile, progresul și fișierele descărcate. Închide întâi paginile extensiilor și videoclipurilor și finalizează descărcările.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Datele temporare sunt încă utilizate. Închide paginile extensiilor și videoclipurilor, finalizează descărcările și încearcă din nou.";
+"Deleting website data can sign you out and remove offline content." = "Ștergerea datelor te poate deconecta și poate elimina conținutul offline.";
+
+"Extension startup timed out." = "A expirat timpul de pornire a extensiei.";
+
+"soulo_extensions" = "Extensii Soulo";
+
+"Add to Quick Links" = "Adaugă la linkuri rapide";
+"Remove from Quick Links" = "Elimină din linkuri rapide";
+"Mark bookmarks with a heart to show them here." = "Ține apăsat un marcaj și marchează-l cu o inimă pentru a-l afișa aici.";
+
+"Type %@ to confirm." = "Scrieți %@ pentru confirmare.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Marcajele sunt îmbinate între dispozitive. Doar ștergerile explicite elimină elemente.";
+"This deletion also syncs to your other devices." = "Această ștergere se sincronizează și cu celelalte dispozitive.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Copiați instrucțiunea, adăugați cerințele și trimiteți-o unui AI. Apoi lipiți aici JSON-ul generat pentru import.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Numele grupurilor din JSON au prioritate. Grupurile corespunzătoare se îmbină fără eliminarea platformelor existente.";
+"Imported %1$d platforms into %2$d groups." = "S-au importat %1$d platforme în %2$d grupuri.";
+"No new platforms or group entries." = "Nu există platforme sau intrări de grup noi.";
+
+"App size" = "Dimensiunea aplicației";
+"App data" = "Datele aplicației";
+"Wallpaper cache" = "Cache pentru fundaluri";
+"Other caches" = "Alte cache-uri";
+"Temporary files" = "Fișiere temporare";
+"Download task data" = "Datele sarcinilor de descărcare";
+"Settings and records" = "Configurări și înregistrări";
+"Shared app data" = "Date partajate ale aplicației";
+"Other app data" = "Alte date ale aplicației";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Datele nu includ programul instalat. Dimensiunea pe disc poate diferi de Configurările iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Șterge conținutul salvat din lista sa. Fișierele temporare active și bazele cache ale sistemului sunt eliberate când este sigur.";
+
+"Current platforms" = "Platforme actuale";
+"Import mode" = "Mod de import";
+"Append" = "Adaugă";
+"Replace all" = "Înlocuiește tot";
+"Replace all platforms?" = "Înlocuiești toate platformele?";
+"A settings backup is saved before replacement." = "Se salvează o copie a configurărilor înainte de înlocuire.";
+
+"Take over web players" = "Preia redarea web";
+"Only takes over website fullscreen. Extension players stay independent." = "Preia doar redarea pe tot ecranul a site-ului. Playerele extensiilor rămân independente.";
+
+"App size is the installed program and resources, not the App Store download size." = "Dimensiunea aplicației include programul și resursele instalate, nu descărcarea din App Store.";
+"App data is the total of the categories below." = "Datele aplicației reprezintă totalul categoriilor de mai jos.";

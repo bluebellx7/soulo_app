@@ -81,3 +81,58 @@
 "Website cache" = "Memòria cau del lloc web";
 "Website icons" = "Icones del lloc web";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "La sincronització amb iCloud desa una còpia abans de canviar els ajustos. Es conserven les %lld còpies més recents i la còpia inicial.";
+
+"Move tab to new window" = "Mou a una finestra nova";
+
+"Save webpage" = "Desa la pàgina";
+
+"Webpage" = "Pàgina web";
+
+"Website data" = "Dades dels llocs";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Inclou articles desats, índex de llibres, cobertes i progrés de lectura. Els llibres es compten als fitxers baixats.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Les mides són estimades. IndexedDB inclou bases de dades i contingut multimèdia. Les mides no disponibles es mostren com —.";
+"Extension temporary cache" = "Memòria cau temporal d’extensions";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Elimina dades multimèdia temporals. Conserva configuració, scripts, progrés i baixades. Tanca les pàgines d’extensions i vídeos i acaba les baixades abans.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Les dades temporals encara s’utilitzen. Tanca les pàgines d’extensions i vídeos, acaba les baixades i torna-ho a provar.";
+"Deleting website data can sign you out and remove offline content." = "Eliminar les dades et pot desconnectar i suprimir contingut fora de línia.";
+
+"Extension startup timed out." = "S’ha esgotat el temps d’inici de l’extensió.";
+
+"soulo_extensions" = "Extensions de Soulo";
+
+"Add to Quick Links" = "Afegeix als enllaços ràpids";
+"Remove from Quick Links" = "Treu dels enllaços ràpids";
+"Mark bookmarks with a heart to show them here." = "Mantén premut un marcador i marca’l amb un cor per mostrar-lo aquí.";
+
+"Type %@ to confirm." = "Escriu %@ per confirmar.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Els marcadors es combinen entre dispositius. Només s’eliminen si els esborres expressament.";
+"This deletion also syncs to your other devices." = "Aquesta eliminació també se sincronitza amb els altres dispositius.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Copia la instrucció, afegeix-hi els requisits i envia-la a una IA. Després enganxa aquí el JSON per importar-lo.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Els noms de grup del JSON tenen prioritat. Els grups coincidents es combinen sense eliminar plataformes existents.";
+"Imported %1$d platforms into %2$d groups." = "S’han importat %1$d plataformes a %2$d grups.";
+"No new platforms or group entries." = "No hi ha plataformes ni entrades de grup noves.";
+
+"App size" = "Mida de l’app";
+"App data" = "Dades de l’app";
+"Wallpaper cache" = "Memòria cau de fons";
+"Other caches" = "Altres memòries cau";
+"Temporary files" = "Fitxers temporals";
+"Download task data" = "Dades de descàrregues";
+"Settings and records" = "Configuració i registres";
+"Shared app data" = "Dades compartides de l’app";
+"Other app data" = "Altres dades de l’app";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Les dades de l’app no inclouen el programa instal·lat. La mida al disc pot diferir de la configuració d’iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Elimina el contingut desat des de la seva llista. Els fitxers temporals actius i les bases de memòria cau del sistema s’alliberen quan és segur.";
+
+"Current platforms" = "Plataformes actuals";
+"Import mode" = "Mode d’importació";
+"Append" = "Afegeix";
+"Replace all" = "Substitueix-ho tot";
+"Replace all platforms?" = "Voleu substituir totes les plataformes?";
+"A settings backup is saved before replacement." = "Es desa una còpia dels ajustos abans de substituir.";
+
+"Take over web players" = "Controla els reproductors web";
+"Only takes over website fullscreen. Extension players stay independent." = "Només substitueix la pantalla completa del web. Els reproductors d’extensions són independents.";
+
+"App size is the installed program and resources, not the App Store download size." = "La mida de l’app és el programa i els recursos instal·lats, no la baixada de l’App Store.";
+"App data is the total of the categories below." = "Les dades de l’app són el total de les categories següents.";

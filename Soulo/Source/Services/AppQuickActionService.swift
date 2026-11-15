@@ -109,6 +109,7 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         TorrentBackgroundCoordinator.shared.register()
+        MediaExportBackgroundService.shared.register()
         Task { @MainActor in
             _ = TorrentDownloadService.shared
             _ = ED2KDownloadService.shared

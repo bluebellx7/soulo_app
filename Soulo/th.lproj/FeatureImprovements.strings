@@ -81,3 +81,58 @@
 "Website cache" = "แคชของเว็บไซต์";
 "Website icons" = "ไอคอนเว็บไซต์";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "การเชื่อมข้อมูล iCloud จะสำรองข้อมูลก่อนเปลี่ยนการตั้งค่า โดยเก็บ %lld ชุดล่าสุดและชุดเริ่มต้นไว้";
+
+"Move tab to new window" = "ย้ายไปหน้าต่างใหม่";
+
+"Save webpage" = "บันทึกหน้าเว็บ";
+
+"Webpage" = "หน้าเว็บ";
+
+"Website data" = "ข้อมูลเว็บไซต์";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "รวมบทความที่บันทึก ดัชนีหนังสือ ปก และความคืบหน้าการอ่าน ไฟล์หนังสือนับรวมในไฟล์ที่ดาวน์โหลด";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "ขนาดเป็นค่าประมาณ IndexedDB รวมฐานข้อมูลและไฟล์สื่อ ขนาดที่ไม่ทราบจะแสดงเป็น —";
+"Extension temporary cache" = "แคชชั่วคราวของส่วนขยาย";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "ลบสื่อชั่วคราวของส่วนขยาย เก็บการตั้งค่า สคริปต์ ความคืบหน้า และไฟล์ที่ดาวน์โหลด โปรดปิดหน้าส่วนขยายและวิดีโอ แล้วดาวน์โหลดให้เสร็จก่อน";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "ข้อมูลชั่วคราวยังใช้งานอยู่ โปรดปิดหน้าส่วนขยายและวิดีโอ ดาวน์โหลดให้เสร็จ แล้วลองอีกครั้ง";
+"Deleting website data can sign you out and remove offline content." = "การลบข้อมูลอาจทำให้คุณออกจากระบบและลบเนื้อหาออฟไลน์";
+
+"Extension startup timed out." = "หมดเวลาการเริ่มส่วนขยาย";
+
+"soulo_extensions" = "ส่วนขยาย Soulo";
+
+"Add to Quick Links" = "เพิ่มในลิงก์ด่วน";
+"Remove from Quick Links" = "นำออกจากลิงก์ด่วน";
+"Mark bookmarks with a heart to show them here." = "กดบุ๊กมาร์กค้างไว้แล้วทำเครื่องหมายหัวใจเพื่อแสดงที่นี่";
+
+"Type %@ to confirm." = "พิมพ์ %@ เพื่อยืนยัน";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "รวมบุ๊กมาร์กระหว่างอุปกรณ์ จะนำรายการออกเมื่อสั่งลบอย่างชัดเจนเท่านั้น";
+"This deletion also syncs to your other devices." = "การลบนี้จะซิงค์ไปยังอุปกรณ์อื่นของคุณด้วย";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "คัดลอกพรอมต์นี้ เพิ่มความต้องการแล้วส่งให้ AI จากนั้นวาง JSON ที่ได้ที่นี่เพื่อนำเข้า";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "ใช้ชื่อกลุ่มใน JSON เป็นหลัก กลุ่มที่ชื่อเหมือนกันจะถูกรวมโดยไม่ลบแพลตฟอร์มเดิม";
+"Imported %1$d platforms into %2$d groups." = "นำเข้า %1$d แพลตฟอร์มไปยัง %2$d กลุ่มแล้ว";
+"No new platforms or group entries." = "ไม่มีแพลตฟอร์มหรือรายการกลุ่มใหม่";
+
+"App size" = "ขนาดแอป";
+"App data" = "ข้อมูลแอป";
+"Wallpaper cache" = "แคชวอลเปเปอร์";
+"Other caches" = "แคชอื่น";
+"Temporary files" = "ไฟล์ชั่วคราว";
+"Download task data" = "ข้อมูลการดาวน์โหลด";
+"Settings and records" = "การตั้งค่าและบันทึก";
+"Shared app data" = "ข้อมูลแอปที่ใช้ร่วมกัน";
+"Other app data" = "ข้อมูลแอปอื่น";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "ข้อมูลแอปไม่รวมโปรแกรมที่ติดตั้ง ขนาดบนดิสก์อาจต่างจากการตั้งค่า iOS";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "ลบเนื้อหาที่บันทึกจากรายการของเนื้อหานั้น ไฟล์ชั่วคราวที่ใช้งานและฐานข้อมูลแคชระบบจะถูกปล่อยเมื่อปลอดภัย";
+
+"Current platforms" = "แพลตฟอร์มปัจจุบัน";
+"Import mode" = "โหมดนำเข้า";
+"Append" = "เพิ่ม";
+"Replace all" = "แทนที่ทั้งหมด";
+"Replace all platforms?" = "แทนที่ทุกแพลตฟอร์มหรือไม่";
+"A settings backup is saved before replacement." = "ระบบจะบันทึกข้อมูลสำรองการตั้งค่าก่อนแทนที่";
+
+"Take over web players" = "ใช้ Soulo แทนตัวเล่นเว็บ";
+"Only takes over website fullscreen. Extension players stay independent." = "ใช้แทนเฉพาะการเล่นเต็มหน้าจอของเว็บไซต์ ตัวเล่นของส่วนขยายยังทำงานแยกกัน";
+
+"App size is the installed program and resources, not the App Store download size." = "ขนาดแอปคือโปรแกรมและทรัพยากรที่ติดตั้ง ไม่ใช่ขนาดดาวน์โหลดจาก App Store";
+"App data is the total of the categories below." = "ข้อมูลแอปคือผลรวมของหมวดหมู่ด้านล่าง";

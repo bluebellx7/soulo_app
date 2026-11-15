@@ -1,6 +1,1 @@
-1.2.13
-
-• Samostatné pozadia pre svetlý a tmavý vzhľad a prepínač vrstvy cez obrázok.
-• Vylepšené farby úvodnej stránky; ukážka tapety sleduje tému aplikácie.
-• Prezerajte si tapety, zdieľajte ich a ukladajte do Fotiek.
-• Nastavenia horných kariet s novou kartou a voliteľným skrytím lišty platforiem po navigácii.
+Vylepšené okná na iPade, hlasové zadávanie, lokálne súhrny a prístupnosť. Vylepšený export médií na pozadí, Skratky a kompatibilita rozšírení. Niektoré funkcie závisia od zariadenia, verzie systému a jazyka.

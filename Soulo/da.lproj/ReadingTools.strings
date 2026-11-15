@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Lydspor";
 "media_subtitles" = "Undertekster";
 "media_track_off" = "Fra";
-"video_settings" = "Video";
+"video_settings" = "Videoindstillinger";
 "video_show_tools" = "Vis videoværktøjer";
 "video_show_tools_desc" = "Vis værktøjer på webvideoer til afspilningshastighed, downloads og fuldskærm.";
 "video_default_player" = "Standardafspiller";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Matteret glas";
 "wallpaper_blur_amount" = "Sløringsstyrke";
 
-"auto_hide_platform_bar_hint" = "Platformlinjen skjules, når du åbner et søgeresultat. Gå tilbage til resultaterne, eller start en ny søgning for at vise den igen. Du kan slå det fra i denne menu.";
+"auto_hide_platform_bar_hint" = "Platformslinjen skjules først, når du trykker på sidens indhold. Automatiske omdirigeringer og rulning skjuler den ikke. Gå tilbage til søgeresultaterne eller start en ny søgning for at vise den igen.";
+
+"ad_subscription_add" = "Tilføj filterliste";
+"ad_subscription_name" = "Navn";
+"ad_subscription_url" = "Abonnements-URL";
+"ad_subscription_invalid" = "Indtast et navn og en gyldig HTTP- eller HTTPS-abonnementsadresse.";
+"ad_subscription_duplicate" = "Denne abonnementsadresse er allerede tilføjet.";
+
+"feedback_settings" = "Lyde og vibration";
+"feedback_settings_hint" = "Styr vibration og brugerfladelyde i hele appen. Afspilning på websider samt video og lyd påvirkes ikke.";
+
+"home_display_settings" = "Visning af startside";
+"browsing_display_settings" = "Browservisning";
+
+"web_video_download" = "Webvideodownloads";
+"web_video_download_description" = "Vis knapper til videodownload på websider, episodelister og afspillere. Afspilning og eksisterende downloads ændres ikke.";
+"builtin_extension" = "Indbygget udvidelse";
+
+"wallpaper_overlay_amount" = "Overlejringsstyrke";
+"feedback_contact_required" = "Angiv en e-mail eller anden kontakt, så vi kan svare.";
+"torrent_incomplete" = "Ufuldstændig";
+"extend_page_background" = "Udvid sidens baggrund";
+"extend_page_background_desc" = "Udvid farverne øverst og nederst på siden til browserens kanter, også farveforløb.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Skjul gruppe";
+"tab_group_expand" = "Udvid gruppe";
+"freeze_page_background_on_scroll" = "Behold de første farver";
+"freeze_page_background_on_scroll_desc" = "Behold de først registrerede farver efter rulning. Nye sider får farverne registreret igen.";
+"page_background_gradient" = "Udvid med farveovergang";
+"page_background_gradient_desc" = "Bland de fundne farver i en overgang. Slå fra for én ensfarvet farve ved hver kant.";
+
+
+"gestures_feedback_settings" = "Bevægelser og feedback";

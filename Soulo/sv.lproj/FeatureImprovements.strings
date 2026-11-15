@@ -81,3 +81,58 @@
 "Website cache" = "Webbplats cache";
 "Website icons" = "Webbplats ikoner";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "iCloud-synkronisering sparar en säkerhetskopia innan inställningar ändras. De senaste %lld kopiorna och den ursprungliga kopian behålls.";
+
+"Move tab to new window" = "Flytta till nytt fönster";
+
+"Save webpage" = "Spara webbsida";
+
+"Webpage" = "Webbsida";
+
+"Website data" = "Webbplatsdata";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Innehåller sparade artiklar, bokindex, omslag och läsframsteg. Bokfiler räknas som hämtade filer.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Storlekarna är uppskattningar. IndexedDB omfattar databaser och medier. Okända storlekar visas som —.";
+"Extension temporary cache" = "Tillfällig tilläggscache";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Tar bort tillfälliga medier från tillägg. Behåller inställningar, skript, framsteg och hämtade filer. Stäng först tilläggs- och videosidor och slutför hämtningar.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Tillfälliga data används fortfarande. Stäng tilläggs- och videosidor, slutför hämtningar och försök igen.";
+"Deleting website data can sign you out and remove offline content." = "Om du tar bort data kan du loggas ut och offlineinnehåll tas bort.";
+
+"Extension startup timed out." = "Tidsgränsen för att starta tillägget överskreds.";
+
+"soulo_extensions" = "Soulo-tillägg";
+
+"Add to Quick Links" = "Lägg till i snabblänkar";
+"Remove from Quick Links" = "Ta bort från snabblänkar";
+"Mark bookmarks with a heart to show them here." = "Håll inne ett bokmärke och markera det med ett hjärta för att visa det här.";
+
+"Type %@ to confirm." = "Skriv %@ för att bekräfta.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Bokmärken slås samman mellan enheter. Endast uttryckliga borttagningar tar bort objekt.";
+"This deletion also syncs to your other devices." = "Denna borttagning synkroniseras även till dina andra enheter.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Kopiera prompten, lägg till dina önskemål och skicka den till en AI. Klistra sedan in dess JSON här för att importera.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Gruppnamn i JSON har företräde. Matchande grupper slås samman utan att befintliga plattformar tas bort.";
+"Imported %1$d platforms into %2$d groups." = "Importerade %1$d plattformar till %2$d grupper.";
+"No new platforms or group entries." = "Inga nya plattformar eller grupposter.";
+
+"App size" = "Appstorlek";
+"App data" = "Appdata";
+"Wallpaper cache" = "Bakgrundscache";
+"Other caches" = "Andra cacheminnen";
+"Temporary files" = "Tillfälliga filer";
+"Download task data" = "Data för nedladdningsuppgifter";
+"Settings and records" = "Inställningar och poster";
+"Shared app data" = "Delade appdata";
+"Other app data" = "Andra appdata";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Appdata omfattar inte det installerade programmet. Storleken på disken kan skilja sig från iOS-inställningar.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Ta bort sparat innehåll från dess egen lista. Aktiva tillfälliga filer och systemets cachedatabaser frigörs när det är säkert.";
+
+"Current platforms" = "Nuvarande plattformar";
+"Import mode" = "Importläge";
+"Append" = "Lägg till";
+"Replace all" = "Ersätt alla";
+"Replace all platforms?" = "Ersätta alla plattformar?";
+"A settings backup is saved before replacement." = "En säkerhetskopia av inställningarna sparas före ersättningen.";
+
+"Take over web players" = "Ta över webbspelare";
+"Only takes over website fullscreen. Extension players stay independent." = "Tar bara över webbplatsens helskärmsuppspelning. Tilläggens spelare förblir oberoende.";
+
+"App size is the installed program and resources, not the App Store download size." = "Appstorleken är det installerade programmet och resurserna, inte App Store-hämtningen.";
+"App data is the total of the categories below." = "Appdata är summan av kategorierna nedan.";

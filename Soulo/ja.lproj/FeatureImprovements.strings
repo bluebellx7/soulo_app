@@ -81,3 +81,58 @@
 "Website cache" = "ウェブサイトのキャッシュ";
 "Website icons" = "ウェブサイトのアイコン";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "iCloud設定同期が有効な場合、設定の変更前にバックアップを保存します。最新の%lld件と初期バックアップを保持します。";
+
+"Move tab to new window" = "新しいウインドウに移動";
+
+"Save webpage" = "ページを保存";
+
+"Webpage" = "Webページ";
+
+"Website data" = "Webサイトデータ";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "保存した記事本文、書籍の索引、表紙、読書の進行状況を含みます。書籍ファイルはダウンロード済みファイルに計上されます。";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "サイトの使用量は推定値です。IndexedDB にはデータベースとメディアが含まれます。取得できないサイズは — と表示されます。";
+"Extension temporary cache" = "拡張機能の一時キャッシュ";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "拡張機能の一時メディアを削除します。設定、スクリプト、再生位置、ダウンロード済みファイルは保持します。先に拡張機能と動画のページを閉じ、ダウンロードを完了してください。";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "一時データを使用中です。拡張機能と動画のページを閉じ、ダウンロード完了後に再試行してください。";
+"Deleting website data can sign you out and remove offline content." = "サイトデータを削除すると、ログアウトしたりオフラインコンテンツが削除されたりする場合があります。";
+
+"Extension startup timed out." = "拡張機能の起動がタイムアウトしました。";
+
+"soulo_extensions" = "Soulo 拡張機能";
+
+"Add to Quick Links" = "クイックリンクに追加";
+"Remove from Quick Links" = "クイックリンクから削除";
+"Mark bookmarks with a heart to show them here." = "ブックマークを長押ししてハートを付けると、ここに表示されます。";
+
+"Type %@ to confirm." = "確認するには %@ と入力してください。";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "デバイス間のブックマークを統合します。明示的に削除した項目だけが削除されます。";
+"This deletion also syncs to your other devices." = "この削除は他のデバイスにも同期されます。";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "プロンプトをコピーして要望を追記し、AIに送信してください。生成されたJSONをここに貼り付けて読み込みます。";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "JSON内のグループ名を優先します。同名グループは既存のプラットフォームを残して統合します。";
+"Imported %1$d platforms into %2$d groups." = "%1$d件のプラットフォームを%2$d件のグループに読み込みました。";
+"No new platforms or group entries." = "新しいプラットフォームやグループ項目はありません。";
+
+"App size" = "アプリのサイズ";
+"App data" = "アプリのデータ";
+"Wallpaper cache" = "壁紙キャッシュ";
+"Other caches" = "その他のキャッシュ";
+"Temporary files" = "一時ファイル";
+"Download task data" = "ダウンロードタスクのデータ";
+"Settings and records" = "設定と記録";
+"Shared app data" = "共有アプリデータ";
+"Other app data" = "その他のアプリデータ";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "アプリのデータにはインストール済みプログラムは含まれません。ディスク使用量は iOS の設定と異なる場合があります。";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "保存した内容は各リストから削除してください。使用中の一時ファイルとシステムキャッシュのデータベースは、安全な時点で解放されます。";
+
+"Current platforms" = "現在のプラットフォーム";
+"Import mode" = "読み込み方法";
+"Append" = "追加";
+"Replace all" = "すべて置換";
+"Replace all platforms?" = "すべてのプラットフォームを置換しますか？";
+"A settings backup is saved before replacement." = "置換前に設定のバックアップを保存します。";
+
+"Take over web players" = "Webプレーヤーを置き換える";
+"Only takes over website fullscreen. Extension players stay independent." = "Webサイトの全画面再生のみを置き換えます。拡張機能のプレーヤーには影響しません。";
+
+"App size is the installed program and resources, not the App Store download size." = "Appのサイズはインストール済みのプログラムとリソースの容量で、App Storeでのダウンロードサイズとは異なります。";
+"App data is the total of the categories below." = "Appデータは以下の項目の合計です。";

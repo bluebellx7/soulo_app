@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Eén zoekopdracht, meer dan 40 platforms";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Zoek of voer de URL in";
 "privacy_search_placeholder" = "Privé zoeken of URL invoeren";
 "search" = "Zoeken";
@@ -354,7 +354,7 @@
 "voice_stop" = "Stop";
 "voice_record" = "Opnemen";
 "batch_import" = "Batch-import";
-"batch_import_format" = "Plak JSON in het onderstaande formaat";
+"batch_import_format" = "Plak JSON hier";
 "batch_import_group" = "Toevoegen aan groep (optioneel)";
 "batch_import_group_placeholder" = "bijv. Films";
 "batch_import_film_entry" = "Open filmplatformvoorinstellingen";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Extensie kon niet worden geïnstalleerd";
 "extension_permissions_summary" = "%d rechten · %d websiteregels";
 "extension_untitled" = "Naamloze extensie";
-"web_extension_install_footer" = "Installeer compatibele extensies via een winkellink of importeer CRX, XPI, ZIP of een extensiemap. Controleer rechten en compatibiliteit; sommige desktopfuncties zijn niet beschikbaar.";
+"web_extension_install_footer" = "Na installatie kun je de machtigingen wijzigen bij het beheer van de extensie.";
 "web_extension_install_store_link" = "Installeren via winkellink...";
 "web_extension_browse_sources" = "Blader door extensiewinkels";
 "web_extension_browse_sources_footer" = "Store Get-knoppen ondersteunen alleen hun eigen desktopbrowsers. Kopieer de link naar een extensiedetailpagina en gebruik vervolgens Installeren vanuit winkellink in Soulo.";
 "web_extension_store_install_title" = "Installeer een winkelextensie";
 "extension_page_banner_title" = "Installeer met Soulo";
-"extension_page_banner_desc" = "Controleer compatibiliteit en rechten vóór installatie.";
-"web_extension_store_install_desc" = "Plak de link naar de detailpagina van een Chrome-, Edge- of Firefox-extensie en controleer compatibiliteit en rechten voordat je de installatie bevestigt.";
+"extension_page_banner_desc" = "Na installatie kun je de machtigingen wijzigen bij het beheer van de extensie.";
+"web_extension_store_install_desc" = "Na installatie kun je de machtigingen wijzigen bij het beheer van de extensie.";
 "web_extension_store_link_placeholder" = "Link naar extensiepagina of Chrome-extensie-ID";
 "web_extension_store_invalid_link" = "Plak een link naar een extensiedetailpagina uit Chrome, Edge of Firefox, een Chrome-extensie-ID of een directe CRX-, XPI- of ZIP-link.";
 "web_extension_store_https_required" = "Extensiepakketten moeten een beveiligde HTTPS-link gebruiken.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Houd het Soulo-symbool op je beginscherm ingedrukt om de hier ingestelde snelkoppelingen te gebruiken.";
 
 "ad_block_scope_hint" = "Filtert webadvertenties, promotielagen en ongewenste pop-ups. Als een website niet werkt, kun je de filtering alleen voor die site uitschakelen.";
+
+"privacy_clear_browsing_on_exit" = "Geschiedenis wissen bij afsluiten";
+"privacy_clear_browsing_on_exit_desc" = "Wis bezochte pagina’s bij overschakelen naar de achtergrond of opnieuw starten. Bewaar zoektermen.";

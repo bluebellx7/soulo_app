@@ -81,3 +81,58 @@
 "Website cache" = "वेबसाइट कॅशे";
 "Website icons" = "वेबसाइट चिन्ह";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "iCloud सिंक सेटिंग्ज बदलण्यापूर्वी बॅकअप जतन करते. सुरुवातीच्या प्रतीसह अलीकडील %lld बॅकअप ठेवले जातात.";
+
+"Move tab to new window" = "नवीन विंडोमध्ये हलवा";
+
+"Save webpage" = "वेबपेज जतन करा";
+
+"Webpage" = "वेबपेज";
+
+"Website data" = "वेबसाइट डेटा";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "यात जतन केलेले लेख, पुस्तकांची सूची, मुखपृष्ठे आणि वाचनाची प्रगती आहे. पुस्तकांच्या फायली डाउनलोड केलेल्या फायलींमध्ये मोजल्या जातात.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "आकार अंदाजे आहेत. IndexedDB मध्ये डेटाबेस आणि मीडिया फायली असतात. अनुपलब्ध आकार — ने दिसतो.";
+"Extension temporary cache" = "विस्तारांची तात्पुरती कॅशे";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "विस्तारांचा तात्पुरता मीडिया काढते. सेटिंग्ज, स्क्रिप्ट, प्रगती आणि डाउनलोड फायली ठेवते. आधी विस्तार व व्हिडिओ पृष्ठे बंद करून डाउनलोड पूर्ण करा.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "तात्पुरता डेटा अजून वापरात आहे. विस्तार व व्हिडिओ पृष्ठे बंद करा, डाउनलोड पूर्ण करा आणि पुन्हा प्रयत्न करा.";
+"Deleting website data can sign you out and remove offline content." = "वेबसाइट डेटा हटवल्यास साइन आउट होऊ शकते आणि ऑफलाइन सामग्री काढली जाऊ शकते.";
+
+"Extension startup timed out." = "विस्तार सुरू होण्याची वेळ संपली.";
+
+"soulo_extensions" = "Soulo विस्तार";
+
+"Add to Quick Links" = "द्रुत दुव्यांमध्ये जोडा";
+"Remove from Quick Links" = "द्रुत दुव्यांमधून काढा";
+"Mark bookmarks with a heart to show them here." = "येथे दाखवण्यासाठी बुकमार्क दाबून धरून हृदयाची खूण करा.";
+
+"Type %@ to confirm." = "पुष्टी करण्यासाठी %@ लिहा.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "उपकरणांवरील बुकमार्क एकत्र केले जातात. स्पष्टपणे हटवले तरच ते काढले जातात.";
+"This deletion also syncs to your other devices." = "हे हटवणे तुमच्या इतर उपकरणांवरही सिंक होईल.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "हा प्रॉम्प्ट कॉपी करा, तुमच्या गरजा जोडा आणि AI ला पाठवा. नंतर त्याचा JSON येथे पेस्ट करून आयात करा.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "JSON मधील गटांच्या नावांना प्राधान्य आहे. जुळणारे गट विद्यमान प्लॅटफॉर्म न हटवता एकत्र केले जातात.";
+"Imported %1$d platforms into %2$d groups." = "%1$d प्लॅटफॉर्म %2$d गटांत आयात केले.";
+"No new platforms or group entries." = "नवीन प्लॅटफॉर्म किंवा गट नोंदी नाहीत.";
+
+"App size" = "ॲपचा आकार";
+"App data" = "ॲप डेटा";
+"Wallpaper cache" = "वॉलपेपर कॅशे";
+"Other caches" = "इतर कॅशे";
+"Temporary files" = "तात्पुरत्या फाइल्स";
+"Download task data" = "डाउनलोड कार्य डेटा";
+"Settings and records" = "सेटिंग्ज आणि नोंदी";
+"Shared app data" = "सामायिक ॲप डेटा";
+"Other app data" = "इतर ॲप डेटा";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "ॲप डेटामध्ये स्थापित प्रोग्राम समाविष्ट नाही. डिस्कवरील आकार iOS सेटिंग्जपेक्षा वेगळा असू शकतो.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "जतन केलेली सामग्री तिच्या यादीतून हटवा. वापरातील तात्पुरत्या फाइल्स आणि सिस्टम कॅशे डेटाबेस सुरक्षित झाल्यावर मोकळे होतील.";
+
+"Current platforms" = "सध्याचे प्लॅटफॉर्म";
+"Import mode" = "आयात पद्धत";
+"Append" = "जोडा";
+"Replace all" = "सर्व बदला";
+"Replace all platforms?" = "सर्व प्लॅटफॉर्म बदलायचे?";
+"A settings backup is saved before replacement." = "बदलण्यापूर्वी सेटिंग्जचा बॅकअप जतन केला जाईल.";
+
+"Take over web players" = "वेब प्लेअरचा ताबा घ्या";
+"Only takes over website fullscreen. Extension players stay independent." = "फक्त वेबसाइटचे पूर्णस्क्रीन प्लेबॅक बदलते. एक्स्टेंशनचे प्लेअर स्वतंत्र राहतात.";
+
+"App size is the installed program and resources, not the App Store download size." = "ॲपचा आकार म्हणजे स्थापित प्रोग्राम आणि संसाधने, App Store डाउनलोडचा आकार नाही.";
+"App data is the total of the categories below." = "ॲप डेटा म्हणजे खालील श्रेणींची एकूण बेरीज.";

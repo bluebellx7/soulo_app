@@ -63,7 +63,6 @@ enum BrowserAddressEditorLayout {
 private struct WebExtensionInstallPresentation: Identifiable {
     let id = UUID()
     let link: String
-    let autoStart: Bool
 }
 
 enum BrowserChromeSymbol {
@@ -268,6 +267,7 @@ struct WebViewContainer: View {
     @State private var pdfResult: WebPagePDFResult?
     @State private var captureError: String?
     @State private var showTranslationSheet = false
+    @State private var showSummarySheet = false
 
     private var toolbarManuallyHidden: Bool {
         get {
@@ -343,7 +343,7 @@ struct WebViewContainer: View {
                     // New Tab Page overlay
                     if isShowingNewTabPage {
                         NewTabPageView(tabManager: tabManager, onSearch: newTabSearchAction) { url in
-                            webViewModel.loadURL(url)
+                            openURLFromBrowserControls(url)
                         }
                         .transition(.opacity)
                     }
@@ -548,7 +548,7 @@ struct WebViewContainer: View {
                             withAnimation { showExternalConfirm = false }
                             if let url = externalBrowserURL {
                                 externalBrowserURL = nil
-                                webViewModel.loadURL(url)
+                                openURLFromBrowserControls(url)
                             }
                         },
                         onConfirm: {
@@ -755,7 +755,7 @@ struct WebViewContainer: View {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     showExternalConfirm = true
                 }
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                HapticsManager.medium()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .linkCopied)) { _ in
@@ -773,7 +773,7 @@ struct WebViewContainer: View {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 showDownloadFailed = true
             }
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            HapticsManager.error()
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 withAnimation { showDownloadFailed = false }
             }
@@ -789,7 +789,7 @@ struct WebViewContainer: View {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     showExternalOpenFailed = true
                 }
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                HapticsManager.error()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     withAnimation { showExternalOpenFailed = false }
                 }
@@ -816,7 +816,7 @@ struct WebViewContainer: View {
                 },
                 onOpenURL: { url in
                     showAddressEditor = false
-                    webViewModel.loadURL(url)
+                    openURLFromBrowserControls(url)
                 },
                 onVoiceInput: {
                     requestVoiceAfterAddressEditorDismisses = true
@@ -878,7 +878,7 @@ struct WebViewContainer: View {
         .sheet(isPresented: $showExtensionCenter) {
             NavigationStack {
                 ExtensionCenterView(onOpenInBrowser: { url in
-                    webViewModel.loadURL(url)
+                    tabManager?.openURLFromBrowserControls(url, searchID: searchVM.searchID, inNewTab: true)
                     showExtensionCenter = false
                 })
                     .toolbar {
@@ -894,8 +894,7 @@ struct WebViewContainer: View {
         }
         .sheet(item: $remoteExtensionInstallPresentation) { presentation in
             WebExtensionStoreInstallView(
-                initialValue: presentation.link,
-                autoStart: presentation.autoStart
+                initialValue: presentation.link
             )
                 .presentationDetents([.height(390), .large])
                 .presentationDragIndicator(.visible)
@@ -908,6 +907,7 @@ struct WebViewContainer: View {
         .navigationDestination(isPresented: $showWiFiTransfer) {
             WiFiTransferView(directory: BookLibrary.directory).toolbar(.visible, for: .navigationBar)
         }
+        .sheet(isPresented: $showSummarySheet) { PageSummaryView(viewModel: webViewModel) }
         .sheet(isPresented: $showArticleReader) {
             if let webView = webViewModel.webView { ArticleReaderView(source: webView) }
         }
@@ -978,7 +978,8 @@ struct WebViewContainer: View {
                 captureError: $captureError,
                 showTranslationSheet: $showTranslationSheet,
                 onCapture: capturePage,
-                onExportPDF: exportPagePDF
+                onExportPDF: exportPagePDF,
+                onOpenURL: openURLFromBrowserControls
             )
         )
         .onReceive(NotificationCenter.default.publisher(for: .browserExtensionInstallCandidate)) { notification in
@@ -988,17 +989,16 @@ struct WebViewContainer: View {
                 return
             }
             extensionInstallCandidate = candidate
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            HapticsManager.medium()
         }
         .onReceive(NotificationCenter.default.publisher(for: .webExtensionStoreInstallRequested)) { notification in
             guard isActiveTab,
                   notification.object as AnyObject? === webViewModel,
                   let value = notification.userInfo?["url"] as? String else { return }
             remoteExtensionInstallPresentation = WebExtensionInstallPresentation(
-                link: value,
-                autoStart: true
+                link: value
             )
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            HapticsManager.medium()
         }
         .onReceive(NotificationCenter.default.publisher(for: .browserExtensionsChanged)) { _ in
             // Rebuild every loaded tab. Otherwise an inactive tab would keep
@@ -1081,6 +1081,14 @@ struct WebViewContainer: View {
         showNewTabPage && webViewModel.currentURL == nil && !webViewModel.isLoading
     }
 
+    private func openURLFromBrowserControls(_ url: URL) {
+        if let tabManager, ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
+            tabManager.openURLFromBrowserControls(url, searchID: searchVM.searchID)
+        } else {
+            webViewModel.loadURL(url)
+        }
+    }
+
     private func setPrivateMode(_ enabled: Bool) {
         guard searchVM.isIncognito != enabled else { return }
         let pageURL = webViewModel.currentURL
@@ -1117,7 +1125,7 @@ struct WebViewContainer: View {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 showExternalOpenFailed = true
             }
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            HapticsManager.error()
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 withAnimation { showExternalOpenFailed = false }
             }
@@ -1195,12 +1203,16 @@ struct WebViewContainer: View {
     }
 
     private var shouldKeepPageAboveToolbar: Bool {
-        keepPageAboveToolbar || webViewModel.needsVideoViewportClearance
+        keepPageAboveToolbar || webViewModel.needsVideoViewportClearance || isExtensionDocument
+    }
+
+    private var isExtensionDocument: Bool {
+        webViewModel.currentURL?.scheme?.lowercased() == "webkit-extension"
     }
 
     private var pageViewportBottomInset: CGFloat {
         guard shouldKeepPageAboveToolbar else { return 0 }
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), !isExtensionDocument {
             // WebKit discards history swipe snapshots when the live view changes
             // size. Keep the frame stable as video controls appear or disappear.
             return 0
@@ -1215,6 +1227,9 @@ struct WebViewContainer: View {
 
     private var webViewObscuredBottomInset: CGFloat {
         guard shouldKeepPageAboveToolbar else { return 0 }
+        // Extension applications pin their own controls to the CSS viewport.
+        // Native obscured insets alone do not move those fixed controls.
+        if isExtensionDocument { return 0 }
         if webViewModel.needsVideoViewportClearance {
             return videoViewportBottomInset
         }
@@ -1289,6 +1304,9 @@ struct WebViewContainer: View {
             onWiFiTransfer: { showWiFiTransfer = true },
             onShowExtensions: { showExtensionCenter = true },
             onGoHome: onGoHome,
+            onNewTab: tabManager.map { manager in
+                { manager.createTab(); searchVM.isSearching = true }
+            },
             onEditAddress: { presentAddressEditor() },
             onAddressTranslation: { handleAddressTranslationAction() },
             onHideToolbar: { hideToolbar() },
@@ -1301,6 +1319,7 @@ struct WebViewContainer: View {
             onInspectResources: { showResourceInspector = true },
             onReadArticle: { showArticleReader = true },
             onTranslatePage: { showTranslationSheet = true },
+            onSummarizePage: { showSummarySheet = true },
             onMoreMenuPresentationChange: { isPresented in
                 toolbarInteractionLocked = isPresented
                 if isPresented, toolbarMinimized {
@@ -1721,7 +1740,7 @@ struct WebViewContainer: View {
     private func copyCurrentPageLink() {
         guard let url = webViewModel.currentURL else { return }
         UIPasteboard.general.url = url
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        HapticsManager.success()
         NotificationCenter.default.post(name: .linkCopied, object: nil)
     }
 
@@ -1767,10 +1786,10 @@ struct WebViewContainer: View {
                 captureResult = try await WebPageCaptureService.capture(mode, from: webViewModel.webView) { completed, total in
                     completedCaptureParts = completed; totalCaptureParts = total
                 }
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                HapticsManager.success()
             } catch {
                 captureError = error.localizedDescription
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                HapticsManager.error()
             }
             isCapturingPage = false
         }
@@ -1790,10 +1809,10 @@ struct WebViewContainer: View {
                         completedCaptureParts = completed; totalCaptureParts = total
                     }
                 )
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                HapticsManager.success()
             } catch {
                 captureError = error.localizedDescription
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                HapticsManager.error()
             }
             isCapturingPage = false
         }
@@ -1914,6 +1933,7 @@ private struct WebToolsPresentationModifier: ViewModifier {
     @Binding var showTranslationSheet: Bool
     let onCapture: (WebPageCaptureMode) -> Void
     let onExportPDF: () -> Void
+    let onOpenURL: (URL) -> Void
 
     func body(content: Content) -> some View {
         content
@@ -1949,7 +1969,7 @@ private struct WebToolsPresentationModifier: ViewModifier {
                 WebPageTranslationSheet(
                     webView: webViewModel.webView,
                     pageURL: webViewModel.currentURL,
-                    onOpenURL: { url in webViewModel.loadURL(url) },
+                    onOpenURL: onOpenURL,
                     onAppleTranslationApplied: { source, target in
                         webViewModel.enableAppleFollowLinkTranslation(source: source, target: target)
                     },

@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "ଗୋଟିଏ ପ୍ରଶ୍ନ, 40+ ପ୍ଲାଟଫର୍ମ";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "URL ସନ୍ଧାନ କରନ୍ତୁ କିମ୍ବା ପ୍ରବେଶ କରନ୍ତୁ";
 "privacy_search_placeholder" = "ବ୍ୟକ୍ତିଗତ ସନ୍ଧାନ କିମ୍ବା URL ପ୍ରବେଶ କରନ୍ତୁ";
 "search" = "ସନ୍ଧାନ କର";
@@ -354,7 +354,7 @@
 "voice_stop" = "ବନ୍ଦ କର";
 "voice_record" = "ରେକର୍ଡ କରନ୍ତୁ";
 "batch_import" = "ବ୍ୟାଚ୍ ଆମଦାନୀ";
-"batch_import_format" = "ନିମ୍ନରେ ଥିବା ଫର୍ମାଟରେ JSON ଲେପନ କରନ୍ତୁ";
+"batch_import_format" = "ଏଠାରେ JSON ପେଷ୍ଟ କରନ୍ତୁ";
 "batch_import_group" = "ଗୋଷ୍ଠୀକୁ ଯୋଡନ୍ତୁ (ବ al କଳ୍ପିକ)";
 "batch_import_group_placeholder" = "ଯଥା ଚଳଚ୍ଚିତ୍ର";
 "batch_import_film_entry" = "ଚଳଚ୍ଚିତ୍ର ପ୍ଲାଟଫର୍ମ ପ୍ରିସେଟ୍ ଖୋଲନ୍ତୁ";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "ସମ୍ପ୍ରସାରଣ ସଂସ୍ଥାପିତ ହୋଇପାରିଲା ନାହିଁ";
 "extension_permissions_summary" = "%d ଅନୁମତିଗୁଡିକ · %d ୱେବସାଇଟ୍ ନିୟମ";
 "extension_untitled" = "ଆଖ୍ୟାବିହୀନ ବିସ୍ତାର";
-"web_extension_install_footer" = "ସୁସଙ୍ଗତ ଷ୍ଟୋର୍ ଲିଙ୍କରୁ ଏକ୍ସଟେନ୍ସନ୍ ଇନ୍‌ଷ୍ଟଲ୍ କରନ୍ତୁ କିମ୍ବା CRX, XPI, ZIP ବା ଏକ୍ସଟେନ୍ସନ୍ ଫୋଲ୍ଡର୍ ଆମଦାନି କରନ୍ତୁ। ପ୍ରଥମେ ଅନୁମତି ଓ ସୁସଙ୍ଗତତା ଯାଞ୍ଚ କରନ୍ତୁ; କିଛି ଡେସ୍କଟପ୍ ସୁବିଧା ଉପଲବ୍ଧ ନୁହେଁ।";
+"web_extension_install_footer" = "ଇନଷ୍ଟଲ୍ କରିବା ପରେ ଏକ୍ସଟେନ୍ସନ୍ ପରିଚାଳନା ପୃଷ୍ଠାରେ ଅନୁମତି ବଦଳାଇପାରିବେ।";
 "web_extension_install_store_link" = "ଷ୍ଟୋର ଲିଙ୍କରୁ ସଂସ୍ଥାପନ…";
 "web_extension_browse_sources" = "ଏକ୍ସଟେନ୍ସନ୍ ଷ୍ଟୋରଗୁଡିକ ବ୍ରାଉଜ୍ କରନ୍ତୁ";
 "web_extension_browse_sources_footer" = "ଷ୍ଟୋର ପାଆନ୍ତୁ ବଟନ୍ କେବଳ ସେମାନଙ୍କର ନିଜସ୍ୱ ଡେସ୍କଟପ୍ ବ୍ରାଉଜରକୁ ସମର୍ଥନ କରେ | ଏକ ବିସ୍ତୃତ ବିବରଣୀ ପୃଷ୍ଠା ଲିଙ୍କ୍ କପି କରନ୍ତୁ, ତାପରେ Soulo ରେ ଷ୍ଟୋର ଲିଙ୍କରୁ ସଂସ୍ଥାପନ ବ୍ୟବହାର କରନ୍ତୁ";
 "web_extension_store_install_title" = "ଏକ ଷ୍ଟୋର ଏକ୍ସଟେନ୍ସନ୍ ସଂସ୍ଥାପନ କରନ୍ତୁ";
 "extension_page_banner_title" = "Soulo ସହିତ ସଂସ୍ଥାପନ କରନ୍ତୁ";
-"extension_page_banner_desc" = "ଇନ୍‌ଷ୍ଟଲ୍ ପୂର୍ବରୁ ସୁସଙ୍ଗତତା ଓ ଅନୁମତି ଯାଞ୍ଚ କରନ୍ତୁ।";
-"web_extension_store_install_desc" = "Chrome, Edge ବା Firefox ଏକ୍ସଟେନ୍ସନ୍‌ର ବିବରଣୀ ପୃଷ୍ଠା ଲିଙ୍କ ପେଷ୍ଟ କରନ୍ତୁ ଏବଂ ଇନ୍‌ଷ୍ଟଲ୍ ନିଶ୍ଚିତ ପୂର୍ବରୁ ସୁସଙ୍ଗତତା ଓ ଅନୁମତି ଯାଞ୍ଚ କରନ୍ତୁ।";
+"extension_page_banner_desc" = "ଇନଷ୍ଟଲ୍ କରିବା ପରେ ଏକ୍ସଟେନ୍ସନ୍ ପରିଚାଳନା ପୃଷ୍ଠାରେ ଅନୁମତି ବଦଳାଇପାରିବେ।";
+"web_extension_store_install_desc" = "ଇନଷ୍ଟଲ୍ କରିବା ପରେ ଏକ୍ସଟେନ୍ସନ୍ ପରିଚାଳନା ପୃଷ୍ଠାରେ ଅନୁମତି ବଦଳାଇପାରିବେ।";
 "web_extension_store_link_placeholder" = "ଏକ୍ସଟେନ୍ସନ୍ ପେଜ୍ ଲିଙ୍କ୍ କିମ୍ବା କ୍ରୋମ୍ ଏକ୍ସଟେନ୍ସନ୍ ID";
 "web_extension_store_invalid_link" = "କ୍ରୋମ୍, ଏଜ୍, କିମ୍ବା ଫାୟାରଫକ୍ସ, ଏକ କ୍ରୋମ୍ ଏକ୍ସଟେନ୍ସନ୍ ID କିମ୍ବା ଏକ ସିଧାସଳଖ CRX, XPI, କିମ୍ବା ZIP ଲିଙ୍କରୁ ଏକ ବିସ୍ତୃତ ବିବରଣୀ ପୃଷ୍ଠା ଲିଙ୍କ୍ ଲେପନ କରନ୍ତୁ";
 "web_extension_store_https_required" = "ଏକ୍ସଟେନ୍ସନ୍ ପ୍ୟାକେଜ୍ ନିଶ୍ଚିତ ଭାବରେ ଏକ ସୁରକ୍ଷିତ HTTPS ଲିଙ୍କ୍ ବ୍ୟବହାର କରିବ";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "ଏଠାରେ ସେଟ୍ କରାଯାଇଥିବା ସର୍ଟକଟ୍ ବ୍ୟବହାର କରିବାକୁ ହୋମ୍ ସ୍କ୍ରିନ୍‌ରେ Soulo ଆଇକନ୍‌କୁ ଦବାଇ ଧରନ୍ତୁ।";
 
 "ad_block_scope_hint" = "ୱେବ୍ ବିଜ୍ଞାପନ, ପ୍ରଚାର ଓଭରଲେ ଓ ଅନାବଶ୍ୟକ ପପ୍-ଅପ୍ ଫିଲ୍ଟର୍ କରେ। କୌଣସି ସାଇଟ୍ କାମ ନକଲେ କେବଳ ସେହି ସାଇଟ୍ ପାଇଁ ଫିଲ୍ଟର୍ ବନ୍ଦ କରିପାରିବେ।";
+
+"privacy_clear_browsing_on_exit" = "ବାହାରିବା ସମୟରେ ବ୍ରାଉଜିଂ ଇତିହାସ ସଫା କରନ୍ତୁ";
+"privacy_clear_browsing_on_exit_desc" = "ପୃଷ୍ଠଭୂମିକୁ ଯିବାବେଳେ କିମ୍ବା ପୁନଃ ଆରମ୍ଭରେ ଦେଖିଥିବା ପୃଷ୍ଠାର ଇତିହାସ ସଫା କରନ୍ତୁ। ସନ୍ଧାନ ଶବ୍ଦ ରଖନ୍ତୁ।";

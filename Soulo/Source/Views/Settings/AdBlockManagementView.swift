@@ -1,16 +1,20 @@
 import SwiftUI
 
+private enum AdBlockRuleDestination: Hashable, Identifiable {
+    case domainAllowlist, manual, builtIn, subscriptions, allowedSites
+    var id: Self { self }
+}
+
 struct AdBlockManagementView: View {
     @ObservedObject private var service = AdBlockSettingsService.shared
     @ObservedObject private var subscriptionService = AdBlockSubscriptionService.shared
     @ObservedObject private var manualRules = ManualAdBlockService.shared
     @ObservedObject private var builtInRules = BuiltInAdRuleStore.shared
     @ObservedObject private var externalNavigation = ExternalNavigationService.shared
-    @Environment(\.dismiss) private var dismiss
     @AppStorage("ad_block_enabled") private var adBlockEnabled = true
     @AppStorage(BrowserDomainNavigationPolicy.preferenceKey) private var confirmCrossDomain = false
     @ObservedObject private var domainAllowlist = BrowserDomainAllowlist.shared
-    @State private var showsDomainAllowlist = false
+    @State private var legacyRuleDestination: AdBlockRuleDestination?
 
     let currentHost: String?
     var showsDoneButton = false
@@ -23,10 +27,15 @@ struct AdBlockManagementView: View {
     }
 
     var body: some View {
+        // Keep navigation destinations independent of this view's dismiss
+        // environment. Capturing it through destination closures can cause
+        // recursive NavigationStack invalidation on iOS 16.
+        let host = currentHost
+        let changed = onChanged
         List {
             Section {
                 Toggle(isOn: $adBlockEnabled) {
-                    Label(LanguageManager.shared.localizedString("ad_block"), systemImage: "shield.checkered")
+                    adSettingLabel(LanguageManager.shared.localizedString("ad_block"), icon: "shield.lefthalf.filled")
                 }
                 .tint(.green)
                 .accessibilityIdentifier("adBlock.enabled")
@@ -38,7 +47,7 @@ struct AdBlockManagementView: View {
 
             Section {
                 Toggle(isOn: $externalNavigation.promptEnabled) {
-                    Label(LanguageManager.shared.localizedString("external_navigation_prompt"), systemImage: "arrow.up.forward.app")
+                    adSettingLabel(LanguageManager.shared.localizedString("external_navigation_prompt"), icon: "arrow.up.forward.app")
                 }
                 .accessibilityIdentifier("adBlock.promptBeforeOpeningApp")
             } footer: {
@@ -47,19 +56,11 @@ struct AdBlockManagementView: View {
 
             Section {
                 Toggle(isOn: $confirmCrossDomain) {
-                    Label(ToolText.text("cross_domain_confirm"), systemImage: "arrow.up.forward.square")
+                    adSettingLabel(ToolText.text("cross_domain_confirm"), icon: "arrow.up.forward.square")
                 }
                 .accessibilityIdentifier("adBlock.confirmCrossDomain")
-                Button { showsDomainAllowlist = true } label: {
-                    HStack {
-                        ruleRow(ToolText.text("cross_domain_allowlist"), icon: "checkmark.shield", count: domainAllowlist.rules.count)
-                        Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("adBlock.domainAllowlist")
+                ruleLink(.domainAllowlist, title: ToolText.text("cross_domain_allowlist"), icon: "checkmark.shield", count: domainAllowlist.rules.count)
+                    .accessibilityIdentifier("adBlock.domainAllowlist")
             } footer: {
                 Text(ToolText.text("cross_domain_confirm_description"))
             }
@@ -84,7 +85,7 @@ struct AdBlockManagementView: View {
                     .accessibilityIdentifier("adBlock.currentSite")
                     if let onMarkAdvertisement {
                         Button(action: onMarkAdvertisement) {
-                            Label(ToolText.text("manual_ad_mark"), systemImage: "viewfinder")
+                            adSettingLabel(ToolText.text("manual_ad_mark"), icon: "viewfinder")
                         }
                         .disabled(!ManualAdBlockService.canUse(on: currentURL, enabled: adBlockEnabled, allowlistedHosts: service.allowlistedHosts))
                         .accessibilityIdentifier("adBlock.markAdvertisement")
@@ -99,29 +100,13 @@ struct AdBlockManagementView: View {
             }
 
             Section(ToolText.text("ad_rule_management")) {
-                NavigationLink {
-                    ManualAdRulesView(currentHost: currentHost)
-                } label: {
-                    ruleRow(ToolText.text("manual_ad_rules"), icon: "eye.slash", count: manualRules.rules.count)
-                }
+                ruleLink(.manual, title: ToolText.text("manual_ad_rules"), icon: "eye.slash", count: manualRules.rules.count)
                 .accessibilityIdentifier("adBlock.manualRules")
-                NavigationLink {
-                    BuiltInAdRulesView(onChanged: onChanged)
-                } label: {
-                    ruleRow(ToolText.text("builtin_rules"), icon: "line.3.horizontal.decrease", count: builtInRules.rules.count)
-                }
+                ruleLink(.builtIn, title: ToolText.text("builtin_rules"), icon: "line.3.horizontal.decrease", count: builtInRules.rules.count)
                 .accessibilityIdentifier("adBlock.builtInRules")
-                NavigationLink {
-                    AdBlockSubscriptionsView(onChanged: onChanged)
-                } label: {
-                    ruleRow(LanguageManager.shared.localizedString("ad_block_subscriptions"), icon: "arrow.triangle.2.circlepath", count: subscriptionService.subscriptions.filter(\.isEnabled).count)
-                }
+                ruleLink(.subscriptions, title: LanguageManager.shared.localizedString("ad_block_subscriptions"), icon: "arrow.triangle.2.circlepath", count: subscriptionService.enabledSubscriptionCount)
                 .accessibilityIdentifier("adBlock.subscriptions")
-                NavigationLink {
-                    AdBlockAllowedSitesView(onChanged: onChanged)
-                } label: {
-                    ruleRow(LanguageManager.shared.localizedString("ad_block_allowlist"), icon: "shield.slash", count: service.permanentAllowlistedHosts.count)
-                }
+                ruleLink(.allowedSites, title: LanguageManager.shared.localizedString("ad_block_allowlist"), icon: "shield.slash", count: service.permanentAllowlistedHosts.count)
                 .accessibilityIdentifier("adBlock.allowedSites")
             }
 
@@ -131,23 +116,94 @@ struct AdBlockManagementView: View {
         .toolbar {
             if showsDoneButton {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+                    AdBlockDoneButton()
                 }
             }
         }
         .onCompatibleChange(of: adBlockEnabled) { _, _ in onChanged?() }
-        .navigationDestination(isPresented: $showsDomainAllowlist) {
-            BrowserDomainAllowlistView()
+        .modifier(AdBlockRuleNavigation(currentHost: host, onChanged: changed))
+        .sheet(item: $legacyRuleDestination) { destination in
+            // Give legacy SwiftUI a separate hosting boundary instead of
+            // invalidating the settings NavigationStack during a nested push.
+            NavigationStack {
+                AdBlockRuleDestinationView(destination: destination, currentHost: host, onChanged: changed)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) { AdBlockDoneButton() }
+                    }
+            }
         }
+    }
+
+    @ViewBuilder
+    private func ruleLink(_ destination: AdBlockRuleDestination, title: String, icon: String, count: Int) -> some View {
+        if #available(iOS 17.0, *) {
+            NavigationLink(value: destination) { ruleRow(title, icon: icon, count: count) }
+        } else {
+            Button { legacyRuleDestination = destination } label: {
+                HStack {
+                    ruleRow(title, icon: icon, count: count)
+                    Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
+            }.buttonStyle(.plain)
+        }
+    }
+
+    private func adSettingLabel(_ title: String, icon: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).foregroundStyle(.blue).frame(width: 24)
+                .accessibilityHidden(true)
+            Text(title).foregroundStyle(.primary)
+        }.frame(minHeight: 44)
     }
 
     private func ruleRow(_ title: String, icon: String, count: Int) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).foregroundStyle(.blue).frame(width: 22)
-            Text(title).foregroundStyle(.primary)
+            adSettingLabel(title, icon: icon)
             Spacer(minLength: 8)
             Text(count.formatted()).foregroundStyle(.secondary).monospacedDigit()
         }
+    }
+}
+
+// iOS 16 uses isolated sheets for all five rule pages. Register value-based
+// destinations only on systems that use them; keeping an unused registration
+// on the legacy parent still couples its navigation environment to child lists.
+private struct AdBlockRuleNavigation: ViewModifier {
+    let currentHost: String?
+    var onChanged: (() -> Void)?
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOS 17.0, *) {
+            content.navigationDestination(for: AdBlockRuleDestination.self) { destination in
+                AdBlockRuleDestinationView(destination: destination, currentHost: currentHost, onChanged: onChanged)
+            }
+        } else {
+            content
+        }
+    }
+}
+
+private struct AdBlockRuleDestinationView: View {
+    let destination: AdBlockRuleDestination
+    let currentHost: String?
+    var onChanged: (() -> Void)?
+    var body: some View {
+        switch destination {
+        case .domainAllowlist: BrowserDomainAllowlistView()
+        case .manual: ManualAdRulesView(currentHost: currentHost)
+        case .builtIn: BuiltInAdRulesView(onChanged: onChanged)
+        case .subscriptions: AdBlockSubscriptionsView(onChanged: onChanged)
+        case .allowedSites: AdBlockAllowedSitesView(onChanged: onChanged)
+        }
+    }
+}
+
+// Keep the navigation parent's body independent of the dismiss environment.
+// iOS 16 otherwise invalidates it repeatedly when a rule subpage is pushed.
+private struct AdBlockDoneButton: View {
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        Button(LanguageManager.shared.localizedString("done")) { dismiss() }
     }
 }
 
@@ -214,8 +270,13 @@ private struct BrowserDomainAllowlistView: View {
 private struct AdBlockSubscriptionsView: View {
     @ObservedObject private var subscriptionService = AdBlockSubscriptionService.shared
     @AppStorage("ad_block_enabled") private var adBlockEnabled = true
+    @State private var showsAddSubscription = false
+    @State private var confirmsReset = false
     var onChanged: (() -> Void)?
     var body: some View {
+        let service = subscriptionService
+        let changed = onChanged
+        let enabled = adBlockEnabled
         List {
             Section {
                 ForEach(subscriptionService.subscriptions) { subscription in
@@ -225,6 +286,10 @@ private struct AdBlockSubscriptionsView: View {
                                 Text(subscription.name)
                                     .font(.body.weight(.medium))
                                     .foregroundStyle(subscription.isEnabled ? Color.primary : Color.secondary)
+                                if subscriptionService.isCustomSubscription(subscription) {
+                                    Text(subscription.urlString)
+                                        .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                                }
                             }
 
                             Spacer()
@@ -237,6 +302,7 @@ private struct AdBlockSubscriptionsView: View {
                                 }
                             ))
                             .labelsHidden()
+                            .accessibilityIdentifier("adBlock.subscription.enabled." + subscription.id)
                             .tint(.green)
                             .disabled(!adBlockEnabled)
                             .accessibilityLabel(subscription.name)
@@ -265,6 +331,14 @@ private struct AdBlockSubscriptionsView: View {
                         }
                     }
                     .padding(.vertical, 4)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        if subscriptionService.isCustomSubscription(subscription) {
+                            Button(role: .destructive) {
+                                subscriptionService.removeSubscription(subscription)
+                                onChanged?()
+                            } label: { Label(ToolText.text("delete_files"), systemImage: "trash") }
+                        }
+                    }
                 }
             } header: {
                 HStack {
@@ -283,7 +357,8 @@ private struct AdBlockSubscriptionsView: View {
                     .accessibilityLabel(LanguageManager.shared.localizedString("ad_block_subscription_update"))
                 }.textCase(nil)
             } footer: {
-                Text(adBlockEnabled ? ToolText.text("ad_subscription_hint") : LanguageManager.shared.localizedString("ad_block_master_disabled_desc"))
+                Text(adBlockEnabled ? ToolText.text("ad_subscription_hint")
+                     : LanguageManager.shared.localizedString("ad_block") + " · " + LanguageManager.shared.localizedString("status_disabled"))
             }
             .opacity(adBlockEnabled ? 1 : 0.48)
 
@@ -297,8 +372,7 @@ private struct AdBlockSubscriptionsView: View {
 
             Section(ToolText.text("rule_maintenance")) {
                 Button(role: .destructive) {
-                    subscriptionService.resetToDefaults()
-                    onChanged?()
+                    confirmsReset = true
                 } label: {
                     Label(LanguageManager.shared.localizedString("ad_block_subscription_reset"), systemImage: "arrow.counterclockwise")
                 }
@@ -308,6 +382,88 @@ private struct AdBlockSubscriptionsView: View {
         }
         .navigationTitle(LanguageManager.shared.localizedString("ad_block_subscriptions"))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showsAddSubscription = true } label: { Image(systemName: "plus") }
+                    .accessibilityLabel(ToolText.text("ad_subscription_add"))
+                    .accessibilityIdentifier("adBlock.addSubscription")
+            }
+        }
+        .sheet(isPresented: $showsAddSubscription) {
+            NavigationStack {
+                AddAdBlockSubscriptionView { subscription in
+                    changed?()
+                    if enabled {
+                        Task {
+                            await service.updateSubscription(subscription)
+                            changed?()
+                        }
+                    }
+                }
+            }
+        }
+        .confirmationDialog(LanguageManager.shared.localizedString("ad_block_subscription_reset"),
+                            isPresented: $confirmsReset, titleVisibility: .visible) {
+            Button(LanguageManager.shared.localizedString("ad_block_subscription_reset"), role: .destructive) {
+                subscriptionService.resetToDefaults()
+                onChanged?()
+            }
+        }
+    }
+}
+
+private struct AddAdBlockSubscriptionView: View {
+    @ObservedObject private var service = AdBlockSubscriptionService.shared
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var url = ""
+    @State private var errorKey: String?
+    let onAdded: (AdBlockSubscription) -> Void
+
+    var body: some View {
+        Form {
+            Section {
+                TextField(ToolText.text("ad_subscription_name"), text: $name)
+                    .textInputAutocapitalization(.words)
+                    .accessibilityIdentifier("adBlock.subscription.name")
+                TextField(ToolText.text("ad_subscription_url"), text: $url)
+                    .keyboardType(.URL).textContentType(.URL)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .accessibilityIdentifier("adBlock.subscription.url")
+            }
+            if let errorKey {
+                Section {
+                    Text(ToolText.text(errorKey)).font(.footnote).foregroundStyle(.red)
+                        .accessibilityIdentifier("adBlock.subscription.error")
+                }
+            }
+        }
+        .navigationTitle(ToolText.text("ad_subscription_add"))
+        .navigationBarTitleDisplayMode(.inline)
+        .onCompatibleChange(of: name) { _, _ in errorKey = nil }
+        .onCompatibleChange(of: url) { _, _ in errorKey = nil }
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(ToolText.text("cancel")) { dismiss() }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button(LanguageManager.shared.localizedString("save"), action: save)
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                              || url.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityIdentifier("adBlock.subscription.save")
+            }
+        }
+    }
+
+    private func save() {
+        do {
+            let subscription = try service.addSubscription(name: name, urlString: url)
+            onAdded(subscription)
+            dismiss()
+        } catch {
+            errorKey = (error as? AdBlockSubscriptionService.SubscriptionInputError) == .duplicateURL
+                ? "ad_subscription_duplicate" : "ad_subscription_invalid"
+        }
     }
 }
 

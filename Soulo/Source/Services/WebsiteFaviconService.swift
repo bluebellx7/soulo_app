@@ -8,8 +8,9 @@ import WebKit
     static let shared = WebsiteFaviconService()
     nonisolated static let responseCache = URLCache(memoryCapacity: 2 * 1024 * 1024,
         diskCapacity: 20 * 1024 * 1024, diskPath: "SouloFavicons")
-    // Retry older placeholders now that HTML icon responses and SVG are supported.
-    nonisolated static let cacheVersion = "3"
+    // Retry older successful responses that actually contained an empty image.
+    nonisolated static let cacheVersion = "4"
+    enum Backplate: Sendable { case automatic, light, dark }
     private static let lifetime: TimeInterval = 7 * 24 * 60 * 60
     private final class Entry {
         let image: UIImage
@@ -76,6 +77,9 @@ import WebKit
             }
             // Inspect only the public origin, never a bookmark's query or path.
             var sources = [Source.image(key), .page(key.deletingLastPathComponent())]
+            for path in ["favicon.svg", "favicon.png", "apple-touch-icon.png"] {
+                sources.append(.image(key.deletingLastPathComponent().appendingPathComponent(path)))
+            }
             var visited = Set<Source>()
             var htmlIconResponses = 0
             var providerURLs = Set<URL>()
@@ -113,14 +117,23 @@ import WebKit
                 }
                 guard case let .image(url) = source else { continue }
                 do {
-                    let (data, response) = try await Self.download(url, session: session)
+                    let data: Data
+                    let response: HTTPURLResponse?
+                    if url.scheme?.lowercased() == "data" {
+                        guard let inline = Self.inlineIconData(url) else { continue }
+                        data = inline; response = nil
+                    } else {
+                        let fetched = try await Self.download(url, session: session)
+                        data = fetched.0; response = fetched.1
+                    }
                     var image = await Self.decode(data)
                     if image == nil { image = await FaviconSVGRenderer.image(from: data) }
+                    if let candidate = image, let cgImage = candidate.cgImage, !Self.appearance(of: cgImage).useful { image = nil }
                     guard !Task.isCancelled, generation == epoch else { return nil }
                     guard let image else {
                         // SPA fallbacks and redirects can return HTML for favicon.ico.
                         // Its declarations are as useful as those on the origin page.
-                        if htmlIconResponses < 3, !providerURLs.contains(url) {
+                        if let response, htmlIconResponses < 3, !providerURLs.contains(url) {
                             let declared = await Self.resources(in: data, response: response, requestedURL: url)
                             if !declared.isEmpty { htmlIconResponses += 1 }
                             sources.insert(contentsOf: declared, at: 0)
@@ -194,20 +207,21 @@ import WebKit
                 }
             }
             guard let href = values["href"],
-                  let url = URL(string: href, relativeTo: base)?.absoluteURL,
-                  ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
-                  url.host != nil, url.user == nil, url.password == nil else { continue }
+                  let url = URL(string: href, relativeTo: base)?.absoluteURL else { continue }
+            let remote = ["http", "https"].contains(url.scheme?.lowercased() ?? "") && url.host != nil && url.user == nil && url.password == nil
             if lower.hasPrefix("<base") {
+                guard remote else { continue }
                 if !usedBase { base = url; usedBase = true }
                 continue
             }
             let rel = (values["rel"] ?? "").lowercased().split(whereSeparator: \.isWhitespace)
-            if rel.contains("manifest"), manifests.count < 2, !manifests.contains(url) {
+            if remote, rel.contains("manifest"), manifests.count < 2, !manifests.contains(url) {
                 manifests.append(url)
             }
             guard rel.contains("icon") || rel.contains("apple-touch-icon") || rel.contains("apple-touch-icon-precomposed") else { continue }
+            guard remote || inlineIconData(url) != nil else { continue }
             guard icons.count < 8, !icons.contains(where: { $0.0 == url }) else { continue }
-            let vector = values["type"]?.lowercased() == "image/svg+xml" || url.pathExtension.lowercased() == "svg"
+            let vector = values["type"]?.lowercased() == "image/svg+xml" || url.pathExtension.lowercased() == "svg" || url.absoluteString.lowercased().hasPrefix("data:image/svg+xml")
             icons.append((url, vector))
         }
         // Prefer the lightweight raster decoder before starting an SVG renderer.
@@ -266,9 +280,51 @@ import WebKit
                     kCGImageSourceThumbnailMaxPixelSize: 64,
                     kCGImageSourceCreateThumbnailWithTransform: true,
                     kCGImageSourceShouldCacheImmediately: true
-                  ] as CFDictionary) else { return nil }
+                  ] as CFDictionary), Self.appearance(of: image).useful else { return nil }
             return UIImage(cgImage: image)
         }.value
+    }
+
+    nonisolated static func backplate(for image: UIImage) -> Backplate {
+        image.cgImage.map { appearance(of: $0).backplate } ?? .automatic
+    }
+
+    /// Sample only a small thumbnail. Transparent/blank responses are common
+    /// favicon fallbacks, while white/black silhouettes need their own contrast.
+    nonisolated private static func appearance(of image: CGImage) -> (useful: Bool, backplate: Backplate) {
+        var pixels = [UInt8](repeating: 0, count: 16 * 16 * 4)
+        let rendered = pixels.withUnsafeMutableBytes { bytes -> Bool in
+            guard let context = CGContext(data: bytes.baseAddress, width: 16, height: 16, bitsPerComponent: 8, bytesPerRow: 64,
+                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else { return false }
+            context.interpolationQuality = .high
+            context.draw(image, in: CGRect(x: 0, y: 0, width: 16, height: 16)); return true
+        }
+        guard rendered else { return (false, .automatic) }
+        var visible = 0, alpha = 0.0, luminance = 0.0, lowAlpha = 255.0, highAlpha = 0.0, lowLuma = 1.0, highLuma = 0.0
+        for index in stride(from: 0, to: pixels.count, by: 4) {
+            let a = Double(pixels[index + 3]); lowAlpha = min(lowAlpha, a); highAlpha = max(highAlpha, a)
+            guard a >= 12 else { continue }
+            visible += 1; alpha += a
+            let light = 0.2126 * Double(pixels[index]) + 0.7152 * Double(pixels[index + 1]) + 0.0722 * Double(pixels[index + 2])
+            luminance += light
+            let straight = min(1, light / a); lowLuma = min(lowLuma, straight); highLuma = max(highLuma, straight)
+        }
+        guard visible >= 3, alpha > 0 else { return (false, .automatic) }
+        let mean = luminance / alpha
+        if highAlpha - lowAlpha < 4, highLuma - lowLuma < 0.03, mean > 0.97 { return (false, .automatic) }
+        let transparent = alpha / (256 * 255) < 0.92
+        return (true, transparent && mean > 0.85 ? .dark : transparent && mean < 0.15 ? .light : .automatic)
+    }
+
+    nonisolated private static func inlineIconData(_ url: URL) -> Data? {
+        let text = url.absoluteString
+        guard text.utf8.count <= 350_000, text.lowercased().hasPrefix("data:image/"), let comma = text.firstIndex(of: ",") else { return nil }
+        let header = text[..<comma].lowercased()
+        guard ["data:image/png", "data:image/x-icon", "data:image/vnd.microsoft.icon", "data:image/jpeg", "data:image/gif", "data:image/webp", "data:image/svg+xml"].contains(where: { header == $0 || header.hasPrefix($0 + ";") }),
+              let body = String(text[text.index(after: comma)...]).removingPercentEncoding else { return nil }
+        let data = header.hasSuffix(";base64") ? Data(base64Encoded: body) : body.data(using: .utf8)
+        guard let data, !data.isEmpty, data.count <= 256 * 1024 else { return nil }
+        return data
     }
 
     /// Byte iteration must not monopolize the UI actor on a fast/cached response.

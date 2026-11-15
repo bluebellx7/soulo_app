@@ -58,10 +58,15 @@ final class WebExtensionStoreSessionDelegate: NSObject, URLSessionDownloadDelega
         self.store = store
     }
 
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {}
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        BrowserStartupTrace.mark("extension_store_transport_finished")
+    }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
                     totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        if totalBytesWritten == bytesWritten {
+            BrowserStartupTrace.mark("extension_store_first_bytes", detail: "expected=\(totalBytesExpectedToWrite)")
+        }
         if totalBytesWritten > WebExtensionStoreInstallService.maximumPackageSize
             || totalBytesExpectedToWrite > WebExtensionStoreInstallService.maximumPackageSize {
             lock.withLock { sizeLimitExceeded = true }
@@ -76,12 +81,20 @@ final class WebExtensionStoreSessionDelegate: NSObject, URLSessionDownloadDelega
         newRequest request: URLRequest,
         completionHandler: @escaping (URLRequest?) -> Void
     ) {
+        BrowserStartupTrace.mark("extension_store_redirect", detail: (request.url?.scheme ?? "") + ":" + (request.url?.host ?? ""))
         guard let url = request.url,
               WebExtensionStoreRedirectPolicy.allows(url, store: store) else {
             completionHandler(nil)
             return
         }
         completionHandler(request)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+        for metric in metrics.transactionMetrics {
+            BrowserStartupTrace.mark("extension_store_transaction", detail:
+                "\(metric.request.url?.host ?? ""):status=\((metric.response as? HTTPURLResponse)?.statusCode ?? 0):proxy=\(metric.isProxyConnection):protocol=\(metric.networkProtocolName ?? "")")
+        }
     }
 }
 
@@ -210,6 +223,8 @@ final class WebExtensionStoreInstallService {
 
     func install(from rawValue: String) async throws -> WebExtensionRecord {
         let preview = try await preview(from: rawValue)
+        defer { BrowserExtensionService.shared.discardWebExtensionPreview(preview) }
+        try Task.checkCancellation()
         return try await BrowserExtensionService.shared.installWebExtension(preview, access: preview.access)
     }
 
@@ -217,6 +232,7 @@ final class WebExtensionStoreInstallService {
         let package = try WebExtensionStoreLinkResolver.resolve(rawValue)
         let localURL = try await downloadPackage(from: rawValue)
         defer { try? FileManager.default.removeItem(at: localURL) }
+        try Task.checkCancellation()
         let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
         let source: URL
         if value.range(of: #"^[a-p]{32}$"#, options: .regularExpression) != nil {
@@ -227,6 +243,13 @@ final class WebExtensionStoreInstallService {
 
     func downloadPackage(from rawValue: String) async throws -> URL {
         let package = try WebExtensionStoreLinkResolver.resolve(rawValue)
+        return try await downloadPackage(package)
+    }
+
+    /// All caller-supplied links pass the HTTPS resolver above. This separated
+    /// transport also covers the store's approved CDN redirects.
+    func downloadPackage(_ package: WebExtensionRemotePackage) async throws -> URL {
+        BrowserStartupTrace.mark("extension_store_download_start")
         var request = URLRequest(url: package.downloadURL)
         request.setValue(AppConstants.desktopWebViewUserAgent, forHTTPHeaderField: "User-Agent")
         let session = makeSession(for: package.store)
@@ -237,6 +260,7 @@ final class WebExtensionStoreInstallService {
         do {
             (temporaryDownload, response) = try await session.download(for: request)
         } catch {
+            BrowserStartupTrace.mark("extension_store_download_error", detail: "\((error as NSError).domain):\((error as NSError).code)")
             if (session.delegate as? WebExtensionStoreSessionDelegate)?.exceededSizeLimit == true {
                 throw WebExtensionStoreInstallError.packageTooLarge
             }
@@ -263,6 +287,7 @@ final class WebExtensionStoreInstallService {
         let localURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("SouloExtension-\(UUID().uuidString)")
             .appendingPathExtension(package.fileExtension)
+        try Task.checkCancellation()
         try FileManager.default.moveItem(at: temporaryDownload, to: localURL)
         return localURL
     }

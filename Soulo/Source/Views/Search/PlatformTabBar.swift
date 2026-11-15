@@ -17,6 +17,7 @@ struct PlatformTabBar: View {
     let platforms: [SearchPlatform]
     @Binding var selectedPlatform: SearchPlatform?
     var usesContrastingControlSurface: Bool = false
+    var onSelection: ((SearchPlatform) -> Void)? = nil
     @EnvironmentObject var languageManager: LanguageManager
     @Namespace private var platformNamespace
 
@@ -38,7 +39,8 @@ struct PlatformTabBar: View {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 selectedPlatform = platform
                             }
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onSelection?(platform)
+                            HapticsManager.light()
                         }
                         .id(platform.id)
                     }
@@ -79,6 +81,7 @@ struct PlatformTabBar: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             self.selectedPlatform = target
         }
+        onSelection?(target)
         AppAccessibility.announce(
             AppAccessibility.formatted(
                 "accessibility_platform_position",

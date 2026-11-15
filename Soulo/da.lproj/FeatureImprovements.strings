@@ -81,3 +81,58 @@
 "Website cache" = "Webstedets cache";
 "Website icons" = "Hjemmeside ikoner";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "iCloud-synkronisering gemmer en sikkerhedskopi før ændringer af indstillinger. De seneste %lld kopier samt den oprindelige kopi beholdes.";
+
+"Move tab to new window" = "Flyt til nyt vindue";
+
+"Save webpage" = "Gem webside";
+
+"Webpage" = "Webside";
+
+"Website data" = "Webstedsdata";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Omfatter gemte artikler, bogindeks, omslag og læsefremskridt. Bogfiler tælles under hentede filer.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Størrelser er anslåede. IndexedDB omfatter databaser og medier. Ukendte størrelser vises som —.";
+"Extension temporary cache" = "Midlertidig udvidelsescache";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Fjerner midlertidige medier fra udvidelser. Bevarer indstillinger, scripts, fremskridt og hentede filer. Luk først udvidelses- og videosider, og færdiggør overførsler.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Midlertidige data er stadig i brug. Luk udvidelses- og videosider, færdiggør overførsler, og prøv igen.";
+"Deleting website data can sign you out and remove offline content." = "Sletning af data kan logge dig ud og fjerne offlineindhold.";
+
+"Extension startup timed out." = "Udvidelsen kunne ikke starte inden for tidsgrænsen.";
+
+"soulo_extensions" = "Soulo-udvidelser";
+
+"Add to Quick Links" = "Føj til hurtige links";
+"Remove from Quick Links" = "Fjern fra hurtige links";
+"Mark bookmarks with a heart to show them here." = "Hold et bogmærke nede, og markér det med et hjerte for at vise det her.";
+
+"Type %@ to confirm." = "Skriv %@ for at bekræfte.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Bogmærker flettes på tværs af enheder. Kun udtrykkelige sletninger fjerner dem.";
+"This deletion also syncs to your other devices." = "Denne sletning synkroniseres også til dine andre enheder.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Kopiér prompten, tilføj dine ønsker og send den til en AI. Indsæt derefter dens JSON her for at importere.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Gruppenavne i JSON har forrang. Ens grupper flettes uden at fjerne eksisterende platforme.";
+"Imported %1$d platforms into %2$d groups." = "Importerede %1$d platforme til %2$d grupper.";
+"No new platforms or group entries." = "Ingen nye platforme eller gruppeposter.";
+
+"App size" = "Appstørrelse";
+"App data" = "Appdata";
+"Wallpaper cache" = "Baggrundscache";
+"Other caches" = "Andre cacher";
+"Temporary files" = "Midlertidige filer";
+"Download task data" = "Downloadopgavedata";
+"Settings and records" = "Indstillinger og historik";
+"Shared app data" = "Delte appdata";
+"Other app data" = "Andre appdata";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Appdata omfatter ikke det installerede program. Diskstørrelser kan afvige fra iOS-indstillinger.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Slet gemt indhold fra dets egen liste. Aktive midlertidige filer og systemets cachedatabaser frigives, når det er sikkert.";
+
+"Current platforms" = "Nuværende platforme";
+"Import mode" = "Importtilstand";
+"Append" = "Tilføj";
+"Replace all" = "Erstat alle";
+"Replace all platforms?" = "Erstat alle platforme?";
+"A settings backup is saved before replacement." = "Der gemmes en sikkerhedskopi af indstillingerne før erstatning.";
+
+"Take over web players" = "Overtag webafspillere";
+"Only takes over website fullscreen. Extension players stay independent." = "Overtager kun webstedets fuldskærmsafspilning. Udvidelsers afspillere forbliver uafhængige.";
+
+"App size is the installed program and resources, not the App Store download size." = "Appstørrelsen er det installerede program og dets ressourcer, ikke downloadstørrelsen i App Store.";
+"App data is the total of the categories below." = "Appdata er summen af kategorierne nedenfor.";

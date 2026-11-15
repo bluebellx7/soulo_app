@@ -81,3 +81,58 @@
 "Website cache" = "ವೆಬ್‌ಸೈಟ್ ಸಂಗ್ರಹ";
 "Website icons" = "ವೆಬ್‌ಸೈಟ್ ಐಕಾನ್‌ಗಳು";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "iCloud ಸಿಂಕ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಬದಲಾಗುವ ಮೊದಲು ಬ್ಯಾಕಪ್ ಉಳಿಸುತ್ತದೆ. ಆರಂಭಿಕ ಪ್ರತಿಯೊಂದಿಗೆ ಇತ್ತೀಚಿನ %lld ಬ್ಯಾಕಪ್‌ಗಳನ್ನು ಉಳಿಸಲಾಗುತ್ತದೆ.";
+
+"Move tab to new window" = "ಹೊಸ ವಿಂಡೋಗೆ ಸರಿಸಿ";
+
+"Save webpage" = "ವೆಬ್ಪುಟ ಉಳಿಸಿ";
+
+"Webpage" = "ವೆಬ್ಪುಟ";
+
+"Website data" = "ವೆಬ್‌ಸೈಟ್ ಡೇಟಾ";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "ಉಳಿಸಿದ ಲೇಖನಗಳು, ಪುಸ್ತಕ ಸೂಚಿ, ಮುಖಪುಟಗಳು ಮತ್ತು ಓದಿನ ಪ್ರಗತಿಯನ್ನು ಒಳಗೊಂಡಿದೆ. ಪುಸ್ತಕದ ಫೈಲ್‌ಗಳನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಫೈಲ್‌ಗಳಲ್ಲಿ ಎಣಿಸಲಾಗುತ್ತದೆ.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "ಗಾತ್ರಗಳು ಅಂದಾಜು. IndexedDB ಡೇಟಾಬೇಸ್ ಮತ್ತು ಮಾಧ್ಯಮ ಫೈಲ್‌ಗಳನ್ನು ಒಳಗೊಂಡಿದೆ. ಲಭ್ಯವಿಲ್ಲದ ಗಾತ್ರವನ್ನು — ಎಂದು ತೋರಿಸಲಾಗುತ್ತದೆ.";
+"Extension temporary cache" = "ವಿಸ್ತರಣೆಯ ತಾತ್ಕಾಲಿಕ ಸಂಗ್ರಹ";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "ವಿಸ್ತರಣೆಗಳ ತಾತ್ಕಾಲಿಕ ಮಾಧ್ಯಮವನ್ನು ತೆಗೆದುಹಾಕುತ್ತದೆ. ಸೆಟ್ಟಿಂಗ್‌ಗಳು, ಸ್ಕ್ರಿಪ್ಟ್‌ಗಳು, ಪ್ರಗತಿ ಮತ್ತು ಡೌನ್‌ಲೋಡ್ ಫೈಲ್‌ಗಳನ್ನು ಉಳಿಸುತ್ತದೆ. ಮೊದಲು ವಿಸ್ತರಣೆ ಮತ್ತು ವೀಡಿಯೊ ಪುಟಗಳನ್ನು ಮುಚ್ಚಿ ಡೌನ್‌ಲೋಡ್ ಪೂರ್ಣಗೊಳಿಸಿ.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "ತಾತ್ಕಾಲಿಕ ಡೇಟಾ ಇನ್ನೂ ಬಳಕೆಯಲ್ಲಿದೆ. ವಿಸ್ತರಣೆ ಮತ್ತು ವೀಡಿಯೊ ಪುಟಗಳನ್ನು ಮುಚ್ಚಿ ಡೌನ್‌ಲೋಡ್ ಪೂರ್ಣಗೊಳಿಸಿದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.";
+"Deleting website data can sign you out and remove offline content." = "ವೆಬ್‌ಸೈಟ್ ಡೇಟಾ ಅಳಿಸಿದರೆ ಸೈನ್ ಔಟ್ ಆಗಬಹುದು ಮತ್ತು ಆಫ್‌ಲೈನ್ ವಿಷಯ ಕಳೆದುಹೋಗಬಹುದು.";
+
+"Extension startup timed out." = "ವಿಸ್ತರಣೆ ಪ್ರಾರಂಭದ ಸಮಯ ಮೀರಿದೆ.";
+
+"soulo_extensions" = "Soulo ವಿಸ್ತರಣೆಗಳು";
+
+"Add to Quick Links" = "ತ್ವರಿತ ಲಿಂಕ್‌ಗಳಿಗೆ ಸೇರಿಸಿ";
+"Remove from Quick Links" = "ತ್ವರಿತ ಲಿಂಕ್‌ಗಳಿಂದ ತೆಗೆದುಹಾಕಿ";
+"Mark bookmarks with a heart to show them here." = "ಇಲ್ಲಿ ತೋರಿಸಲು ಬುಕ್‌ಮಾರ್ಕ್ ಒತ್ತಿ ಹಿಡಿದು ಹೃದಯ ಗುರುತು ನೀಡಿ.";
+
+"Type %@ to confirm." = "ದೃಢೀಕರಿಸಲು %@ ಟೈಪ್ ಮಾಡಿ.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "ಸಾಧನಗಳ ನಡುವೆ ಬುಕ್‌ಮಾರ್ಕ್‌ಗಳನ್ನು ವಿಲೀನಗೊಳಿಸಲಾಗುತ್ತದೆ. ಸ್ಪಷ್ಟ ಅಳಿಸುವಿಕೆಯಿಂದ ಮಾತ್ರ ಅಂಶಗಳು ತೆಗೆದುಹಾಕಲ್ಪಡುತ್ತವೆ.";
+"This deletion also syncs to your other devices." = "ಈ ಅಳಿಸುವಿಕೆ ನಿಮ್ಮ ಇತರ ಸಾಧನಗಳಿಗೂ ಸಿಂಕ್ ಆಗುತ್ತದೆ.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "ಈ ಪ್ರಾಂಪ್ಟ್ ನಕಲಿಸಿ, ನಿಮ್ಮ ಅಗತ್ಯಗಳನ್ನು ಸೇರಿಸಿ AIಗೆ ಕಳುಹಿಸಿ. ನಂತರ ಅದರ JSON ಅನ್ನು ಇಲ್ಲಿ ಅಂಟಿಸಿ ಆಮದು ಮಾಡಿ.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "JSONನ ಗುಂಪಿನ ಹೆಸರುಗಳಿಗೆ ಆದ್ಯತೆ ಇದೆ. ಒಂದೇ ಹೆಸರಿನ ಗುಂಪುಗಳು ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗಳನ್ನು ತೆಗೆದುಹಾಕದೆ ವಿಲೀನಗೊಳ್ಳುತ್ತವೆ.";
+"Imported %1$d platforms into %2$d groups." = "%1$d ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗಳನ್ನು %2$d ಗುಂಪುಗಳಿಗೆ ಆಮದು ಮಾಡಲಾಗಿದೆ.";
+"No new platforms or group entries." = "ಹೊಸ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗಳು ಅಥವಾ ಗುಂಪಿನ ನಮೂದುಗಳಿಲ್ಲ.";
+
+"App size" = "ಆ್ಯಪ್ ಗಾತ್ರ";
+"App data" = "ಆ್ಯಪ್ ಡೇಟಾ";
+"Wallpaper cache" = "ವಾಲ್‌ಪೇಪರ್ ಸಂಗ್ರಹ";
+"Other caches" = "ಇತರ ಸಂಗ್ರಹಗಳು";
+"Temporary files" = "ತಾತ್ಕಾಲಿಕ ಫೈಲ್‌ಗಳು";
+"Download task data" = "ಡೌನ್‌ಲೋಡ್ ಕಾರ್ಯದ ಡೇಟಾ";
+"Settings and records" = "ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಮತ್ತು ದಾಖಲೆಗಳು";
+"Shared app data" = "ಹಂಚಿದ ಆ್ಯಪ್ ಡೇಟಾ";
+"Other app data" = "ಇತರ ಆ್ಯಪ್ ಡೇಟಾ";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "ಆ್ಯಪ್ ಡೇಟಾ ಸ್ಥಾಪಿಸಿದ ಪ್ರೋಗ್ರಾಂ ಅನ್ನು ಒಳಗೊಂಡಿಲ್ಲ. ಡಿಸ್ಕ್ ಗಾತ್ರವು iOS ಸೆಟ್ಟಿಂಗ್‌ಗಳಿಗಿಂತ ಭಿನ್ನವಾಗಿರಬಹುದು.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "ಉಳಿಸಿದ ವಿಷಯವನ್ನು ಅದರ ಪಟ್ಟಿಯಿಂದ ಅಳಿಸಿ. ಬಳಕೆಯಲ್ಲಿರುವ ತಾತ್ಕಾಲಿಕ ಫೈಲ್‌ಗಳು ಮತ್ತು ಸಿಸ್ಟಂ ಸಂಗ್ರಹ ಡೇಟಾಬೇಸ್‌ಗಳು ಸುರಕ್ಷಿತವಾದಾಗ ಬಿಡುಗಡೆಯಾಗುತ್ತವೆ.";
+
+"Current platforms" = "ಪ್ರಸ್ತುತ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗಳು";
+"Import mode" = "ಆಮದು ವಿಧಾನ";
+"Append" = "ಸೇರಿಸಿ";
+"Replace all" = "ಎಲ್ಲವನ್ನೂ ಬದಲಿಸಿ";
+"Replace all platforms?" = "ಎಲ್ಲಾ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗಳನ್ನು ಬದಲಿಸಬೇಕೇ?";
+"A settings backup is saved before replacement." = "ಬದಲಿಸುವ ಮೊದಲು ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಬ್ಯಾಕಪ್ ಉಳಿಸಲಾಗುತ್ತದೆ.";
+
+"Take over web players" = "ವೆಬ್ ಪ್ಲೇಯರ್‌ಗಳ ನಿಯಂತ್ರಣ";
+"Only takes over website fullscreen. Extension players stay independent." = "ವೆಬ್‌ಸೈಟ್‌ನ ಪೂರ್ಣಪರದೆ ಪ್ಲೇಯರ್ ಅನ್ನು ಮಾತ್ರ ಬದಲಿಸುತ್ತದೆ. ವಿಸ್ತರಣೆಗಳ ಪ್ಲೇಯರ್‌ಗಳು ಸ್ವತಂತ್ರವಾಗಿರುತ್ತವೆ.";
+
+"App size is the installed program and resources, not the App Store download size." = "ಆ್ಯಪ್ ಗಾತ್ರವು ಸ್ಥಾಪಿತ ಪ್ರೋಗ್ರಾಂ ಮತ್ತು ಸಂಪನ್ಮೂಲಗಳ ಗಾತ್ರ; App Store ಡೌನ್‌ಲೋಡ್ ಗಾತ್ರವಲ್ಲ.";
+"App data is the total of the categories below." = "ಆ್ಯಪ್ ಡೇಟಾ ಕೆಳಗಿನ ವರ್ಗಗಳ ಒಟ್ಟು ಮೊತ್ತವಾಗಿದೆ.";

@@ -91,7 +91,7 @@ struct BrowserToolbarSettingsView: View {
             Button {
                 service.save(actions: draftActions, addressAction: draftAddressAction)
                 showSaved = true
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                HapticsManager.success()
             } label: {
                 Label(LanguageManager.shared.localizedString("save"), systemImage: "checkmark")
             }

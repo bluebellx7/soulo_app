@@ -5,6 +5,25 @@ import XCTest
 
 @MainActor
 final class DownloadManagerServiceTests: XCTestCase {
+    func testHLSTimeFractionNeverBecomesAFictitiousMegabyte() {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (item, _) = service.beginDownload(suggestedFilename: "stream.mp4", sourceURL: nil, transport: .hls)
+        service.updateProgress(id: item.id, completed: 88_000, total: 1_000_000)
+        service.updateHLSProgress(id: item.id, fraction: 0.09, receivedBytes: nil)
+        XCTAssertEqual(service.downloads[0].progress, 0.09, accuracy: 0.0001)
+        XCTAssertEqual(service.downloads[0].receivedBytes, 0)
+        XCTAssertEqual(service.downloads[0].expectedBytes, 0)
+        service.updateHLSProgress(id: item.id, fraction: 0.25, receivedBytes: 125_000_000)
+        XCTAssertEqual(service.downloads[0].receivedBytes, 125_000_000)
+        XCTAssertEqual(service.downloads[0].expectedBytes, 0, "Duration fraction does not reveal a whole-file byte size")
+        service.markPaused(id: item.id)
+        service.updateHLSProgress(id: item.id, fraction: 0.9, receivedBytes: 450_000_000)
+        XCTAssertEqual(service.downloads[0].progress, 0.25, accuracy: 0.0001)
+        service.markResumed(id: item.id)
+        service.updateHLSProgress(id: item.id, fraction: .nan, receivedBytes: 500)
+        XCTAssertEqual(service.downloads[0].progress, 0.25, accuracy: 0.0001)
+    }
+
     func testDeletingPartialMediaClearsItsRecentEntryAndPositionAfterRemoval() throws {
         let recent = RecentLocalPlaybackStore(userDefaults: defaults, rootURL: directory)
         let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory, recentPlaybackStore: recent)

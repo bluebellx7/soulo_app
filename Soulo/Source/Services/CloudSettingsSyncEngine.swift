@@ -275,8 +275,10 @@ enum CloudSettingsSyncEngine {
 
     static func write(_ values: Values, to defaults: UserDefaults) {
         for key in CloudSyncService.syncedKeys {
-            if let value = values[key] { defaults.set(value, forKey: key) }
-            else { defaults.removeObject(forKey: key) }
+            if let value = values[key] {
+                if let old = defaults.object(forKey: key), NSDictionary(dictionary: ["value": old]).isEqual(to: ["value": value]) { continue }
+                defaults.set(value, forKey: key)
+            } else if defaults.object(forKey: key) != nil { defaults.removeObject(forKey: key) }
         }
     }
 
@@ -374,16 +376,16 @@ enum CloudSettingsSyncEngine {
 
     private static var scalarDefaults: Values {
         ["appearance": "dark", "theme_color": "#007AFF", "app_language": AppConstants.preferredLanguageCode(),
-         "dynamic_theme": "midnight", "home_title": "Soulo", "home_subtitle": "",
+         "dynamic_theme": "midnight", "home_title": "Soulo", "home_subtitle": AppConstants.defaultHomeSubtitle,
          "show_bookmarks_on_home": false, "show_group_picker_on_home": false, "show_recent_searches_on_home": true,
          "auto_hide_platform_bar": false, "show_top_tab_bar": true,
-         "show_top_search_bar": false, "keep_fullscreen_browsing": false, "web_follows_app_color_scheme": true,
+         "show_top_search_bar": false, "keep_fullscreen_browsing": false, "extend_page_background": false, "page_background_gradient": false, "freeze_page_background_on_scroll": false, "web_follows_app_color_scheme": true,
          "web_warm_color_shift": false, "web_force_dark_pages": false, "web_reduce_page_motion": false,
          "web_underline_links": false, "browser_shake_action": "none", "browser_shake_intensity": "standard",
          BrowserShakeDirection.preferenceKey: BrowserShakeDirection.horizontal.rawValue,
          BrowserSwipePreferences.enabledKey: BrowserSwipePreferences.enabledByDefault, BrowserSwipePreferences.rightKey: "closeTab",
          BrowserSwipePreferences.executionKey: BrowserSwipeExecution.release.rawValue,
-         BrowserSwipePreferences.hapticsKey: true, BrowserSwipePreferences.soundKey: false,
+         AppFeedbackPreferences.hapticsKey: true, AppFeedbackPreferences.soundKey: false,
          BrowserSwipePreferences.leftKey: "tabs", BrowserSwipePreferences.menuKey: BrowserSwipePreferences.defaultMenuValue,
          BrowserSwipePreferences.noHistoryKey: BrowserSwipeAction.closeTab.rawValue,
          WebsiteZoomStore.enabledKey: true, WebsiteZoomStore.sitesKey: [String: Double](),
@@ -396,15 +398,19 @@ enum CloudSettingsSyncEngine {
          VideoPlaybackPreferences.defaultPlayerKey: "soulo",
          VideoPlaybackPreferences.holdSpeedKey: 2.0,
          VideoPlaybackPreferences.showsEpisodeDockKey: true,
+         VideoPlaybackPreferences.takesOverWebPlayersKey: false,
+         VideoPlaybackPreferences.showsWebDownloadControlsKey: true,
          "privacy_https_upgrade_enabled": PrivacyFeatureDefaults.httpsUpgradeEnabled,
          "privacy_strip_tracking_parameters": PrivacyFeatureDefaults.stripTrackingParameters,
          "privacy_gpc_enabled": PrivacyFeatureDefaults.gpcEnabled,
          "privacy_cookie_banner_enabled": PrivacyFeatureDefaults.cookieBannerHandling,
+         BrowsingHistoryExitPolicy.preferenceKey: false,
          "privacy_https_upgrade_excluded_hosts": [String](), "soulo_privacy_disabled_hosts": [String](),
          "soulo_ad_block_allowlisted_hosts": [String](), "soulo_ad_block_subscriptions": Data(),
          "soulo_external_navigation_blocked_hosts": [String](), "soulo_external_navigation_suppress_prompts": false,
          ExternalNavigationService.promptEnabledKey: true,
-         "wallpaper_image_overlay": true, "wallpaper_image_blur": false, "wallpaper_image_blur_amount": 0.35,
+         "wallpaper_image_overlay": true, "wallpaper_image_overlay_amount": WallpaperContrast.defaultImageOverlayAmount,
+         "wallpaper_image_blur": false, "wallpaper_image_blur_amount": 0.35,
          "wallpaper_source": "pixabay", "wallpaper_gradient_id": "aurora", "wallpaper_solid_color": "#FFFFFF",
          "wallpaper_gradient_id_light": "", "wallpaper_gradient_id_dark": "",
          "wallpaper_solid_color_light": "", "wallpaper_solid_color_dark": "",

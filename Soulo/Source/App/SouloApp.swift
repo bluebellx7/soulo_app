@@ -41,10 +41,16 @@ struct SouloApp: App {
     @StateObject private var wallpaperManager = WallpaperManager.shared
 
     private let libraryStore: LibraryStore
+    private let historyExitPolicy: BrowsingHistoryExitPolicy
 
     init() {
+        StorageUsageService.prepareSession()
         do { libraryStore = try LibraryStore() }
         catch { fatalError("Could not open the Soulo library: \(error)") }
+        historyExitPolicy = BrowsingHistoryExitPolicy(container:libraryStore.container)
+        historyExitPolicy.start()
+        BrowserIntentLibrary.shared.context = libraryStore.mainContext
+        BookmarkCloudSyncService.shared.attach(container: libraryStore.container)
         BrowserStartupTrace.mark("app_init")
         BrowserStartupTrace.startResponsivenessProbe()
         UserDefaults.standard.register(defaults: [AppConstants.StorageKeys.appearance: "dark"])
@@ -79,6 +85,7 @@ struct SouloApp: App {
 }
 
 private struct SouloWindowRoot: View {
+    private let windowID: UUID
     @EnvironmentObject private var languageManager: LanguageManager
     @EnvironmentObject private var themeManager: ThemeManager
     @EnvironmentObject private var wallpaperManager: WallpaperManager
@@ -89,6 +96,7 @@ private struct SouloWindowRoot: View {
     @AppStorage("is_incognito") private var isIncognito = false
 
     init(windowID: UUID) {
+        self.windowID = windowID
         BrowserWindowConfiguration.registerExistingWindow(windowID)
         _searchVM = StateObject(wrappedValue: SearchViewModel())
         _tabManager = StateObject(
@@ -102,12 +110,17 @@ private struct SouloWindowRoot: View {
             .environmentObject(searchVM)
             .environmentObject(tabManager)
             .task {
+                if BrowserWindowTransferService.shared.claim(windowID: windowID, into: tabManager) {
+                    searchVM.isSearching = true
+                }
                 VideoScreenAwakeService.shared.reloadUserPreference()
                 CloudSyncService.shared.startIfEnabled()
+                BookmarkCloudSyncService.shared.refresh()
             }
             .onCompatibleChange(of: scenePhase, initial: true) { _, newPhase in
                 if newPhase == .active {
                     CloudSyncService.shared.refresh()
+                    BookmarkCloudSyncService.shared.refresh()
                     tabManager.synchronizeDesktopMode()
                     handlePendingSharedAction()
                     AppQuickActionService.shared.configureShortcuts()

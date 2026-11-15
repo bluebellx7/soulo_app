@@ -16,17 +16,16 @@ enum ToolText {
     }
 
     static func text(_ key: String, language: String) -> String {
-        let resolved = Bundle.preferredLocalizations(from: Bundle.main.localizations, forPreferences: [language]).first ?? "en-US"
-        let selected = Bundle.main.path(forResource: resolved, ofType: "lproj").flatMap(Bundle.init(path:))
-        let english = Bundle.main.path(forResource: "en-US", ofType: "lproj").flatMap(Bundle.init(path:)) ?? .main
-        if let localized = selected?.localizedString(forKey: key, value: key, table: "ReadingTools"), localized != key {
+        let selected = LocalizedResourceBundles.selected(language)
+        let localized = selected.localizedString(forKey: key, value: key, table: "ReadingTools")
+        if localized != key {
             return localized
         }
         if let sharedKey = sharedKeys[key],
-           let localized = selected?.localizedString(forKey: sharedKey, value: sharedKey, table: nil), localized != sharedKey {
+           case let localized = selected.localizedString(forKey: sharedKey, value: sharedKey, table: nil), localized != sharedKey {
             return localized
         }
-        let fallback = english.localizedString(forKey: key, value: key, table: "ReadingTools")
+        let fallback = LocalizedResourceBundles.english.localizedString(forKey: key, value: key, table: "ReadingTools")
         return fallback
     }
 }

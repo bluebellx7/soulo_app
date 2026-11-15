@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Zvukové stopy";
 "media_subtitles" = "titulky";
 "media_track_off" = "Vypnuté";
-"video_settings" = "Video";
+"video_settings" = "Nastavenia videa";
 "video_show_tools" = "Zobraziť video nástroje";
 "video_show_tools_desc" = "Zobrazte na webových videách nástroje na rýchlosť prehrávania, sťahovanie a celú obrazovku.";
 "video_default_player" = "Predvolený prehrávač";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Matné sklo";
 "wallpaper_blur_amount" = "Intenzita rozmazania";
 
-"auto_hide_platform_bar_hint" = "Panel platforiem sa skryje po otvorení výsledku vyhľadávania. Znova sa zobrazí po návrate k výsledkom alebo pri novom vyhľadávaní. V tejto ponuke ho môžete vypnúť.";
+"auto_hide_platform_bar_hint" = "Lišta platforiem sa skryje až po klepnutí na obsah stránky. Automatické presmerovania ani posúvanie ju neskryjú. Znova sa zobrazí po návrate k výsledkom alebo pri novom hľadaní.";
+
+"ad_subscription_add" = "Pridať zoznam filtrov";
+"ad_subscription_name" = "Názov";
+"ad_subscription_url" = "URL odberu";
+"ad_subscription_invalid" = "Zadajte názov a platnú adresu odberu HTTP alebo HTTPS.";
+"ad_subscription_duplicate" = "Táto adresa odberu už bola pridaná.";
+
+"feedback_settings" = "Zvuky a vibrácie";
+"feedback_settings_hint" = "Ovládajte vibrácie a zvuky rozhrania v celej aplikácii. Nemá vplyv na prehrávanie webových stránok, videa ani zvuku.";
+
+"home_display_settings" = "Zobrazenie úvodnej stránky";
+"browsing_display_settings" = "Zobrazenie prehliadania";
+
+"web_video_download" = "Sťahovanie webového videa";
+"web_video_download_description" = "Zobrazí ovládacie prvky sťahovania videa na webových stránkach, v zoznamoch epizód a prehrávačoch. Prehrávanie ani existujúce sťahovania sa nemenia.";
+"builtin_extension" = "Vstavané rozšírenie";
+
+"wallpaper_overlay_amount" = "Intenzita prekrytia";
+"feedback_contact_required" = "Zadajte e-mail alebo iný kontakt, aby sme mohli odpovedať.";
+"torrent_incomplete" = "Nedokončené";
+"extend_page_background" = "Rozšíriť pozadie stránky";
+"extend_page_background_desc" = "Rozšíri horné a dolné farby stránky na okraje prehliadača vrátane prechodov.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Zbaliť skupinu";
+"tab_group_expand" = "Rozbaliť skupinu";
+"freeze_page_background_on_scroll" = "Ponechať počiatočné farby";
+"freeze_page_background_on_scroll_desc" = "Po posunutí ponechať prvé rozpoznané farby. Na novej stránke sa farby rozpoznajú znova.";
+"page_background_gradient" = "Rozšírenie prechodom";
+"page_background_gradient_desc" = "Spojí zistené farby prechodom. Pri vypnutí má každý okraj jednu plnú farbu.";
+
+
+"gestures_feedback_settings" = "Gestá a odozva";

@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "O singură interogare, peste 40 de platforme";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Căutați sau introduceți adresa URL";
 "privacy_search_placeholder" = "Căutare privată sau introduceți adresa URL";
 "search" = "Caută";
@@ -354,7 +354,7 @@
 "voice_stop" = "Opreste-te";
 "voice_record" = "Înregistrează";
 "batch_import" = "Import lot";
-"batch_import_format" = "Lipiți JSON în formatul de mai jos";
+"batch_import_format" = "Lipiți JSON aici";
 "batch_import_group" = "Adăugați la grup (opțional)";
 "batch_import_group_placeholder" = "de ex. Filme";
 "batch_import_film_entry" = "Deschideți presetări ale platformei de film";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Extensia nu a putut fi instalată";
 "extension_permissions_summary" = "%d permisiuni · %d regulile site-ului";
 "extension_untitled" = "Extensie fără titlu";
-"web_extension_install_footer" = "Instalează extensii compatibile dintr-un link de magazin sau importă CRX, XPI, ZIP ori un dosar de extensie. Verifică permisiunile și compatibilitatea; unele funcții desktop nu sunt disponibile.";
+"web_extension_install_footer" = "După instalare, poți schimba permisiunile în pagina de gestionare a extensiei.";
 "web_extension_install_store_link" = "Instalați din linkul magazinului...";
 "web_extension_browse_sources" = "Răsfoiți magazinele de extensii";
 "web_extension_browse_sources_footer" = "Butoanele Store Get acceptă doar propriile browsere desktop. Copiați linkul unei pagini cu detalii de extensie, apoi utilizați Instalare din linkul magazinului în Soulo.";
 "web_extension_store_install_title" = "Instalați o extensie de magazin";
 "extension_page_banner_title" = "Instalați cu Soulo";
-"extension_page_banner_desc" = "Verifică compatibilitatea și permisiunile înainte de instalare.";
-"web_extension_store_install_desc" = "Lipește linkul paginii unei extensii Chrome, Edge sau Firefox și verifică compatibilitatea și permisiunile înainte de confirmarea instalării.";
+"extension_page_banner_desc" = "După instalare, poți schimba permisiunile în pagina de gestionare a extensiei.";
+"web_extension_store_install_desc" = "După instalare, poți schimba permisiunile în pagina de gestionare a extensiei.";
 "web_extension_store_link_placeholder" = "Link pentru pagina de extensie sau ID-ul extensiei Chrome";
 "web_extension_store_invalid_link" = "Inserați un link pentru o pagină cu detalii de extensie din Chrome, Edge sau Firefox, un ID de extensie Chrome sau un link direct CRX, XPI sau ZIP.";
 "web_extension_store_https_required" = "Pachetele de extensie trebuie să utilizeze o legătură HTTPS securizată.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Țineți apăsată pictograma Soulo pe ecranul principal pentru a folosi scurtăturile configurate aici.";
 
 "ad_block_scope_hint" = "Filtrează reclamele web, suprapunerile promoționale și ferestrele pop-up nedorite. Dacă un site nu mai funcționează, puteți dezactiva filtrarea doar pentru el.";
+
+"privacy_clear_browsing_on_exit" = "Șterge istoricul la ieșire";
+"privacy_clear_browsing_on_exit_desc" = "Șterge paginile vizitate la trecerea în fundal sau la repornire. Păstrează termenii de căutare.";

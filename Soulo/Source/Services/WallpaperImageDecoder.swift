@@ -5,6 +5,31 @@ import ImageIO
 /// Decode only the pixels needed by the full-screen background. The original
 /// compressed file stays intact for later export or editing.
 enum WallpaperImageDecoder {
+    static func previewURL(for file: URL) -> URL { file.appendingPathExtension("preview.jpg") }
+
+    /// Small, eagerly decoded first-frame image. Large display decoding stays off-main.
+    static func preview(file: URL) -> CGImage? {
+        let cached = previewURL(for: file)
+        for selected in [cached, file] where FileManager.default.fileExists(atPath: selected.path) {
+            guard let source = CGImageSourceCreateWithURL(selected as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary) else { continue }
+            if let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: 512,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceShouldCacheImmediately: true
+            ] as CFDictionary) { return image }
+        }
+        return nil
+    }
+
+    static func writePreview(for file: URL) {
+        let data = NSMutableData()
+        guard let image = preview(file: file),
+              let destination = CGImageDestinationCreateWithData(data, "public.jpeg" as CFString, 1, nil) else { return }
+        CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.85] as CFDictionary)
+        if CGImageDestinationFinalize(destination) { try? (data as Data).write(to: previewURL(for: file), options: .atomic) }
+    }
+
     static func decode(_ data: Data, targetPixels: CGSize) -> CGImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary) else { return nil }
         return decode(source, targetPixels: targetPixels)

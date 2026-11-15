@@ -1,0 +1,108 @@
+{
+  "status": "completed_with_documented_simulator_only_limits",
+  "requests": [
+    "Auto-hide platform bar only after trusted page click; add shared home search-menu toggle",
+    "Include app-container data beyond installation size and all supported cleanup/management entries",
+    "Show multiple player episodes per row like the web episode popover",
+    "Cross-group platform drag/drop in grid and list; preserve shared platform identity and persist membership/order",
+    "Validate player episode switching on a real site from website navigation; show failure and retry"
+  ],
+  "constraints": [
+    "Simulator only",
+    "Preserve user saved content and explicit deletion confirmation",
+    "No commit, push or upload"
+  ],
+  "checks": {
+    "platform_auto_hide": {
+      "result": "passed",
+      "simulator": "iOS 26.2",
+      "unit_seconds": 0.003,
+      "ui_seconds": 45.355,
+      "log": "/tmp/soulo-platform-autohide-20261115/test.log",
+      "ui_log": "/tmp/soulo-storage-complete-20261115/home-final10.log",
+      "management_toggle_log": "/tmp/soulo-storage-complete-20261115/platform-final12.log"
+    },
+    "real_episodes": {
+      "result": "passed",
+      "site": "https://www.pbkan.com/yun/1009-4-2.html",
+      "selected_episodes": [
+        2,
+        3
+      ],
+      "decoders": [
+        "production MediaSession/AVPlayer with video output",
+        "production MatroskaPlayback/VLC with visible surface"
+      ],
+      "seconds": 37.458,
+      "log": "/tmp/soulo-storage-complete-20261115/unit3.log"
+    },
+    "ios16_storage": {
+      "result": "passed",
+      "categories": 9,
+      "extra_categories_seconds": 89.63,
+      "platform_toggle_seconds": 24.584,
+      "log": "/tmp/soulo-storage-complete-20261115/ios16-final12c.log",
+      "populated_rule_routes_log": "/tmp/soulo-storage-complete-20261115/ios16.log"
+    },
+    "player_ui": {
+      "result": "passed",
+      "grid_failure_retry_seconds": 49.477,
+      "both_players_fullscreen_switch_seconds": 31.861,
+      "log": "/tmp/soulo-storage-complete-20261115/test.log"
+    },
+    "cache_safety": {
+      "result": "passed",
+      "test_count": 11,
+      "log": "/tmp/soulo-storage-complete-20261115/storage-final8.log",
+      "coverage": [
+        "all sandbox/shared files accounted without symlink traversal",
+        "installed program separated from data",
+        "nested WebKit cache assignment",
+        "favorites/downloads/paused data preserved",
+        "abandoned UUID intermediates only",
+        "compiled rule deletion preserves unrelated identifiers and active blockers"
+      ]
+    },
+    "extra_storage_navigation": {
+      "result": "passed",
+      "category_count": 9,
+      "simulator": "iPad iOS26.2",
+      "seconds": 77.849,
+      "log": "/tmp/soulo-storage-complete-20261115/verified-ipad.log"
+    },
+    "cross_group_drag": {
+      "result": "passed",
+      "model_log": "/tmp/soulo-storage-complete-20261115/home-final10.log",
+      "ui_log": "/tmp/soulo-storage-complete-20261115/platform-final13.log",
+      "ui_seconds": 94.73,
+      "coverage": [
+        "actual grid/list drag across regions",
+        "saved membership/order after relaunch",
+        "list visibility control",
+        "list editor",
+        "native swipe deletion",
+        "model covers custom/region/shared identities and invalid destinations"
+      ]
+    },
+    "build": {
+      "result": "passed",
+      "ios26": "/tmp/soulo-storage-complete-20261115/build13.log",
+      "minimum_ios16": "/tmp/soulo-storage-complete-20261115/ios16-final12b-build.log"
+    },
+    "localization_and_metadata": {
+      "result": "passed",
+      "locales": 50,
+      "logs": [
+        "/tmp/soulo-storage-complete-20261115/localization-final12.log",
+        "/tmp/soulo-storage-complete-20261115/metadata-final12.log"
+      ]
+    }
+  },
+  "pending": [],
+  "limits": [
+    "Simulators only; physical iOS 27 was not tested",
+    "App data is classified by owned files and system WebKit records, not a promise to match the Settings app byte-for-byte",
+    "Current-session temporary files, active system databases and user content are not unlinked as generic caches",
+    "Live video playback was verified on two PBKan episodes with both production decoders; other sites may have different access requirements"
+  ]
+}

@@ -47,6 +47,44 @@ enum WebExtensionTampermonkeyAdapter {
         }
         return result;
       }});
+      // Only the pinned publisher program calls this path. These rewrites
+      // preserve URL matches; its redirect uses the entire match (\\0).
+      Object.defineProperty(globalThis,'__souloCompileTampermonkeyRules',{value:function(rules,nextID) {
+        const prepared=rules.map(rule=>{
+          let pattern=rule.condition?.regexFilter;
+          if(typeof pattern!=='string')return rule;
+          pattern=pattern.replaceAll('[0-9]{1,9}','[0-9]'+'[0-9]?'.repeat(8))
+            .replaceAll('[^/-]{1,1}','[^/-]');
+          return {...rule,condition:{...rule.condition,regexFilter:pattern}};
+        });
+        const compiled=globalThis.__souloExpandTampermonkeyRules(prepared,nextID).map(rule=>{
+          let pattern=rule.condition?.regexFilter;
+          if(typeof pattern!=='string')return rule;
+          // WebKit requires the end anchor outside its surrounding group.
+          pattern=pattern.replaceAll('(?:$)','$').replaceAll('($)','$');
+          return {...rule,condition:{...rule.condition,regexFilter:pattern}};
+        });
+        const result=[];
+        for(const rule of compiled){
+          const priority=rule.priority||1;
+          if(rule.action.type==='modifyHeaders'){
+            // Generated allow rules must not suppress the publisher's CSP or
+            // GM request-header rules, which previously had no allow action.
+            result.push({...rule,priority:1000+priority});continue;
+          }
+          if(rule.action.type!=='redirect'){result.push(rule);continue;}
+          const {excludedRequestDomains,...condition}=rule.condition;
+          if(excludedRequestDomains?.length&&condition.requestMethods){
+            // WebKit cannot compile a method list together with excluded
+            // request domains. Express the same exclusion with an allow rule;
+            // specific publisher domains retain their higher redirect tier.
+            result.push({...rule,priority:priority*4,condition});
+            result.push({id:nextID(),priority:priority*4+1,condition:{...condition,requestDomains:excludedRequestDomains},action:{type:'allow'}});
+          }else result.push({...rule,priority:priority*4+2});
+        }
+        return result;
+      }});
+      Object.defineProperty(globalThis,'__souloTampermonkeyRulePriority',{value:priority=>priority>=1000?priority-1000:priority>=12&&priority<=18?Math.floor(priority/4):priority});
     })();
     """#
     private static let originalHash = "7377109daee3340f6f1f89d06f8099e92583229231b25d0f950653a63fb7dd32"
@@ -75,7 +113,9 @@ enum WebExtensionTampermonkeyAdapter {
                                   with: #"INTERNAL_PAGE_PROTOCOLS:[new URL(chrome.runtime.getURL("")).protocol]"#)
             .replacingOccurrences(of: "if(!pt)throw new Error(", with: "if(!pt&&!globalThis.__souloWebExtensionStarting)throw new Error(")
             .replacingOccurrences(of: "sendBinary:async e=>{", with: "sendBinary:async e=>{if(typeof globalThis.__souloOffscreenBinary==='function')return (await globalThis.__souloOffscreenBinary(e)).result;")
-            .replacingOccurrences(of: "addRules:e,removeRuleIds:t", with: "addRules:globalThis.__souloExpandTampermonkeyRules(e,()=>KA++),removeRuleIds:t")
+            .replacingOccurrences(of: "addRules:e,removeRuleIds:t", with: "addRules:globalThis.__souloCompileTampermonkeyRules(e,()=>KA++),removeRuleIds:t")
+            .replacingOccurrences(of: "getSessionRules:(...e)=>C.declarativeNetRequest.getSessionRules(...e)",
+                with: "getSessionRules:async(...e)=>(await C.declarativeNetRequest.getSessionRules(...e)).map(rule=>({...rule,priority:globalThis.__souloTampermonkeyRulePriority(rule.priority)}))")
             // WebKit grants hosts across ports and rejects ports in patterns.
             // Normalize only this permission query; keep the actual request URL.
             .replacingOccurrences(of: "Hn(t,{\nnopath:!0})", with: "Hn(t,{\nnopath:!0,noport:!0})")

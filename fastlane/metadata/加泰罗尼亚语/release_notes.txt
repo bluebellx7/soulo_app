@@ -1,6 +1,1 @@
-1.2.13
-
-• Fons separats per als modes clar i fosc i un interruptor per a la capa de la imatge.
-• Colors d’inici millorats; la previsualització del fons segueix el tema de l’app.
-• Previsualitza, comparteix i desa fons a Fotos.
-• Configuració de pestanyes superior amb pestanya nova i ocultació opcional de la barra de plataformes en navegar.
+Millores a les finestres de l’iPad, l’entrada de veu, els resums locals i l’accessibilitat. Millores a l’exportació multimèdia en segon pla, les Dreceres i la compatibilitat de les extensions. Algunes funcions depenen del dispositiu, el sistema i l’idioma.

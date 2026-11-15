@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import UIKit
 
 enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
     case none, downloads, files, bookmarks, history, wallpaper, refreshWallpaper, platforms, extensions, settings
@@ -94,28 +95,34 @@ final class HomeToolbarConfigurationService: ObservableObject {
     static let shared = HomeToolbarConfigurationService()
     static let storageKey = "home_toolbar_actions"
     static let backgroundKey = "home_toolbar_button_background"
-    static let slotCount = 5
+    static let maximumSlotCount = 8
+    static var slotCount: Int { UIDevice.current.userInterfaceIdiom == .pad ? maximumSlotCount : 5 }
     @Published private(set) var actions: [HomeToolbarAction]
     @Published private(set) var showsButtonBackground: Bool
     private let defaults: UserDefaults
-    init(defaults: UserDefaults = .standard) {
+    private let slotLimit: Int
+    init(defaults: UserDefaults = .standard, slotLimit: Int? = nil) {
         self.defaults = defaults
-        actions = Self.resolve(defaults.stringArray(forKey: Self.storageKey))
+        self.slotLimit = min(max(slotLimit ?? Self.slotCount, 1), Self.maximumSlotCount)
+        actions = Self.resolve(defaults.stringArray(forKey: Self.storageKey), slotLimit: self.slotLimit)
         showsButtonBackground = defaults.object(forKey: Self.backgroundKey) == nil || defaults.bool(forKey: Self.backgroundKey)
     }
-    static func resolve(_ raw: [String]?) -> [HomeToolbarAction] {
-        (0..<slotCount).map { index in
+    static func resolve(_ raw: [String]?, slotLimit: Int? = nil) -> [HomeToolbarAction] {
+        (0..<min(max(slotLimit ?? slotCount, 1), maximumSlotCount)).map { index in
             guard let raw, raw.indices.contains(index) else { return .none }
             return HomeToolbarAction(rawValue: raw[index]) ?? .none
         }
     }
     func reloadFromDefaults() {
-        actions = Self.resolve(defaults.stringArray(forKey: Self.storageKey))
+        actions = Self.resolve(defaults.stringArray(forKey: Self.storageKey), slotLimit: self.slotLimit)
         showsButtonBackground = defaults.object(forKey: Self.backgroundKey) == nil || defaults.bool(forKey: Self.backgroundKey)
     }
     func save(_ actions: [HomeToolbarAction], showsButtonBackground: Bool? = nil) {
-        self.actions = Self.resolve(actions.map(\.rawValue))
-        defaults.set(self.actions.map(\.rawValue), forKey: Self.storageKey)
+        self.actions = Self.resolve(actions.map(\.rawValue), slotLimit: slotLimit)
+        // Editing the five visible phone slots must not delete iPad-only slots
+        // when the same settings are restored or synchronized across devices.
+        let extra = Array((defaults.stringArray(forKey: Self.storageKey) ?? []).dropFirst(slotLimit).prefix(Self.maximumSlotCount - slotLimit))
+        defaults.set(self.actions.map(\.rawValue) + extra, forKey: Self.storageKey)
         if let showsButtonBackground {
             self.showsButtonBackground = showsButtonBackground
             defaults.set(showsButtonBackground, forKey: Self.backgroundKey)

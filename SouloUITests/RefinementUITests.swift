@@ -6,7 +6,7 @@ final class RefinementUITests: XCTestCase {
     private func launch(extra: [String] = []) -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
-        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
         app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-wallpaper_source", "gradient",
             "-wallpaper_gradient_id", "dawn", "-wallpaper_refresh_interval", "0", "-icloud_sync_enabled", "NO",
             "-review.requestedOnce", "YES", "-privacy_https_upgrade_enabled", "NO", "-is_incognito", "NO",
@@ -73,6 +73,35 @@ final class RefinementUITests: XCTestCase {
         XCTAssertTrue(app.buttons["files.viewMode"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.textFields["library.search"].firstMatch.exists)
         screenshot(app, "file-list-query-controls")
+    }
+
+    func testIPadMoveTabIntoWindowKeepsTheLiveDocument() async throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("iPad window transfer") }
+        let title = "MoveWindow-\(UUID().uuidString.prefix(6))"
+        let html = "<title>\(title)</title><h1>\(title)</h1><button onclick=\"document.getElementById('state').textContent='Document retained after move'\">Mark document</button><p id='state'>Fresh document</p>"
+        let fixture = try DownloadPlaybackHTTPFixture(files: ["/": Data(html.utf8)])
+        let url = try await fixture.start(); defer { fixture.stop() }
+        let app = launch(); defer { app.terminate() }
+        var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
+        route.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
+        if SouloUITestApplication.bundleIdentifier == "com.dkluge.Soulo" {
+            app.open(try XCTUnwrap(route.url))
+        } else {
+            let search = app.textFields["search.query"]
+            XCTAssertTrue(search.waitForExistence(timeout: 10)); search.tap(); search.typeText(url.absoluteString + "\n")
+        }
+        XCTAssertTrue(app.webViews.buttons["Mark document"].waitForExistence(timeout: 15))
+        app.webViews.buttons["Mark document"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["Document retained after move"].waitForExistence(timeout: 5))
+        let home = app.buttons["Home Screen"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout: 5)); home.tap()
+        let menu = app.buttons["home.menu"].firstMatch
+        XCTAssertTrue(menu.waitForExistence(timeout: 5)); menu.tap()
+        let move = app.buttons["Move tab to new window"].firstMatch
+        XCTAssertTrue(move.waitForExistence(timeout: 5)); move.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Document retained after move"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertEqual(fixture.receivedRequests.filter { $0.path == "/" && $0.method == "GET" }.count, 1, "Moving must not reload the page")
+        screenshot(app, "iPad-moved-window-retains-live-document")
     }
 
     func testIPadNewWindowEntryOpensAHomeWindow() throws {

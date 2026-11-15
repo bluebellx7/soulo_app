@@ -81,3 +81,58 @@
 "Website cache" = "Weboldal gyorsítótár";
 "Website icons" = "Weboldal ikonok";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "Az iCloud-szinkronizálás a beállítások módosítása előtt mentést készít. A legutóbbi %lld mentés és a kezdeti másolat marad meg.";
+
+"Move tab to new window" = "Áthelyezés új ablakba";
+
+"Save webpage" = "Weboldal mentése";
+
+"Webpage" = "Weboldal";
+
+"Website data" = "Webhelyadatok";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Mentett cikkeket, könyvjegyzéket, borítókat és olvasási állást tartalmaz. A könyvfájlok a letöltött fájlokhoz számítanak.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "A méretek becslések. Az IndexedDB adatbázisokat és médiát tartalmaz. A nem elérhető méretek jele: —.";
+"Extension temporary cache" = "Bővítmények ideiglenes gyorsítótára";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Törli a bővítmények ideiglenes médiáját. Megőrzi a beállításokat, szkripteket, lejátszási állást és letöltött fájlokat. Előbb zárja be a bővítmény- és videóoldalakat, és fejezze be a letöltéseket.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Az ideiglenes adatok még használatban vannak. Zárja be a bővítmény- és videóoldalakat, fejezze be a letöltéseket, majd próbálja újra.";
+"Deleting website data can sign you out and remove offline content." = "Az adatok törlése kijelentkeztetheti, és eltávolíthat offline tartalmakat.";
+
+"Extension startup timed out." = "A bővítmény indításakor időtúllépés történt.";
+
+"soulo_extensions" = "Soulo-bővítmények";
+
+"Add to Quick Links" = "Hozzáadás a gyorshivatkozásokhoz";
+"Remove from Quick Links" = "Eltávolítás a gyorshivatkozásokból";
+"Mark bookmarks with a heart to show them here." = "Tartson nyomva egy könyvjelzőt, és jelölje meg szívvel, hogy itt megjelenjen.";
+
+"Type %@ to confirm." = "A megerősítéshez írja be: %@.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "A könyvjelzők egyesülnek az eszközök között. Csak a kifejezett törlés távolít el elemeket.";
+"This deletion also syncs to your other devices." = "Ez a törlés a többi eszközére is szinkronizálódik.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Másolja a promptot, adja hozzá igényeit és küldje el egy MI-nek. Ezután illessze ide a kapott JSON-t az importáláshoz.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "A JSON csoportnevei elsőbbséget élveznek. Az egyező csoportok egyesülnek a meglévő platformok törlése nélkül.";
+"Imported %1$d platforms into %2$d groups." = "%1$d platform importálva %2$d csoportba.";
+"No new platforms or group entries." = "Nincsenek új platformok vagy csoportbejegyzések.";
+
+"App size" = "App mérete";
+"App data" = "App adatai";
+"Wallpaper cache" = "Háttérkép-gyorsítótár";
+"Other caches" = "Egyéb gyorsítótárak";
+"Temporary files" = "Ideiglenes fájlok";
+"Download task data" = "Letöltési feladatok adatai";
+"Settings and records" = "Beállítások és bejegyzések";
+"Shared app data" = "Megosztott appadatok";
+"Other app data" = "Egyéb appadatok";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Az appadatok nem tartalmazzák a telepített programot. A lemezméret eltérhet az iOS-beállításokban láthatótól.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "A mentett tartalmat a saját listájából törölje. A használt ideiglenes fájlok és rendszer-gyorsítótárak biztonságos időpontban szabadulnak fel.";
+
+"Current platforms" = "Jelenlegi platformok";
+"Import mode" = "Importálási mód";
+"Append" = "Hozzáadás";
+"Replace all" = "Összes cseréje";
+"Replace all platforms?" = "Lecseréli az összes platformot?";
+"A settings backup is saved before replacement." = "A csere előtt biztonsági mentés készül a beállításokról.";
+
+"Take over web players" = "Webes lejátszók átvétele";
+"Only takes over website fullscreen. Extension players stay independent." = "Csak a webhely teljes képernyős lejátszását veszi át. A bővítmények lejátszói önállóak maradnak.";
+
+"App size is the installed program and resources, not the App Store download size." = "Az app mérete a telepített programot és erőforrásokat jelenti, nem az App Store-letöltést.";
+"App data is the total of the categories below." = "Az appadatok az alábbi kategóriák összege.";

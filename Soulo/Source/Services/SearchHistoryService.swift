@@ -1,6 +1,7 @@
 import Foundation
 import CoreData
 import CoreSpotlight
+import UIKit
 
 struct SearchHistoryService {
     static let browsingHistoryLifetime: TimeInterval = 3 * 24 * 60 * 60
@@ -70,12 +71,14 @@ struct SearchHistoryService {
 
     /// Records a completed HTTP(S) page visit. Repeated visits update the same
     /// URL entry so reloads and WebKit progress callbacks do not create noise.
-    static func recordWebVisit(
+    @MainActor static func recordWebVisit(
         url: URL,
         title: String?,
         visitedAt: Date = Date(),
         context: NSManagedObjectContext
     ) {
+        guard !(UserDefaults.standard.bool(forKey: BrowsingHistoryExitPolicy.preferenceKey)
+                && UIApplication.shared.applicationState == .background) else { return }
         guard let canonicalURL = canonicalHistoryURLString(for: url) else { return }
 
         // The hot path runs when a page finishes loading. Do not materialize
@@ -259,5 +262,86 @@ struct SearchHistoryService {
             return trimmed
         }
         return url.host ?? url.absoluteString
+    }
+}
+
+/// UIApplication's notification covers the whole process, unlike individual
+/// iPad scenes. Also clear on launch because force-quitting has no callback.
+@MainActor final class BrowsingHistoryExitPolicy {
+    nonisolated static let preferenceKey = "privacy_clear_browsing_on_exit"
+    private let container: NSPersistentContainer
+    private let defaults: UserDefaults
+    private let notifications: NotificationCenter
+    private var observer: NSObjectProtocol?
+    private var cleanup: Task<Void, Never>?
+
+    init(container: NSPersistentContainer, defaults: UserDefaults = .standard,
+         notifications: NotificationCenter = .default) {
+        self.container = container; self.defaults = defaults; self.notifications = notifications
+    }
+
+    deinit {
+        if let observer { notifications.removeObserver(observer) }
+        cleanup?.cancel()
+    }
+
+    func start() {
+        guard observer == nil else { return }
+        observer = notifications.addObserver(forName: UIApplication.didEnterBackgroundNotification,
+            object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self, Self.shouldClear(enabled:self.defaults.bool(forKey:Self.preferenceKey),
+                        state:UIApplication.shared.applicationState) else { return }
+                    self.scheduleCleanup(inBackground:true)
+                }
+            }
+        scheduleCleanup(inBackground:false)
+    }
+
+    static func shouldClear(enabled: Bool, state: UIApplication.State) -> Bool {
+        enabled && state == .background
+    }
+
+    private func scheduleCleanup(inBackground: Bool) {
+        guard defaults.bool(forKey:Self.preferenceKey), cleanup == nil else { return }
+        let backgroundID = inBackground ? UIApplication.shared.beginBackgroundTask(withName:"Clear browsing history") { [weak self] in
+            self?.cleanup?.cancel()
+        } : .invalid
+        cleanup = Task { [weak self] in
+            defer { if backgroundID != .invalid { UIApplication.shared.endBackgroundTask(backgroundID) } }
+            guard let self else { return }
+            defer { self.cleanup = nil }
+            do { _ = try await self.clearIfEnabled() }
+            catch is CancellationError { }
+            catch { BrowserStartupTrace.mark("history_exit_cleanup_failed") }
+        }
+    }
+
+    /// Delete bounded batches off the UI queue. Preserve search terms,
+    /// bookmarks, unsaved main-context edits and visits made after this pass.
+    @discardableResult
+    func clearIfEnabled(referenceDate: Date = Date(), index: CSSearchableIndex = .default()) async throws -> Int {
+        guard defaults.bool(forKey:Self.preferenceKey) else { return 0 }
+        let worker = container.newBackgroundContext()
+        worker.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        worker.undoManager = nil
+        var deleted = 0
+        while defaults.bool(forKey:Self.preferenceKey) {
+            try Task.checkCancellation()
+            let identifiers: [String] = try await worker.perform {
+                let request = SearchHistoryRecord.request(predicate:NSPredicate(format:"visitedURLString != nil AND timestamp <= %@",referenceDate as NSDate))
+                request.fetchLimit = 256; request.fetchBatchSize = 256
+                let rows = try worker.fetch(request)
+                let identifiers = rows.map { "search-history-" + $0.id.uuidString }
+                for row in rows { worker.delete(row) }
+                if worker.hasChanges { try worker.save() }
+                worker.reset()
+                return identifiers
+            }
+            guard !identifiers.isEmpty else { break }
+            index.deleteSearchableItems(withIdentifiers:identifiers, completionHandler:nil)
+            deleted += identifiers.count
+        }
+        return deleted
     }
 }

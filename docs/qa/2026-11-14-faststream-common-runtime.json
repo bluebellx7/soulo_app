@@ -1,0 +1,101 @@
+{
+  "date": "2026-11-14",
+  "scope": "Generic native WebExtension frame messaging, embedded read-only network retries, MSE capability adapter, generated document downloads",
+  "publisher_package": {
+    "name": "FastStream",
+    "version": "1.3.78",
+    "sha256": "cd739b318150c32f0d3e755f838c4690c440511659697bee44eb03f8acd208c7",
+    "publisher_background_program": "unchanged, byte equality asserted during actual installation",
+    "built_into_app": false,
+    "VLC_removed": false
+  },
+  "verified": [
+    {
+      "result": "sim-broad-regression-32.xcresult",
+      "passed": 124,
+      "failed": 0,
+      "skipped": 0,
+      "covers": "Actual Cat Catch/TYTY/Tampermonkey/FastStream; native frame routing, streamed fetch SHA256/Range/cancel, access expiry/denials, wallpaper/edge/PiP/torrent regressions"
+    },
+    {
+      "result": "sim-document-download-38.xcresult",
+      "passed": 2,
+      "failed": 0,
+      "covers": "Real original FastStream MP4/HLS/DASH/Bili playback and original download UI for MP4/HLS/DASH; each saved native file has duration>7sec; generated-document boundary fixture rejects network/foreign Blob and exposes no history/show APIs"
+    },
+    {
+      "result": "physical-ios27-document-model-39.xcresult",
+      "passed": 2,
+      "skipped": 1,
+      "failed": 0,
+      "device": "iPhone17 iOS27.2.1 build24B156",
+      "covers": "Real generated-document saving and ownership boundaries; capability report. Actual local model generation skipped because deviceNotEligible. Built SDK26.2; not acceptance of compiler-gated SDK27 branches."
+    },
+    {
+      "result": "sim-common-runtime-regression-48.xcresult",
+      "passed": 126,
+      "failed": 0,
+      "skipped": 0,
+      "covers": "Real publisher userScripts sandbox runner despite restrictive page CSP; MP4/HLS/DASH downloads each decoded by native AVAssetImageGenerator; native MMS; all seven previous regression classes."
+    },
+    {
+      "result": "sim-media-layout-56.xcresult",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "covers": "Actual new Bili wide/narrow bounds and playback/restoration, plus generic ratio layout fixture honoring external/fixed frames and restoring styles."
+    },
+    {
+      "result": "sim-media-layout-regression-56.xcresult",
+      "passed": 96,
+      "failed": 0,
+      "skipped": 0,
+      "covers": "All ExtensionAudit37/Lifecycle18/Management17 and Favicon24 offline cases, includes actual unmodified publisher MP4/HLS/DASH downloads/decoding, MMS and both Bili links."
+    },
+    {
+      "result": "restore-unassisted-164.xcresult",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "covers": "Original previously installed CRX, normal restored runtime, no active diagnostic PING or trace. Real finger progress drag, actual fullscreen enter/exit, independent download filename confirmation, native completion prompt and saved-file row."
+    },
+    {
+      "result": "soulo-native-module-165.xcresult",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "covers": "Native SDK27 original package MP4/HLS/DASH/Bili playback; playback time advances after publisher play, pause/seek; MP4/HLS/DASH saved files decoded. Common module transport variants and wrapper migration."
+    },
+    {
+      "result": "common-regression-167.xcresult",
+      "passed": 62,
+      "failed": 0,
+      "skipped": 1,
+      "covers": "All39 audit cases incl one opt-in online transport skipped;23management cases; originalFastStream3-round refresh/toggle. Official store install/delete separately verified109."
+    }
+  ],
+  "download_durations": {
+    "dashSavedDuration": 8,
+    "hlsSavedDuration": 8,
+    "mp4SavedDuration": 8
+  },
+  "root_causes": [
+    "Native targeted messages to embedded own extension frames were not delivered, although runtime messages worked.",
+    "Embedded own extension frames could not fetch already-granted HTTP media while top-level extension/background could.",
+    "WebKit exposes a serviceWorker container on extension documents but rejects registration except HTTP/HTTPS. Genuine document worker registration rejection retained in35.",
+    "Chrome package uses its non-Chrome save path without declaring downloads. Narrow generated-document save does not grant network/history APIs.",
+    "Native helper cannot read an iframe-partitioned extension Blob. Real owner-frame <a download> initiates WebKit download; native queue is then associated with owning extension.",
+    "Production runtime started only a subset of background types while earlier audit helpers explicitly started backgrounds. Normal loading now awaits all declared backgrounds and concurrent loads join the same pending task.",
+    "Restored module worker could report loaded without responsive publisher message listeners. Module compatibility bootstrap now uses a native nonpersistent module event page with the original publisher import graph; stable extension identity, permissions and settings preserved. Changing only worker wrapper filename failed and was reverted."
+  ],
+  "pending": [
+    "Optional latest phone smoke after unlocking; prior physical evidence retained. No unresolved implementation from this acceptance matrix is represented as all-extension compatibility."
+  ],
+  "artifacts_root": "/tmp/soulo-faststream-compat-20261114",
+  "limitations": [
+    "userScripts messaging:true and execute are unsupported; complex CSP is rejected; top-level cross-registration global bindings are not shared. Not all Chrome APIs/extensions are claimed compatible.",
+    "Intermittent reported self-closing was not reproduced in the actual three-round reload/disable/enable audit; no blanket guarantee for arbitrary extensions or future publisher revisions.",
+    "NativeSDK27 154 fixed500ms low-level video timing assertions failed for DASH/Bili.165 uses publisher play/pause and a bounded wait for real first advancement, recording native playing/waiting events; buffering and saved native file decoding were already functional."
+  ],
+  "final_release": "Native SDK27 shipping minimum16 Release166 BUILD SUCCEEDED; unsigned generic-device verification."
+}

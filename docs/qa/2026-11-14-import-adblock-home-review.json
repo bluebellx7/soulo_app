@@ -1,0 +1,238 @@
+{
+  "date": "2026-11-14",
+  "version": "1.2.15",
+  "build": 55,
+  "status": "Current-SDK fixes verified; full eight-feature acceptance and the reported iOS 27.2.1 first-menu stall remain incomplete.",
+  "artifacts": "/tmp/soulo-20261114-review",
+  "scope": [
+    "Extension file/folder picker does not open",
+    "iOS 16 rule-management and trusted-domain navigation",
+    "Reaudit the previous eight platform features",
+    "Cold-launch home menu and other home actions"
+  ],
+  "changes": [
+    {
+      "file": "Soulo/Source/Views/Settings/ExtensionCenterView.swift",
+      "detail": "One fileImporter with an explicit package/script request kind replaces two competing modifiers. Existing permission review, security-scoped access and installation services remain in use. Busy-state reentry is disabled; canceling does not report an installation error."
+    },
+    {
+      "file": "Soulo/Source/Views/Settings/AdBlockManagementView.swift",
+      "detail": "All five destinations share the same legacy sheet route on iOS 16, including trusted domains. Value-navigation destinations are registered only on iOS 17+. No filtering rules, subscriptions or allowlist contents changed."
+    },
+    {
+      "file": "Soulo/Source/Services/WebExtensionCompatibilityService.swift",
+      "detail": "Do not rewrite an unchanged ordinary manifest during package preparation. Real worker/port migrations still persist. Existing archive byte-preservation regression exposed the unnecessary JSON reformatting."
+    }
+  ],
+  "findings": {
+    "import": {
+      "baseline": "On iOS 26.2 the package entry did not present its picker; the script entry did. The page had two fileImporter modifiers.",
+      "after": "Both entries open/cancel/reopen three times on iPhone and iPad iOS 26.2. Script presentation also passed on iOS 16.0. ZIP/XPI/CRX preparation, directory preview and native installation are exercised separately by service tests.",
+      "limits": "Picker presentation tests do not exercise every third-party cloud document provider."
+    },
+    "ad_block": {
+      "baseline": "The reported 1.2.12 crash was not reproduced with the existing 1.2.15 sources on iOS 16.4.",
+      "after": "iOS 16.0 and 26.2 completed 60 combined open/return cycles across all five pages with filtering enabled and disabled. The nested Settings route on iOS 16.0 completed another 15 cycles without freezing or exiting.",
+      "limits": "Navigation compatibility is strengthened; no reporter crash stack was supplied, so the exact original failure is not claimed as proven."
+    },
+    "home": {
+      "actions": [
+        "menu",
+        "search",
+        "settings",
+        "files",
+        "downloads",
+        "tab overview"
+      ],
+      "functional": "Six cold-process actions passed with a gradient on iOS 16.0 and 26.2, and with a loaded photo on iOS 26.2.",
+      "timing": "Four opt-in cold launches on iOS 26.2 compared warmup on/off. Constructing the spare WebView took 46.5 and 88.9 ms in the two warm samples; the app-init-to-home interval was approximately 0.48–0.53 s. Neither proves performance on the reporter’s iOS 27 device.",
+      "important": "XCTest driver tap→destination measurements include synchronization and must not be presented as raw touch latency. Photo timing collected alongside compilation was rejected because host load exceeded 300 and swap approached 40 GB. With compilation stopped and other QA simulators shut down, all six loaded-photo cold-launch actions passed again in a serial run.",
+      "production_change": "No speculative performance rewrite was applied without reproducing the iOS 27 stall.",
+      "limits": "No local iOS 27 SDK/runtime/device; exact iOS 27 first-menu delay remains unverified.",
+      "reported_system": "iOS 27.2.1 (confirmed by user during this review)",
+      "hardware": "Device model not supplied"
+    }
+  },
+  "platform_feature_acceptance": {
+    "reference": "2026-11-14-1.2.15-validation.json",
+    "overall": "Not all eight features are fully accepted. Current-SDK regressions and fallbacks can pass while new-SDK and hardware paths remain untested.",
+    "items": [
+      {
+        "id": 1,
+        "name": "iOS 27 WebKit",
+        "state": "Public declarations rechecked; compiler/runtime gated. iOS 27 build and execution pending."
+      },
+      {
+        "id": 2,
+        "name": "Continued background media export",
+        "state": "Native progress/cancellation regressions passed previously. Physical-device OS scheduling/expiration pending."
+      },
+      {
+        "id": 3,
+        "name": "iPad multi-window",
+        "state": "Live-document transfer and back-history regressions passed again in the serial iPad run. The prior real multi-window simulator UI workflow also passed."
+      },
+      {
+        "id": 4,
+        "name": "SpeechAnalyzer",
+        "state": "Authorization/locale/cancellation regressions passed. Installed-model microphone execution on eligible hardware pending."
+      },
+      {
+        "id": 5,
+        "name": "Liquid Glass accessibility",
+        "state": "Current-SDK light/dark/high-contrast renders passed. The actual system Reduce Transparency toggle was not exercised in the fixture."
+      },
+      {
+        "id": 6,
+        "name": "Foundation Models summaries",
+        "state": "Deterministic fallback and cancellation passed. Actual local model generation on eligible hardware pending."
+      },
+      {
+        "id": 7,
+        "name": "Siri webpage entities",
+        "state": "Entity/privacy/bookmark tests passed. Full Siri conversation pending."
+      },
+      {
+        "id": 8,
+        "name": "System generated subtitles and styles",
+        "state": "Public controller/menu declarations rechecked. Runtime path remains gated to iOS 27 and is excluded from Xcode 26.2 builds; iOS 27 compilation/execution pending."
+      }
+    ],
+    "official_references": [
+      "https://developer.apple.com/xcode/system-requirements",
+      "https://developer.apple.com/documentation/webkit/wkcontentworld/configuration",
+      "https://developer.apple.com/documentation/webkit/wkhttpcookiestore/getcookies(for:completionhandler:)",
+      "https://developer.apple.com/documentation/webkit/wkwebpagepreferences/alternaterequest",
+      "https://developer.apple.com/documentation/avkit/avlegiblemediaoptionsmenucontroller",
+      "https://developer.apple.com/documentation/ios-ipados-release-notes/ios-ipados-27-release-notes"
+    ]
+  },
+  "verification": {
+    "simulator_standard_build": "Passed",
+    "unsigned_device_build": "Passed",
+    "metadata_check": "50 locales passed; version unchanged",
+    "localization_strict": "881 Localizable + 500 ReadingTools + 84 FeatureImprovements keys × 50 locales passed",
+    "diff_check": "Passed",
+    "final_successful_tests": "49 successful case executions across home-import-ios26 (8), adblock-home-final-ios160 (8), adblock-final-ios26 (2), settings-route-ios160 (1), photo-home-serial-ios26 (6), features-import-serial-ipad (22), import-final-ipad (2). Baseline failures and discarded concurrent performance samples remain in test_runs."
+  },
+  "test_runs": [
+    {
+      "name": "import-before-ios26",
+      "result": "Failed",
+      "passedTests": 1,
+      "failedTests": 1,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/import-before-ios26.xcresult"
+    },
+    {
+      "name": "home-import-ios26",
+      "result": "Passed",
+      "passedTests": 8,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/home-import-ios26.xcresult"
+    },
+    {
+      "name": "adblock-before-ios164",
+      "result": "Passed",
+      "passedTests": 1,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/adblock-before-ios164.xcresult"
+    },
+    {
+      "name": "adblock-home-final-ios160",
+      "result": "Passed",
+      "passedTests": 8,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/adblock-home-final-ios160.xcresult"
+    },
+    {
+      "name": "adblock-final-ios26",
+      "result": "Passed",
+      "passedTests": 2,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/adblock-final-ios26.xcresult"
+    },
+    {
+      "name": "settings-route-ios160",
+      "result": "Passed",
+      "passedTests": 1,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/settings-route-ios160.xcresult"
+    },
+    {
+      "name": "photo-home-ios26",
+      "result": "Passed",
+      "passedTests": 6,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/photo-home-ios26.xcresult"
+    },
+    {
+      "name": "photo-home-serial-ios26",
+      "result": "Passed",
+      "passedTests": 6,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/photo-home-serial-ios26.xcresult"
+    },
+    {
+      "name": "feature-import-regression-ipad",
+      "result": "Failed",
+      "passedTests": 18,
+      "failedTests": 1,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/feature-import-regression-ipad.xcresult"
+    },
+    {
+      "name": "features-import-final-ipad",
+      "result": "Failed",
+      "passedTests": 21,
+      "failedTests": 1,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/features-import-final-ipad.xcresult"
+    },
+    {
+      "name": "features-import-serial-ipad",
+      "result": "Passed",
+      "passedTests": 22,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/features-import-serial-ipad.xcresult"
+    },
+    {
+      "name": "import-final-ipad",
+      "result": "Passed",
+      "passedTests": 2,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "xcresult": "/tmp/soulo-20261114-review/import-final-ipad.xcresult"
+    }
+  ],
+  "notes": [
+    "No commit/push was requested or performed.",
+    "No original workspace changes were discarded. A current-task baseline archive is retained.",
+    "A first iOS 16.0 UI harness selected an underlying Done button; child-bar-scoped dismissal fixed the harness. That failure is not counted as an app crash.",
+    "The full iOS 16.0 automation build initially failed because unrelated UI tests use XCUIApplication.open (iOS 16.4+). An isolated UI-source selection and command-line minimum override enabled boundary tests without changing project.yml or the shipping minimum.",
+    "The iPad local-page navigation fixture timed out while multiple QA simulators and compilation ran concurrently. No production/window code or assertions were changed. The same complete 22-test selection passed serially on the same iPad simulator in 5.35 seconds. Both results are retained; concurrent timings are not used as performance evidence."
+  ],
+  "environment": {
+    "Xcode": "26.2 (17C52)",
+    "iOS_SDK": "26.2",
+    "runtime_coverage": [
+      "iOS 16.0",
+      "iOS 16.4 baseline",
+      "iOS/iPadOS 26.2"
+    ],
+    "reported_system": "iOS 27.2.1",
+    "iOS27_runtime_or_device": "Not available locally"
+  },
+  "superseded_validation_scope": {
+    "latest_report": "2026-11-14-device-acceptance.json",
+    "note": "Historical failures and limitations retained below. Later physical iOS27.2.1/iPad26.6.1 tests supersede statements that no hardware testing occurred; SDK27-specific and eligible-model limits remain explicit in latest report."
+  }
+}

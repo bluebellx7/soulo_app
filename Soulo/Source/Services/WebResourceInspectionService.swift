@@ -28,7 +28,10 @@ enum WebResourceInspectionService {
         let format = URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?.first(where: { ["type", "format"].contains($0.name.lowercased()) })?
             .value?.lowercased() ?? ""
-        if fileExtension == "m3u8" || ["m3u8", "hls"].contains(format)
+        let nestedFormats = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
+            .filter { ["url", "src", "file"].contains($0.name.lowercased()) }
+            .compactMap { $0.value.flatMap { URL(string: $0)?.pathExtension.lowercased() } } ?? []
+        if fileExtension == "m3u8" || nestedFormats.contains("m3u8") || ["m3u8", "hls"].contains(format)
             || format.contains("mpegurl") { return .hls }
         if fileExtension == "mpd" || ["mpd", "dash"].contains(format) { return .dash }
         return .direct
@@ -64,12 +67,17 @@ enum WebResourceInspectionService {
         guard let result = try? await webView.callAsyncJavaScript(
             currentVideoScript, arguments: ["token": token], in: frame, contentWorld: .page
         ) as? [String: String] else { return .init(target: nil, hasInlineVideo: false) }
+        if let data = result["manifests"]?.data(using: .utf8), let values = try? JSONSerialization.jsonObject(with: data) as? [String: String] {
+            WebMediaManifestCache.remember(values, webView: webView)
+        }
         if result["inlineVideo"] == "true" { return .init(target: nil, hasInlineVideo: true) }
         guard let raw = result["url"],
               let url = URL(string: raw),
               ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return .init(target: nil, hasInlineVideo: false) }
+        WebMediaManifestCache.rememberPolicy(result["referrerPolicy"], urls: [url], webView: webView)
         let delivery = WebMediaResource.Delivery(rawValue: result["delivery"] ?? "") ?? .direct
-        let frameURL = frame?.requestURL
+        let declaredReferrer = result["referrer"].flatMap(URL.init(string:))
+        let frameURL = ["http", "https"].contains(declaredReferrer?.scheme?.lowercased() ?? "") ? declaredReferrer : frame?.requestURL
         let sourcePageURL = ["http", "https"].contains(frameURL?.scheme?.lowercased() ?? "")
             ? frameURL : webView.url
         return .init(target: (WebMediaResource(
@@ -109,10 +117,13 @@ enum WebResourceInspectionService {
             if (!url) return null;
             const parsed = new URL(url);
             const format = String(parsed.searchParams.get('type') || parsed.searchParams.get('format') || '').toLowerCase();
-            const delivery = /\.m3u8$/i.test(parsed.pathname) || /(?:m3u8|hls|mpegurl)/i.test(format + ' ' + String(mime || ''))
+            const nested = ['url','src','file'].map(key => {
+                try { return new URL(parsed.searchParams.get(key) || '', parsed).pathname; } catch (_) { return ''; }
+            }).join(' ');
+            const delivery = /\.m3u8(?:$|\s)/i.test(parsed.pathname + ' ' + nested) || /(?:m3u8|hls|mpegurl)/i.test(format + ' ' + String(mime || ''))
                 ? 'hls' : /\.mpd$/i.test(parsed.pathname) || /(?:mpd|dash)/i.test(format + ' ' + String(mime || ''))
                 ? 'dash' : 'direct';
-            return { url, delivery, token: resolvedToken };
+            return { url, delivery, token: resolvedToken, referrerPolicy: document.referrerPolicy || document.querySelector('meta[name=referrer]')?.content || '', manifests: JSON.stringify(window.__souloObservedHLSManifests || {}) };
         };
         const mediaURL = (value, encoding) => {
             let raw = String(value || '').trim();
@@ -201,6 +212,16 @@ enum WebResourceInspectionService {
         const declaredSource = !!rawSource?.trim() || Array.from(video.querySelectorAll('source[src]')).some(source => !!source.getAttribute('src')?.trim());
         const documentPlaceholder = !declaredSource && video.currentSrc === document.URL;
         const currentURL = (documentPlaceholder ? '' : webURL(video.currentSrc)) || (rawSource?.trim() ? webURL(video.src) : '');
+        // Extension media adapters expose only the selected element's source;
+        // the common inspector never guesses from unrelated background traffic.
+        try {
+            const descriptor = window.__souloNativeMediaSource?.(video);
+            const selected = descriptor && result(descriptor.url, descriptor.mime);
+            if (selected) {
+                const referrer = webURL(descriptor.referrer);
+                return referrer ? {...selected, referrer} : selected;
+            }
+        } catch (_) {}
         if (currentURL) {
             const response = Array.from(window.__souloObservedMediaResponses || []).reverse()
                 .find(item => webURL(item?.url) === currentURL);
@@ -209,8 +230,9 @@ enum WebResourceInspectionService {
         // Hls.js keeps a blob in currentSrc while the element's source and
         // attached controller still identify the actual playlist. Resolve that
         // exact element before considering unrelated network responses or ads.
-        const hls = window.hls;
-        if (hls && hls.media === video) {
+        const hls = [window.hls, ...(Array.isArray(window.Artplayer?.instances) ? window.Artplayer.instances.map(p => p?.hls) : [])]
+            .find(controller => controller?.media === video);
+        if (hls) {
             const level = hls.levels?.[hls.currentLevel];
             const selected = result(level?.details?.url || hls.url, 'application/vnd.apple.mpegurl');
             if (selected) return selected;
@@ -266,14 +288,19 @@ enum WebResourceInspectionService {
         guard let dictionary = value as? [String: Any] else {
             throw WebResourceInspectionError.invalidResult
         }
+        WebMediaManifestCache.remember(dictionary["hlsManifests"] as? [String: String] ?? [:], webView: webView)
         var snapshot = WebResourceSnapshot(dictionary: dictionary)
+        WebMediaManifestCache.rememberPolicy(dictionary["referrerPolicy"] as? String, urls: snapshot.videos.map(\.url), webView: webView)
         for frame in frames.prefix(16) {
             guard let value = try? await webView.evaluateCompatibleJavaScript(
                 extractionScript,
                 in: frame,
                 contentWorld: .page
             ), let dictionary = value as? [String: Any] else { continue }
-            snapshot = snapshot.mergingMedia(from: WebResourceSnapshot(dictionary: dictionary))
+            WebMediaManifestCache.remember(dictionary["hlsManifests"] as? [String: String] ?? [:], webView: webView)
+            let frameSnapshot = WebResourceSnapshot(dictionary: dictionary)
+            WebMediaManifestCache.rememberPolicy(dictionary["referrerPolicy"] as? String, urls: frameSnapshot.videos.map(\.url), webView: webView)
+            snapshot = snapshot.mergingMedia(from: frameSnapshot)
         }
         return snapshot
     }
@@ -815,6 +842,26 @@ enum WebResourceInspectionService {
         }
 
         function collectKnownPlayerData() {
+            // An MSE element exposes blob:, while its controller still owns the
+            // actual playlist. Prefer that current source over preloaded URLs.
+            var controllers = [window.hls];
+            try { if (Array.isArray(window.Artplayer?.instances)) window.Artplayer.instances.forEach(function(player) { controllers.push(player.hls); }); } catch (_) {}
+            controllers.forEach(function(controller) {
+                try {
+                    var video = controller?.media;
+                    var raw = controller?.url;
+                    if (!video?.isConnected || !/^https?:/.test(String(raw || ''))) return;
+                    var current = absoluteWebURL(raw);
+                    if (!current) return;
+                    configuredVideoURLs.add(current);
+                    addMedia('video', current, titleFor(video, ''), video.poster, 'hls');
+                } catch (_) {}
+            });
+            // Completed playlist responses provide a MIME-checked fallback for
+            // opaque MSE players. Do not infer a stream from an HTML wrapper.
+            Object.keys(window.__souloObservedHLSManifests || {}).forEach(function(url) {
+                addMedia('video', url, filenameForURL(url), '', 'hls');
+            });
             var candidates = [];
             var currentVideoID = currentYouTubeVideoID();
             [window.player_aaaa, window.player_bbbb, window.player_config,
@@ -949,6 +996,8 @@ enum WebResourceInspectionService {
             images: Array.from(imageMap.values()),
             videos: Array.from(videoMap.values()),
             configuredVideoURLs: Array.from(configuredVideoURLs),
+            hlsManifests: window.__souloObservedHLSManifests || {},
+            referrerPolicy: document.referrerPolicy || document.querySelector('meta[name=referrer]')?.content || '',
             audio: Array.from(audioMap.values()),
             links: Array.from(linkMap.values()),
             texts: texts,
@@ -987,6 +1036,7 @@ enum WebResourceMediaService {
                 return AVURLAsset(url: downloaded.localURL)
             }
         }
+        if let normalized = await HLSPlaybackBridge.assetIfNeeded(resource: resource, webView: webView) { return normalized }
         let options = await networkAssetOptions(for: resource, webView: webView)
         return AVURLAsset(url: resource.url, options: options)
     }
@@ -1008,9 +1058,7 @@ enum WebResourceMediaService {
             options[AVURLAssetHTTPUserAgentKey] = userAgent
         }
         if let cookieStore {
-            let cookies: [HTTPCookie] = await withCheckedContinuation { continuation in
-                cookieStore.getAllCookies { continuation.resume(returning: $0) }
-            }
+            let cookies = await WebKitCookieAccess.cookies(for: resource.url, in: cookieStore)
             let matching = WebResourceDownloadService.matchingCookies(from: cookies, for: resource.url)
             if !matching.isEmpty { options[AVURLAssetHTTPCookiesKey] = matching }
         }

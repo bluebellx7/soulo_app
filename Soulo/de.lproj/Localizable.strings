@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "Eine Suche, über 40 Plattformen";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Suchen oder URL eingeben";
 "search" = "Suchen";
 "recent_searches" = "Letzte Suchen";
@@ -632,3 +632,6 @@ Erzahlen Sie uns:
 "quick_actions_explanation" = "Halte das Soulo-Symbol auf dem Home-Bildschirm gedrückt, um die hier eingerichteten Kurzbefehle zu nutzen.";
 
 "ad_block_scope_hint" = "Filtert Webwerbung, Werbeeinblendungen und unerwünschte Pop-ups. Falls eine Website nicht funktioniert, kannst du die Filterung nur für diese Website ausschalten.";
+
+"privacy_clear_browsing_on_exit" = "Verlauf beim Beenden löschen";
+"privacy_clear_browsing_on_exit_desc" = "Besuchte Seiten beim Wechsel in den Hintergrund oder Neustart löschen. Suchbegriffe bleiben erhalten.";

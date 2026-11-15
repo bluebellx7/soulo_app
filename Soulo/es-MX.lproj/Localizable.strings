@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Una consulta, más de 40 plataformas";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Buscar o ingresar URL";
 "privacy_search_placeholder" = "Búsqueda privada o ingrese URL";
 "search" = "Buscar";
@@ -354,7 +354,7 @@
 "voice_stop" = "Detener";
 "voice_record" = "Registro";
 "batch_import" = "Importación por lotes";
-"batch_import_format" = "Pegue JSON en el formato siguiente";
+"batch_import_format" = "Pega el JSON aquí";
 "batch_import_group" = "Agregar al grupo (opcional)";
 "batch_import_group_placeholder" = "por ej. Películas";
 "batch_import_film_entry" = "Abrir ajustes preestablecidos de plataforma de películas";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "No se pudo instalar la extensión";
 "extension_permissions_summary" = "%d permisos · %d reglas del sitio web";
 "extension_untitled" = "Extensión sin título";
-"web_extension_install_footer" = "Instala extensiones compatibles desde un enlace de la tienda o importa CRX, XPI, ZIP o una carpeta de extensión. Revisa permisos y compatibilidad; algunas funciones de escritorio no están disponibles.";
+"web_extension_install_footer" = "Tras instalar la extensión, puedes cambiar los permisos en su página de gestión.";
 "web_extension_install_store_link" = "Instalar desde el enlace de la tienda...";
 "web_extension_browse_sources" = "Explorar tiendas de extensiones";
 "web_extension_browse_sources_footer" = "Los botones Obtener de la tienda solo son compatibles con sus propios navegadores de escritorio. Copie el enlace de la página de detalles de una extensión y luego use Instalar desde el enlace de la tienda en Soulo.";
 "web_extension_store_install_title" = "Instalar una extensión de tienda";
 "extension_page_banner_title" = "Instalar con Soulo";
-"extension_page_banner_desc" = "Revisa la compatibilidad y los permisos antes de instalar.";
-"web_extension_store_install_desc" = "Pega el enlace de la página de una extensión de Chrome, Edge o Firefox y revisa la compatibilidad y los permisos antes de confirmar la instalación.";
+"extension_page_banner_desc" = "Tras instalar la extensión, puedes cambiar los permisos en su página de gestión.";
+"web_extension_store_install_desc" = "Tras instalar la extensión, puedes cambiar los permisos en su página de gestión.";
 "web_extension_store_link_placeholder" = "Enlace a la página de extensión o ID de extensión de Chrome";
 "web_extension_store_invalid_link" = "Pegue un enlace a la página de detalles de una extensión desde Chrome, Edge o Firefox, un ID de extensión de Chrome o un enlace CRX, XPI o ZIP directo.";
 "web_extension_store_https_required" = "Los paquetes de extensión deben utilizar un enlace HTTPS seguro.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Mantén presionado el ícono de Soulo en la pantalla de inicio para usar los atajos configurados aquí.";
 
 "ad_block_scope_hint" = "Filtra anuncios web, capas promocionales y ventanas emergentes no solicitadas. Si un sitio deja de funcionar, puedes desactivar el filtrado solo para ese sitio.";
+
+"privacy_clear_browsing_on_exit" = "Borrar historial al salir";
+"privacy_clear_browsing_on_exit_desc" = "Borra las páginas visitadas al pasar a segundo plano o reiniciar. Conserva los términos de búsqueda.";

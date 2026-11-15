@@ -417,7 +417,7 @@
 "media_audio_tracks" = "오디오 트랙";
 "media_subtitles" = "자막";
 "media_track_off" = "끄기";
-"video_settings" = "비디오";
+"video_settings" = "동영상 설정";
 "video_show_tools" = "비디오 도구 표시";
 "video_show_tools_desc" = "재생 속도, 다운로드 및 전체 화면에 대한 웹 비디오 도구를 표시합니다.";
 "video_default_player" = "기본 플레이어";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "반투명 유리";
 "wallpaper_blur_amount" = "흐림 강도";
 
-"auto_hide_platform_bar_hint" = "검색 결과의 페이지를 열면 플랫폼 막대가 자동으로 숨겨집니다. 검색 결과로 돌아가거나 새로 검색하면 다시 표시됩니다. 이 메뉴에서 끌 수 있습니다.";
+"auto_hide_platform_bar_hint" = "웹페이지 내용을 탭한 후에만 플랫폼 막대를 숨깁니다. 자동 리디렉션이나 스크롤로는 숨겨지지 않습니다. 검색 결과로 돌아가거나 새 검색을 시작하면 다시 표시됩니다.";
+
+"ad_subscription_add" = "필터 목록 추가";
+"ad_subscription_name" = "이름";
+"ad_subscription_url" = "구독 URL";
+"ad_subscription_invalid" = "이름과 올바른 HTTP 또는 HTTPS 구독 URL을 입력하세요.";
+"ad_subscription_duplicate" = "이미 추가된 구독 URL입니다.";
+
+"feedback_settings" = "사운드 및 햅틱";
+"feedback_settings_hint" = "앱 전체의 진동과 인터페이스 사운드를 제어합니다. 웹페이지, 동영상 및 오디오 재생에는 영향을 주지 않습니다.";
+
+"home_display_settings" = "홈 화면 표시";
+"browsing_display_settings" = "브라우징 화면 표시";
+
+"web_video_download" = "웹 동영상 다운로드";
+"web_video_download_description" = "웹페이지, 에피소드 목록 및 플레이어에 동영상 다운로드 컨트롤을 표시합니다. 재생 및 기존 다운로드에는 영향을 주지 않습니다.";
+"builtin_extension" = "내장 확장 프로그램";
+
+"wallpaper_overlay_amount" = "오버레이 강도";
+"feedback_contact_required" = "답변을 받을 이메일이나 다른 연락처를 입력하세요.";
+"torrent_incomplete" = "미완료";
+"extend_page_background" = "웹페이지 배경 확장";
+"extend_page_background_desc" = "그라데이션을 포함한 페이지 위아래 색상을 브라우저 가장자리까지 확장합니다.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "그룹 접기";
+"tab_group_expand" = "그룹 펼치기";
+"freeze_page_background_on_scroll" = "처음 감지한 색상 유지";
+"freeze_page_background_on_scroll_desc" = "스크롤 후 처음 감지한 색상을 유지하고 다시 추출하지 않습니다. 새 페이지에서는 다시 감지합니다.";
+"page_background_gradient" = "그라데이션 확장";
+"page_background_gradient_desc" = "감지한 색상을 그라데이션으로 연결합니다. 끄면 위아래 가장자리에 각각 단색을 사용합니다.";
+
+
+"gestures_feedback_settings" = "제스처 및 피드백";

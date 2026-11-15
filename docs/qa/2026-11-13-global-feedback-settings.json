@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-13",
+  "feature": "App-wide sounds and haptics settings",
+  "entry": "Settings > Other > Sounds & Haptics; searchable by Sound or Haptics",
+  "changes": [
+    "Independent app-wide haptic and interface sound switches with a preview action.",
+    "Retain existing browser.swipe.haptics and browser.swipe.sound keys, defaults, iCloud scope, and backup compatibility.",
+    "Route 45 direct UIKit feedback calls and the compatible SwiftUI success modifier through the shared live preference gate.",
+    "Gate gesture sounds and extension notification sounds without changing webpage or media playback audio.",
+    "Replace gesture-only controls with a link to the same settings page.",
+    "Use a separate sheet for the nested gesture-page entry on iOS 16 to avoid a reproduced NavigationStack invalidation loop.",
+    "Add two translated strings to all 50 locales."
+  ],
+  "validation": {
+    "unit_tests": {
+      "status": "passed",
+      "tests": 3,
+      "coverage": ["all seven haptic types", "independent live switches", "zero sound ID", "legacy preference persistence", "portable backup round trip"],
+      "result": "/tmp/soulo-feedback-20261113/unit-final.xcresult"
+    },
+    "ui_test": {
+      "test": "HomeToolbarUITests/testGlobalFeedbackSettingsPersistAndAreSharedWithGestures",
+      "coverage": ["search entry", "independent switches", "preview state", "restart persistence", "same values from gesture settings"],
+      "ios_16_4": "passed on iPhone 14 simulator",
+      "ios_26_2": "passed on iPhone 17 simulator",
+      "results": [
+        "/tmp/soulo-feedback-20261113/ui-final-ios16.xcresult",
+        "/tmp/soulo-feedback-20261113/ui-final-ios26.xcresult"
+      ]
+    },
+    "build_for_testing": "passed",
+    "generic_ios_device_build": "passed with CODE_SIGNING_ALLOWED=NO",
+    "native_feedback_audit": "No direct native feedback generators, sensoryFeedback modifiers, or interface sound playback calls remain outside the shared player in app-owned source.",
+    "localization": "check_localization.py --strict passed for all 50 locales; all ReadingTools.strings passed plutil -lint",
+    "metadata": "export_metadata_json.py --check passed; release metadata and version unchanged",
+    "whitespace": "git diff --check passed"
+  },
+  "diagnostics": [
+    "The initial backup regression run inherited a numeric wallpaper launch argument as a string. Removing that test manifest override allowed the unchanged backup test to pass.",
+    "The first iOS 16 UI run reproduced the nested navigation loop and was cancelled; the final run passed after the legacy sheet fix."
+  ],
+  "settings_organization_proposal": {
+    "applied": false,
+    "root_categories": ["外观与首页", "搜索与平台", "浏览与标签", "手势与反馈", "视频播放", "隐私与安全", "扩展", "通用与数据", "关于与帮助"],
+    "principles": ["Category links replace expanded root-level controls", "Keep search shortcuts to individual settings", "Consolidate cache cleanup", "Move descriptions into detail pages", "Keep common settings within two levels"]
+  },
+  "limits": ["Physical haptic sensation and device silent-mode behavior were not tested on hardware."],
+  "paid_api_calls": 0,
+  "pushed": false
+}

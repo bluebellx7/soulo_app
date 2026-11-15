@@ -83,6 +83,10 @@ struct BrowserKeyboardActions {
     let forward: () -> Void
     let find: () -> Void
     let newWindow: () -> Void
+    var moveTabToWindow: () -> Void = {}
+    var showTabs: () -> Void = {}
+    var showDownloads: () -> Void = {}
+    var showExtensions: () -> Void = {}
 }
 
 private struct BrowserKeyboardActionsKey: FocusedValueKey {
@@ -122,7 +126,13 @@ struct BrowserKeyboardCommands: Commands {
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     Button(FeatureText.text("New window")) { perform(\.newWindow) }
                         .keyboardShortcut("n", modifiers: .command)
+                    Button(FeatureText.text("Move tab to new window")) { perform(\.moveTabToWindow) }
                 }
+                Divider()
+                Button(LanguageManager.shared.localizedString("tab_tabs")) { perform(\.showTabs) }
+                    .keyboardShortcut("\\", modifiers: [.command, .shift])
+                Button(LanguageManager.shared.localizedString("downloads")) { perform(\.showDownloads) }
+                Button(LanguageManager.shared.localizedString("userscripts")) { perform(\.showExtensions) }
             }
             .disabled(actions?.enabled != true)
         }

@@ -1122,7 +1122,7 @@ private struct SystemWebPageTranslationView: View {
             executingRequestID = nil
             pendingSnapshot = nil
             activeSession = nil
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            HapticsManager.success()
         } catch is CancellationError {
             finishCancelledTranslation(requestID: requestID)
         } catch {
@@ -1255,7 +1255,7 @@ private struct SystemWebPageTranslationView: View {
             "Translation failed domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public) error=\(String(reflecting: error), privacy: .public)"
         )
         errorMessage = translationErrorMessage(error)
-        UINotificationFeedbackGenerator().notificationOccurred(.error)
+        HapticsManager.error()
     }
 
     private func translationErrorMessage(_ error: Error) -> String {
@@ -1280,7 +1280,7 @@ private struct SystemWebPageTranslationView: View {
            let sourceURL = googleTranslationSourcePageURL(from: pageURL) {
             onOpenURL(sourceURL)
             onRestore()
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            HapticsManager.success()
             dismiss()
             return
         }
@@ -1290,7 +1290,7 @@ private struct SystemWebPageTranslationView: View {
                 try await WebPageTranslationBridge.restore(on: webView)
                 onRestore()
                 didTranslate = false
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                HapticsManager.success()
             } catch {
                 errorMessage = error.localizedDescription
             }

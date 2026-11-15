@@ -5,6 +5,17 @@ import UIKit
 final class LibraryPagingUITests: XCTestCase {
     private let sections = ["bookmarks", "history", "downloads", "files"]
 
+    func testReadingListOpensFromTheLazyBookmarkPage() throws {
+        let app = launch(); defer { app.terminate() }
+        app.open(try XCTUnwrap(URL(string: "soulo://bookmarks")))
+        let manage = app.buttons["favorites.manage"]
+        XCTAssertTrue(manage.waitForExistence(timeout: 10)); manage.tap()
+        app.buttons["Reading list"].tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "reading-list.explanation").firstMatch.waitForExistence(timeout: 5))
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(manage.waitForExistence(timeout: 5))
+    }
+
     func testFolderSwipeActionsTakePriorityOverPagingAndCanDelete() throws {
         let app = launch(); defer { app.terminate() }
         app.open(try XCTUnwrap(URL(string: "soulo://bookmarks")))
@@ -91,10 +102,11 @@ final class LibraryPagingUITests: XCTestCase {
     private func launch() -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
-        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
         app.launchArguments = ["-app_language", "en-US", "-appearance", "light",
             "-wallpaper_source", "gradient", "-wallpaper_gradient_id", "dawn",
-            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-files.gridView", "NO"]
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-files.gridView", "NO",
+            "-icloud_sync_enabled", "NO", "-icloud_bookmarks_sync_enabled", "NO", "-review.requestedOnce", "YES"]
         app.launch()
         return app
     }

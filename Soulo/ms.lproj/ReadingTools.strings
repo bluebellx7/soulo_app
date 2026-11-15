@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Lagu Audio";
 "media_subtitles" = "Sari kata";
 "media_track_off" = "Mati";
-"video_settings" = "Video";
+"video_settings" = "Tetapan video";
 "video_show_tools" = "Tunjukkan alatan video";
 "video_show_tools_desc" = "Tunjukkan alatan pada video web untuk kelajuan main balik, muat turun dan skrin penuh.";
 "video_default_player" = "Pemain lalai";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Kaca Kabur";
 "wallpaper_blur_amount" = "Kekuatan Kabur";
 
-"auto_hide_platform_bar_hint" = "Bar platform disembunyikan apabila anda membuka hasil carian. Kembali ke hasil atau mulakan carian baharu untuk memaparkannya semula. Anda boleh mematikannya dalam menu ini.";
+"auto_hide_platform_bar_hint" = "Bar platform hanya disembunyikan selepas anda mengetik kandungan halaman. Ubah hala automatik dan menatal tidak menyembunyikannya. Kembali ke hasil carian atau mulakan carian baharu untuk memaparkannya semula.";
+
+"ad_subscription_add" = "Tambah senarai penapis";
+"ad_subscription_name" = "Nama";
+"ad_subscription_url" = "URL langganan";
+"ad_subscription_invalid" = "Masukkan nama dan URL langganan HTTP atau HTTPS yang sah.";
+"ad_subscription_duplicate" = "URL langganan ini sudah ditambahkan.";
+
+"feedback_settings" = "Bunyi dan Getaran";
+"feedback_settings_hint" = "Kawal getaran dan bunyi antara muka di seluruh app. Main balik halaman web, video dan audio tidak terjejas.";
+
+"home_display_settings" = "Paparan Utama";
+"browsing_display_settings" = "Paparan Penyemakan Imbas";
+
+"web_video_download" = "Muat Turun Video Web";
+"web_video_download_description" = "Paparkan kawalan muat turun video pada halaman web, senarai episod dan pemain. Main balik dan muat turun sedia ada kekal sama.";
+"builtin_extension" = "Sambungan terbina dalam";
+
+"wallpaper_overlay_amount" = "Keamatan Lapisan";
+"feedback_contact_required" = "Masukkan e-mel atau maklumat hubungan lain untuk menerima balasan.";
+"torrent_incomplete" = "Belum lengkap";
+"extend_page_background" = "Panjangkan latar halaman";
+"extend_page_background_desc" = "Panjangkan warna atas dan bawah halaman ke tepi pelayar, termasuk kecerunan.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Runtuhkan kumpulan";
+"tab_group_expand" = "Kembangkan kumpulan";
+"freeze_page_background_on_scroll" = "Kekalkan warna awal";
+"freeze_page_background_on_scroll_desc" = "Selepas menatal, kekalkan warna yang mula-mula dikesan. Warna halaman baharu dikesan semula.";
+"page_background_gradient" = "Sambungan gradien";
+"page_background_gradient_desc" = "Campurkan warna yang dikesan menjadi gradien. Jika dimatikan, setiap tepi menggunakan satu warna rata.";
+
+
+"gestures_feedback_settings" = "Gerak Isyarat & Maklum Balas";

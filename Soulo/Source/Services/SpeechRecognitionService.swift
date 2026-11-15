@@ -2,6 +2,7 @@ import Speech
 import AVFoundation
 import SwiftUI
 import NaturalLanguage
+import UIKit
 
 /// Enhanced speech recognition service tuned for search queries.
 /// Improvements over baseline:
@@ -31,7 +32,28 @@ class SpeechRecognitionService: ObservableObject {
     private var recognitionTask: SFSpeechRecognitionTask?
     private var recordingSessionID: UUID?
     private var hasInputTap = false
+    private var ownsAudioSession = false
+    private var analyzerStorage: Any?
+    #if SOULO_ACCEPTANCE
+    var usesAnalyzerForAcceptance: Bool { analyzerStorage != nil }
+    private(set) var acceptanceAnalyzerStarted = false
+    private(set) var acceptanceTransitions: [String] = []
+    var acceptanceSpeechState: String {
+        let recording: String
+        if #available(iOS 17.0, *) { recording = String(AVAudioApplication.shared.recordPermission.rawValue) }
+        else { recording = "legacy" }
+        let usage = (Bundle.main.object(forInfoDictionaryKey: "NSMicrophoneUsageDescription") as? String)?.count ?? 0
+        return "auth=\(SFSpeechRecognizer.authorizationStatus().rawValue),mic=\(recording),capture=\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue),app=\(UIApplication.shared.applicationState.rawValue),usage=\(usage),pending=\(recordingSessionID != nil),locale=\(speechRecognizer?.locale.identifier ?? "none"),events=\(acceptanceTransitions.joined(separator: ","))"
+    }
+    private func acceptanceMark(_ event: String) {
+        acceptanceTransitions.append(event)
+        if acceptanceTransitions.count > 12 { acceptanceTransitions.removeFirst() }
+    }
+    #endif
+    private var analyzerStart: Task<Void, Never>?
     private let authorize: (@escaping (SFSpeechRecognizerAuthorizationStatus) -> Void) -> Void
+    private let preferOnDeviceRecognition: Bool
+    private var legacySession = false
     private lazy var audioEngine = AVAudioEngine()
 
     /// Domain vocabulary that boosts recognition accuracy (platform names, recent searches).
@@ -45,9 +67,10 @@ class SpeechRecognitionService: ObservableObject {
 
     // MARK: - Init
 
-    init(languageCode: String = "en",
+    init(languageCode: String = "en", preferOnDeviceRecognition: Bool = true,
          authorize: @escaping (@escaping (SFSpeechRecognizerAuthorizationStatus) -> Void) -> Void = SFSpeechRecognizer.requestAuthorization) {
         self.authorize = authorize
+        self.preferOnDeviceRecognition = preferOnDeviceRecognition
         let localeID = Self.localeIdentifier(for: languageCode)
         self.speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: localeID))
         self.isAvailable = speechRecognizer?.isAvailable ?? false
@@ -174,6 +197,9 @@ class SpeechRecognitionService: ObservableObject {
 
     /// Start recording. `locale` overrides the default; `contextualStrings` boosts accuracy.
     func startRecording(locale: String? = nil, contextualStrings: [String] = []) {
+        #if SOULO_ACCEPTANCE
+        acceptanceMark("start-request")
+        #endif
         guard recordingSessionID == nil, !isRecording else { return }
         if let locale, !locale.isEmpty {
             let newLocale = Locale(identifier: Self.localeIdentifier(for: locale))
@@ -188,8 +214,46 @@ class SpeechRecognitionService: ObservableObject {
         guard recordingSessionID == nil, !isRecording else { return }
         let sessionID = UUID()
         recordingSessionID = sessionID
+        legacySession = false
+        if #available(iOS 26.0, *), preferOnDeviceRecognition {
+            let locale = speechRecognizer?.locale ?? Locale.current
+            analyzerStart = Task { [weak self] in
+                let installed = await OnDeviceSpeechSession.installedLocale(equivalentTo: locale)
+                guard self?.recordingSessionID == sessionID, !Task.isCancelled else { return }
+                guard installed != nil else { self?.requestLegacyAuthorization(sessionID); return }
+                #if SOULO_ACCEPTANCE
+                self?.acceptanceMark("microphone-permission-request")
+                #endif
+                // SpeechAnalyzer stays on device and needs microphone access,
+                // not the separate SFSpeechRecognizer server authorization.
+                let granted: Bool
+                switch AVAudioApplication.shared.recordPermission {
+                case .granted: granted = true
+                case .denied: granted = false
+                default: granted = await AVAudioApplication.requestRecordPermission()
+                }
+                #if SOULO_ACCEPTANCE
+                self?.acceptanceMark("microphone-permission-\(granted)")
+                #endif
+                guard let self, self.recordingSessionID == sessionID, !Task.isCancelled else { return }
+                guard granted else {
+                    self.recordingSessionID = nil
+                    self.errorMessage = LanguageManager.shared.localizedString("speech_permission")
+                    return
+                }
+                self.beginRecordingSession()
+            }
+        } else { requestLegacyAuthorization(sessionID) }
+    }
+
+    private func requestLegacyAuthorization(_ sessionID: UUID) {
+        guard recordingSessionID == sessionID else { return }
+        legacySession = true
         authorize { [weak self] status in
             Task { @MainActor in
+                #if SOULO_ACCEPTANCE
+                self?.acceptanceMark("authorization-\(status.rawValue)")
+                #endif
                 guard let self, self.recordingSessionID == sessionID else { return }
                 guard status == .authorized else {
                     self.recordingSessionID = nil
@@ -202,6 +266,49 @@ class SpeechRecognitionService: ObservableObject {
     }
 
     func beginRecordingSession() {
+        #if SOULO_ACCEPTANCE
+        acceptanceMark("begin-session")
+        #endif
+        guard let sessionID = recordingSessionID else { return }
+        if #available(iOS 26.0, *), preferOnDeviceRecognition, !legacySession {
+            let backend = OnDeviceSpeechSession()
+            analyzerStorage = backend
+            analyzerStart = Task { [weak self] in
+                guard let self else { return }
+                do {
+                    let started = try await backend.start(locale: self.speechRecognizer?.locale ?? Locale.current,
+                        onText: { [weak self] text in
+                            guard let self, self.recordingSessionID == sessionID else { return }
+                            if text != self.lastTranscription {
+                                self.lastTranscription = text; self.recognizedText = text; self.lastActivityTime = Date()
+                            }
+                        }, onLevel: { [weak self] level in
+                            guard self?.recordingSessionID == sessionID else { return }
+                            self?.audioLevel = level
+                        }, onFailure: { [weak self] in
+                            guard let self, self.recordingSessionID == sessionID else { return }
+                            self.errorMessage = ToolText.text("speech_failed"); self.stopRecording()
+                        })
+                    guard self.recordingSessionID == sessionID, !Task.isCancelled else { backend.cancel(); return }
+                    if started {
+                        #if SOULO_ACCEPTANCE
+                        self.acceptanceAnalyzerStarted = true
+                        self.acceptanceMark("analyzer-started")
+                        #endif
+                        self.isRecording = true; self.errorMessage = nil
+                        self.lastActivityTime = Date(); self.lastTranscription = ""; self.startSilenceTimer()
+                        return
+                    }
+                } catch {
+                    guard self.recordingSessionID == sessionID, !Task.isCancelled else { backend.cancel(); return }
+                }
+                backend.cancel(); self.analyzerStorage = nil
+                self.requestLegacyAuthorization(sessionID)
+            }
+        } else { beginLegacyRecordingSession() }
+    }
+
+    private func beginLegacyRecordingSession() {
         guard let sessionID = recordingSessionID else { return }
         // Cancel any existing task
         recognitionTask?.cancel()
@@ -212,6 +319,7 @@ class SpeechRecognitionService: ObservableObject {
         do {
             try audioSession.setCategory(.playAndRecord, mode: .spokenAudio, options: [.duckOthers, .defaultToSpeaker, .allowBluetoothHFP])
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            ownsAudioSession = true
         } catch {
             errorMessage = "Failed to configure audio session: \(error.localizedDescription)"
             cleanUp()
@@ -334,10 +442,12 @@ class SpeechRecognitionService: ObservableObject {
     // MARK: - Stop Recording
 
     func stopRecording() {
+        #if SOULO_ACCEPTANCE
+        acceptanceMark("stop-request")
+        #endif
         // Cancellation must also invalidate a permission prompt that has not
         // started the engine yet, and callbacks from an older recording.
         recordingSessionID = nil
-        guard isRecording else { return }
         cleanUp()
         isRecording = false
         audioLevel = 0
@@ -346,11 +456,14 @@ class SpeechRecognitionService: ObservableObject {
     // MARK: - Clean Up
 
     private func cleanUp() {
+        analyzerStart?.cancel(); analyzerStart = nil
+        if #available(iOS 26.0, *) { (analyzerStorage as? OnDeviceSpeechSession)?.cancel() }
+        analyzerStorage = nil
         recordingSessionID = nil
         silenceTimer?.invalidate()
         silenceTimer = nil
 
-        audioEngine.stop()
+        if hasInputTap || isRecording { audioEngine.stop() }
         if hasInputTap {
             audioEngine.inputNode.removeTap(onBus: 0)
             hasInputTap = false
@@ -361,6 +474,9 @@ class SpeechRecognitionService: ObservableObject {
         recognitionTask?.cancel()
         recognitionTask = nil
 
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        if ownsAudioSession {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            ownsAudioSession = false
+        }
     }
 }

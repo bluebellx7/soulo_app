@@ -417,7 +417,7 @@
 "media_audio_tracks" = "ਆਡੀਓ ਟਰੈਕ";
 "media_subtitles" = "ਉਪਸਿਰਲੇਖ";
 "media_track_off" = "ਬੰਦ";
-"video_settings" = "ਵੀਡੀਓ";
+"video_settings" = "ਵੀਡੀਓ ਸੈਟਿੰਗਾਂ";
 "video_show_tools" = "ਵੀਡੀਓ ਟੂਲ ਦਿਖਾਓ";
 "video_show_tools_desc" = "ਪਲੇਬੈਕ ਸਪੀਡ, ਡਾਊਨਲੋਡ ਅਤੇ ਪੂਰੀ ਸਕਰੀਨ ਲਈ ਵੈੱਬ ਵੀਡੀਓ 'ਤੇ ਟੂਲ ਦਿਖਾਓ।";
 "video_default_player" = "ਡਿਫੌਲਟ ਪਲੇਅਰ";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "ਧੁੰਦਲਾ ਕੱਚ";
 "wallpaper_blur_amount" = "ਧੁੰਦਲੇਪਨ ਦੀ ਤੀਬਰਤਾ";
 
-"auto_hide_platform_bar_hint" = "ਖੋਜ ਦਾ ਨਤੀਜਾ ਖੋਲ੍ਹਣ ’ਤੇ ਪਲੇਟਫਾਰਮ ਬਾਰ ਲੁਕ ਜਾਵੇਗੀ। ਨਤੀਜਿਆਂ ’ਤੇ ਵਾਪਸ ਜਾਣ ਜਾਂ ਨਵੀਂ ਖੋਜ ਕਰਨ ’ਤੇ ਇਹ ਮੁੜ ਦਿਖੇਗੀ। ਇਸ ਮੀਨੂ ਵਿੱਚ ਇਸਨੂੰ ਬੰਦ ਕਰ ਸਕਦੇ ਹੋ।";
+"auto_hide_platform_bar_hint" = "ਵੈੱਬਪੰਨੇ ਦੀ ਸਮੱਗਰੀ ’ਤੇ ਟੈਪ ਕਰਨ ਤੋਂ ਬਾਅਦ ਹੀ ਪਲੇਟਫਾਰਮ ਬਾਰ ਲੁਕੇਗੀ। ਆਪਣੇ ਆਪ ਰੀਡਾਇਰੈਕਟ ਹੋਣ ਜਾਂ ਸਕ੍ਰੋਲ ਕਰਨ ਨਾਲ ਨਹੀਂ। ਮੁੜ ਦਿਖਾਉਣ ਲਈ ਖੋਜ ਨਤੀਜਿਆਂ ’ਤੇ ਵਾਪਸ ਜਾਓ ਜਾਂ ਨਵੀਂ ਖੋਜ ਕਰੋ।";
+
+"ad_subscription_add" = "ਫਿਲਟਰ ਸੂਚੀ ਜੋੜੋ";
+"ad_subscription_name" = "ਨਾਮ";
+"ad_subscription_url" = "ਗਾਹਕੀ URL";
+"ad_subscription_invalid" = "ਨਾਮ ਅਤੇ ਵੈਧ HTTP ਜਾਂ HTTPS ਗਾਹਕੀ URL ਦਰਜ ਕਰੋ।";
+"ad_subscription_duplicate" = "ਇਹ ਗਾਹਕੀ URL ਪਹਿਲਾਂ ਹੀ ਜੋੜਿਆ ਗਿਆ ਹੈ।";
+
+"feedback_settings" = "ਆਵਾਜ਼ ਅਤੇ ਵਾਈਬ੍ਰੇਸ਼ਨ";
+"feedback_settings_hint" = "ਪੂਰੀ ਐਪ ਵਿੱਚ ਵਾਈਬ੍ਰੇਸ਼ਨ ਅਤੇ ਇੰਟਰਫੇਸ ਦੀਆਂ ਆਵਾਜ਼ਾਂ ਕੰਟਰੋਲ ਕਰੋ। ਵੈੱਬਪੰਨੇ, ਵੀਡੀਓ ਅਤੇ ਆਡੀਓ ਪਲੇਬੈਕ ਪ੍ਰਭਾਵਿਤ ਨਹੀਂ ਹੁੰਦੇ।";
+
+"home_display_settings" = "ਹੋਮ ਡਿਸਪਲੇ";
+"browsing_display_settings" = "ਬ੍ਰਾਊਜ਼ਿੰਗ ਡਿਸਪਲੇ";
+
+"web_video_download" = "ਵੈੱਬ ਵੀਡੀਓ ਡਾਊਨਲੋਡ";
+"web_video_download_description" = "ਵੈੱਬਪੰਨਿਆਂ, ਐਪੀਸੋਡ ਸੂਚੀਆਂ ਅਤੇ ਪਲੇਅਰਾਂ ਵਿੱਚ ਵੀਡੀਓ ਡਾਊਨਲੋਡ ਕੰਟਰੋਲ ਦਿਖਾਓ। ਪਲੇਬੈਕ ਅਤੇ ਮੌਜੂਦਾ ਡਾਊਨਲੋਡ ਨਹੀਂ ਬਦਲਦੇ।";
+"builtin_extension" = "ਬਿਲਟ-ਇਨ ਐਕਸਟੈਂਸ਼ਨ";
+
+"wallpaper_overlay_amount" = "ਓਵਰਲੇ ਦੀ ਤੀਬਰਤਾ";
+"feedback_contact_required" = "ਜਵਾਬ ਪ੍ਰਾਪਤ ਕਰਨ ਲਈ ਈਮੇਲ ਜਾਂ ਹੋਰ ਸੰਪਰਕ ਜਾਣਕਾਰੀ ਦਿਓ।";
+"torrent_incomplete" = "ਅਧੂਰਾ";
+"extend_page_background" = "ਵੈੱਬਪੰਨੇ ਦਾ ਪਿਛੋਕੜ ਵਧਾਓ";
+"extend_page_background_desc" = "ਗ੍ਰੇਡੀਐਂਟ ਸਮੇਤ ਪੰਨੇ ਦੇ ਉੱਪਰਲੇ ਅਤੇ ਹੇਠਲੇ ਰੰਗਾਂ ਨੂੰ ਬ੍ਰਾਊਜ਼ਰ ਦੇ ਕਿਨਾਰਿਆਂ ਤੱਕ ਵਧਾਓ।";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "ਗਰੁੱਪ ਸਮੇਟੋ";
+"tab_group_expand" = "ਗਰੁੱਪ ਖੋਲ੍ਹੋ";
+"freeze_page_background_on_scroll" = "ਸ਼ੁਰੂਆਤੀ ਰੰਗ ਰੱਖੋ";
+"freeze_page_background_on_scroll_desc" = "ਸਕ੍ਰੋਲ ਕਰਨ ਤੋਂ ਬਾਅਦ ਪਹਿਲਾਂ ਪਛਾਣੇ ਰੰਗ ਰੱਖੋ। ਨਵੇਂ ਪੰਨੇ ਦੇ ਰੰਗ ਮੁੜ ਪਛਾਣੇ ਜਾਣਗੇ।";
+"page_background_gradient" = "ਗ੍ਰੇਡੀਐਂਟ ਵਿਸਤਾਰ";
+"page_background_gradient_desc" = "ਪਛਾਣੇ ਰੰਗਾਂ ਨੂੰ ਗ੍ਰੇਡੀਐਂਟ ਵਿੱਚ ਮਿਲਾਓ। ਬੰਦ ਹੋਣ ਤੇ ਹਰ ਕਿਨਾਰੇ ਉੱਤੇ ਇੱਕੋ ਰੰਗ ਵਰਤਿਆ ਜਾਂਦਾ ਹੈ।";
+
+
+"gestures_feedback_settings" = "ਇਸ਼ਾਰੇ ਅਤੇ ਫੀਡਬੈਕ";

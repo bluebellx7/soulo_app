@@ -1,9 +1,80 @@
 import XCTest
 import WebKit
 import Combine
+import AVFoundation
+import UIKit
 @testable import Soulo
 
 @MainActor final class WebEpisodeDownloadTests: XCTestCase {
+    func testLiveNavigationSiteResolvesDistinctEpisodesAndStartsPlayback() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_EPISODE_QA"] == "1", "Opt-in real site from website/movies.html")
+        try await verifyLiveEpisodes(mtyy: false)
+    }
+
+    func testLiveMtyySelectedEpisodesStartBothDecoders() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_MTY_QA"] == "1", "Opt-in user-reported MTYY video")
+        try await verifyLiveEpisodes(mtyy: true)
+    }
+
+    private func verifyLiveEpisodes(mtyy: Bool) async throws {
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let source = WKWebView(frame: .zero, configuration: config)
+        var resolved: [URL] = []
+        for number in mtyy ? [1,2] : [2,3] {
+            let page = URL(string: mtyy ? "https://www.mtyy5.com/vodplay/155698-4-\(number).html" : "https://www.pbkan.com/yun/1009-4-\(number).html")!
+            let resolver = WebEpisodeMediaResolver(episode: .init(title: "Episode \(number)",url:page), sourceView:source)
+            defer { resolver.invalidate() }
+            let resource = try await resolver.resolve(timeout: mtyy ? 45 : 25)
+            let configured = try await resolver.webView.evaluateJavaScript("window.player_data?.url") as? String
+            if !mtyy {
+                XCTAssertEqual(resource.url.absoluteString,configured,"Do not resolve the preloaded next episode")
+                XCTAssertEqual(resource.sourcePageURL?.host,page.host,"Retain the actual selected player frame as the media Referer")
+            }
+            print("LIVE EPISODE QA page=\(page.absoluteString) resource=\(resource.url.absoluteString) referer=\(resource.sourcePageURL?.absoluteString ?? "")")
+            XCTAssertFalse(resolved.contains(resource.url));resolved.append(resource.url)
+            let asset = await WebResourceMediaService.asset(for:resource,webView:source)
+            let session=MediaSession.shared
+            session.open(url:resource.url,title:resource.title,pageURL:resource.sourcePageURL,asset:asset,webView:source,persistPosition:false,startAt:0)
+            let player=session.player,item=try XCTUnwrap(player.currentItem)
+            item.preferredForwardBufferDuration=1
+            let output=AVPlayerItemVideoOutput(pixelBufferAttributes:nil);item.add(output)
+            let scene=try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap{$0 as? UIWindowScene}.first)
+            let oldWindow=scene.keyWindow,window=UIWindow(windowScene:scene),host=UIViewController()
+            window.rootViewController=host;window.makeKeyAndVisible()
+            let layer=AVPlayerLayer(player:player);layer.frame=CGRect(x:0,y:0,width:390,height:220);host.view.layer.addSublayer(layer)
+            defer { session.stop();window.isHidden=true;window.rootViewController=nil;oldWindow?.makeKeyAndVisible() }
+            var decoded = false
+            for _ in 0..<400 {
+                let time=output.itemTime(forHostTime:CACurrentMediaTime())
+                decoded = player.currentTime().seconds > 0.3 && output.copyPixelBuffer(forItemTime:time,itemTimeForDisplay:nil) != nil
+                if item.status == .failed || decoded { break }
+                try await Task.sleep(for:.milliseconds(50))
+            }
+            let report: [String:Any] = ["page":page.absoluteString,"resource":resource.url.absoluteString,
+                "referer":resource.sourcePageURL?.absoluteString ?? "", "status":item.status.rawValue,
+                "time":player.currentTime().seconds, "rate":player.rate,"requested":session.isPlaybackRequested,
+                "waiting":player.reasonForWaitingToPlay?.rawValue ?? "",
+                "errors":item.errorLog()?.events.map { $0.errorComment ?? "" } ?? []]
+            let attachment=XCTAttachment(data:try JSONSerialization.data(withJSONObject:report),uniformTypeIdentifier:"public.json")
+            attachment.name="live-selected-episode-\(number)";attachment.lifetime = .keepAlways;add(attachment)
+            XCTAssertNotEqual(item.status,.failed,item.error?.localizedDescription ?? "")
+            XCTAssertTrue(decoded,"Real selected episode must decode a video frame: \(report)")
+            session.stop()
+            layer.removeFromSuperlayer()
+            let playback=MatroskaPlayback();playback.attach(host.view)
+            let context=await VideoPlaybackRequestContext.load(url:resource.url,pageURL:resource.sourcePageURL,webView:source)
+            playback.open(asset.url,requestContext:context,title:resource.title)
+            defer{playback.stop()}
+            for _ in 0..<400 {
+                if playback.error != nil || playback.elapsed > 0.3 {break}
+                try await Task.sleep(for:.milliseconds(50))
+            }
+            XCTAssertNil(playback.error)
+            XCTAssertGreaterThan(playback.elapsed,0.3,"The default Soulo decoder must play the selected episode")
+            playback.stop()
+        }
+    }
+
     func testDirectCatalogStreamsResolveWithoutLoadingAnHTMLPage() async throws {
         let pageURL = try XCTUnwrap(URL(string: "https://catalog.example/detail/1"))
         let streamURL = try XCTUnwrap(URL(string: "https://cdn.example/play/first/index.m3u8?token=abc"))
@@ -19,10 +90,24 @@ import Combine
     }
 
     func testDirectCatalogEpisodesDownloadRealMediaWithSharedCookies() async throws {
+        try await verifyDirectCatalogDownloads()
+    }
+
+    func testHidingVideoDownloadControlsDoesNotStopExistingOrQueuedDownloads() async throws {
+        let defaults = UserDefaults.standard
+        let original = defaults.object(forKey: VideoPlaybackPreferences.showsWebDownloadControlsKey)
+        defaults.set(true, forKey: VideoPlaybackPreferences.showsWebDownloadControlsKey)
+        defer { defaults.set(original, forKey: VideoPlaybackPreferences.showsWebDownloadControlsKey) }
+        try await verifyDirectCatalogDownloads(hideControlsAfterEnqueue: true)
+    }
+
+    private func verifyDirectCatalogDownloads(hideControlsAfterEnqueue: Bool = false) async throws {
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
         let bytes = try Data(contentsOf: fixture)
-        let server = try DownloadPlaybackHTTPFixture(files: ["/first.mp4": bytes, "/second.mp4": bytes], requiredCookie: "catalogAuth=allowed")
-        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let names = hideControlsAfterEnqueue ? ["first", "second", "third"] : ["first", "second"]
+        let files = Dictionary(uniqueKeysWithValues: names.map { ("/\($0).mp4", bytes) })
+        let server = try DownloadPlaybackHTTPFixture(files: files, requiredCookie: "catalogAuth=allowed")
+        let root = try await server.start(); defer { server.stop() }
         let configuration = WKWebViewConfiguration(); configuration.websiteDataStore = .nonPersistent()
         let model = WebViewModel(); model.webView = WKWebView(frame: .zero, configuration: configuration)
         defer { model.releaseWebViewRuntime() }
@@ -35,13 +120,23 @@ import Combine
         }
         let cookie = try XCTUnwrap(HTTPCookie(properties: [.domain: "127.0.0.1", .path: "/", .name: "catalogAuth", .value: "allowed"]))
         await configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
-        let episodes = ["first", "second"].enumerated().map { index, name in
+        let episodes = names.enumerated().map { index, name in
             WebEpisode(title: "Episode \(index + 1)", url: root.appendingPathComponent("\(name).mp4"), resourcePageURL: root.appendingPathComponent("detail.html"))
         }
         let service = WebEpisodeDownloadService(resolutionTimeout: 2)
-        XCTAssertEqual(service.enqueue(episodes, pageTitle: "Catalog", viewModel: model), 2)
+        XCTAssertEqual(service.enqueue(episodes, pageTitle: "Catalog", viewModel: model), episodes.count)
+        if hideControlsAfterEnqueue {
+            for _ in 0..<80 where !service.jobs.contains(where: { $0.status == .downloading }) {
+                try await Task.sleep(for: .milliseconds(25))
+            }
+            XCTAssertTrue(service.jobs.contains { $0.status == .downloading })
+            XCTAssertTrue(service.jobs.contains { $0.status == .waiting }, "Exceed the two-worker limit to verify a queued download starts after controls are hidden")
+            UserDefaults.standard.set(false, forKey: VideoPlaybackPreferences.showsWebDownloadControlsKey)
+            XCTAssertFalse(VideoPlaybackPreferences.showsWebDownloadControls())
+        }
+        server.releaseDownloads()
         for _ in 0..<240 where service.jobs.contains(where: \.isActive) { try await Task.sleep(for: .milliseconds(100)) }
-        XCTAssertEqual(service.jobs.map(\.status), [.finished, .finished], service.jobs.map(\.errorMessage).joined(separator: "; "))
+        XCTAssertEqual(service.jobs.map(\.status), Array(repeating: .finished, count: episodes.count), service.jobs.map(\.errorMessage).joined(separator: "; "))
         for episode in episodes {
             let item = try XCTUnwrap(DownloadManagerService.shared.finishedDownload(for: episode.url))
             XCTAssertEqual(try Data(contentsOf: item.localURL), bytes)

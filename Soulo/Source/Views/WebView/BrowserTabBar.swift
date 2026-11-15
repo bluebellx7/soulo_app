@@ -4,6 +4,8 @@ import UIKit.UIGestureRecognizerSubclass
 // MARK: - Browser Tab Bar (Scrollable Strip)
 
 struct BrowserTabBar: View {
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject var tabManager: TabManager
     var onHidingTabBar: (() -> Void)? = nil
     let onNewTab: () -> Void
@@ -28,14 +30,23 @@ struct BrowserTabBar: View {
                             },
                             onClose: {
                                 HapticsManager.light()
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
                                     tabManager.closeTab(at: index)
                                 }
                             }
                         )
                         .id(tab.id)
+                        .contextMenu {
+                            if UIDevice.current.userInterfaceIdiom == .pad {
+                                Button(FeatureText.text("Move tab to new window")) {
+                                    if let configuration = BrowserWindowTransferService.shared.prepare(from: tabManager, tabID: tab.id) {
+                                        openWindow(value: configuration)
+                                    }
+                                }
+                            }
+                        }
                         .matchedGeometryEffect(id: tab.id, in: tabNamespace)
-                        .transition(.asymmetric(
+                        .transition(reduceMotion ? .identity : .asymmetric(
                             insertion: .scale(scale: 0.8).combined(with: .opacity),
                             removal: .scale(scale: 0.8).combined(with: .opacity)
                         ))
@@ -49,14 +60,12 @@ struct BrowserTabBar: View {
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.primary)
                             .frame(width: 30, height: 30)
-                            .background {
-                                Circle().fill(.ultraThinMaterial).opacity(0.5)
-                            }
+                            .browserToolbarButtonGlass()
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(LanguageManager.shared.localizedString("settings"))
                     .accessibilityIdentifier("browser.top-tab-options")
-                    .popover(isPresented: $showTabOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+                    .compatiblePopover(isPresented: $showTabOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
                         BrowserTabOptionsPanel(tabManager: tabManager, dismissWhenHidingBar: true, onHidingTabBar: onHidingTabBar,
                             onDismiss: { showTabOptions = false }, onNewTab: onNewTab)
                             .compatiblePopoverAdaptation()
@@ -71,7 +80,7 @@ struct BrowserTabBar: View {
             }
             .onCompatibleChange(of: tabManager.activeTabIndex) { _, _ in
                 if let id = tabManager.activeTab?.id {
-                    withAnimation {
+                    withAnimation(reduceMotion ? nil : .default) {
                         proxy.scrollTo(id, anchor: .center)
                     }
                 }
@@ -131,14 +140,7 @@ private struct BrowserTabChip: View {
         .padding(.leading, 10)
         .padding(.trailing, 6)
         .padding(.vertical, 5)
-        .background(
-            Capsule()
-                .fill(.ultraThinMaterial)
-                .opacity(isActive ? 0.62 : 0.40)
-                .overlay(
-                    Capsule().fill(Color.primary.opacity(isActive ? 0.06 : 0.015))
-                )
-        )
+        .browserToolbarCapsuleGlass(tint: isActive ? Color.primary.opacity(0.06) : nil)
         .overlay(
             Capsule()
                 .stroke(
@@ -336,7 +338,7 @@ struct TabSwitcherOverlay: View {
             .buttonStyle(.plain)
             .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
             .accessibilityIdentifier("tabs.options")
-            .popover(isPresented: $showTabOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+            .compatiblePopover(isPresented: $showTabOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
                 tabOptionsPanel
                     .compatiblePopoverAdaptation()
             }
@@ -554,11 +556,22 @@ private struct TabDomainGroupRow: View {
     @State private var pendingClose: TabOverviewDomainGroup?
     @State private var renaming = false
     @State private var groupName = ""
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private var isCollapsed: Bool { tabManager.collapsedOverviewGroupIDs.contains(group.id) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                HStack(spacing: 8) {
+                Button {
+                    HapticsManager.selection()
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                        tabManager.toggleCollapsedOverviewGroup(group.id)
+                    }
+                } label: { HStack(spacing: 8) {
+                    Image(systemName: "chevron.forward")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(isCollapsed ? 0 : 90))
                     if tabManager.pinnedOverviewGroupIDs.contains(group.id) { Image(systemName: "pin.fill").font(.caption).foregroundStyle(Color.primary.opacity(0.8)) }
                     groupIcon
                     Text(group.title)
@@ -571,11 +584,13 @@ private struct TabDomainGroupRow: View {
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
                         .background(Color.primary.opacity(0.08), in: Capsule())
-                }
+                    Spacer(minLength: 0)
+                }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle()) }
+                .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
                 .accessibilityAddTraits(.isHeader)
+                .accessibilityHint(ToolText.text(isCollapsed ? "tab_group_expand" : "tab_group_collapse"))
                 .accessibilityIdentifier("tabs.group.\(group.id)")
-                Spacer(minLength: 0)
                 Menu {
                     Button(FeatureText.text(tabManager.pinnedOverviewGroupIDs.contains(group.id) ? "Unpin group" : "Pin group")) { tabManager.togglePinnedOverviewGroup(group.id) }
                     Button(FeatureText.text("Rename group")) { groupName = group.title; renaming = true }
@@ -618,6 +633,7 @@ private struct TabDomainGroupRow: View {
             .padding(.horizontal, 24)
             .anchorPreference(key: TabGroupOccupiedBoundsKey.self, value: .bounds) { [$0] }
 
+            if !isCollapsed {
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(cardWidth), spacing: 12, alignment: .top), count: columnCount), alignment: .leading, spacing: 14) {
                     ForEach(group.tabs) { tab in
                         TabOverviewCard(
@@ -644,6 +660,7 @@ private struct TabDomainGroupRow: View {
             .padding(.vertical, 2)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("tabs.group-row.\(group.id)")
+            }
         }
     }
 
@@ -932,7 +949,7 @@ private struct TabSwitcherCarousel: View {
         guard !tabs.isEmpty else { return 0..<0 }
         let offset = stepDistance > 0 ? Int((dragOffset / stepDistance).rounded()) : 0
         let center = min(max(focusedIndex - offset, 0), tabs.count - 1)
-        return max(0, center - 3)..<min(tabs.count, center + 4)
+        return max(0, center - 2)..<min(tabs.count, center + 3)
     }
 
     var body: some View {
@@ -1386,7 +1403,7 @@ private struct TabOverviewCard: View {
                 if let url = webViewModel.currentURL {
                     Button {
                         UIPasteboard.general.url = url
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        HapticsManager.success()
                         NotificationCenter.default.post(name: .linkCopied, object: nil)
                     } label: {
                         tabContextLabel("copy_link", systemImage: "doc.on.doc")
@@ -1428,7 +1445,11 @@ private struct TabOverviewCard: View {
         }
         .accessibilityIdentifier(webViewModel.snapshot == nil ? "tabs.card.placeholder" : "tabs.card.preview")
         .task(id: "\(webViewModel.snapshotRevision)-\(viewportSize.width)-\(viewportSize.height)") {
-            await webViewModel.prepareOverviewSnapshot(viewport: viewportSize)
+            // Fast drags and the position slider can pass many cards. Let
+            // transient cards leave before queueing their image reads.
+            do { try await Task.sleep(for: .milliseconds(60)) } catch { return }
+            await webViewModel.prepareOverviewSnapshot(viewport: viewportSize,
+                maximumPixelSize: compactPreviewHeight == nil ? 1600 : 512)
         }
         .onDisappear {
             if !webViewModel.showSnapshotWhileRestoring { webViewModel.releaseSnapshotMemory() }
@@ -1624,10 +1645,12 @@ struct TabSnapshotPreview: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
+                if abs(image.size.width / max(1, image.size.height) - geometry.size.width / max(1, geometry.size.height)) > 0.02 {
                 Image(uiImage: image).resizable().scaledToFill()
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped().scaleEffect(1.12).blur(radius: 14, opaque: true)
                     .overlay(Color.black.opacity(0.12))
+                }
                 Image(uiImage: image).resizable().scaledToFit()
                     .frame(width: geometry.size.width, height: geometry.size.height)
             }

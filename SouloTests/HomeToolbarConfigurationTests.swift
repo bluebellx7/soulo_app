@@ -7,30 +7,30 @@ final class HomeToolbarConfigurationTests: XCTestCase {
         let name = "HomeToolbarTests." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!
         defer { defaults.removePersistentDomain(forName: name) }
-        let service = HomeToolbarConfigurationService(defaults: defaults)
+        let service = HomeToolbarConfigurationService(defaults: defaults, slotLimit: 5)
         XCTAssertFalse(service.isVisible)
         XCTAssertTrue(service.showsButtonBackground)
         XCTAssertEqual(service.actions, Array(repeating: .none, count: 5))
         service.save([.downloads, .files, .bookmarks, .history, .wallpaper], showsButtonBackground: true)
-        let restored = HomeToolbarConfigurationService(defaults: defaults)
+        let restored = HomeToolbarConfigurationService(defaults: defaults, slotLimit: 5)
         XCTAssertTrue(restored.isVisible)
         XCTAssertTrue(restored.showsButtonBackground)
         XCTAssertEqual(restored.actions, [.downloads, .files, .bookmarks, .history, .wallpaper])
         defaults.set(false, forKey: HomeToolbarConfigurationService.backgroundKey)
         restored.reloadFromDefaults()
         XCTAssertFalse(restored.showsButtonBackground)
-        XCTAssertFalse(HomeToolbarConfigurationService(defaults: defaults).showsButtonBackground)
+        XCTAssertFalse(HomeToolbarConfigurationService(defaults: defaults, slotLimit: 5).showsButtonBackground)
         XCTAssertEqual(restored.actions, [.downloads, .files, .bookmarks, .history, .wallpaper])
         defaults.removeObject(forKey: HomeToolbarConfigurationService.backgroundKey)
         restored.reloadFromDefaults()
         XCTAssertTrue(restored.showsButtonBackground)
         restored.save([])
-        XCTAssertFalse(HomeToolbarConfigurationService(defaults: defaults).isVisible)
+        XCTAssertFalse(HomeToolbarConfigurationService(defaults: defaults, slotLimit: 5).isVisible)
     }
     func testUnknownSavedActionsLeaveTheirSlotsEmptyWithoutMovingOthers() {
-        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["downloads", "future-action", "wallpaper", "files", "settings"]),
+        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["downloads", "future-action", "wallpaper", "files", "settings"], slotLimit: 5),
                        [.downloads, .none, .wallpaper, .files, .settings])
-        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["history"]), [.history, .none, .none, .none, .none])
+        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["history"], slotLimit: 5), [.history, .none, .none, .none, .none])
     }
     func testRetiredHelpEntryLeavesOtherSavedSlotsAndSettingsIntact() {
         let name = "HomeToolbarTests." + UUID().uuidString
@@ -38,7 +38,7 @@ final class HomeToolbarConfigurationTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: name) }
         defaults.set(["help", "backups", "quickActions", "files", "settings"], forKey: HomeToolbarConfigurationService.storageKey)
         defaults.set(false, forKey: HomeToolbarConfigurationService.backgroundKey)
-        let service = HomeToolbarConfigurationService(defaults: defaults)
+        let service = HomeToolbarConfigurationService(defaults: defaults, slotLimit: 5)
         XCTAssertNil(HomeToolbarAction(rawValue: "help"))
         XCTAssertEqual(service.actions, [.none, .backups, .quickActions, .files, .settings])
         XCTAssertFalse(service.showsButtonBackground)
@@ -47,11 +47,25 @@ final class HomeToolbarConfigurationTests: XCTestCase {
                        ["none", "backups", "quickActions", "files", "settings"])
     }
     func testFourSlotUpgradeKeepsExistingChoicesAndRejectsASixthSlot() {
-        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["downloads", "files", "bookmarks", "history"]),
+        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["downloads", "files", "bookmarks", "history"], slotLimit: 5),
                        [.downloads, .files, .bookmarks, .history, .none])
-        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["downloads", "files", "bookmarks", "history", "wallpaper", "settings"]),
+        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["downloads", "files", "bookmarks", "history", "wallpaper", "settings"], slotLimit: 5),
                        [.downloads, .files, .bookmarks, .history, .wallpaper])
     }
+    func testIPadSupportsEightSlotsAndPhoneEditsKeepTheLastThree() {
+        let name = "HomeToolbarPad." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let pad = HomeToolbarConfigurationService(defaults: defaults, slotLimit: 8)
+        let choices: [HomeToolbarAction] = [.settings, .files, .downloads, .tabs, .bookmarks, .extensions, .history, .newTab]
+        pad.save(choices)
+        XCTAssertEqual(HomeToolbarConfigurationService(defaults: defaults, slotLimit: 8).actions, choices)
+        let phone = HomeToolbarConfigurationService(defaults: defaults, slotLimit: 5)
+        XCTAssertEqual(phone.actions, Array(choices.prefix(5)))
+        phone.save([.settings, .files])
+        XCTAssertEqual(Array(HomeToolbarConfigurationService(defaults: defaults, slotLimit: 8).actions.suffix(3)), Array(choices.suffix(3)))
+    }
+
     func testEveryActionHasALocalizedLabelAndSymbol() {
         for action in HomeToolbarAction.allCases {
             XCTAssertFalse(action.title.isEmpty)

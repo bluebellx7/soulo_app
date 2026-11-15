@@ -45,15 +45,12 @@ enum BuiltInUserScripts {
         "com.dkluge.soulo.examples.reading-progress": (
             "userscript_sample_name",
             "userscript_sample_desc"
-        ),
-        "com.dkluge.soulo.examples.page-marker": (
-            "userscript_page_marker_name",
-            "userscript_page_marker_desc"
         )
     ]
 
     static let retiredNamespaces: Set<String> = [
         "com.dkluge.soulo.examples.reading-mode",
+        "com.dkluge.soulo.examples.page-marker",
         "com.dkluge.soulo.builtin.video-helper"
     ]
 
@@ -98,6 +95,7 @@ enum BuiltInUserScripts {
                 let metadata = BrowserExtensionService.parseMetadata(from: source)
                 guard let namespace = metadata.namespace,
                       !namespace.isEmpty,
+                      !retiredNamespaces.contains(namespace),
                       metadata.patterns.allSatisfy({ UserScriptURLMatcher.isValid(pattern: $0) }),
                       metadata.excludePatterns.allSatisfy({ UserScriptURLMatcher.isValid(pattern: $0) }),
                       metadata.connectDomains.allSatisfy({ UserScriptConnectPolicy.isValid(declaration: $0) })

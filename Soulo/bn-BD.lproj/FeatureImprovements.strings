@@ -81,3 +81,58 @@
 "Website cache" = "ওয়েবসাইট ক্যাশে";
 "Website icons" = "ওয়েবসাইট আইকন";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "iCloud সিঙ্ক সেটিংস পরিবর্তনের আগে ব্যাকআপ রাখে। প্রাথমিক কপির পাশাপাশি সর্বশেষ %lldটি ব্যাকআপ রাখা হয়।";
+
+"Move tab to new window" = "নতুন উইন্ডোতে সরান";
+
+"Save webpage" = "ওয়েবপৃষ্ঠা সংরক্ষণ";
+
+"Webpage" = "ওয়েবপৃষ্ঠা";
+
+"Website data" = "ওয়েবসাইটের ডেটা";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "সংরক্ষিত নিবন্ধ, বইয়ের সূচি, প্রচ্ছদ ও পড়ার অগ্রগতি অন্তর্ভুক্ত। বইয়ের ফাইল ডাউনলোড করা ফাইলে গণনা করা হয়।";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "আকার আনুমানিক। IndexedDB-তে ডেটাবেস ও মিডিয়া ফাইল থাকে। অজানা আকার — হিসেবে দেখানো হয়।";
+"Extension temporary cache" = "এক্সটেনশনের অস্থায়ী ক্যাশ";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "এক্সটেনশনের অস্থায়ী মিডিয়া মুছে দেয়। সেটিংস, স্ক্রিপ্ট, অগ্রগতি ও ডাউনলোড করা ফাইল রাখে। আগে এক্সটেনশন ও ভিডিও পৃষ্ঠা বন্ধ করুন এবং ডাউনলোড শেষ করুন।";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "অস্থায়ী ডেটা এখনও ব্যবহৃত হচ্ছে। এক্সটেনশন ও ভিডিও পৃষ্ঠা বন্ধ করে ডাউনলোড শেষ করুন, তারপর আবার চেষ্টা করুন।";
+"Deleting website data can sign you out and remove offline content." = "ওয়েবসাইটের ডেটা মুছলে সাইন আউট হতে পারেন এবং অফলাইন বিষয়বস্তু মুছে যেতে পারে।";
+
+"Extension startup timed out." = "এক্সটেনশন চালু হতে সময়সীমা পেরিয়ে গেছে।";
+
+"soulo_extensions" = "Soulo এক্সটেনশন";
+
+"Add to Quick Links" = "দ্রুত লিঙ্কে যোগ করুন";
+"Remove from Quick Links" = "দ্রুত লিঙ্ক থেকে সরান";
+"Mark bookmarks with a heart to show them here." = "এখানে দেখাতে বুকমার্ক চেপে ধরে হৃদয় চিহ্ন দিন।";
+
+"Type %@ to confirm." = "নিশ্চিত করতে %@ লিখুন।";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "ডিভাইসগুলির বুকমার্ক একত্রিত হয়। স্পষ্টভাবে মুছলেই সেগুলি সরানো হয়।";
+"This deletion also syncs to your other devices." = "এই মুছে ফেলা অন্য ডিভাইসেও সিঙ্ক হবে।";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "এই প্রম্পট কপি করে চাহিদা যোগ করুন, AI-কে পাঠান, তারপর তার JSON এখানে পেস্ট করে আমদানি করুন।";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "JSON-এর গোষ্ঠীর নাম অগ্রাধিকার পায়। একই নামের গোষ্ঠী মেশানো হয়, বিদ্যমান প্ল্যাটফর্ম মুছে যায় না।";
+"Imported %1$d platforms into %2$d groups." = "%1$dটি প্ল্যাটফর্ম %2$dটি গোষ্ঠীতে আমদানি হয়েছে।";
+"No new platforms or group entries." = "নতুন প্ল্যাটফর্ম বা গোষ্ঠীর এন্ট্রি নেই।";
+
+"App size" = "অ্যাপের আকার";
+"App data" = "অ্যাপের ডেটা";
+"Wallpaper cache" = "ওয়ালপেপার ক্যাশ";
+"Other caches" = "অন্যান্য ক্যাশ";
+"Temporary files" = "অস্থায়ী ফাইল";
+"Download task data" = "ডাউনলোড কাজের ডেটা";
+"Settings and records" = "সেটিংস ও রেকর্ড";
+"Shared app data" = "ভাগ করা অ্যাপ ডেটা";
+"Other app data" = "অন্যান্য অ্যাপ ডেটা";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "অ্যাপের ডেটায় ইনস্টল করা প্রোগ্রাম অন্তর্ভুক্ত নয়। ডিস্কের আকার iOS সেটিংস থেকে আলাদা হতে পারে।";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "সংরক্ষিত বিষয়বস্তু তার নিজস্ব তালিকা থেকে মুছুন। ব্যবহৃত অস্থায়ী ফাইল ও সিস্টেম ক্যাশ ডেটাবেস নিরাপদ হলে মুক্ত হবে।";
+
+"Current platforms" = "বর্তমান প্ল্যাটফর্ম";
+"Import mode" = "আমদানির ধরন";
+"Append" = "যোগ করুন";
+"Replace all" = "সব প্রতিস্থাপন";
+"Replace all platforms?" = "সব প্ল্যাটফর্ম প্রতিস্থাপন করবেন?";
+"A settings backup is saved before replacement." = "প্রতিস্থাপনের আগে সেটিংসের ব্যাকআপ রাখা হবে।";
+
+"Take over web players" = "ওয়েব প্লেয়ার নিয়ন্ত্রণ";
+"Only takes over website fullscreen. Extension players stay independent." = "শুধু ওয়েবসাইটের পূর্ণস্ক্রিন প্লেয়ার বদলায়। এক্সটেনশনের প্লেয়ার স্বাধীন থাকে।";
+
+"App size is the installed program and resources, not the App Store download size." = "অ্যাপের আকার হলো ইনস্টল করা প্রোগ্রাম ও রিসোর্সের আকার, App Store থেকে ডাউনলোডের আকার নয়।";
+"App data is the total of the categories below." = "অ্যাপ ডেটা হলো নিচের বিভাগগুলির মোট পরিমাণ।";

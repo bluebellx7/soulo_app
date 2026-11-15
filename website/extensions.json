@@ -1,0 +1,57 @@
+{
+  "updated": "2026-11-15",
+  "souloVersion": "1.2.15",
+  "extensions": [
+    {
+      "id": "faststream",
+      "name": "FastStream",
+      "subtitle": "网页视频播放器",
+      "subtitle_en": "Web video player",
+      "version": "1.3.78",
+      "store": "chrome",
+      "storeName": "Chrome Web Store",
+      "url": "https://chromewebstore.google.com/detail/faststream-video-player/kkeakohpadmbldjaiggikmnldlfkdfog",
+      "icon": "images/extension-icons/faststream.png",
+      "description": "将网页中的视频替换为 FastStream 播放器，使用熟悉的进度、画质和字幕控制。",
+      "description_en": "Replace a webpage video with FastStream, with playback, quality, and subtitle controls.",
+      "tested": [
+        "网页播放器替换",
+        "进度拖动与全屏",
+        "MP4 / HLS / DASH"
+      ],
+      "tested_en": [
+        "Inline player replacement",
+        "Seeking and fullscreen",
+        "MP4 / HLS / DASH"
+      ],
+      "note": "DRM 保护内容及部分网站的视频可能无法播放。",
+      "note_en": "DRM-protected videos and some websites may not play."
+    },
+    {
+      "id": "catcatch",
+      "name": "猫抓",
+      "name_en": "Cat Catch",
+      "subtitle": "网页媒体资源助手",
+      "subtitle_en": "Web media resources",
+      "version": "2.7.4",
+      "store": "edge",
+      "storeName": "Microsoft Edge Add-ons",
+      "url": "https://microsoftedge.microsoft.com/addons/detail/oohmdefbjalncfplafanlagojlakmjci",
+      "icon": "images/extension-icons/catcatch.png",
+      "description": "查看当前网页发现的媒体资源，复制链接或下载，也可使用在线合并与缓存捕获。",
+      "description_en": "Find media resources on the current page, copy links, or download them. Includes merge and cache-capture tools.",
+      "tested": [
+        "资源捕获与中文界面",
+        "下载与目录入口",
+        "在线合并与缓存捕获"
+      ],
+      "tested_en": [
+        "Capture and localized popup",
+        "Downloads and download folder",
+        "Merge and cache capture"
+      ],
+      "note": "可用资源取决于网站；分离的音视频可能需要合并。",
+      "note_en": "Available resources depend on the site; separate audio and video may need merging."
+    }
+  ]
+}

@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Bản nhạc âm thanh";
 "media_subtitles" = "phụ đề";
 "media_track_off" = "Tắt";
-"video_settings" = "Video";
+"video_settings" = "Cài đặt video";
 "video_show_tools" = "Hiển thị công cụ video";
 "video_show_tools_desc" = "Hiển thị các công cụ trên video trên web về tốc độ phát, tải xuống và toàn màn hình.";
 "video_default_player" = "Trình phát mặc định";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Kính mờ";
 "wallpaper_blur_amount" = "Mức độ làm mờ";
 
-"auto_hide_platform_bar_hint" = "Thanh nền tảng sẽ ẩn khi bạn mở kết quả tìm kiếm. Quay lại kết quả hoặc tìm kiếm mới để hiện lại. Bạn có thể tắt tùy chọn này trong menu này.";
+"auto_hide_platform_bar_hint" = "Thanh nền tảng chỉ ẩn sau khi bạn chạm vào nội dung trang web. Chuyển hướng tự động và cuộn không làm ẩn thanh. Quay lại kết quả hoặc bắt đầu tìm kiếm mới để hiện lại.";
+
+"ad_subscription_add" = "Thêm danh sách lọc";
+"ad_subscription_name" = "Tên";
+"ad_subscription_url" = "URL đăng ký";
+"ad_subscription_invalid" = "Nhập tên và URL đăng ký HTTP hoặc HTTPS hợp lệ.";
+"ad_subscription_duplicate" = "URL đăng ký này đã được thêm.";
+
+"feedback_settings" = "Âm thanh và rung";
+"feedback_settings_hint" = "Điều khiển rung và âm thanh giao diện trong toàn bộ ứng dụng. Không ảnh hưởng đến việc phát trang web, video và âm thanh.";
+
+"home_display_settings" = "Hiển thị trang chủ";
+"browsing_display_settings" = "Hiển thị duyệt web";
+
+"web_video_download" = "Tải video web";
+"web_video_download_description" = "Hiện nút tải video trên trang web, danh sách tập và trình phát. Việc phát và các lượt tải hiện có không thay đổi.";
+"builtin_extension" = "Tiện ích tích hợp";
+
+"wallpaper_overlay_amount" = "Độ đậm lớp phủ";
+"feedback_contact_required" = "Nhập email hoặc thông tin liên hệ khác để chúng tôi có thể trả lời.";
+"torrent_incomplete" = "Chưa hoàn tất";
+"extend_page_background" = "Mở rộng nền trang web";
+"extend_page_background_desc" = "Mở rộng màu trên và dưới trang đến các cạnh trình duyệt, kể cả chuyển sắc.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Thu gọn nhóm";
+"tab_group_expand" = "Mở rộng nhóm";
+"freeze_page_background_on_scroll" = "Giữ màu ban đầu";
+"freeze_page_background_on_scroll_desc" = "Sau khi cuộn, giữ các màu được nhận diện đầu tiên. Trang mới sẽ được nhận diện màu lại.";
+"page_background_gradient" = "Mở rộng chuyển màu";
+"page_background_gradient_desc" = "Trộn các màu nhận diện thành dải chuyển màu. Khi tắt, mỗi cạnh dùng một màu đồng nhất.";
+
+
+"gestures_feedback_settings" = "Cử chỉ và phản hồi";

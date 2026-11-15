@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "ค้นหาครั้งเดียว กว่า 40 แพลตฟอร์ม";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "ค้นหาหรือป้อน URL";
 "privacy_search_placeholder" = "ค้นหาแบบส่วนตัวหรือป้อน URL";
 "search" = "ค้นหา";
@@ -354,7 +354,7 @@
 "voice_stop" = "หยุด";
 "voice_record" = "บันทึกเสียง";
 "batch_import" = "นำเข้าเป็นชุด";
-"batch_import_format" = "วาง JSON ในรูปแบบด้านล่าง";
+"batch_import_format" = "วาง JSON ที่นี่";
 "batch_import_group" = "เพิ่มในกลุ่ม (ไม่บังคับ)";
 "batch_import_group_placeholder" = "เช่น ภาพยนตร์";
 "batch_import_film_entry" = "เปิดการตั้งค่าแพลตฟอร์มภาพยนตร์";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "ไม่สามารถติดตั้งส่วนขยายได้";
 "extension_permissions_summary" = "%d สิทธิ์ · %d กฎของเว็บไซต์";
 "extension_untitled" = "ส่วนขยายที่ไม่มีชื่อ";
-"web_extension_install_footer" = "ติดตั้งส่วนขยายที่เข้ากันได้จากลิงก์ร้านค้าหรือนำเข้า CRX, XPI, ZIP หรือโฟลเดอร์ส่วนขยาย ตรวจสอบสิทธิ์และความเข้ากันได้ก่อนติดตั้ง บางฟังก์ชันเดสก์ท็อปอาจใช้ไม่ได้";
+"web_extension_install_footer" = "หลังติดตั้ง คุณสามารถเปลี่ยนสิทธิ์ในหน้าจัดการส่วนขยายได้";
 "web_extension_install_store_link" = "ติดตั้งจากลิงก์ร้านค้า...";
 "web_extension_browse_sources" = "เรียกดูร้านค้าส่วนขยาย";
 "web_extension_browse_sources_footer" = "ปุ่ม Store Get รองรับเฉพาะเบราว์เซอร์เดสก์ท็อปของตัวเองเท่านั้น คัดลอกลิงก์หน้ารายละเอียดส่วนขยาย จากนั้นใช้ติดตั้งจากลิงก์ร้านค้าใน Soulo";
 "web_extension_store_install_title" = "ติดตั้งส่วนขยายร้านค้า";
 "extension_page_banner_title" = "ติดตั้งด้วย Soulo";
-"extension_page_banner_desc" = "ตรวจสอบความเข้ากันได้และสิทธิ์ก่อนติดตั้ง";
-"web_extension_store_install_desc" = "วางลิงก์หน้ารายละเอียดส่วนขยาย Chrome, Edge หรือ Firefox แล้วตรวจสอบความเข้ากันได้และสิทธิ์ก่อนยืนยันการติดตั้ง";
+"extension_page_banner_desc" = "หลังติดตั้ง คุณสามารถเปลี่ยนสิทธิ์ในหน้าจัดการส่วนขยายได้";
+"web_extension_store_install_desc" = "หลังติดตั้ง คุณสามารถเปลี่ยนสิทธิ์ในหน้าจัดการส่วนขยายได้";
 "web_extension_store_link_placeholder" = "ลิงก์หน้าส่วนขยายหรือรหัสส่วนขยาย Chrome";
 "web_extension_store_invalid_link" = "วางลิงก์หน้ารายละเอียดส่วนขยายจาก Chrome, Edge หรือ Firefox, รหัสส่วนขยาย Chrome หรือลิงก์ CRX, XPI หรือ ZIP โดยตรง";
 "web_extension_store_https_required" = "แพ็คเกจส่วนขยายต้องใช้ลิงก์ HTTPS ที่ปลอดภัย";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "แตะไอคอน Soulo บนหน้าจอโฮมค้างไว้เพื่อใช้ทางลัดที่ตั้งค่าไว้ที่นี่";
 
 "ad_block_scope_hint" = "กรองโฆษณาบนเว็บ เลเยอร์โปรโมต และป๊อปอัปที่ไม่ได้สั่งเปิด หากเว็บไซต์ทำงานผิดปกติ คุณสามารถปิดการกรองเฉพาะเว็บไซต์นั้นได้";
+
+"privacy_clear_browsing_on_exit" = "ล้างประวัติเมื่อออก";
+"privacy_clear_browsing_on_exit_desc" = "ล้างหน้าที่เข้าชมเมื่อแอปทำงานเบื้องหลังหรือเปิดใหม่ โดยเก็บคำค้นหาไว้";

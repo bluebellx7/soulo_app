@@ -8,5 +8,7 @@ struct SouloShortcutsProvider: AppShortcutsProvider {
         AppShortcut(intent: NewPrivateSearchIntent(), phrases: ["Private search with \(.applicationName)"], shortTitle: "intent_private_search_title", systemImageName: "eye.slash")
         AppShortcut(intent: PasteAndSearchSouloIntent(), phrases: ["Paste and search with \(.applicationName)"], shortTitle: "intent_paste_search_title", systemImageName: "doc.on.clipboard")
         AppShortcut(intent: OpenSouloDownloadsIntent(), phrases: ["Open \(.applicationName) downloads"], shortTitle: "intent_open_downloads_title", systemImageName: "arrow.down.circle")
+        AppShortcut(intent: OpenSavedWebPageIntent(), phrases: ["Open a saved webpage in \(.applicationName)"], shortTitle: "bookmarks", systemImageName: "bookmark")
+        AppShortcut(intent: SaveWebPageIntent(), phrases: ["Save this webpage in \(.applicationName)"], shortTitle: LocalizedStringResource("Save webpage", table: "FeatureImprovements"), systemImageName: "bookmark.fill")
     }
 }

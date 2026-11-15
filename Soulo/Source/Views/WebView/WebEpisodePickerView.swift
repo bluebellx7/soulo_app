@@ -5,6 +5,7 @@ struct WebEpisodePickerView: View {
     @ObservedObject private var downloads = WebEpisodeDownloadService.shared
     @Environment(\.dismiss) private var dismiss
     @AppStorage("web_episodes_descending") private var descending = false
+    @AppStorage(VideoPlaybackPreferences.showsWebDownloadControlsKey) private var showsVideoDownloadControls = true
     @State private var selectedSourceID = ""
     @State private var isSelecting = false
     @State private var selectedIDs = Set<String>()
@@ -12,6 +13,8 @@ struct WebEpisodePickerView: View {
     @State private var selectedMedia: WebMediaResource?
     @State private var selectedEpisodeURL: URL?
     @State private var mediaDownloadError = ""
+    @State private var episodeOpenError = ""
+    @State private var openingEpisodeID: String?
 
     private var source: WebEpisodeSource? {
         viewModel.episodeList?.sources.first { $0.id == selectedSourceID }
@@ -19,19 +22,21 @@ struct WebEpisodePickerView: View {
     }
     private var currentIndex: Int? {
         guard let url = selectedEpisodeURL ?? viewModel.currentURL else { return nil }
-        return source?.episodes.firstIndex { WebEpisodeList.matches($0.url, url) }
+        return source?.episodes.firstIndex { $0.matchesCurrentPage(url) }
     }
     private var episodes: [WebEpisode] {
         let all = source?.episodes ?? []
         return descending ? Array(all.reversed()) : all
     }
     private var jobs: [WebEpisodeDownloadJob] {
-        let urls = Set(source?.episodes.map(\.url) ?? [])
+        let urls = Set(source?.episodes.filter { $0.action == nil }.map(\.url) ?? [])
         var latest: [URL: WebEpisodeDownloadJob] = [:]
         for job in downloads.jobs where urls.contains(job.episode.url) { latest[job.episode.url] = job }
-        return source?.episodes.compactMap { latest[$0.url] } ?? []
+        return source?.episodes.filter { $0.action == nil }.compactMap { latest[$0.url] } ?? []
     }
     private var failures: [WebEpisodeDownloadJob] { jobs.filter { $0.status == .failed } }
+    private var canSelectDownloads: Bool { showsVideoDownloadControls && source?.episodes.contains(where: { $0.action == nil }) == true }
+    private var selectingDownloads: Bool { isSelecting && canSelectDownloads }
 
     var body: some View {
         NavigationStack {
@@ -63,7 +68,7 @@ struct WebEpisodePickerView: View {
                     }
                     .font(.subheadline)
 
-                    if !isSelecting {
+                    if !selectingDownloads {
                         HStack(spacing: 12) {
                             adjacentButton(offset: -1, key: "episodes_previous", symbol: "backward.end.fill")
                             Text(currentIndex.map { source.episodes[$0].title } ?? ToolText.text("episodes"))
@@ -86,16 +91,17 @@ struct WebEpisodePickerView: View {
                             if let currentIndex { proxy.scrollTo(source.episodes[currentIndex].id, anchor: .center) }
                         }
                     }
-                    if isSelecting {
+                    if selectingDownloads {
                         HStack {
-                            let allSelected = selectedIDs.count == source.episodes.count
+                            let eligible = source.episodes.filter { $0.action == nil }
+                            let allSelected = selectedIDs.count == eligible.count
                             Button(ToolText.text(allSelected ? "image_batch_deselect_all" : "image_batch_select_all")) {
-                                selectedIDs = allSelected ? [] : Set(source.episodes.map(\.id))
+                                selectedIDs = allSelected ? [] : Set(eligible.map(\.id))
                             }
                             .accessibilityIdentifier("browser.episodes-select-all")
                             Spacer()
                             Button {
-                                let chosen = source.episodes.filter { selectedIDs.contains($0.id) }
+                                let chosen = source.episodes.filter { $0.action == nil && selectedIDs.contains($0.id) }
                                 downloads.enqueue(chosen, pageTitle: viewModel.pageTitle, viewModel: viewModel)
                                 isSelecting = false
                                 selectedIDs.removeAll()
@@ -121,6 +127,7 @@ struct WebEpisodePickerView: View {
             .navigationTitle(ToolText.text("episodes"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                if canSelectDownloads {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(ToolText.text(isSelecting ? "cancel" : "episodes_select")) {
                         isSelecting.toggle()
@@ -128,6 +135,7 @@ struct WebEpisodePickerView: View {
                     }
                     .disabled(source == nil)
                     .accessibilityIdentifier("browser.episodes-select")
+                }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(ToolText.text("done")) { dismiss() }
@@ -137,6 +145,7 @@ struct WebEpisodePickerView: View {
                         .accessibilityLabel(LanguageManager.shared.localizedString("settings"))
                         .accessibilityIdentifier("browser.episodes-settings")
                 }
+                if showsVideoDownloadControls {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         DownloadManagerContentView()
@@ -148,9 +157,13 @@ struct WebEpisodePickerView: View {
                     .accessibilityLabel(LanguageManager.shared.localizedString("downloads"))
                     .accessibilityIdentifier("browser.episodes-downloads")
                 }
+                }
             }
             .onCompatibleChange(of: source?.id) { _, _ in selectedIDs.removeAll() }
             .onCompatibleChange(of: source?.episodes.map(\.id)) { _, ids in selectedIDs.formIntersection(Set(ids ?? [])) }
+            .onCompatibleChange(of: showsVideoDownloadControls) { _, visible in
+                if !visible { isSelecting = false; selectedIDs.removeAll() }
+            }
             .sheet(item: $selectedMedia) { media in
                 WebResourceMediaPlayerView(resource: media, pageURL: media.sourcePageURL ?? viewModel.currentURL,
                     sourceWebView: viewModel.webView,
@@ -167,13 +180,15 @@ struct WebEpisodePickerView: View {
                     )) { Button(ToolText.text("done"), role: .cancel) {} } message: { Text(mediaDownloadError) }
             }
             .alert(ToolText.text("error"), isPresented: $showsFailures) {
+                if showsVideoDownloadControls && episodeOpenError.isEmpty {
                 Button(ToolText.text("retry")) {
                     downloads.enqueue(failures.map(\.episode), pageTitle: viewModel.pageTitle, viewModel: viewModel)
                 }
                 .disabled(viewModel.webView == nil)
+                }
                 Button(ToolText.text("done"), role: .cancel) {}
             } message: {
-                Text(failures.map { "\($0.episode.title): \($0.errorMessage)" }.joined(separator: "\n"))
+                Text(episodeOpenError.isEmpty ? failures.map { "\($0.episode.title): \($0.errorMessage)" }.joined(separator: "\n") : episodeOpenError)
             }
         }
     }
@@ -205,15 +220,15 @@ struct WebEpisodePickerView: View {
     }
 
     private func episodeButton(_ episode: WebEpisode, job: WebEpisodeDownloadJob?) -> some View {
-        let current = (selectedEpisodeURL ?? viewModel.currentURL).map { WebEpisodeList.matches(episode.url, $0) } ?? false
-        let selected = isSelecting ? selectedIDs.contains(episode.id) : current
+        let current = (selectedEpisodeURL ?? viewModel.currentURL).map { episode.matchesCurrentPage($0) } ?? false
+        let selected = selectingDownloads ? selectedIDs.contains(episode.id) : current
         return Button {
-            if isSelecting {
+            if selectingDownloads {
                 if !selectedIDs.insert(episode.id).inserted { selectedIDs.remove(episode.id) }
             } else { open(episode) }
         } label: {
             HStack(spacing: 5) {
-                if isSelecting {
+                if selectingDownloads {
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                         .accessibilityHidden(true)
                 } else if let job {
@@ -235,7 +250,7 @@ struct WebEpisodePickerView: View {
         .accessibilityLabel(episode.title)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .contextMenu {
-            if !isSelecting {
+            if showsVideoDownloadControls && !isSelecting && episode.action == nil {
                 Button {
                     downloads.enqueue([episode], pageTitle: viewModel.pageTitle, viewModel: viewModel)
                 } label: {
@@ -245,6 +260,7 @@ struct WebEpisodePickerView: View {
                 .accessibilityIdentifier("browser.episode-download")
             }
         }
+        .disabled(openingEpisodeID != nil || selectingDownloads && episode.action != nil)
         .id(episode.id)
     }
 
@@ -264,6 +280,16 @@ struct WebEpisodePickerView: View {
         .accessibilityIdentifier(offset < 0 ? "browser.episodes-previous" : "browser.episodes-next")
     }
     private func open(_ episode: WebEpisode) {
+        if episode.action != nil {
+            guard let webView = viewModel.webView else { return }
+            episodeOpenError = ""; openingEpisodeID = episode.id
+            Task { @MainActor in
+                defer { openingEpisodeID = nil }
+                do { try await WebEpisodeRuntime.activate(episode,in:webView);dismiss() }
+                catch { episodeOpenError = error.localizedDescription;showsFailures = true }
+            }
+            return
+        }
         if let media = episode.directMediaResource {
             selectedEpisodeURL = episode.url
             selectedMedia = media

@@ -54,8 +54,8 @@ enum BrowserSwipePreferences {
     static let menuKey = "browser.twoFingerSwipe.menu"
     static let noHistoryKey = "browser.noHistorySwipe.action"
     static let executionKey = "browser.swipe.execution"
-    static let hapticsKey = "browser.swipe.haptics"
-    static let soundKey = "browser.swipe.sound"
+    static let hapticsKey = AppFeedbackPreferences.hapticsKey
+    static let soundKey = AppFeedbackPreferences.soundKey
     static let defaultMenu: [BrowserSwipeAction] = [.back, .forward, .tabs, .closeTab, .newTab, .showToolbar]
     static var defaultMenuValue: String { defaultMenu.map(\.rawValue).joined(separator: ",") }
     static func action(for direction: BrowserSwipeDirection, defaults: UserDefaults = .standard) -> BrowserSwipeAction {
@@ -71,20 +71,12 @@ enum BrowserSwipePreferences {
 
 @MainActor enum BrowserSwipeFeedback {
     static func selection() {
-        if UserDefaults.standard.object(forKey: BrowserSwipePreferences.hapticsKey) == nil
-            || UserDefaults.standard.bool(forKey: BrowserSwipePreferences.hapticsKey) {
-            HapticsManager.selection()
-        }
+        HapticsManager.selection()
     }
 
     static func executed() {
-        if UserDefaults.standard.object(forKey: BrowserSwipePreferences.hapticsKey) == nil
-            || UserDefaults.standard.bool(forKey: BrowserSwipePreferences.hapticsKey) {
-            HapticsManager.success()
-        }
-        if UserDefaults.standard.bool(forKey: BrowserSwipePreferences.soundKey), sound != 0 {
-            AudioServicesPlaySystemSound(sound)
-        }
+        HapticsManager.success()
+        AppFeedbackPlayer.shared.playSound(sound)
     }
 
     // A bundled UI sound uses the system's volume and silent-mode behavior,

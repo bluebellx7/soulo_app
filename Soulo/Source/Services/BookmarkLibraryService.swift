@@ -23,6 +23,9 @@ enum BookmarkLibraryService {
         var links = Set(existingLinks.map { Location(parent: $0.folderID, value: $0.urlString) })
         var mappedIDs: [UUID: UUID] = [:]
         var result = ImportResult(skipped: archive.skipped)
+        // The archive's link order is the exported manual order. New imports
+        // append in that order, including when several links share one date.
+        var nextOrder = existingLinks.map(\.sortOrder).max() ?? 0
         do {
             for folder in archive.folders {
                 let parent = folder.parentID.flatMap { mappedIDs[$0] } ?? parentID
@@ -46,6 +49,9 @@ enum BookmarkLibraryService {
                 let item = BookmarkRecord(title: link.title, urlString: link.url)
                 item.folderID = folderID
                 item.dateAdded = link.dateAdded
+                item.isFavorite = link.isFavorite
+                if nextOrder < Int64.max { nextOrder += 1 }
+                item.sortOrder = nextOrder
                 context.insert(item)
                 result.added += 1
             }
@@ -56,9 +62,9 @@ enum BookmarkLibraryService {
 
     static func archive(context: NSManagedObjectContext) throws -> BookmarkArchive {
         let folders = try context.fetch(BookmarkFolderRecord.request(sortBy: [NSSortDescriptor(key: "dateAdded", ascending: true)]))
-        let items = try context.fetch(BookmarkRecord.request(sortBy: [NSSortDescriptor(key: "dateAdded", ascending: true)]))
+        let items = try context.fetch(BookmarkRecord.request(sortBy: BookmarkService.sortDescriptors))
         return BookmarkArchive(folders: folders.map { .init(id: $0.id, parentID: $0.parentID, title: $0.title, dateAdded: $0.dateAdded) },
-            links: items.map { .init(folderID: $0.folderID, title: $0.title, url: $0.urlString, dateAdded: $0.dateAdded) })
+            links: items.map { .init(folderID: $0.folderID, title: $0.title, url: $0.urlString, dateAdded: $0.dateAdded, isFavorite: $0.isFavorite) })
     }
 
     /// Removing a folder keeps its contents in the parent folder, including nested folders.

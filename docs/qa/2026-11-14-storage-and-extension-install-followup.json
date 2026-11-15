@@ -1,0 +1,22 @@
+{
+  "version": "1.2.15 (55)",
+  "checks": {
+    "storage_web_cache": "sim-storage-68:57/57; sim-storage-ui-74:3/3",
+    "ad_routes": "sim80:2/2 UI; native84:1/1 UI; iOS16 sim91:1/1 UI, 15 child-page pushes per OS",
+    "chinese": "sim94:Chinese Storage→Website data UI passed; native95:Chinese Storage→Website data UI passed",
+    "home": "sim89:clear title+subtitle stable search UI passed",
+    "clipboard": "sim89:actual WK optional clipboard permission granted/revoked + writes preserved passed",
+    "bar": "sim94 parse + real DOM collapsed/moved hit targets/status passed, native95 real DOM passed",
+    "episodes": "sim89 WebEpisodeTests39/39 incl live ep733317 and live BP SPA",
+    "tampermonkey": "107/118/129原始Edge5.5.1无发布者程序补丁启动及保存真实脚本通过；相同权限重复写反馈循环已修复。",
+    "install_flow": "109实际官方商店两步安装、完成提示、长按管理和删除通过；133真实待完成网络请求取消通过。",
+    "delete": "用户脚本和扩展长按删除、扩展管理页删除、左滑保留，确认后执行；内置脚本不可删除。",
+    "faststream_download": "164 restored record with no active diagnostic messages: actual drag/fullscreen and independent save/completion/list file2/2PASS; nativeSDK27 original package1653/3PASS."
+  },
+  "limitations": [
+    "No arbitrary/all Chrome extension compatibility claim.",
+    "Latest phone retest blocked by lock; existing physical QA retained."
+  ],
+  "evidence_root": "/tmp/soulo-faststream-compat-20261114",
+  "final_release": "SDK27 Release166 passed."
+}

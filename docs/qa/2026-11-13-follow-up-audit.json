@@ -1,0 +1,192 @@
+{
+  "date": "2026-11-13",
+  "version": "1.2.14",
+  "build": 54,
+  "status": "verified_in_simulators_and_unsigned_device_build",
+  "reviewed_requirements": [
+    {
+      "request": "自定义广告过滤规则订阅",
+      "status": "verified",
+      "details": "添加、校验重复、持久化、更新期间删除与队列；20 个服务测试和 iOS 16 实际界面流程。"
+    },
+    {
+      "request": "统一声音与震动设置",
+      "status": "verified",
+      "details": "沿用原偏好键，界面提示声音和震动统一开关；不控制网页与媒体本身的音频。"
+    },
+    {
+      "request": "整理设置层级",
+      "status": "verified",
+      "details": "首页保留两个入口；浏览界面显示、存储和清缓存归位；iCloud 并入备份；关于与支持及动态版本页脚。"
+    },
+    {
+      "request": "网页视频下载内置扩展开关",
+      "status": "verified",
+      "details": "默认开启，仅控制网页、选集、播放器和网页资源的视频下载入口；真实带 Cookie 下载及已排队任务在关闭后仍完成。"
+    },
+    {
+      "request": "图片蒙层可调强度",
+      "status": "verified",
+      "details": "图像源独立开关与强度，0–100%；保留毛玻璃独立控制及主题预设。"
+    },
+    {
+      "request": "第三方扩展、篡改猴与 TYTY",
+      "status": "verified_for_pinned_packages",
+      "details": "加载中可关闭、弹窗可退出；TYTY 0.6.6 真实消息/网络/规则/启停；篡改猴 5.5.1 真实脚本安装、执行、GM 网络、存储、权限和规则设置。"
+    },
+    {
+      "request": "反馈联系方式必填",
+      "status": "verified",
+      "details": "界面和请求构造两层检查，清空后禁用提交；未提交真实反馈。"
+    },
+    {
+      "request": "缓存首页壁纸立即显示、首页交互",
+      "status": "verified",
+      "details": "同步小预览与后台大图解码；无固定加载延时；启动与前后台交互验证沿用 completion 报告。"
+    },
+    {
+      "request": "种子进度和未完成文件大小",
+      "status": "verified",
+      "details": "按所选文件已验证字节、checking 期间保留进度；资料库明确显示未完成及已下载/总量。"
+    },
+    {
+      "request": "网页背景延伸、默认关闭、独立首页壁纸",
+      "status": "verified",
+      "details": "原生渲染取上下边缘及渐变；仅开启生效；动态更新、跨页开关状态、返回首页、关闭恢复原色均验证。"
+    },
+    {
+      "request": "浏览设置启用图例",
+      "status": "verified",
+      "details": "四个开关的说明图、实际开关和返回入口已打开检查。"
+    },
+    {
+      "request": "版本及元数据",
+      "status": "verified",
+      "details": "三个编译制品均为 1.2.14 (54)；50 语言元数据一致，本地化严格检查通过。"
+    }
+  ],
+  "additional_fixes_found_in_review": [
+    {
+      "issue": "网页脚本引导值在新页面恢复为标签创建时的旧值",
+      "fix": "在 didCommit / didFinish 强制同步当前开关；真实双向导航测试在修复前失败，修复后通过。"
+    },
+    {
+      "issue": "设置搜索缺少网页背景延伸关键词",
+      "fix": "加入入口别名与分类搜索关键字；实际搜索界面通过。"
+    },
+    {
+      "issue": "篡改猴 service worker 原生启动回调超时",
+      "fix": "仅已识别 5.5.1 改为非持久后台页面，保留原程序与存储身份。"
+    },
+    {
+      "issue": "扩展离屏文档没有 worker 消息接收端口",
+      "fix": "仅在离屏文档缺失时提供本地消息端口；未模拟注册与后台常驻；70 KB Blob、ArrayBuffer、typed array 往返及撤销权限通过。"
+    },
+    {
+      "issue": "篡改猴安装规则的正则及方法/排除域组合被 WebKit 拒绝",
+      "fix": "保留正则匹配含义；通过优先级分层和域排除 allow 规则表达条件，保持专用网站重定向、GET 限制与 CSP/GM 头规则；读取时恢复发布者内部优先级；实际规则加载及 auto/manual 切换通过。"
+    },
+    {
+      "issue": "Soulo 播放器已打开的原生菜单在暂停时仍不断重建，动画未完成且点击入口失效",
+      "fix": "运行栈定位 UpdateContextMenuInteraction.updateValue；减少未变化的播放器/会话状态发布，并将菜单与进度更新隔离，保持来源、能力、下载开关与语言变化时刷新。菜单点击仍读取当前播放位置。"
+    },
+    {
+      "issue": "AVKit 的 isPictureInPicturePossible 可先于 AVPlayerLayer 首帧就绪变成 true，过早的启动被系统忽略",
+      "fix": "同时等待首帧 isReadyForDisplay，并观察其实际变化后继续排队请求；保留超时、窗口挂载及关闭交接检查。真实 Soulo→原生播放器菜单流程修复前超时，修复后通过。"
+    }
+  ],
+  "validation": {
+    "distinct_unit_and_local_integration_cases": 167,
+    "unit_evidence": [
+      "/tmp/soulo-today-audit-20261113/delivery-unit-regression.xcresult (134 passed; offscreen failed before its fix)",
+      "/tmp/soulo-today-audit-20261113/verified-extensions.xcresult (39 passed; one test used an incorrect boolean instead of the publisher auto/manual setting enum)",
+      "/tmp/soulo-today-audit-20261113/tampermonkey-complete.xcresult (corrected setting API, full lifecycle and actual rules passed)",
+      "late-unit.xcresult + late-unit-ipad.xcresult (60-tab decoding/scroll stress, group preferences, Retina/rotation snapshots, edge-color freeze)",
+      "pip-menu-unit-final.xcresult (state publication and cookie-bearing handoff)",
+      "pip-final-native-ipad.xcresult (5 passed; actual native primary/mini PiP, quick stop/restart, timeout, unsupported error)"
+    ],
+    "distinct_ui_cases": 12,
+    "ui_evidence": [
+      "/tmp/soulo-today-audit-20261113/current-ui-regression.xcresult (7 passed; the original combined search/guide harness failed)",
+      "/tmp/soulo-today-audit-20261113/final-ui-background.xcresult (2 passed: guides/colors/isolation/off and the separate search route)",
+      "late-ui-ios16.xcresult (3 settings/TG/color flows passed)",
+      "many-tabs-complete-ios16.xcresult (36 actual separate tabs; scroll, collapse/reopen, expand, layout and carousel passed)",
+      "pip-all-entries-final-ipad.xcresult (both entries in both decoders passed; actual system floating window screenshots)"
+    ],
+    "visual_review": "原生红顶蓝底、动态深顶金底、首页原浅色背景、背景延伸说明图已检查；附件位于 final-ui-attachments。；TG 设置首页最后一行、36 标签分组展开/折叠图已检查，见 late-ui-attachments 和 many-tabs-final-attachments。；pip-final-attachments 中四个真实系统浮窗截图均导出，已检查两个小卡片入口及 Soulo 菜单来源的实际系统浮窗。",
+    "localization": "881 Localizable / 497 ReadingTools / 81 FeatureImprovements × 50 languages; strict check passed",
+    "metadata": "export_metadata_json.py --check passed for 50 locales; all three built versions and JSON equal 1.2.14 (54)",
+    "failed_runs": "保留在 /tmp/soulo-today-audit-20261113。修复原生启动/消息/规则错误；修正系统中文 Cancel 标签、搜索快速输入丢字的测试操作和发布者设置枚举。未删除功能断言以获得通过。 后续真实 PiP 进一步修复首帧尚未准备时请求被忽略、系统关闭回调内同步重启被忽略、Soulo 原生菜单持续替换；对应失败和修复后结果均保留。",
+    "latest_simulator_build": "build-pip-first-frame.log passed",
+    "device_build": "device-pip-first-frame.log passed for final production code (unsigned generic iOS)",
+    "late_followup_evidence": {
+      "late-unit.xcresult": "32 total; 31 passed, iPad-only snapshot case skipped on iPhone",
+      "late-unit-ipad.xcresult": "5 passed, including 60-image stress and Retina/rotation snapshot",
+      "late-ui-ios16.xcresult": "3 settings/color/TG cases passed; many-tabs fixture reused its current tab, corrected before accepting stress coverage",
+      "native-pip-and-freeze.xcresult": "9 passed; native PiP skipped because iPhone Simulator reports unsupported",
+      "native-pip-ipad.xcresult": "actual supported iPad PiP initially failed for a never-played paused source; first-frame priming added",
+      "native-pip-prime-ipad.xcresult": "primary native PiP actually started; unit harness incorrectly requested a UI-test screenshot; replaced with text evidence",
+      "native-pip-verified-ipad.xcresult": "exposed quick stop/restart callback race; not counted as passing",
+      "many-tabs-real-ios16.xcresult": "36 actual separate tabs; scroll/collapse/layout routes passed but AX hittability wait after dismissal failed; changed to visible-frame tap with actual reopen assertions",
+      "many-tabs-final-ios16.xcresult": "test app installation collided with rebuild of extension bundle; run discarded, rebuild/install made sequential",
+      "many-tabs-complete-ios16.xcresult": "passed: 36 actual tabs, repeated grouped scrolling, fold/reopen/expand and carousel scrubbing",
+      "pip-native-trace.xcresult": "showed AVKit ignores restarting synchronously inside its DidStop delegate; deferred to next main-actor turn",
+      "pip-native-unwind.xcresult": "native primary and mini PiP both reached active, including quick stop/restart",
+      "pip-complete-ipad.xcresult": "4 passed with final code; actual native primary/mini start, source-layer handoff, timeout/duplicate taps, immediate unsupported error",
+      "pip-entries-ui-ipad.xcresult": "superseded; original child AX selector failed before tapping, final test uses visible button label",
+      "pip-entry-buttons-verified-ipad.xcresult": "Three flows passed (both system entries and Soulo mini); Soulo menu exposed continuous native menu replacement/animations and its PiP action failed. Sample saved in pip-soulo-menu-sample.txt; product fix added, final UI pending.",
+      "pip-menu-unit-final.xcresult": "5 passed, native PiP skipped on unsupported iPhone simulator; includes unchanged-state publication and actual cookie-bearing decoder handoff",
+      "pip-stable-menu-final-ipad.xcresult": "menu became responsive (<5 seconds) but actual PiP still timed out; retained as regression evidence",
+      "pip-menu-flow-trace.xcresult": "isolated real source handoff; native state trace showed possible=true while ready=false, start ignored with no WillStart callback",
+      "pip-first-frame-menu-ipad.xcresult": "targeted previously failing playing-Soulo video-menu flow passed with actual system floating window",
+      "pip-all-entries-final-ipad.xcresult": "passed all four combinations; menu responds within 5 seconds while video plays; all four actual system floating window screenshots preserved",
+      "pip-final-native-ipad.xcresult": "5 passed with final code; actual native primary/mini PiP including quick stop/restart, no duplicate unchanged-state notifications, queued timeout and unsupported error"
+    },
+    "passing_case_index": "/tmp/soulo-today-audit-20261113/distinct-passing-cases.json"
+  },
+  "new_user_followups": [
+    {
+      "id": "many_tabs_scrolling",
+      "request": "几十个多标签滑动时有时整个 App 卡死",
+      "status": "verified",
+      "details": "截图在后台按预览尺寸解码；取消已离屏的排队任务；轮播只预备邻近卡片；比例一致时不绘制重复模糊背景。60 张大图、36 次反复滚动：iPhone 仅留 7 张解码图，主线程最大间隔 45 ms；iPad 留 16 张，最大间隔 66 ms。原始截图不改写。"
+    },
+    {
+      "id": "collapsible_groups",
+      "request": "分组视图可以折叠组",
+      "status": "verified",
+      "details": "整块标题可展开/折叠；保留组内标签及顺序；折叠后不创建预览网格；普通窗口持久化，隐私窗口不写入。"
+    },
+    {
+      "id": "pip_both_entries",
+      "request": "小卡片与视频菜单中的悬浮窗入口偶发无响应",
+      "status": "verified",
+      "details": "修复图层交接重试、暂停源首帧准备、AVKit 允许标志早于首帧的竞态，以及关闭回调中的重启请求；减少无效状态发布、隔离菜单与播放进度更新。两个入口 × 系统/Soulo 播放器共四个场景实际点击和系统浮窗截图均通过，包含播放中的菜单；保留启动反馈与失败提示。"
+    },
+    {
+      "id": "background_freeze_performance",
+      "request": "颜色延伸注意性能；滚动后保持首次识别颜色，只停止重新取色",
+      "status": "verified",
+      "details": "仅主开关开启时显示子开关，默认关闭；滚动后保留当前延伸色，断开页面观察并取消取色；新页面重置。关闭时不取色，不影响首页。仅截上下窄条，节流并避开拖动/惯性滚动。实际网页修改 100 次，冻结后原生收不到取色消息；关闭子开关重新更新。"
+    },
+    {
+      "id": "telegram_root_settings",
+      "request": "TG 反馈群组移到设置上一层最下方，关于与支持下面",
+      "status": "verified",
+      "details": "设置首页的最后一行，在关于与支持入口后、版本页脚前；关于页面内原入口已移除。未打开 Telegram 或发送任何消息。"
+    }
+  ],
+  "limits": [
+    "Simulator verification; no physical-device run.",
+    "Native extensions require iOS 18.4+; only exact pinned packages tested. No actual TYTY cloud account login/transfer/upload/delete.",
+    "Desktop-only Chrome APIs and every arbitrary third-party script are not certified."
+  ],
+  "references": [
+    "https://developer.apple.com/documentation/webkit/wkwebextensioncontext/loadbackgroundcontent(completionhandler:)",
+    "https://webkit.org/blog/3476/content-blockers-first-look/",
+    "https://raw.githubusercontent.com/WebKit/WebKit/main/Source/WebKit/UIProcess/Extensions/Cocoa/_WKWebExtensionDeclarativeNetRequestRule.mm"
+  ],
+  "paid_api_calls": 0,
+  "committed": false,
+  "pushed": false
+}

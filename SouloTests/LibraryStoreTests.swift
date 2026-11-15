@@ -4,7 +4,315 @@ import XCTest
 @testable import Soulo
 
 @MainActor
+final class BookmarkCloudSyncTests: XCTestCase {
+    private func peer(_ name: String, root: URL, transport: BookmarkTestTransport) throws -> (LibraryStore, BookmarkCloudSyncService) {
+        let suite = "BookmarkTransport-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        addTeardownBlock { defaults.removePersistentDomain(forName: suite) }
+        let library = try LibraryStore(inMemory: true)
+        let service = BookmarkCloudSyncService(defaults: defaults, localDirectory: root.appendingPathComponent(name),
+            locationProvider: { transport.location() })
+        service.attach(container: library.container)
+        return (library, service)
+    }
+    func testActualSaveObserversTwoPeersOfflineEditsAndExplicitDeletion() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("BookmarkTransport-\(UUID())")
+        let transport = BookmarkTestTransport(root: root.appendingPathComponent("Cloud"))
+        let (phone, a) = try peer("Phone", root: root, transport: transport)
+        let (pad, b) = try peer("Pad", root: root, transport: transport)
+        defer { a.setEnabled(false); b.setEnabled(false) }
+        let first = BookmarkRecord(title: "Phone original", urlString: "https://phone.example/")
+        let second = BookmarkRecord(title: "Pad original", urlString: "https://pad.example/")
+        phone.mainContext.insert(first); try phone.mainContext.save()
+        pad.mainContext.insert(second); try pad.mainContext.save()
+        a.setEnabled(true); b.setEnabled(true)
+        await a.synchronizeNow(); await b.synchronizeNow(); await a.synchronizeNow()
+        XCTAssertFalse(a.hasSyncIssue); XCTAssertFalse(b.hasSyncIssue)
+        XCTAssertEqual(try phone.mainContext.count(for: BookmarkRecord.request()), 2)
+        XCTAssertEqual(try pad.mainContext.count(for: BookmarkRecord.request()), 2)
+        let padFirst = try XCTUnwrap(pad.mainContext.fetch(BookmarkRecord.request(predicate: NSPredicate(format: "id == %@", first.id as NSUUID))).first)
+        transport.setAvailable(false)
+        first.title = "Phone offline rename"; try phone.mainContext.save()
+        padFirst.isFavorite = true; try pad.mainContext.save()
+        await a.synchronizeNow(); await b.synchronizeNow()
+        XCTAssertTrue(a.hasSyncIssue); XCTAssertTrue(b.hasSyncIssue)
+        transport.setAvailable(true)
+        await a.synchronizeNow(); await b.synchronizeNow(); await a.synchronizeNow()
+        XCTAssertEqual(padFirst.title, "Phone offline rename"); XCTAssertTrue(first.isFavorite)
+        XCTAssertFalse(a.hasSyncIssue); XCTAssertFalse(b.hasSyncIssue)
+        a.setEnabled(false)
+        phone.mainContext.delete(first); try phone.mainContext.save()
+        await b.synchronizeNow()
+        XCTAssertEqual(try pad.mainContext.count(for: BookmarkRecord.request()), 2, "Disabled peers cannot upload a deletion")
+        a.setEnabled(true); await a.synchronizeNow(); await b.synchronizeNow()
+        XCTAssertEqual(try pad.mainContext.fetch(BookmarkRecord.request()).map(\.id), [second.id])
+        XCTAssertEqual(try phone.mainContext.fetch(BookmarkRecord.request()).map(\.id), [second.id])
+        let (empty, c) = try peer("Empty-restored-device", root: root, transport: transport)
+        defer { c.setEnabled(false) }
+        c.setEnabled(true); await c.synchronizeNow(); await a.synchronizeNow()
+        XCTAssertEqual(try empty.mainContext.fetch(BookmarkRecord.request()).map(\.id), [second.id])
+        XCTAssertEqual(try phone.mainContext.fetch(BookmarkRecord.request()).map(\.id), [second.id])
+    }
+
+    func testAccountChangeDoesNotCarryOldAccountTombstonesIntoNewAccount() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("BookmarkAccount-\(UUID())")
+        let transport = BookmarkTestTransport(root: root.appendingPathComponent("Cloud"))
+        let (library, service) = try peer("Local", root: root, transport: transport)
+        defer { service.setEnabled(false) }
+        let first = BookmarkRecord(title: "Account one", urlString: "https://one.example/")
+        let id = first.id
+        library.mainContext.insert(first); try library.mainContext.save()
+        service.setEnabled(true); await service.synchronizeNow()
+        library.mainContext.delete(first); try library.mainContext.save(); await service.synchronizeNow()
+        transport.switchAccount()
+        let (newAccount, other) = try peer("Other", root: root, transport: transport)
+        defer { other.setEnabled(false) }
+        let restored = BookmarkRecord(title: "Second account keeps this", urlString: "https://second.example/")
+        restored.id = id; newAccount.mainContext.insert(restored); try newAccount.mainContext.save()
+        other.setEnabled(true); await other.synchronizeNow(); await service.synchronizeNow()
+        let current = try XCTUnwrap(library.mainContext.fetch(BookmarkRecord.request()).first)
+        XCTAssertEqual(current.id, id); XCTAssertEqual(current.title, "Second account keeps this")
+        XCTAssertFalse(service.hasSyncIssue)
+    }
+
+    func testNewRecordsAndFaviconOnlySavesKeepTheTransportValid() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("BookmarkMetadata-\(UUID())")
+        let transport = BookmarkTestTransport(root: root.appendingPathComponent("Cloud"))
+        let (library, a) = try peer("Phone", root: root, transport: transport)
+        let (remote, b) = try peer("Pad", root: root, transport: transport)
+        defer { a.setEnabled(false); b.setEnabled(false) }
+        a.setEnabled(true); await a.synchronizeNow()
+        let item = BookmarkRecord(title: "Inserted after enabling", urlString: "https://metadata.example/")
+        library.mainContext.insert(item); try library.mainContext.save()
+        await a.synchronizeNow()
+        item.faviconData = Data([1, 2, 3]); try library.mainContext.save()
+        await a.synchronizeNow()
+        b.setEnabled(true); await b.synchronizeNow()
+        let copy = try XCTUnwrap(remote.mainContext.fetch(BookmarkRecord.request()).first)
+        XCTAssertEqual(copy.id, item.id); XCTAssertEqual(copy.title, item.title)
+        XCTAssertFalse(a.hasSyncIssue); XCTAssertFalse(b.hasSyncIssue)
+        XCTAssertEqual(item.faviconData, Data([1, 2, 3]))
+    }
+
+    func testDeletionBeforeFirstOptInSurvivesInitialAccountLink() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("BookmarkFirstLink-\(UUID())")
+        let transport = BookmarkTestTransport(root: root.appendingPathComponent("Cloud"))
+        let (library, a) = try peer("Phone", root: root, transport: transport)
+        let (remote, b) = try peer("Pad", root: root, transport: transport)
+        defer { a.setEnabled(false); b.setEnabled(false) }
+        let local = BookmarkRecord(title: "Explicitly deleted", urlString: "https://deleted.example/")
+        let stale = BookmarkRecord(title: "Stale remote copy", urlString: local.urlString)
+        stale.id = local.id
+        library.mainContext.insert(local); try library.mainContext.save()
+        library.mainContext.delete(local); try library.mainContext.save()
+        remote.mainContext.insert(stale); try remote.mainContext.save()
+        b.setEnabled(true); await b.synchronizeNow()
+        a.setEnabled(true); await a.synchronizeNow(); await b.synchronizeNow()
+        XCTAssertEqual(try library.mainContext.count(for: BookmarkRecord.request()), 0)
+        XCTAssertEqual(try remote.mainContext.count(for: BookmarkRecord.request()), 0)
+        XCTAssertFalse(a.hasSyncIssue); XCTAssertFalse(b.hasSyncIssue)
+    }
+
+    private func stamp(_ writer: String, _ sequence: UInt64, baseline: Bool = false, date: Double = 1) -> BookmarkSyncStamp {
+        .init(baseline: baseline, date: Date(timeIntervalSince1970: date), sequence: sequence, writer: writer)
+    }
+    private func record(title: String, writer: String = "phone", sequence: UInt64 = 1, kind: BookmarkSyncRecord.Kind = .bookmark) -> BookmarkSyncRecord {
+        let date = stamp(writer, sequence)
+        var fields = ["title": BookmarkSyncField(value: title, stamp: date), "dateAdded": .init(value: "100", stamp: date)]
+        if kind == .bookmark {
+            fields["urlString"] = .init(value: "https://example.com/" + UUID().uuidString, stamp: date)
+        }
+        return .init(kind: kind, fields: fields)
+    }
+
+    func testIndependentDevicesMergeUnionAndEmptySnapshotsDoNotDelete() throws {
+        let a = UUID().uuidString, b = UUID().uuidString
+        var phone = BookmarkSyncJournal(writer: "phone", revision: 1, records: [a: record(title: "Phone")])
+        let pad = BookmarkSyncJournal(writer: "pad", revision: 2, records: [b: record(title: "Pad", writer: "pad", sequence: 2)])
+        try phone.merge(pad)
+        XCTAssertEqual(Set(phone.records.keys), [a, b])
+        XCTAssertEqual(phone.revision, 2)
+        let before = phone
+        try phone.merge(.init(writer: "old-empty-backup"))
+        XCTAssertEqual(phone, before)
+        let encoded = try PropertyListEncoder().encode(phone)
+        XCTAssertEqual(try PropertyListDecoder().decode(BookmarkSyncJournal.self, from: encoded), phone)
+    }
+
+    func testConcurrentFieldEditsConvergeAndBaselineCannotOverwriteEdits() throws {
+        let id = UUID().uuidString
+        var initial = record(title: "Original", sequence: 0)
+        for key in initial.fields.keys { initial.fields[key]?.stamp.baseline = true }
+        var phoneRecord = initial, padRecord = initial
+        phoneRecord.fields["title"] = .init(value: "Renamed on phone", stamp: stamp("phone", 1, date: 100))
+        padRecord.fields["isFavorite"] = .init(value: "1", stamp: stamp("pad", 1, date: 200))
+        var phone = BookmarkSyncJournal(writer: "phone", revision: 1, records: [id: phoneRecord])
+        var pad = BookmarkSyncJournal(writer: "pad", revision: 1, records: [id: padRecord])
+        let originalPhone = phone
+        try phone.merge(pad); try pad.merge(originalPhone)
+        XCTAssertEqual(phone.records, pad.records)
+        XCTAssertEqual(phone.records[id]?.fields["title"]?.value, "Renamed on phone")
+        XCTAssertEqual(phone.records[id]?.fields["isFavorite"]?.value, "1")
+        var baseline = initial
+        baseline.fields["title"] = .init(value: "Stale restored name", stamp: stamp("backup", 50, baseline: true, date: 99_999))
+        try phone.merge(.init(writer: "backup", revision: 50, records: [id: baseline]))
+        XCTAssertEqual(phone.records[id]?.fields["title"]?.value, "Renamed on phone")
+    }
+
+    func testOnlyAnExplicitTombstoneDeletesAndCannotBeRevivedByStaleData() throws {
+        let library = try LibraryStore(inMemory: true), id = UUID().uuidString
+        var live = record(title: "Saved")
+        var journal = BookmarkSyncJournal(writer: "phone", revision: 1, records: [id: live])
+        try BookmarkCloudSyncService.applyMergedRecords(journal, to: library.mainContext)
+        XCTAssertEqual(try library.mainContext.count(for: BookmarkRecord.request()), 1)
+        try BookmarkCloudSyncService.applyMergedRecords(.init(writer: "empty"), to: library.mainContext)
+        XCTAssertEqual(try library.mainContext.count(for: BookmarkRecord.request()), 1)
+        let deletion = BookmarkSyncRecord(kind: .bookmark, fields: [:], deletion: stamp("pad", 2))
+        try journal.merge(.init(writer: "pad", revision: 2, records: [id: deletion]))
+        live.fields["title"] = .init(value: "Stale item edited much later", stamp: stamp("phone", 30))
+        try journal.merge(.init(writer: "phone", revision: 30, records: [id: live]))
+        XCTAssertNotNil(journal.records[id]?.deletion)
+        try BookmarkCloudSyncService.applyMergedRecords(journal, to: library.mainContext)
+        XCTAssertEqual(try library.mainContext.count(for: BookmarkRecord.request()), 0)
+    }
+
+    func testDeletingRemoteFolderPreservesUnchangedLocalChildrenAndIcons() throws {
+        let library = try LibraryStore(inMemory: true), context = library.mainContext
+        let folder = BookmarkFolderRecord(title: "Removed folder")
+        let child = BookmarkRecord(title: "Keep local child", urlString: "https://local.example/")
+        let nested = BookmarkFolderRecord(title: "Keep nested folder", parentID: folder.id)
+        let icon = Data([1, 2, 3, 4]); child.faviconData = icon; child.folderID = folder.id
+        context.insert(folder); context.insert(child); context.insert(nested); try context.save()
+        let delta = BookmarkSyncJournal(writer: "pad", revision: 2, records: [folder.id.uuidString:
+            .init(kind: .folder, fields: [:], deletion: stamp("pad", 2))])
+        try BookmarkCloudSyncService.applyMergedRecords(delta, to: context)
+        XCTAssertEqual(try context.count(for: BookmarkFolderRecord.request()), 1)
+        XCTAssertEqual(try context.count(for: BookmarkRecord.request()), 1)
+        XCTAssertNil(child.folderID); XCTAssertNil(nested.parentID)
+        XCTAssertEqual(child.faviconData, icon)
+    }
+
+    func testMalformedPeerIsRejectedAtomicallyAndCannotOverflowRevision() throws {
+        let id = UUID().uuidString
+        var local = BookmarkSyncJournal(writer: "phone", revision: 1, records: [id: record(title: "Keep")])
+        let original = local
+        var malformed = BookmarkSyncJournal(writer: "pad", revision: 2, records: [UUID().uuidString: record(title: "Valid", writer: "pad", sequence: 2),
+            "not-a-uuid": record(title: "Invalid", writer: "pad", sequence: 2)])
+        XCTAssertThrowsError(try local.merge(malformed)); XCTAssertEqual(local, original)
+        malformed.records.removeValue(forKey: "not-a-uuid"); malformed.revision = UInt64.max
+        XCTAssertThrowsError(try local.merge(malformed)); XCTAssertEqual(local, original)
+        var conflict = record(title: "Wrong kind", writer: "pad", sequence: 2, kind: .folder)
+        conflict.fields["parentID"] = .init(value: nil, stamp: stamp("pad", 2))
+        XCTAssertThrowsError(try local.merge(.init(writer: "pad", revision: 2, records: [id: conflict])))
+        XCTAssertEqual(local, original)
+    }
+}
+
+private final class BookmarkTestTransport: @unchecked Sendable {
+    private let lock = NSLock()
+    private let root: URL
+    private var available = true
+    private var account = "first"
+    init(root: URL) { self.root = root }
+    func location() -> (URL, String)? {
+        lock.lock(); defer { lock.unlock() }
+        return available ? (root.appendingPathComponent(account), account) : nil
+    }
+    func setAvailable(_ value: Bool) { lock.lock(); available = value; lock.unlock() }
+    func switchAccount() { lock.lock(); account = "second"; lock.unlock() }
+}
+
+@MainActor
 final class LibraryStoreTests: XCTestCase {
+    func testFavoriteOnlyLibraryMigratesManualOrderAndPersistsAFilteredReorder() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("favorite.sqlite")
+        let ids = (0..<4).map { _ in UUID() }
+        try autoreleasepool {
+            let previous = NSPersistentContainer(name: "FavoriteOnly", managedObjectModel: LibraryStore.makeModel(includeOrder: false))
+            previous.persistentStoreDescriptions = [NSPersistentStoreDescription(url: url)]
+            var failure: Error?
+            previous.loadPersistentStores { _, error in failure = error }; if let failure { throw failure }
+            for index in ids.indices {
+                let item = NSEntityDescription.insertNewObject(forEntityName: BookmarkRecord.entityName, into: previous.viewContext)
+                for (key, value) in ["id": ids[index], "title": "Page \(index)", "urlString": "https://example.com/\(index)",
+                                     "dateAdded": Date(timeIntervalSince1970: Double(10-index)), "isFavorite": index.isMultiple(of: 2)] as [String: Any] {
+                    item.setValue(value, forKey: key)
+                }
+            }
+            try previous.viewContext.save()
+            let store = try XCTUnwrap(previous.persistentStoreCoordinator.persistentStores.first)
+            previous.viewContext.reset(); try previous.persistentStoreCoordinator.remove(store)
+        }
+        try autoreleasepool {
+            let migrated = try LibraryStore(url: url)
+            let all = try migrated.mainContext.fetch(BookmarkRecord.request(sortBy: BookmarkService.sortDescriptors))
+            XCTAssertEqual(all.map(\.id), ids)
+            XCTAssertEqual(all.filter(\.isFavorite).map(\.id), [ids[0], ids[2]])
+            try BookmarkService.reorder([ids[2], ids[0]], context: migrated.mainContext)
+            XCTAssertEqual(try migrated.mainContext.fetch(BookmarkRecord.request(sortBy: BookmarkService.sortDescriptors)).map(\.id), [ids[2], ids[1], ids[0], ids[3]])
+            try close(migrated)
+        }
+        let reopened = try LibraryStore(url: url)
+        XCTAssertEqual(try reopened.mainContext.fetch(BookmarkRecord.request(sortBy: BookmarkService.sortDescriptors)).map(\.id), [ids[2], ids[1], ids[0], ids[3]])
+        let exported = try BookmarkLibraryService.archive(context: reopened.mainContext)
+        let target = try LibraryStore(inMemory: true)
+        _ = try BookmarkLibraryService.importArchive(BookmarkHTML.parse(BookmarkHTML.encode(exported)), into: nil, context: target.mainContext)
+        XCTAssertEqual(try target.mainContext.fetch(BookmarkRecord.request(sortBy: BookmarkService.sortDescriptors)).map(\.urlString), exported.links.map(\.url))
+        try close(reopened)
+    }
+
+    func testPreviousLibraryMigratesFavoriteMarksWithoutLosingRecordsOrExternalIcons() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("previous.sqlite"), id = UUID(), folderID = UUID()
+        let icon = Data(repeating: 37, count: 2 * 1024 * 1024)
+        try autoreleasepool {
+            let previous = NSPersistentContainer(name: "Previous", managedObjectModel: LibraryStore.makeModel(includeFavorite: false, includeOrder: false))
+            previous.persistentStoreDescriptions = [NSPersistentStoreDescription(url: url)]
+            var failure: Error?
+            previous.loadPersistentStores { _, error in failure = error }; if let failure { throw failure }
+            let record = NSEntityDescription.insertNewObject(forEntityName: BookmarkRecord.entityName, into: previous.viewContext)
+            for (key, value) in ["id": id, "title": "Original page", "urlString": "https://example.com/", "dateAdded": Date(), "folderID": folderID, "faviconData": icon] as [String: Any] { record.setValue(value, forKey: key) }
+            try previous.viewContext.save()
+            let store = try XCTUnwrap(previous.persistentStoreCoordinator.persistentStores.first)
+            var metadata = previous.persistentStoreCoordinator.metadata(for: store)
+            metadata["SouloSwiftDataImported"] = true; previous.persistentStoreCoordinator.setMetadata(metadata, for: store)
+            previous.viewContext.reset(); try previous.persistentStoreCoordinator.remove(store)
+            try NSPersistentStoreCoordinator.setMetadata(metadata, forPersistentStoreOfType: NSSQLiteStoreType, at: url)
+        }
+        try autoreleasepool {
+            let library = try LibraryStore(url: url)
+            let record = try XCTUnwrap(library.mainContext.fetch(BookmarkRecord.request()).first)
+            XCTAssertEqual(record.id, id); XCTAssertEqual(record.folderID, folderID)
+            XCTAssertEqual(record.faviconData, icon); XCTAssertFalse(record.isFavorite)
+            XCTAssertEqual(library.container.persistentStoreCoordinator.metadata(for: try XCTUnwrap(library.container.persistentStoreCoordinator.persistentStores.first))["SouloSwiftDataImported"] as? Bool, true)
+            record.title = "Renamed page"; record.isFavorite = true; try library.mainContext.save(); try close(library)
+        }
+        let reopened = try LibraryStore(url: url)
+        let record = try XCTUnwrap(reopened.mainContext.fetch(BookmarkRecord.request()).first)
+        XCTAssertEqual(record.title, "Renamed page"); XCTAssertTrue(record.isFavorite)
+        XCTAssertEqual(record.faviconData, icon)
+        let archive = try BookmarkLibraryService.archive(context: reopened.mainContext)
+        XCTAssertTrue(try BookmarkHTML.parse(BookmarkHTML.encode(archive)).links[0].isFavorite)
+        try close(reopened)
+    }
+
+    func testQuickLinksPreferHeartsAcrossFoldersAndFallBackWithoutDuplicates() throws {
+        let library = try LibraryStore(inMemory: true)
+        let pages = (0..<10).map { BookmarkRecord(title: "Page \($0)", urlString: "https://example.org/\($0)") }
+        pages.forEach(library.mainContext.insert)
+        XCTAssertEqual(BookmarkService.quickLinks(from: pages).map(\.title), Array(pages.prefix(8)).map(\.title))
+        pages[8].folderID = UUID(); pages[8].isFavorite = true
+        XCTAssertEqual(BookmarkService.quickLinks(from: pages).map(\.title), ["Page 8"])
+        pages[8].isFavorite = false
+        XCTAssertEqual(BookmarkService.quickLinks(from: [pages[0], pages[0]]).count, 1)
+        XCTAssertTrue(BookmarkService.quickLinks(from: pages, limit: 0).isEmpty)
+    }
+
     func testExistingSwiftDataLibraryMigratesAndDeletedItemsStayDeleted() throws {
         guard #available(iOS 17.0, *) else { throw XCTSkip("Legacy SwiftData libraries require iOS 17") }
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

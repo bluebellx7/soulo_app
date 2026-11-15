@@ -33,7 +33,7 @@ struct WebEpisodeDownloadJob: Identifiable {
         if jobs.count > 500 { jobs = Self.prunedHistory(jobs) }
         var addedJobs: [WebEpisodeDownloadJob] = []
         var addedWork: [Work] = []
-        for episode in episodes where activeURLs.insert(episode.url).inserted {
+        for episode in episodes where episode.action == nil && activeURLs.insert(episode.url).inserted {
             guard ["http", "https"].contains(episode.url.scheme?.lowercased() ?? "") else { continue }
             let job = WebEpisodeDownloadJob(episode: episode)
             addedJobs.append(job)
@@ -116,22 +116,26 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
     }
 }
 
-/// Load each selected episode in its own cookie-sharing context. Never click a
-/// site's controls or download an episode's HTML as if it were a video.
+/// Link-based episodes resolve in a cookie-sharing context. Button catalogs
+/// activate only the explicitly selected bound action in the source page.
 @MainActor final class WebEpisodeMediaResolver: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
     let webView: WKWebView
     private let episode: WebEpisode
+    private weak var actionSourceView: WKWebView?
+    private let previousResourceURL: URL?
     private var frames: [WKFrameInfo] = []
     private var committed = false
     private var navigationError: Error?
 
-    init(episode: WebEpisode, sourceView: WKWebView) {
+    init(episode: WebEpisode, sourceView: WKWebView, previousResourceURL: URL? = nil) {
         self.episode = episode
+        self.previousResourceURL = previousResourceURL
+        actionSourceView = sourceView
         let config = WKWebViewConfiguration()
         config.websiteDataStore = sourceView.configuration.websiteDataStore
         config.defaultWebpagePreferences.preferredContentMode = sourceView.configuration.defaultWebpagePreferences.preferredContentMode
         config.allowsInlineMediaPlayback = true
-        config.mediaTypesRequiringUserActionForPlayback = .all
+        config.mediaTypesRequiringUserActionForPlayback = .audio
         config.preferences.javaScriptCanOpenWindowsAutomatically = false
         webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 720), configuration: config)
         super.init()
@@ -142,7 +146,13 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
         controller.addUserScript(WKUserScript(source: WebViewScripts.mediaResourceTracking,
             injectionTime: .atDocumentStart, forMainFrameOnly: false))
         controller.addUserScript(WKUserScript(source: """
-        document.addEventListener('play',event=>{if(event.target instanceof HTMLMediaElement){event.target.muted=true;event.target.pause()}},true);
+        // A private resolver may need MSE initialization before a URL exists.
+        // Permit muted startup here only; never alter the user's source page.
+        const originalPlay = HTMLMediaElement.prototype.play;
+        HTMLMediaElement.prototype.play = function(...args) {
+            this.muted = true; this.playsInline = true;
+            return originalPlay.apply(this, args);
+        };
         """, injectionTime: .atDocumentStart, forMainFrameOnly: false))
         controller.addUserScript(WKUserScript(source: "window.webkit.messageHandlers.souloEpisodeFrame.postMessage({});",
             injectionTime: .atDocumentEnd, forMainFrameOnly: false))
@@ -153,10 +163,21 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
         // Catalogs can link directly to a stream. Loading an M3U8 as an HTML
         // page may trigger a download instead of publishing a DOM video.
         if let resource = episode.directMediaResource { return resource }
+        if episode.action != nil {
+            guard let source = actionSourceView else { throw WebEpisodeDownloadError.unavailable }
+            return try await WebEpisodeRuntime.resolveActionMedia(episode,in:source,timeout:timeout,excluding:previousResourceURL)
+        }
         if AdBlockSettingsService.filteringEnabled() {
             for rule in await AdBlockService.compileRuleLists(allowlistedHosts: AdBlockSettingsService.shared.allowlistedHosts) ?? [] {
                 webView.configuration.userContentController.add(rule)
             }
+        }
+        let parent = actionSourceView?.superview ?? actionSourceView?.window?.rootViewController?.view
+            ?? UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController?.view }.first
+        if let parent, webView.superview == nil {
+            webView.frame = parent.bounds; webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            webView.isUserInteractionEnabled = false
+            parent.insertSubview(webView, at: 0)
         }
         var request = URLRequest(url: episode.url)
         request.timeoutInterval = timeout
@@ -165,7 +186,14 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
         let deadline = ProcessInfo.processInfo.systemUptime + timeout
         var previous: WebMediaResource?
         var ambiguous = false
+        #if SOULO_ACCEPTANCE
+        var auditIteration = 0
+        #endif
         while ProcessInfo.processInfo.systemUptime < deadline {
+            #if SOULO_ACCEPTANCE
+            auditIteration += 1
+            if auditIteration % 8 == 1 { NSLog("[SouloEpisodeResolve] page:%@ committed:%d frames:%d", webView.url?.lastPathComponent ?? "nil", committed, frames.count) }
+            #endif
             try Task.checkCancellation()
             if let navigationError { throw navigationError }
             if committed, let snapshot = try? await WebResourceInspectionService.inspect(webView: webView, frames: frames) {
@@ -179,11 +207,26 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
                 // in Resources without treating them as competing downloads.
                 let candidates = !mainPlayer.isEmpty ? mainPlayer
                     : !configured.isEmpty ? configured : snapshot.videos.filter { $0.delivery != .dash }
+                #if SOULO_ACCEPTANCE
+                if auditIteration % 8 == 1 {
+                    NSLog("[SouloEpisodeResolve] configured:%d videos:%d candidates:%@", configured.count, snapshot.videos.count,
+                          candidates.map { ($0.url.host ?? "") + $0.url.path }.joined(separator: "|"))
+                }
+                #endif
                 ambiguous = candidates.count > 1
                 if candidates.count == 1, let candidate = candidates.first {
                     // Require two observations so a transient preload does not
                     // win before the player publishes its actual source.
                     if candidate.url == previous?.url {
+                        for frame in [Optional<WKFrameInfo>.none] + frames.map(Optional.init) {
+                            _ = try? await webView.callAsyncJavaScript("""
+                                document.querySelectorAll('video,audio').forEach(v=>v.pause());
+                                window.hls?.stopLoad?.();
+                                if(Array.isArray(window.Artplayer?.instances)) window.Artplayer.instances.forEach(p=>p.hls?.stopLoad?.());
+                                """, arguments: [:], in: frame, contentWorld: .page)
+                        }
+                        if let source = actionSourceView { WebMediaManifestCache.copy(from: webView, to: source) }
+                        webView.stopLoading(); webView.removeFromSuperview()
                         return WebMediaResource(kind: .video, url: candidate.url, title: episode.title,
                             posterURL: candidate.posterURL, delivery: candidate.delivery,
                             companionAudioURL: candidate.companionAudioURL,
@@ -198,6 +241,7 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
     }
 
     func invalidate() {
+        webView.removeFromSuperview()
         webView.stopLoading()
         webView.navigationDelegate = nil
         webView.configuration.userContentController.removeScriptMessageHandler(forName: "souloEpisodeFrame")

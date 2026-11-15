@@ -296,6 +296,7 @@ struct VoiceInputView: View {
                     speechService.isRecording ? "voice_stop" : "voice_record"
                 )
             )
+            .accessibilityIdentifier("voice.record")
             .accessibilityValue(
                 languageManager.localizedString(
                     speechService.isRecording

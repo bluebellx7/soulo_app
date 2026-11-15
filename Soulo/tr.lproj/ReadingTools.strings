@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Ses Parçaları";
 "media_subtitles" = "Altyazılar";
 "media_track_off" = "Kapalı";
-"video_settings" = "video";
+"video_settings" = "Video ayarları";
 "video_show_tools" = "Video araçlarını göster";
 "video_show_tools_desc" = "Oynatma hızı, indirmeler ve tam ekran için web videolarındaki araçları gösterin.";
 "video_default_player" = "Varsayılan oynatıcı";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Buzlu Cam";
 "wallpaper_blur_amount" = "Bulanıklık Gücü";
 
-"auto_hide_platform_bar_hint" = "Bir arama sonucunu açtığınızda platform çubuğu gizlenir. Yeniden göstermek için sonuçlara dönün veya yeni bir arama yapın. Bu menüden kapatabilirsiniz.";
+"auto_hide_platform_bar_hint" = "Platform çubuğu yalnızca web sayfası içeriğine dokunduğunuzda gizlenir. Otomatik yönlendirmeler ve kaydırma çubuğu gizlemez. Yeniden göstermek için sonuçlara dönün veya yeni bir arama başlatın.";
+
+"ad_subscription_add" = "Filtre listesi ekle";
+"ad_subscription_name" = "Ad";
+"ad_subscription_url" = "Abonelik URL’si";
+"ad_subscription_invalid" = "Bir ad ve geçerli bir HTTP veya HTTPS abonelik URL’si girin.";
+"ad_subscription_duplicate" = "Bu abonelik URL’si zaten eklenmiş.";
+
+"feedback_settings" = "Sesler ve Titreşim";
+"feedback_settings_hint" = "Uygulama genelinde titreşimi ve arayüz seslerini yönetin. Web sayfası, video ve ses oynatma etkilenmez.";
+
+"home_display_settings" = "Ana Sayfa Görünümü";
+"browsing_display_settings" = "Tarayıcı Görünümü";
+
+"web_video_download" = "Web Videosu İndirme";
+"web_video_download_description" = "Web sayfalarında, bölüm listelerinde ve oynatıcılarda video indirme denetimlerini gösterir. Oynatma ve mevcut indirmeler değişmez.";
+"builtin_extension" = "Yerleşik uzantı";
+
+"wallpaper_overlay_amount" = "Katman Yoğunluğu";
+"feedback_contact_required" = "Yanıt alabilmek için e-posta veya başka iletişim bilgileri girin.";
+"torrent_incomplete" = "Tamamlanmadı";
+"extend_page_background" = "Sayfa arka planını uzat";
+"extend_page_background_desc" = "Sayfanın üst ve alt renklerini geçişler dahil tarayıcı kenarlarına uzatır.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Grubu daralt";
+"tab_group_expand" = "Grubu genişlet";
+"freeze_page_background_on_scroll" = "İlk renkleri koru";
+"freeze_page_background_on_scroll_desc" = "Kaydırdıktan sonra ilk algılanan renkleri koru. Yeni sayfaların renkleri yeniden algılanır.";
+"page_background_gradient" = "Gradyanla genişlet";
+"page_background_gradient_desc" = "Algılanan renkleri gradyan olarak karıştırır. Kapalıyken her kenarda tek düz renk kullanılır.";
+
+
+"gestures_feedback_settings" = "Hareketler ve Geri Bildirim";

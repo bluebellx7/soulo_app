@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Jeden dotaz, 40+ platforem";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Vyhledejte nebo zadejte URL";
 "privacy_search_placeholder" = "Soukromé vyhledávání nebo zadejte URL";
 "search" = "Hledat";
@@ -354,7 +354,7 @@
 "voice_stop" = "Přestaň";
 "voice_record" = "Záznam";
 "batch_import" = "Dávkový import";
-"batch_import_format" = "Vložte JSON ve formátu níže";
+"batch_import_format" = "Sem vložte JSON";
 "batch_import_group" = "Přidat do skupiny (volitelné)";
 "batch_import_group_placeholder" = "např. Filmy";
 "batch_import_film_entry" = "Otevřete předvolby filmové platformy";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Rozšíření nelze nainstalovat";
 "extension_permissions_summary" = "%d oprávnění · %d pravidla webu";
 "extension_untitled" = "Rozšíření bez názvu";
-"web_extension_install_footer" = "Kompatibilní rozšíření instalujte z odkazu na obchod nebo importujte CRX, XPI, ZIP či složku rozšíření. Zkontrolujte oprávnění a kompatibilitu; některé funkce pro počítače nejsou dostupné.";
+"web_extension_install_footer" = "Po instalaci můžete oprávnění změnit na stránce správy rozšíření.";
 "web_extension_install_store_link" = "Instalovat z odkazu na obchod…";
 "web_extension_browse_sources" = "Procházet obchody s rozšířeními";
 "web_extension_browse_sources_footer" = "Tlačítka Store Get podporují pouze jejich vlastní prohlížeče pro stolní počítače. Zkopírujte odkaz na stránku s podrobnostmi o rozšíření a poté použijte odkaz Instalovat z obchodu v Soulo.";
 "web_extension_store_install_title" = "Nainstalujte rozšíření obchodu";
 "extension_page_banner_title" = "Instalujte pomocí Soulo";
-"extension_page_banner_desc" = "Před instalací zkontrolujte kompatibilitu a oprávnění.";
-"web_extension_store_install_desc" = "Vložte odkaz na stránku rozšíření pro Chrome, Edge nebo Firefox a před potvrzením instalace zkontrolujte kompatibilitu a oprávnění.";
+"extension_page_banner_desc" = "Po instalaci můžete oprávnění změnit na stránce správy rozšíření.";
+"web_extension_store_install_desc" = "Po instalaci můžete oprávnění změnit na stránce správy rozšíření.";
 "web_extension_store_link_placeholder" = "Odkaz na stránku rozšíření nebo ID rozšíření Chrome";
 "web_extension_store_invalid_link" = "Vložte odkaz na stránku s podrobnostmi rozšíření z Chrome, Edge nebo Firefox, ID rozšíření Chrome nebo přímý odkaz CRX, XPI nebo ZIP.";
 "web_extension_store_https_required" = "Balíčky rozšíření musí používat zabezpečené spojení HTTPS.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Podržením ikony Soulo na ploše otevřete zkratky nastavené zde.";
 
 "ad_block_scope_hint" = "Filtruje webové reklamy, propagační překryvy a nevyžádaná vyskakovací okna. Pokud web přestane fungovat, můžete filtrování vypnout jen pro něj.";
+
+"privacy_clear_browsing_on_exit" = "Při ukončení smazat historii";
+"privacy_clear_browsing_on_exit_desc" = "Při přechodu na pozadí nebo novém spuštění smaže navštívené stránky. Hledané výrazy zůstanou.";

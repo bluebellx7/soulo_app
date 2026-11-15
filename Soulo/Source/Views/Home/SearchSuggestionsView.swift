@@ -20,6 +20,7 @@ struct SearchSuggestionsView: View {
                     Text(languageManager.localizedString("recent_searches"))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.8))
+                        .accessibilityIdentifier("home.recent.title")
 
                     Spacer()
 
@@ -35,7 +36,7 @@ struct SearchSuggestionsView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 30)
+                .padding(.horizontal, 28)
 
                 // Tags
                 FlowLayout(spacing: 8) {
@@ -47,9 +48,12 @@ struct SearchSuggestionsView: View {
                         )
                     }
                 }
-                .padding(.horizontal, 30)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("home.recent.terms")
+                .padding(.horizontal, 28)
             }
-            .frame(maxWidth: 600)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -115,7 +119,7 @@ private struct SuggestionChip: View {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 showDelete.toggle()
             }
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            HapticsManager.light()
         })
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(

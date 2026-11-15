@@ -74,6 +74,7 @@ struct WebExtensionReviewView: View {
 
 struct WebExtensionManagementView: View {
     let id: UUID
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject private var service = BrowserExtensionService.shared
     @State private var hostText = ""
     @State private var choosingFile = false
@@ -81,6 +82,7 @@ struct WebExtensionManagementView: View {
     @State private var preview: WebExtensionInstallPreview?
     @State private var reviewAction: String?
     @State private var errorMessage: String?
+    @State private var confirmingDelete = false
 
     private var record: WebExtensionRecord? { service.webExtensions.first { $0.id == id } }
     private var access: WebExtensionAccess { service.webExtensionAccess(id) }
@@ -145,6 +147,10 @@ struct WebExtensionManagementView: View {
                     }
                 }
                 ExtensionDiagnosticsSection(messages: service.webExtensionDiagnostics(id))
+                Section {
+                    Button(AppLocalization.string("delete"), role: .destructive) { confirmingDelete = true }
+                        .accessibilityIdentifier("extensions.management-delete")
+                }
             }
         }
         .navigationTitle(record?.name ?? AppLocalization.string("extension_manage"))
@@ -164,6 +170,14 @@ struct WebExtensionManagementView: View {
         .alert(AppLocalization.string("save_failed"), isPresented: Binding(
             get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } }
         )) { Button(AppLocalization.string("done"), role: .cancel) {} } message: { Text(errorMessage ?? "") }
+        .confirmationDialog(AppLocalization.string("delete"), isPresented: $confirmingDelete) {
+            Button(AppLocalization.string("delete"), role: .destructive) {
+                service.deleteWebExtension(id)
+                if service.webExtensions.contains(where: { $0.id == id }) {
+                    errorMessage = service.webExtensionErrors[id] ?? AppLocalization.string("save_failed")
+                } else { dismiss() }
+            }
+        } message: { Text(AppAccessibility.formatted("userscript_delete_message", record?.name ?? "")) }
     }
 
     private func update(_ change: (inout WebExtensionAccess) -> Void) {

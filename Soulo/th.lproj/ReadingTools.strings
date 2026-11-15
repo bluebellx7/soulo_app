@@ -417,7 +417,7 @@
 "media_audio_tracks" = "แทร็กเสียง";
 "media_subtitles" = "คำบรรยาย";
 "media_track_off" = "ปิด";
-"video_settings" = "วีดีโอ";
+"video_settings" = "การตั้งค่าวิดีโอ";
 "video_show_tools" = "แสดงเครื่องมือวิดีโอ";
 "video_show_tools_desc" = "แสดงเครื่องมือบนเว็บวิดีโอสำหรับความเร็วในการเล่น ดาวน์โหลด และเต็มหน้าจอ";
 "video_default_player" = "ผู้เล่นเริ่มต้น";
@@ -497,4 +497,38 @@
 "wallpaper_image_blur" = "กระจกฝ้า";
 "wallpaper_blur_amount" = "ระดับความเบลอ";
 
-"auto_hide_platform_bar_hint" = "แถบแพลตฟอร์มจะซ่อนเมื่อเปิดผลการค้นหา กลับไปที่ผลการค้นหาหรือเริ่มค้นหาใหม่เพื่อแสดงอีกครั้ง คุณปิดตัวเลือกนี้ได้ในเมนูนี้";
+"auto_hide_platform_bar_hint" = "แถบแพลตฟอร์มจะซ่อนเมื่อคุณแตะเนื้อหาหน้าเว็บเท่านั้น การเปลี่ยนเส้นทางอัตโนมัติและการเลื่อนจะไม่ซ่อนแถบ กลับไปที่ผลการค้นหาหรือเริ่มค้นหาใหม่เพื่อแสดงอีกครั้ง";
+
+"ad_subscription_add" = "เพิ่มรายการตัวกรอง";
+"ad_subscription_name" = "ชื่อ";
+"ad_subscription_url" = "URL การสมัคร";
+"ad_subscription_invalid" = "ป้อนชื่อและ URL การสมัคร HTTP หรือ HTTPS ที่ถูกต้อง";
+"ad_subscription_duplicate" = "เพิ่ม URL การสมัครนี้แล้ว";
+
+"feedback_settings" = "เสียงและการสั่น";
+"feedback_settings_hint" = "ควบคุมการสั่นและเสียงส่วนติดต่อทั่วทั้งแอป โดยไม่ส่งผลต่อการเล่นสื่อบนเว็บเพจ วิดีโอ และเสียง";
+
+"home_display_settings" = "การแสดงผลหน้าแรก";
+"browsing_display_settings" = "การแสดงผลการท่องเว็บ";
+
+"web_video_download" = "ดาวน์โหลดวิดีโอเว็บ";
+"web_video_download_description" = "แสดงตัวควบคุมการดาวน์โหลดวิดีโอบนเว็บเพจ รายการตอน และเครื่องเล่น โดยไม่เปลี่ยนแปลงการเล่นและการดาวน์โหลดที่มีอยู่";
+"builtin_extension" = "ส่วนขยายในตัว";
+
+"wallpaper_overlay_amount" = "ความเข้มของเลเยอร์";
+"feedback_contact_required" = "กรอกอีเมลหรือข้อมูลติดต่ออื่นเพื่อให้เราตอบกลับได้";
+"torrent_incomplete" = "ยังไม่เสร็จ";
+"extend_page_background" = "ขยายพื้นหลังหน้าเว็บ";
+"extend_page_background_desc" = "ขยายสีด้านบนและด้านล่างของหน้าเว็บไปยังขอบเบราว์เซอร์ รวมถึงสีไล่ระดับ";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "ยุบกลุ่ม";
+"tab_group_expand" = "ขยายกลุ่ม";
+"freeze_page_background_on_scroll" = "คงสีเริ่มต้น";
+"freeze_page_background_on_scroll_desc" = "หลังเลื่อน ให้คงสีที่ตรวจพบครั้งแรกไว้ หน้าใหม่จะตรวจจับสีอีกครั้ง";
+"page_background_gradient" = "ขยายแบบไล่สี";
+"page_background_gradient_desc" = "ผสมสีที่ตรวจพบเป็นการไล่สี เมื่อปิด แต่ละขอบจะใช้สีพื้นเพียงสีเดียว";
+
+
+
+"gestures_feedback_settings" = "ท่าทางและการตอบสนอง";

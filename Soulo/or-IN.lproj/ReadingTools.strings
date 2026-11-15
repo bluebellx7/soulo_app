@@ -417,7 +417,7 @@
 "media_audio_tracks" = "|\nଅଡିଓ ଟ୍ରାକ୍ |";
 "media_subtitles" = "|\nସବ୍ଟାଇଟ୍ସ |";
 "media_track_off" = "|\nବନ୍ଦ";
-"video_settings" = "|\nଭିଡିଓ";
+"video_settings" = "ଭିଡିଓ ସେଟିଂସ୍";
 "video_show_tools" = "|\nଭିଡିଓ ଉପକରଣଗୁଡିକ ଦେଖାନ୍ତୁ |";
 "video_show_tools_desc" = "|\nପ୍ଲେବ୍ୟାକ୍ ସ୍ପିଡ୍, ଡାଉନଲୋଡ୍ ଏବଂ ଫୁଲ୍ ସ୍କ୍ରିନ୍ ପାଇଁ ୱେବ୍ ଭିଡିଓରେ ଉପକରଣଗୁଡିକ ଦେଖାନ୍ତୁ |";
 "video_default_player" = "|\nଡିଫଲ୍ଟ ପ୍ଲେୟାର |";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "ଝାପ୍ସା କାଚ";
 "wallpaper_blur_amount" = "ଝାପ୍ସାର ତୀବ୍ରତା";
 
-"auto_hide_platform_bar_hint" = "ସନ୍ଧାନ ଫଳାଫଳ ଖୋଲିଲେ ପ୍ଲାଟଫର୍ମ ବାର୍ ଲୁଚିଯାଏ। ଫଳାଫଳକୁ ଫେରିଲେ କିମ୍ବା ନୂଆ ସନ୍ଧାନ କଲେ ଏହା ପୁଣି ଦେଖାଯିବ। ଏହି ମେନୁରେ ଏହା ବନ୍ଦ କରିପାରିବେ।";
+"auto_hide_platform_bar_hint" = "ୱେବ୍‌ପୃଷ୍ଠାର ବିଷୟବସ୍ତୁରେ ଟ୍ୟାପ୍ କଲେ ହିଁ ପ୍ଲାଟଫର୍ମ ବାର୍ ଲୁଚିବ। ସ୍ୱୟଂଚାଳିତ ପୁନଃନିର୍ଦ୍ଦେଶନ କିମ୍ବା ସ୍କ୍ରୋଲ୍ କଲେ ଲୁଚିବ ନାହିଁ। ପୁଣି ଦେଖାଇବାକୁ ଖୋଜ ଫଳାଫଳକୁ ଫେରନ୍ତୁ କିମ୍ବା ନୂଆ ଖୋଜ ଆରମ୍ଭ କରନ୍ତୁ।";
+
+"ad_subscription_add" = "ଫିଲ୍ଟର ତାଲିକା ଯୋଡ଼ନ୍ତୁ";
+"ad_subscription_name" = "ନାମ";
+"ad_subscription_url" = "ସଦସ୍ୟତା URL";
+"ad_subscription_invalid" = "ଏକ ନାମ ଏବଂ ବୈଧ HTTP କିମ୍ବା HTTPS ସଦସ୍ୟତା URL ଦିଅନ୍ତୁ।";
+"ad_subscription_duplicate" = "ଏହି ସଦସ୍ୟତା URL ପୂର୍ବରୁ ଯୋଡ଼ାଯାଇଛି।";
+
+"feedback_settings" = "ଶବ୍ଦ ଓ କମ୍ପନ";
+"feedback_settings_hint" = "ସମଗ୍ର ଆପ୍‌ରେ କମ୍ପନ ଓ ଇଣ୍ଟରଫେସ୍ ଶବ୍ଦ ନିୟନ୍ତ୍ରଣ କରନ୍ତୁ। ୱେବ୍‌ପୃଷ୍ଠା, ଭିଡିଓ ଓ ଅଡିଓ ପ୍ଲେବ୍ୟାକ୍ ପ୍ରଭାବିତ ହୁଏ ନାହିଁ।";
+
+"home_display_settings" = "ହୋମ୍ ପ୍ରଦର୍ଶନ";
+"browsing_display_settings" = "ବ୍ରାଉଜିଂ ପ୍ରଦର୍ଶନ";
+
+"web_video_download" = "ୱେବ୍ ଭିଡିଓ ଡାଉନଲୋଡ୍";
+"web_video_download_description" = "ୱେବ୍‌ପୃଷ୍ଠା, ଏପିସୋଡ୍ ତାଲିକା ଓ ପ୍ଲେୟରରେ ଭିଡିଓ ଡାଉନଲୋଡ୍ ନିୟନ୍ତ୍ରଣ ଦେଖାନ୍ତୁ। ପ୍ଲେବ୍ୟାକ୍ ଓ ବିଦ୍ୟମାନ ଡାଉନଲୋଡ୍ ବଦଳେ ନାହିଁ।";
+"builtin_extension" = "ଅନ୍ତର୍ନିର୍ମିତ ଏକ୍ସଟେନ୍ସନ୍";
+
+"wallpaper_overlay_amount" = "ଓଭରଲେର ତୀବ୍ରତା";
+"feedback_contact_required" = "ଉତ୍ତର ପାଇବା ପାଇଁ ଇମେଲ୍ କିମ୍ବା ଅନ୍ୟ ଯୋଗାଯୋଗ ସୂଚନା ଦିଅନ୍ତୁ।";
+"torrent_incomplete" = "ଅସମ୍ପୂର୍ଣ୍ଣ";
+"extend_page_background" = "ୱେବ୍‌ପୃଷ୍ଠା ପୃଷ୍ଠଭୂମି ବଢ଼ାନ୍ତୁ";
+"extend_page_background_desc" = "ଗ୍ରେଡିଏଣ୍ଟ୍ ସହିତ ପୃଷ୍ଠାର ଉପର ଓ ତଳ ରଙ୍ଗକୁ ବ୍ରାଉଜର୍‌ର ଧାର ପର୍ଯ୍ୟନ୍ତ ବଢ଼ାନ୍ତୁ।";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "ଗୋଷ୍ଠୀ ସଙ୍କୁଚିତ କରନ୍ତୁ";
+"tab_group_expand" = "ଗୋଷ୍ଠୀ ବିସ୍ତାର କରନ୍ତୁ";
+"freeze_page_background_on_scroll" = "ପ୍ରାରମ୍ଭିକ ରଙ୍ଗ ରଖନ୍ତୁ";
+"freeze_page_background_on_scroll_desc" = "ସ୍କ୍ରୋଲ୍ କରିବା ପରେ ପ୍ରଥମେ ଚିହ୍ନଟ ହୋଇଥିବା ରଙ୍ଗ ରଖନ୍ତୁ। ନୂଆ ପୃଷ୍ଠାରେ ରଙ୍ଗ ପୁଣି ଚିହ୍ନଟ ହେବ।";
+"page_background_gradient" = "ଗ୍ରେଡିଏଣ୍ଟ ବିସ୍ତାର";
+"page_background_gradient_desc" = "ଚିହ୍ନଟ ରଙ୍ଗଗୁଡ଼ିକୁ ଗ୍ରେଡିଏଣ୍ଟରେ ମିଶାନ୍ତୁ। ବନ୍ଦ ଥିଲେ ପ୍ରତ୍ୟେକ ଧାରରେ ଗୋଟିଏ ରଙ୍ଗ ବ୍ୟବହାର ହୁଏ।";
+
+
+"gestures_feedback_settings" = "ଅଙ୍ଗଭଙ୍ଗୀ ଓ ପ୍ରତିକ୍ରିୟା";

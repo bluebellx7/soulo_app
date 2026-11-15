@@ -1,6 +1,1 @@
-1.2.13
-
-• Fonds clairs et sombres distincts et interrupteur du voile sur l’image.
-• Couleurs d’accueil améliorées ; l’aperçu du fond suit le thème de l’app.
-• Prévisualisez, partagez et enregistrez les fonds dans Photos.
-• Réglages des onglets en haut avec nouvel onglet et masquage facultatif de la barre des plateformes après navigation.
+Amélioration des fenêtres sur iPad, de la saisie vocale, des résumés locaux et de l’accessibilité. Amélioration de l’exportation multimédia en arrière-plan, des Raccourcis et de la compatibilité des extensions. Certaines fonctions dépendent de l’appareil, du système et de la langue.

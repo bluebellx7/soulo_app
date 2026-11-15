@@ -81,3 +81,58 @@
 "Website cache" = "Website-cache";
 "Website icons" = "Website-iconen";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "iCloud-synchronisatie bewaart een reservekopie vóór wijzigingen in instellingen. De laatste %lld kopieën en de oorspronkelijke kopie blijven bewaard.";
+
+"Move tab to new window" = "Verplaats naar nieuw venster";
+
+"Save webpage" = "Webpagina bewaren";
+
+"Webpage" = "Webpagina";
+
+"Website data" = "Websitegegevens";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Bevat opgeslagen artikelen, de boekenindex, omslagen en leesvoortgang. Boekbestanden worden bij gedownloade bestanden geteld.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "De groottes zijn schattingen. IndexedDB omvat databases en media. Niet-beschikbare groottes worden als — weergegeven.";
+"Extension temporary cache" = "Tijdelijke extensiecache";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Verwijdert tijdelijke media van extensies. Instellingen, scripts, voortgang en downloads blijven behouden. Sluit eerst extensie- en videopagina’s en voltooi downloads.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Tijdelijke gegevens zijn nog in gebruik. Sluit extensie- en videopagina’s, voltooi downloads en probeer opnieuw.";
+"Deleting website data can sign you out and remove offline content." = "Websitegegevens verwijderen kan je afmelden en offline-inhoud verwijderen.";
+
+"Extension startup timed out." = "Het starten van de extensie duurde te lang.";
+
+"soulo_extensions" = "Soulo-extensies";
+
+"Add to Quick Links" = "Toevoegen aan snelle links";
+"Remove from Quick Links" = "Verwijderen uit snelle links";
+"Mark bookmarks with a heart to show them here." = "Houd een bladwijzer ingedrukt en markeer deze met een hart om hem hier te tonen.";
+
+"Type %@ to confirm." = "Typ %@ om te bevestigen.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Bladwijzers worden tussen apparaten samengevoegd. Alleen expliciet verwijderen wist items.";
+"This deletion also syncs to your other devices." = "Deze verwijdering wordt ook met je andere apparaten gesynchroniseerd.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Kopieer de prompt, voeg je wensen toe en stuur deze naar een AI. Plak daarna de JSON hier om te importeren.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Groepsnamen in JSON hebben voorrang. Overeenkomende groepen worden samengevoegd zonder bestaande platforms te verwijderen.";
+"Imported %1$d platforms into %2$d groups." = "%1$d platforms geïmporteerd in %2$d groepen.";
+"No new platforms or group entries." = "Geen nieuwe platforms of groepsitems.";
+
+"App size" = "Appgrootte";
+"App data" = "Appgegevens";
+"Wallpaper cache" = "Achtergrondcache";
+"Other caches" = "Andere caches";
+"Temporary files" = "Tijdelijke bestanden";
+"Download task data" = "Downloadtaakgegevens";
+"Settings and records" = "Instellingen en gegevens";
+"Shared app data" = "Gedeelde appgegevens";
+"Other app data" = "Andere appgegevens";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Appgegevens omvatten niet het geïnstalleerde programma. De schijfgrootte kan afwijken van iOS-instellingen.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Verwijder opgeslagen inhoud uit de eigen lijst. Actieve tijdelijke bestanden en systeemcachedatabases worden vrijgegeven zodra dit veilig kan.";
+
+"Current platforms" = "Huidige platforms";
+"Import mode" = "Importmodus";
+"Append" = "Toevoegen";
+"Replace all" = "Alles vervangen";
+"Replace all platforms?" = "Alle platforms vervangen?";
+"A settings backup is saved before replacement." = "Vóór het vervangen wordt een reservekopie van de instellingen opgeslagen.";
+
+"Take over web players" = "Webspelers overnemen";
+"Only takes over website fullscreen. Extension players stay independent." = "Neemt alleen schermvullende weergave van websites over. Spelers van extensies blijven onafhankelijk.";
+
+"App size is the installed program and resources, not the App Store download size." = "De appgrootte is het geïnstalleerde programma met bronnen, niet de App Store-download.";
+"App data is the total of the categories below." = "Appgegevens zijn het totaal van de onderstaande categorieën.";

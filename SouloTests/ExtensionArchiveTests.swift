@@ -59,6 +59,21 @@ final class ExtensionArchiveTests: XCTestCase {
         }
     }
 
+    func testArchiveCanInstallThroughAnAliasedContainerDirectory() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let real = root.appendingPathComponent("real")
+        let alias = root.appendingPathComponent("alias")
+        try FileManager.default.createDirectory(at: real, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: real)
+        let prepared = try prepare(archive(), at: alias)
+        XCTAssertEqual(try Data(contentsOf: prepared.appendingPathComponent("manifest.json")), manifest)
+        XCTAssertEqual(try String(contentsOf: prepared.appendingPathComponent("scripts/test.js"), encoding: .utf8), "var answer=42;")
+        XCTAssertEqual(prepared.resolvingSymlinksInPath().path, real.appendingPathComponent("installed/Extension").resolvingSymlinksInPath().path)
+        XCTAssertThrowsError(try prepare(archive(extraPath: "../../outside.js"), at: alias))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("outside.js").path))
+    }
+
     func testPopupQueryAndFragmentDoNotPreventCompatibilityInjection() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

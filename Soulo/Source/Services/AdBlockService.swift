@@ -102,6 +102,8 @@ struct AdBlockService {
             "[class*='cqlkxq1wc']",
             "[id*='cqlkxq1wc']",
             "#float-bottom-ad",
+            // First-party template ads: explicit ad wrapper, not the player.
+            ".ec-ad.ads_w[data-id]",
             "[class*='floatad']",
             "[id*='floatad']",
             "[class*='popupad']",
@@ -272,7 +274,11 @@ struct AdBlockService {
             .flatMap { String(data: $0, encoding: .utf8) }
     }
 
+    @MainActor private static var compilationIdentifiers: [UUID: Set<String>] = [:]
     static func compileRuleLists(allowlistedHosts: [String] = []) async -> [WKContentRuleList]? {
+        let job = UUID()
+        await MainActor.run { compilationIdentifiers[job] = [] }
+        defer { Task { @MainActor in compilationIdentifiers.removeValue(forKey: job) } }
         BrowserStartupTrace.mark("content_rules_start")
         defer { BrowserStartupTrace.mark("content_rules_end") }
         let cacheKey = startupCacheKey(allowlistedHosts: allowlistedHosts)
@@ -286,6 +292,8 @@ struct AdBlockService {
             }
             if cached.count == identifiers.count, cacheKey == startupCacheKey(allowlistedHosts: allowlistedHosts) {
                 BrowserStartupTrace.mark("content_rules_disk_hit")
+                await MainActor.run { compilationIdentifiers[job] = Set(identifiers) }
+                await pruneObsoleteCompiledRules(keeping: Set(identifiers))
                 return cached
             }
         }
@@ -294,6 +302,7 @@ struct AdBlockService {
         for batch in contentRuleBatches(allowlistedHosts: allowlistedHosts, batchSize: 20_000) {
             guard let json = encodeRules(batch) else { return nil }
             let identifier = "SouloAdBlockV6-\(stableIdentifierHash(json))"
+            await MainActor.run { _ = compilationIdentifiers[job]?.insert(identifier) }
             guard let list = await compileContentRules(identifier: identifier, json: json) else { return nil }
             compiled.append(list)
         }
@@ -303,7 +312,23 @@ struct AdBlockService {
                 AdBlockStartupCache.shared.write(identifiers, slot: .contentRuleIdentifiers, key: cacheKey)
             }
         }
+        let identifiers = await MainActor.run { Set(compiled.compactMap(\.identifier)) }
+        await pruneObsoleteCompiledRules(keeping: identifiers)
         return compiled
+    }
+
+    @MainActor
+    private static func pruneObsoleteCompiledRules(keeping identifiers: Set<String>) async {
+        let store = WKContentRuleListStore.default()!
+        let available: [String] = await withCheckedContinuation { continuation in
+            store.getAvailableContentRuleListIdentifiers { continuation.resume(returning: $0 ?? []) }
+        }
+        let retained = identifiers.union(compilationIdentifiers.values.flatMap { $0 })
+        for id in available where id.hasPrefix("SouloAdBlock") && !retained.contains(id) {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                store.removeContentRuleList(forIdentifier: id) { _ in continuation.resume() }
+            }
+        }
     }
 
     @MainActor

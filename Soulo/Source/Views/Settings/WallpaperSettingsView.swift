@@ -4,6 +4,7 @@ import PhotosUI
 @MainActor
 struct WallpaperSettingsView: View {
     @ObservedObject var wallpaperManager = WallpaperManager.shared
+    var showsFavoritesOnly = false
     @AppStorage("fav_section_collapsed") private var isFavCollapsed = false
     
     @Environment(\.colorScheme) private var colorScheme
@@ -24,6 +25,7 @@ struct WallpaperSettingsView: View {
 
     var body: some View {
         List {
+            if !showsFavoritesOnly {
             // 1. Source Picker
             Section {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -38,6 +40,19 @@ struct WallpaperSettingsView: View {
                 Section {
                     Toggle(ToolText.text("wallpaper_image_overlay"), isOn: $wallpaperManager.imageOverlayEnabled)
                         .accessibilityIdentifier("wallpaper.image-overlay")
+                    if wallpaperManager.imageOverlayEnabled {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Text(ToolText.text("wallpaper_overlay_amount"))
+                                Spacer()
+                                Text(wallpaperManager.imageOverlayAmount, format: .percent.precision(.fractionLength(0)))
+                                    .foregroundStyle(.secondary).monospacedDigit()
+                            }
+                            Slider(value: $wallpaperManager.imageOverlayAmount, in: 0...1)
+                                .accessibilityLabel(ToolText.text("wallpaper_overlay_amount"))
+                                .accessibilityIdentifier("wallpaper.overlay-amount")
+                        }.padding(.vertical, 4)
+                    }
                     Toggle(ToolText.text("wallpaper_image_blur"), isOn: $wallpaperManager.imageBlurEnabled)
                         .accessibilityIdentifier("wallpaper.image-blur")
                     if wallpaperManager.imageBlurEnabled {
@@ -112,10 +127,12 @@ struct WallpaperSettingsView: View {
                 } header: { Label(LText("wallpaper_discover"), systemImage: "sparkles") }
             }
 
-            // 3. Favorites (Collapsible)
-            if wallpaperManager.source.isRemote && !wallpaperManager.favorites.isEmpty {
+            }
+            // Storage management can reach favorites without changing the
+            // currently selected wallpaper source or starting a remote search.
+            if (showsFavoritesOnly || wallpaperManager.source.isRemote) && !wallpaperManager.favorites.isEmpty {
                 Section {
-                    if !isFavCollapsed {
+                    if showsFavoritesOnly || !isFavCollapsed {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
                                 ForEach(wallpaperManager.favorites) { wall in favoriteTile(wall) }
@@ -140,16 +157,21 @@ struct WallpaperSettingsView: View {
             }
 
             // 4. Results
-            sourceOptions
+            if showsFavoritesOnly {
+                if wallpaperManager.favorites.isEmpty {
+                    CompatibleUnavailableView(LText("wallpaper_favorites"), systemImage: "heart")
+                }
+            } else { sourceOptions }
         }
-        .navigationTitle(LText("settings_wallpaper"))
+        .navigationTitle(LText(showsFavoritesOnly ? "wallpaper_favorites" : "settings_wallpaper"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { editingAppearance = WallpaperAppearance(colorScheme) }
-        .task(id: wallpaperManager.source) { await wallpaperManager.ensureCandidatesLoaded() }
+        .task(id: wallpaperManager.source) { if !showsFavoritesOnly { await wallpaperManager.ensureCandidatesLoaded() } }
         .task(id: "\(wallpaperManager.source.rawValue)-\(wallpaperManager.customPhotoRevision)") {
-            guard wallpaperManager.source == .photo else { return }
+            guard !showsFavoritesOnly else { return }
             for appearance in WallpaperAppearance.allCases {
-                let image = await wallpaperManager.customPhotoPreview(for: appearance)
+                let pixels = wallpaperManager.source == .photo ? CGSize(width: 900, height: 1200) : CGSize(width: 240, height: 180)
+                let image = await wallpaperManager.customPhotoPreview(for: appearance, targetPixels: pixels)
                 guard !Task.isCancelled else { return }
                 photoPreviews[appearance] = image
             }
@@ -224,16 +246,28 @@ struct WallpaperSettingsView: View {
             Task { await wallpaperManager.selectSource(src) }
         } label: {
             VStack(spacing: 8) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12).fill(selected ? Color.themePrimary.opacity(0.15) : Color(uiColor: .secondarySystemFill)).frame(width: 80, height: 60)
-                    Image(systemName: sourceIcon(src)).font(.system(size: 20)).foregroundStyle(selected ? Color.themePrimary : .secondary)
-                }.overlay(RoundedRectangle(cornerRadius: 12).stroke(selected ? Color.themePrimary : Color.clear, lineWidth: 2))
+                sourceSample(src, appearance: wallpaperManager.source.isRemote ? WallpaperAppearance(colorScheme) : editingAppearance)
+                    .frame(width: 80, height: 60)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.themePrimary : Color.primary.opacity(0.12), lineWidth: selected ? 2 : 0.5))
+                    .accessibilityHidden(true)
                 Text(src.localizedName).font(.system(size: 10, weight: selected ? .bold : .medium)).foregroundStyle(selected ? .primary : .secondary)
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("wallpaper.source.\(src.rawValue)")
         .accessibilityAddTraits(selected ? .isSelected : [])
+        .task { await wallpaperManager.loadSourcePreview(for: src) }
+    }
+
+    private func sourceSample(_ source: WallpaperSource, appearance: WallpaperAppearance) -> some View {
+        WallpaperSourceSample(source: source, appearance: appearance,
+            image: source == .photo ? photoPreviews[appearance] : wallpaperManager.sourcePreviewImage(for: source),
+            gradient: wallpaperManager.gradient(for: appearance), solidColor: wallpaperManager.solidColor(for: appearance),
+            overlayOpacity: wallpaperManager.imageOverlayEnabled ? wallpaperManager.imageOverlayAmount : 0,
+            blurRadius: wallpaperManager.imageBlurEnabled ? CGFloat(wallpaperManager.imageBlurAmount * 30) : 0,
+            placeholderSymbol: sourceIcon(source))
     }
 
     @ViewBuilder
@@ -331,26 +365,8 @@ struct WallpaperSettingsView: View {
         footer: { Text(ToolText.text("wallpaper_appearance_hint")) }
     }
 
-    @ViewBuilder
     private func appearanceSample(_ appearance: WallpaperAppearance) -> some View {
-        switch wallpaperManager.source {
-        case .solid:
-            Color(hex: wallpaperManager.solidColor(for: appearance))
-        case .gradient:
-            let preset = wallpaperManager.gradient(for: appearance)
-            LinearGradient(colors: preset.colors, startPoint: preset.startPoint, endPoint: preset.endPoint)
-        default:
-            GeometryReader { geometry in
-                ZStack {
-                    Color(uiColor: .tertiarySystemFill)
-                    if let image = photoPreviews[appearance] {
-                        Image(uiImage: image).resizable().scaledToFill()
-                    } else { Image(systemName: "photo").foregroundStyle(.secondary) }
-                }
-                .frame(width: geometry.size.width, height: geometry.size.height)
-                .clipped()
-            }
-        }
+        sourceSample(wallpaperManager.source, appearance: appearance)
     }
 
     private var gradientSection: some View {
@@ -559,6 +575,54 @@ struct WallpaperSettingsView: View {
 }
 
 // MARK: - FullScreen Context
+/// A static miniature of the configured background, with the same image
+/// effects as Home. Rendering a tile never changes the app's appearance.
+struct WallpaperSourceSample: View {
+    let source: WallpaperSource
+    let appearance: WallpaperAppearance
+    let image: UIImage?
+    let gradient: GradientPreset
+    let solidColor: String
+    let overlayOpacity: Double
+    let blurRadius: CGFloat
+    var placeholderSymbol = "photo"
+
+    var body: some View {
+        GeometryReader { geometry in
+            let scale = min(1, geometry.size.width / max(1, UIScreen.main.bounds.width))
+            ZStack {
+                switch source {
+                case .solid:
+                    Color(hex: solidColor)
+                case .gradient:
+                    DynamicGradientView(colors: gradient.colors, isPaused: true)
+                    WallpaperReadabilityScrim(source: source, appearance: appearance, isLight: gradient.isLight, scale: scale)
+                default:
+                    if let image {
+                        WallpaperPhotoLayer(image: image, size: geometry.size, blurRadius: blurRadius * scale)
+                        Color.black.opacity(overlayOpacity)
+                        if overlayOpacity > 0 {
+                            let isLight = image.cgImage.map { WallpaperContrast.imageLightness($0, overlayAmount: overlayOpacity).masked } ?? false
+                            WallpaperReadabilityScrim(source: source, appearance: appearance, isLight: isLight, scale: scale)
+                                .opacity(min(1, overlayOpacity / WallpaperContrast.defaultImageOverlayAmount))
+                        }
+                    } else {
+                        Color(uiColor: .secondarySystemFill)
+                        Image(systemName: placeholderSymbol).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
+        }
+        .environment(\.colorScheme, appearance == .dark ? .dark : .light)
+        // A scaled-to-fill image can retain hit bounds beyond its visual crop.
+        // Only the enclosing source/appearance button should receive touches.
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
 struct FullScreenContext: Identifiable {
     let id = UUID()
     let wallpapers: [RemoteWallpaper]

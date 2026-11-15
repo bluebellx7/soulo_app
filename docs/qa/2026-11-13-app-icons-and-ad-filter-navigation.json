@@ -1,0 +1,116 @@
+{
+  "date": "2026-11-13",
+  "app_version": "1.2.14",
+  "build": 54,
+  "status": "Icon artwork and picker implemented; ad-filter navigation verified; consecutive icon switching has an observed iOS 26.2 platform error",
+  "app_icons": {
+    "source": "Soulo/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
+    "original_unchanged_against_HEAD": true,
+    "original_sha256": "958479601cd58cc5f45b2fdbd597c26c1da732383cec821d1ff537d972e48762",
+    "generation": "Local white-matte extraction from the approved original PNG; no generative redraw or paid service. Smooth alpha edges and Lanczos preview scaling. White recomposition maximum channel error is 0/255.",
+    "generator": "scripts/generate_app_icon_variants.py",
+    "resources": [
+      "Primary AppIcon uses the approved original white artwork for light and dark; monochrome system-tinted rendition retained",
+      "SouloGlass.icon native Icon Composer package",
+      "SouloDark.icon native Icon Composer package",
+      "Theme-aware 256px picker previews rendered by Apple's Icon Composer CLI"
+    ],
+    "original_texture": "The extracted foreground preserves the original texture with additional foreground glass bevel disabled to avoid extra highlights and edge artifacts. Native layered background and system clear/tinted renditions remain available.",
+    "picker": "Existing quick-action page renamed to Icon & Shortcuts / 图标与快捷操作. Three whole-card buttons use theme-aware gray backgrounds, subtle borders, selected accent outline and checkmarks, making the original white icon plate visible.",
+    "api": "Public UIApplication.setAlternateIconName only. Serial in-flight guard, bounded asynchronous retry only for POSIX EAGAIN, actual UIKit state on failure, explicit Retry/Cancel alert.",
+    "configuration": "project.yml regenerated using xcodegen. Compiled Info.plist declares both alternate icons for iPhone and iPad. Assets.car includes native layered and appearance renditions. Default icon remains AppIcon.",
+    "ios16_roundtrip": {
+      "platform": "iOS 16.4 simulator",
+      "passed": 1,
+      "failed": 0,
+      "coverage": "Select Glass, select Dark, restore Original through the public API; capture actual Springboard icons after each selection; return to Settings.",
+      "result": "/tmp/soulo-icons-adblock-20261113/icon-final-ios16.xcresult"
+    },
+    "cards": {
+      "platform": "iOS 26.2 simulator",
+      "passed": 1,
+      "failed": 0,
+      "coverage": "English/light and Simplified Chinese/dark; all three buttons hittable and equal-height; screenshots retained.",
+      "visual_review": "Both final screenshots inspected: original white plate visible in light appearance, all cards and outlines within bounds, labels on one line, selected checkmark clear in both appearances.",
+      "runtime_warning": "Xcode recorded two _UIReparentingView/UIHostingController hierarchy warnings. The test summary has zero failures and both captured layouts are intact; no additional view hierarchy mutation was added for the icon cards.",
+      "result": "/tmp/soulo-icons-adblock-20261113/icon-cards-final-ios26.xcresult"
+    },
+    "ios26_limitation": {
+      "first_glass_selection": "Succeeded; actual Springboard icon captured and visually inspected.",
+      "consecutive_change": "Failed in both existing and freshly created isolated iOS 26.2 QA simulators with NSPOSIXErrorDomain code 35, Resource temporarily unavailable, from LSIconAlertManager iconChangeAlertTokenForIdentity:error:.",
+      "retry_result": "Non-blocking bounded retries do not resolve persistent refusal in the tested simulator. Selection is retained and failure is surfaced; the full iOS 26.2 switching roundtrip is not marked passed.",
+      "result": "/tmp/soulo-icons-adblock-20261113/icon-isolated-ios26.xcresult",
+      "limits": "No physical-device or iOS 27 execution. This observation does not establish that all iOS 26 devices have this error."
+    },
+    "original_white_followup": {
+      "request": "Original Soulo option must keep its white background in light and dark appearance",
+      "changes": "Remove the original preview dark override; reference the original PNG explicitly for the primary dark icon; update the generator and remove its obsolete generated dark PNGs. Layered Glass/Dark choices retain their own appearance renditions.",
+      "original_sha256_unchanged": true,
+      "simulator_and_unsigned_device_build": "Passed: original-white-build.log and original-white-device.log",
+      "ui": "Passed, 1 case / 0 failures: original-white-cards.xcresult; both appearance screenshots retained and dark screenshot visually reviewed with the first card white.",
+      "artifact_root": "/tmp/soulo-icons-adblock-20261113"
+    }
+  },
+  "ad_filter_feedback_47": {
+    "reported_version": "1.2.12 (52)",
+    "current_result": "Could not reproduce the reported freeze in the current 1.2.14 tree. The tree already contains iOS 16 nested-settings navigation isolation and a separate dismissal button; those production fixes predate this icon task. Added regression coverage, without changing filtering behavior in this task.",
+    "root_cause": "Not confirmed on the reporting user's device; successful current-version tests do not prove the precise cause of the older-version report.",
+    "destinations": [
+      "Trusted domains",
+      "Marked ads",
+      "Built-in rules",
+      "Filter lists",
+      "Allowed Sites"
+    ],
+    "tests": [
+      {
+        "platform": "iOS 16.4 simulator",
+        "passed": 1,
+        "failed": 0,
+        "coverage": "Two passes through all five destinations, including return navigation: 10 round trips.",
+        "result": "/tmp/soulo-icons-adblock-20261113/adblock-before-ios16.xcresult"
+      },
+      {
+        "platform": "iPadOS 26.2 simulator",
+        "passed": 1,
+        "failed": 0,
+        "coverage": "Two passes through all five destinations: 10 round trips.",
+        "result": "/tmp/soulo-icons-adblock-20261113/adblock-ios26.xcresult"
+      },
+      {
+        "platform": "iOS 16.4 simulator",
+        "passed": 1,
+        "failed": 0,
+        "coverage": "Browser Site Information -> Ad Blocking -> domain allowlist and back, repeatedly using the full-row entry.",
+        "result": "/tmp/soulo-icons-adblock-20261113/adblock-browser-ios16.xcresult"
+      }
+    ]
+  },
+  "extension_status": {
+    "production_changes_this_task": false,
+    "existing_evidence": "docs/qa/2026-11-13-extension-advanced-downloads-and-telegram.json",
+    "verified_scope": "Blob/data downloads, online FFmpeg merge, cache capture and merge with playable audio/video output; 47 iPhone regression tests and 3 iPad advanced workflows passed in the prior task.",
+    "limits": "Not a claim that every Chrome API, extension, site or encrypted media is supported. Prior extension execution was on simulators; native third-party extension engine requires iOS/iPadOS 18.4+."
+  },
+  "checks": {
+    "simulator_test_build": "Passed: /tmp/soulo-icons-adblock-20261113/verified-build.log",
+    "unsigned_device_build": "Passed: /tmp/soulo-icons-adblock-20261113/device-verified-build.log",
+    "localization": "Strict checks passed for all 50 locales: localization-verified.log",
+    "metadata": "Generated JSON check passed for all 50 locales; version and release metadata not changed by this task.",
+    "diff_whitespace": "Passed"
+  },
+  "cleanup": {
+    "isolated_simulator_created": "BB49FD86-9B43-46C7-AF8F-34790C81FB3E",
+    "isolated_simulator_shut_down": true,
+    "ios16_original_icon_restored": true,
+    "ios26_icon": "QA simulators remain on Glass after the system rejected subsequent changes. No user data erased to force restoration.",
+    "temporary_composer_document": "Closed and moved into the QA artifact folder."
+  },
+  "artifacts": "/tmp/soulo-icons-adblock-20261113",
+  "paid_api_calls": 0,
+  "pushed": false,
+  "icon_configuration_superseded_by": {
+    "report": "2026-11-13-liquid-default-icon.json",
+    "current_configuration": "Liquid Glass is now the sole default icon. Icon selection and runtime switching were removed at the user's request; previous picker screenshots and Code 35 failures are historical."
+  }
+}

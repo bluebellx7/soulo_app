@@ -38,6 +38,21 @@ class WallpaperManager: ObservableObject {
     @Published var imageOverlayEnabled: Bool {
         didSet { UserDefaults.standard.set(imageOverlayEnabled, forKey: "wallpaper_image_overlay") }
     }
+    @Published var imageOverlayAmount: Double {
+        didSet {
+            let bounded = Self.boundedOverlayAmount(imageOverlayAmount)
+            if bounded != imageOverlayAmount { imageOverlayAmount = bounded }
+            UserDefaults.standard.set(bounded, forKey: "wallpaper_image_overlay_amount")
+            updateImageContrast()
+        }
+    }
+    var imageOverlayOpacity: Double {
+        guard imageOverlayEnabled, source.isRemote || source == .photo else { return 0 }
+        return Self.boundedOverlayAmount(imageOverlayAmount)
+    }
+    private static func boundedOverlayAmount(_ amount: Double) -> Double {
+        amount.isFinite ? min(1, max(0, amount)) : WallpaperContrast.defaultImageOverlayAmount
+    }
     @Published var imageBlurEnabled: Bool {
         didSet { UserDefaults.standard.set(imageBlurEnabled, forKey: "wallpaper_image_blur") }
     }
@@ -56,7 +71,7 @@ class WallpaperManager: ObservableObject {
         amount.isFinite ? min(1, max(0, amount)) : 0.35
     }
     var showsWallpaperOverlay: Bool {
-        source == .gradient || ((source.isRemote || source == .photo) && imageOverlayEnabled)
+        source == .gradient || imageOverlayOpacity > 0
     }
     @Published private(set) var displayAppearance: WallpaperAppearance = .dark
     @Published private(set) var appearancePresets: [WallpaperAppearance: WallpaperAppearancePreset] = [:]
@@ -114,6 +129,17 @@ class WallpaperManager: ObservableObject {
     @Published var customImage: UIImage?
     @Published private(set) var lastRemoteError: String = ""
     @Published private(set) var lastRemoteErrorAt: Date?
+    @Published private(set) var sourcePreviewImages: [WallpaperSource: UIImage] = [:]
+    private struct SourcePreviewRecord: Codable, Sendable {
+        let id: String
+        let date: Date
+        let data: Data
+    }
+    private var sourcePreviewRecords: [WallpaperSource: SourcePreviewRecord] = [:]
+    private var sourcePreviewLoads: [WallpaperSource: Task<Void, Never>] = [:]
+    private var sourcePreviewVersions: [WallpaperSource: UUID] = [:]
+    private let sourcePreviewIO = DispatchQueue(label: "com.dkluge.Soulo.wallpaper-source-previews", qos: .utility)
+    private let sourcePreviewDirectory: URL
 
     @Published var favorites: [RemoteWallpaper] = [] {
         didSet {
@@ -162,6 +188,8 @@ class WallpaperManager: ObservableObject {
          favoriteImageStorage: FavoriteWallpaperImageStore? = nil, photoDirectory: URL? = nil) {
         self.session = session
         self.photoDirectory = photoDirectory ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        self.sourcePreviewDirectory = (photoDirectory ?? FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0])
+            .appendingPathComponent("WallpaperSourcePreviews", isDirectory: true)
         self.favoriteImageStorage = favoriteImageStorage ?? FavoriteWallpaperImageStore()
         let resources = resources ?? .shared
         self.resources = resources
@@ -169,10 +197,12 @@ class WallpaperManager: ObservableObject {
         self.selectedGradientId = UserDefaults.standard.string(forKey: "wallpaper_gradient_id") ?? "aurora"
         self.solidColor = UserDefaults.standard.string(forKey: "wallpaper_solid_color") ?? "#FFFFFF"
         let appearance = UserDefaults.standard.string(forKey: "appearance")
-        self.displayAppearance = appearance == "light" ? .light : (appearance == "system" && UITraitCollection.current.userInterfaceStyle != .dark ? .light : .dark)
+        self.displayAppearance = .appPreference(appearance, systemIsDark: UIScreen.main.traitCollection.userInterfaceStyle == .dark)
         self.appearancePresets = Self.readAppearancePresets()
         let defaults = UserDefaults.standard
         self.imageOverlayEnabled = defaults.object(forKey: "wallpaper_image_overlay") == nil || defaults.bool(forKey: "wallpaper_image_overlay")
+        self.imageOverlayAmount = Self.boundedOverlayAmount(defaults.object(forKey: "wallpaper_image_overlay_amount") == nil
+            ? WallpaperContrast.defaultImageOverlayAmount : defaults.double(forKey: "wallpaper_image_overlay_amount"))
         self.imageBlurEnabled = defaults.bool(forKey: "wallpaper_image_blur")
         self.imageBlurAmount = Self.boundedBlurAmount(defaults.object(forKey: "wallpaper_image_blur_amount") == nil ? 0.35 : defaults.double(forKey: "wallpaper_image_blur_amount"))
         self.searchTopic = BrowserInitialPreferences.wallpaperTopic(in: .standard)
@@ -222,6 +252,9 @@ class WallpaperManager: ObservableObject {
         if solidColor != nextSolidColor { solidColor = nextSolidColor }
         let nextOverlay = defaults.object(forKey: "wallpaper_image_overlay") == nil || defaults.bool(forKey: "wallpaper_image_overlay")
         if imageOverlayEnabled != nextOverlay { imageOverlayEnabled = nextOverlay }
+        let nextOverlayAmount = Self.boundedOverlayAmount(defaults.object(forKey: "wallpaper_image_overlay_amount") == nil
+            ? WallpaperContrast.defaultImageOverlayAmount : defaults.double(forKey: "wallpaper_image_overlay_amount"))
+        if imageOverlayAmount != nextOverlayAmount { imageOverlayAmount = nextOverlayAmount }
         let nextBlur = defaults.bool(forKey: "wallpaper_image_blur")
         let nextBlurAmount = Self.boundedBlurAmount(defaults.object(forKey: "wallpaper_image_blur_amount") == nil ? 0.35 : defaults.double(forKey: "wallpaper_image_blur_amount"))
         if imageBlurEnabled != nextBlur { imageBlurEnabled = nextBlur }
@@ -244,7 +277,91 @@ class WallpaperManager: ObservableObject {
             searchTopic = BrowserInitialPreferences.defaultWallpaperTopic
         }
         guard selected.isRemote, changed || currentImage == nil || candidateWallpapers.isEmpty else { return }
-        await initialFetch()
+        // Selecting a source browses its gallery. A favorites-only refresh can
+        // choose another source and immediately undo the user's selection.
+        if onlyUseFavoriteWallpapers {
+            await ensureCandidatesLoaded()
+        } else {
+            await initialFetch()
+        }
+    }
+
+    func sourcePreviewImage(for selected: WallpaperSource) -> UIImage? {
+        if selected == source, candidateWallpapers.contains(where: { $0.id == currentImageID && $0.source == selected.rawValue }),
+           let currentImage { return currentImage }
+        return sourcePreviewImages[selected]
+    }
+
+    /// Preview loading never changes the active source, Home image, gallery,
+    /// search topic or remote error. Reuse small on-disk thumbnails for a day.
+    func loadSourcePreview(for selected: WallpaperSource) async {
+        guard selected.isRemote else { return }
+        if let loading = sourcePreviewLoads[selected] { await loading.value; return }
+        let loading = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let version = self.sourcePreviewVersions[selected] ?? UUID()
+            self.sourcePreviewVersions[selected] = version
+            if self.sourcePreviewImages[selected] == nil {
+                let file = self.sourcePreviewDirectory.appendingPathComponent(selected.rawValue + ".json")
+                let cached: (SourcePreviewRecord, UIImage)? = await withCheckedContinuation { continuation in
+                    self.sourcePreviewIO.async {
+                        guard let data = try? Data(contentsOf: file),
+                              let record = try? JSONDecoder().decode(SourcePreviewRecord.self, from: data),
+                              let cg = WallpaperImageDecoder.decode(record.data, targetPixels: CGSize(width: 240, height: 180)) else {
+                            continuation.resume(returning: nil); return
+                        }
+                        continuation.resume(returning: (record, UIImage(cgImage: cg)))
+                    }
+                }
+                guard self.sourcePreviewVersions[selected] == version else { return }
+                if let (record, image) = cached, !self.blockedIDs.contains(record.id) {
+                    self.sourcePreviewImages[selected] = image
+                    self.sourcePreviewRecords[selected] = record
+                }
+            }
+            if let record = self.sourcePreviewRecords[selected], Date().timeIntervalSince(record.date) < 86_400 { return }
+            let query = self.searchTopic == "Bing Daily" ? BrowserInitialPreferences.defaultWallpaperTopic : self.searchTopic
+            let candidate: RemoteWallpaper?
+            switch selected {
+            case .pexels: candidate = await self.fetchPexelsCandidates(query: query, page: 1).first
+            case .pixabay: candidate = await self.fetchPixabayCandidates(query: query, page: 1).first
+            case .bing: candidate = await self.fetchBingCandidate(random: false)
+            default: candidate = nil
+            }
+            guard !Task.isCancelled, self.sourcePreviewVersions[selected] == version, let candidate,
+                  let url = URL(string: candidate.previewURL.isEmpty ? candidate.url : candidate.previewURL) else { return }
+            var request = URLRequest(url: url); request.timeoutInterval = 10
+            guard let (data, response) = try? await self.session.data(for: request),
+                  (response as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) != false else { return }
+            await self.rememberSourcePreview(data, wallpaper: candidate, expectedVersion: version)
+        }
+        sourcePreviewLoads[selected] = loading
+        await loading.value
+        sourcePreviewLoads[selected] = nil
+    }
+
+    private func rememberSourcePreview(_ data: Data, wallpaper: RemoteWallpaper, expectedVersion: UUID? = nil) async {
+        guard let selected = WallpaperSource(rawValue: wallpaper.source), selected.isRemote,
+              !blockedIDs.contains(wallpaper.id) else { return }
+        if let expectedVersion, sourcePreviewVersions[selected] != expectedVersion { return }
+        let version = UUID(); sourcePreviewVersions[selected] = version
+        let decoded: (UIImage, Data)? = await Task.detached(priority: .utility) {
+            guard let cg = WallpaperImageDecoder.decode(data, targetPixels: CGSize(width: 240, height: 180)) else { return nil }
+            let image = UIImage(cgImage: cg)
+            guard let encoded = image.jpegData(compressionQuality: 0.85) else { return nil }
+            return (image, encoded)
+        }.value
+        guard sourcePreviewVersions[selected] == version, !blockedIDs.contains(wallpaper.id), let (image, encoded) = decoded else { return }
+        let record = SourcePreviewRecord(id: wallpaper.id, date: Date(), data: encoded)
+        sourcePreviewImages[selected] = image; sourcePreviewRecords[selected] = record
+        let directory = sourcePreviewDirectory, file = directory.appendingPathComponent(selected.rawValue + ".json")
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            sourcePreviewIO.async {
+                try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                if let saved = try? JSONEncoder().encode(record) { try? saved.write(to: file, options: .atomic) }
+                continuation.resume()
+            }
+        }
     }
 
     private func initialFetch() async {
@@ -265,10 +382,10 @@ class WallpaperManager: ObservableObject {
         guard !networkLoading else { return }
         let src = source
         guard src == .pexels || src == .pixabay || src == .bing else { return }
-        guard candidateWallpapers.isEmpty || currentImage == nil else { return }
+        guard currentImage == nil else { return }
         Task {
             await cachedImageLoadTask?.value
-            guard source == src, !networkLoading else { return }
+            guard source == src, !networkLoading, currentImage == nil else { return }
             await initialFetch()
         }
     }
@@ -559,6 +676,7 @@ class WallpaperManager: ObservableObject {
         guard let url = URL(string: "https://api.pexels.com/v1/search?query=\(encoded)&page=\(page)&per_page=15&orientation=portrait") else { return [] }
         var request = URLRequest(url: url)
         request.setValue(pexelsKey, forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 15
         guard let (data, _) = try? await session.data(for: request),
               let res = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let photos = res["photos"] as? [[String: Any]] else { return [] }
@@ -574,7 +692,8 @@ class WallpaperManager: ObservableObject {
     private func fetchPixabayCandidates(query: String, page: Int) async -> [RemoteWallpaper] {
         let encoded = SearchQueryEncoding.encode(query) ?? "nature"
         guard let url = URL(string: "https://pixabay.com/api/?key=\(pixabayKey)&q=\(encoded)&page=\(page)&per_page=15&safesearch=true&image_type=photo&orientation=vertical") else { return [] }
-        guard let (data, _) = try? await session.data(from: url),
+        var request = URLRequest(url: url); request.timeoutInterval = 15
+        guard let (data, _) = try? await session.data(for: request),
               let res = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let hits = res["hits"] as? [[String: Any]] else { return [] }
 
@@ -588,7 +707,8 @@ class WallpaperManager: ObservableObject {
     private func fetchBingCandidate(random: Bool) async -> RemoteWallpaper? {
         let idx = random ? Int.random(in: 0...7) : 0
         guard let url = URL(string: "https://www.bing.com/HPImageArchive.aspx?format=js&idx=\(idx)&n=1&mkt=en-US") else { return nil }
-        guard let (data, _) = try? await session.data(from: url),
+        var request = URLRequest(url: url); request.timeoutInterval = 15
+        guard let (data, _) = try? await session.data(for: request),
               let res = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let images = res["images"] as? [[String: Any]],
               let first = images.first,
@@ -624,6 +744,12 @@ class WallpaperManager: ObservableObject {
 
     func blockWallpaper(_ wallpaper: RemoteWallpaper) {
         blockedIDs.insert(wallpaper.id)
+        if let selected = WallpaperSource(rawValue: wallpaper.source), sourcePreviewRecords[selected]?.id == wallpaper.id {
+            sourcePreviewVersions[selected] = UUID()
+            sourcePreviewImages[selected] = nil; sourcePreviewRecords[selected] = nil
+            let file = sourcePreviewDirectory.appendingPathComponent(selected.rawValue + ".json")
+            sourcePreviewIO.async { try? FileManager.default.removeItem(at: file) }
+        }
         withAnimation(.easeOut(duration: 0.25)) {
             candidateWallpapers.removeAll { $0.id == wallpaper.id }
         }
@@ -754,6 +880,7 @@ class WallpaperManager: ObservableObject {
             currentImage = image
             currentImageID = wallpaper.id
         }
+        await rememberSourcePreview(imageData, wallpaper: wallpaper)
         await persistRemoteWallpaper(imageData, wallpaper: wallpaper)
     }
 
@@ -831,7 +958,7 @@ class WallpaperManager: ObservableObject {
         switch source {
         case .solid: return WallpaperContrast.prefersDarkText(hex: solidColor(for: appearance))
         case .gradient: return gradient(for: appearance).isLight
-        default: return imageOverlayEnabled ? (imagePrefersDarkText[appearance] ?? false) : unmaskedImagePrefersDarkText
+        default: return imageOverlayOpacity > 0 ? (imagePrefersDarkText[appearance] ?? false) : unmaskedImagePrefersDarkText
         }
     }
 
@@ -839,30 +966,11 @@ class WallpaperManager: ObservableObject {
         contrastTask?.cancel()
         let revision = UUID(); contrastRevision = revision
         guard let cgImage = currentImage?.cgImage else { imagePrefersDarkText = [:]; unmaskedImagePrefersDarkText = false; return }
+        let overlayAmount = Self.boundedOverlayAmount(imageOverlayAmount)
         contrastTask = Task { [weak self] in
             let work = Task.detached(priority: .userInitiated) { () -> (overlays: [WallpaperAppearance: Bool], original: Bool) in
-                let side = 24
-                var pixels = [UInt8](repeating: 0, count: side * side * 4)
-                let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
-                    guard let context = CGContext(data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8,
-                        bytesPerRow: side * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
-                    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: side, height: side))
-                    return true
-                }
-                guard drawn else { return ([:], false) }
-                var original = 0.0, light = 0.0, dark = 0.0
-                let lightness = 1 - WallpaperContrast.lightOverlayOpacity
-                let darkness = 1 - WallpaperContrast.darkOverlayOpacity
-                for index in stride(from: 0, to: pixels.count, by: 4) {
-                    let r = Double(pixels[index]) / 255, g = Double(pixels[index + 1]) / 255, b = Double(pixels[index + 2]) / 255
-                    original += WallpaperContrast.luminance(red: r, green: g, blue: b)
-                    light += WallpaperContrast.luminance(red: r * lightness, green: g * lightness, blue: b * lightness)
-                    dark += WallpaperContrast.luminance(red: r * darkness, green: g * darkness, blue: b * darkness)
-                }
-                let count = Double(side * side)
-                return ([.light: WallpaperContrast.prefersDarkText(luminance: light / count),
-                         .dark: WallpaperContrast.prefersDarkText(luminance: dark / count)],
-                        WallpaperContrast.prefersDarkText(luminance: original / count))
+                let lightness = WallpaperContrast.imageLightness(cgImage, overlayAmount: overlayAmount)
+                return ([.light: lightness.masked, .dark: lightness.masked], lightness.original)
             }
             let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
             guard let self, !Task.isCancelled, self.contrastRevision == revision else { return }
@@ -925,10 +1033,10 @@ class WallpaperManager: ObservableObject {
         let specific = customPhotoDestination(for: appearance)
         return FileManager.default.fileExists(atPath: specific.path) ? specific : customImageURL
     }
-    func customPhotoPreview(for appearance: WallpaperAppearance) async -> UIImage? {
+    func customPhotoPreview(for appearance: WallpaperAppearance, targetPixels: CGSize = CGSize(width: 900, height: 1200)) async -> UIImage? {
         let file = customPhotoFile(for: appearance)
         let work = Task.detached(priority: .userInitiated) {
-            WallpaperImageDecoder.decode(file: file, targetPixels: CGSize(width: 900, height: 1200)).map { UIImage(cgImage: $0) }
+            WallpaperImageDecoder.decode(file: file, targetPixels: targetPixels).map { UIImage(cgImage: $0) }
         }
         return await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
     }
@@ -938,11 +1046,15 @@ class WallpaperManager: ObservableObject {
         let staging = target.deletingLastPathComponent().appendingPathComponent(".wallpaper-" + revision.uuidString)
         let pixels = Self.backgroundPixels
         try FileManager.default.createDirectory(at: photoDirectory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: staging) }
+        defer {
+            try? FileManager.default.removeItem(at: staging)
+            try? FileManager.default.removeItem(at: WallpaperImageDecoder.previewURL(for: staging))
+        }
         let work = Task.detached(priority: .userInitiated) {
             try Task.checkCancellation()
             guard let cg = WallpaperImageDecoder.decode(data, targetPixels: pixels) else { throw WebResourceDownloadError.invalidImage }
             try data.write(to: staging, options: .atomic)
+            WallpaperImageDecoder.writePreview(for: staging)
             try Task.checkCancellation()
             return UIImage(cgImage: cg)
         }
@@ -952,6 +1064,9 @@ class WallpaperManager: ObservableObject {
         if FileManager.default.fileExists(atPath: target.path) {
             _ = try FileManager.default.replaceItemAt(target, withItemAt: staging)
         } else { try FileManager.default.moveItem(at: staging, to: target) }
+        let preview = WallpaperImageDecoder.previewURL(for: target)
+        try? FileManager.default.removeItem(at: preview)
+        try? FileManager.default.moveItem(at: WallpaperImageDecoder.previewURL(for: staging), to: preview)
         customPhotoRevision &+= 1
         if source == .photo, appearance == displayAppearance {
             imageLoadRevision = UUID(); cachedImageLoadTask?.cancel()
@@ -1016,7 +1131,7 @@ class WallpaperManager: ObservableObject {
         return directory
     }
 
-    /// Restore the last wallpaper from disk without blocking the first frame or touches.
+    /// Restore a small first-frame preview before decoding the display image off-main.
     private func loadPersistedRemoteWallpaper() {
         guard source.isRemote else { return }
 
@@ -1037,12 +1152,21 @@ class WallpaperManager: ObservableObject {
         let revision = imageLoadRevision
         let expectedSource = source
         let pixels = Self.backgroundPixels
+        if let preview = WallpaperImageDecoder.preview(file: file) {
+            let image = UIImage(cgImage: preview)
+            if custom { customImage = image }
+            currentImage = image; currentImageID = imageID; currentImageURLString = remoteURL
+        }
         cachedImageLoadTask = Task { @MainActor [weak self] in
             let work = Task.detached(priority: .userInitiated) {
                 BrowserStartupTrace.markThread("wallpaper_cache_decode_start")
                 defer { BrowserStartupTrace.mark("wallpaper_cache_decode_end") }
                 guard !Task.isCancelled else { return nil as UIImage? }
-                return WallpaperImageDecoder.decode(file: file, targetPixels: pixels).map { UIImage(cgImage: $0) }
+                let image = WallpaperImageDecoder.decode(file: file, targetPixels: pixels).map { UIImage(cgImage: $0) }
+                if !FileManager.default.fileExists(atPath: WallpaperImageDecoder.previewURL(for: file).path) {
+                    WallpaperImageDecoder.writePreview(for: file)
+                }
+                return image
             }
             let image = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
             guard let self else { return }
@@ -1070,6 +1194,7 @@ class WallpaperManager: ObservableObject {
         let saved = await Task.detached(priority: .utility) {
             do {
                 try imageData.write(to: fileURL, options: .atomic)
+                WallpaperImageDecoder.writePreview(for: fileURL)
                 return true
             } catch {
                 return false
@@ -1079,6 +1204,7 @@ class WallpaperManager: ObservableObject {
         guard saved else { return }
         guard currentImageID == wallpaper.id else {
             try? FileManager.default.removeItem(at: fileURL)
+            try? FileManager.default.removeItem(at: WallpaperImageDecoder.previewURL(for: fileURL))
             return
         }
 
@@ -1092,7 +1218,14 @@ class WallpaperManager: ObservableObject {
             let previousURL = Self.currentWallpaperCacheDirectory
                 .appendingPathComponent(previousFileName)
             try? FileManager.default.removeItem(at: previousURL)
+            try? FileManager.default.removeItem(at: WallpaperImageDecoder.previewURL(for: previousURL))
         }
+    }
+
+    /// Keep the visible image and saved originals while clearing regenerable
+    /// remote previews. Cancel pending cache reads so an old result cannot win.
+    func prepareForImageCacheCleanup() {
+        removePersistedRemoteWallpaper()
     }
 
     private func removePersistedRemoteWallpaper() {
@@ -1102,6 +1235,7 @@ class WallpaperManager: ObservableObject {
         if let fileName = defaults.string(forKey: Self.currentWallpaperFileKey) {
             let fileURL = Self.currentWallpaperCacheDirectory.appendingPathComponent(fileName)
             try? FileManager.default.removeItem(at: fileURL)
+            try? FileManager.default.removeItem(at: WallpaperImageDecoder.previewURL(for: fileURL))
         }
         defaults.removeObject(forKey: Self.currentWallpaperFileKey)
         defaults.removeObject(forKey: Self.currentWallpaperIDKey)

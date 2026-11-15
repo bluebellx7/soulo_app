@@ -32,7 +32,7 @@ struct RecommendedPlatformsView: View {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                     selectedPlatform = platform
                                 }
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                HapticsManager.light()
                             }
                         }
                     }

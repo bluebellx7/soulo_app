@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "استعلام واحد، أكثر من 40 منصة";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "ابحث أو أدخل عنوان URL";
 "privacy_search_placeholder" = "بحث خاص أو أدخل عنوان URL";
 "search" = "بحث";
@@ -354,7 +354,7 @@
 "voice_stop" = "إيقاف";
 "voice_record" = "تسجيل";
 "batch_import" = "استيراد دفعي";
-"batch_import_format" = "الصق JSON بالتنسيق أدناه";
+"batch_import_format" = "الصق JSON هنا";
 "batch_import_group" = "إضافة إلى مجموعة (اختياري)";
 "batch_import_group_placeholder" = "مثال: أفلام";
 "batch_import_film_entry" = "افتح الإعدادات المسبقة لمنصة الفيلم";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "تعذر تثبيت الامتداد";
 "extension_permissions_summary" = "%d الأذونات · %d قواعد الموقع";
 "extension_untitled" = "ملحق بلا عنوان";
-"web_extension_install_footer" = "ثبّت الإضافات المتوافقة من رابط المتجر أو استورد CRX أو XPI أو ZIP أو مجلد إضافة. راجع الأذونات والتوافق قبل التثبيت؛ بعض ميزات سطح المكتب غير متاحة.";
+"web_extension_install_footer" = "يمكنك تعديل الأذونات من صفحة إدارة الإضافة بعد التثبيت.";
 "web_extension_install_store_link" = "رابط التثبيت من المتجر...";
 "web_extension_browse_sources" = "تصفح متاجر الامتداد";
 "web_extension_browse_sources_footer" = "تدعم أزرار Store Get متصفحات سطح المكتب الخاصة بها فقط. انسخ رابط صفحة تفاصيل الإضافة، ثم استخدم رابط التثبيت من المتجر في Soulo.";
 "web_extension_store_install_title" = "قم بتثبيت ملحق المتجر";
 "extension_page_banner_title" = "التثبيت باستخدام Soulo";
-"extension_page_banner_desc" = "راجع التوافق والأذونات قبل التثبيت.";
-"web_extension_store_install_desc" = "ألصق رابط صفحة تفاصيل إضافة Chrome أو Edge أو Firefox وراجع التوافق والأذونات قبل تأكيد التثبيت.";
+"extension_page_banner_desc" = "يمكنك تعديل الأذونات من صفحة إدارة الإضافة بعد التثبيت.";
+"web_extension_store_install_desc" = "يمكنك تعديل الأذونات من صفحة إدارة الإضافة بعد التثبيت.";
 "web_extension_store_link_placeholder" = "رابط صفحة الامتداد أو معرف ملحق Chrome";
 "web_extension_store_invalid_link" = "الصق رابط صفحة تفاصيل الإضافة من Chrome، أو Edge، أو Firefox، أو معرف ملحق Chrome، أو رابط CRX، أو XPI، أو ZIP المباشر.";
 "web_extension_store_https_required" = "يجب أن تستخدم حزم الملحقات رابط HTTPS آمنًا.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "المس مطولاً أيقونة Soulo على الشاشة الرئيسية لاستخدام الاختصارات التي تضبطها هنا.";
 
 "ad_block_scope_hint" = "يصفّي إعلانات الويب والطبقات الترويجية والنوافذ المنبثقة غير المطلوبة. إذا توقف موقع عن العمل، يمكنك إيقاف التصفية لذلك الموقع فقط.";
+
+"privacy_clear_browsing_on_exit" = "مسح سجل التصفح عند الخروج";
+"privacy_clear_browsing_on_exit_desc" = "امسح الصفحات التي تمت زيارتها عند الانتقال إلى الخلفية أو إعادة التشغيل، مع الاحتفاظ بعبارات البحث.";

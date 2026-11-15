@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "一次輸入，切換 40+ 平台";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "搜尋關鍵詞或輸入網址";
 "privacy_search_placeholder" = "私人搜尋或輸入網址";
 "search" = "搜尋";
@@ -360,7 +360,7 @@
 "voice_stop" = "停止";
 "voice_record" = "錄音";
 "batch_import" = "批次匯入";
-"batch_import_format" = "貼上以下格式的 JSON";
+"batch_import_format" = "在此貼上 JSON";
 "batch_import_group" = "新增到群組（選填）";
 "batch_import_group_placeholder" = "如：影視";
 "batch_import_film_entry" = "打開電影平台預設";
@@ -628,14 +628,14 @@
 "extension_install_failed" = "無法安裝擴充功能";
 "extension_permissions_summary" = "%d 權限 · %d 網站規則";
 "extension_untitled" = "無標題擴展";
-"web_extension_install_footer" = "支援從相容的商店連結安裝，或匯入 CRX、XPI、ZIP 和擴充功能資料夾。安裝前請查看權限與相容性，部分桌面功能無法使用。";
+"web_extension_install_footer" = "安裝後可在擴充功能管理頁面調整權限。";
 "web_extension_install_store_link" = "從商店連結安裝…";
 "web_extension_browse_sources" = "瀏覽擴充商店";
 "web_extension_browse_sources_footer" = "商店中的「取得」按鈕僅支援對應的桌面瀏覽器。請複製擴充功能詳情頁連結，再使用 Soulo 的「從商店連結安裝」。";
 "web_extension_store_install_title" = "安裝商店擴展";
 "extension_page_banner_title" = "使用 Soulo 安裝";
-"extension_page_banner_desc" = "查看相容性與權限後安裝。";
-"web_extension_store_install_desc" = "貼上 Chrome、Edge 或 Firefox 擴充功能的詳細資訊頁連結，檢查相容性與權限後確認安裝。";
+"extension_page_banner_desc" = "安裝後可在擴充功能管理頁面調整權限。";
+"web_extension_store_install_desc" = "安裝後可在擴充功能管理頁面調整權限。";
 "web_extension_store_link_placeholder" = "擴充功能頁面連結或 Chrome 擴充功能 ID";
 "web_extension_store_invalid_link" = "請貼上 Chrome、Edge 或 Firefox 擴充功能詳情頁連結、Chrome 擴充功能 ID，或者直接的 CRX、XPI、ZIP 連結。";
 "web_extension_store_https_required" = "擴充包必須使用安全的 HTTPS 連結。";
@@ -894,3 +894,6 @@
 "quick_actions_explanation" = "長按主畫面上的 Soulo 圖示，即可使用在這裡設定的快捷選單。";
 
 "ad_block_scope_hint" = "過濾網頁廣告、推廣浮層及非主動開啟的彈出視窗。網頁異常時，可只為該網站關閉過濾。";
+
+"privacy_clear_browsing_on_exit" = "退出時清除瀏覽記錄";
+"privacy_clear_browsing_on_exit_desc" = "進入背景或重新啟動時清除造訪記錄，保留搜尋字詞。";

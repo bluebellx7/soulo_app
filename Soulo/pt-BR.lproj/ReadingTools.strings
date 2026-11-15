@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Faixas de áudio";
 "media_subtitles" = "Legendas";
 "media_track_off" = "Desligado";
-"video_settings" = "Vídeo";
+"video_settings" = "Configurações de vídeo";
 "video_show_tools" = "Mostrar ferramentas de vídeo";
 "video_show_tools_desc" = "Mostre ferramentas em vídeos da web para velocidade de reprodução, downloads e tela cheia.";
 "video_default_player" = "Jogador padrão";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Vidro fosco";
 "wallpaper_blur_amount" = "Intensidade do desfoque";
 
-"auto_hide_platform_bar_hint" = "A barra de plataformas é ocultada ao abrir um resultado de busca. Volte aos resultados ou faça outra busca para exibi-la novamente. Você pode desativar isso neste menu.";
+"auto_hide_platform_bar_hint" = "A barra de plataformas só é ocultada ao tocar no conteúdo da página. Redirecionamentos automáticos e rolagem não a ocultam. Volte aos resultados ou inicie uma nova busca para exibi-la novamente.";
+
+"ad_subscription_add" = "Adicionar lista de filtros";
+"ad_subscription_name" = "Nome";
+"ad_subscription_url" = "URL da assinatura";
+"ad_subscription_invalid" = "Digite um nome e uma URL de assinatura HTTP ou HTTPS válida.";
+"ad_subscription_duplicate" = "Esta URL de assinatura já foi adicionada.";
+
+"feedback_settings" = "Sons e vibração";
+"feedback_settings_hint" = "Controle a vibração e os sons da interface em todo o app. A reprodução de páginas da web, vídeo e áudio não é afetada.";
+
+"home_display_settings" = "Exibição do início";
+"browsing_display_settings" = "Exibição da navegação";
+
+"web_video_download" = "Downloads de vídeo web";
+"web_video_download_description" = "Mostra controles de download de vídeo em páginas da web, listas de episódios e players. A reprodução e os downloads existentes permanecem iguais.";
+"builtin_extension" = "Extensão integrada";
+
+"wallpaper_overlay_amount" = "Intensidade da camada";
+"feedback_contact_required" = "Informe um e-mail ou outro contato para receber uma resposta.";
+"torrent_incomplete" = "Incompleto";
+"extend_page_background" = "Estender fundo da página";
+"extend_page_background_desc" = "Estende as cores superior e inferior da página às bordas do navegador, incluindo gradientes.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Recolher grupo";
+"tab_group_expand" = "Expandir grupo";
+"freeze_page_background_on_scroll" = "Manter cores iniciais";
+"freeze_page_background_on_scroll_desc" = "Após rolar, mantenha as primeiras cores detectadas. As novas páginas são analisadas novamente.";
+"page_background_gradient" = "Extensão em degradê";
+"page_background_gradient_desc" = "Misture as cores detectadas em um degradê. Desativado, cada borda usa uma cor sólida.";
+
+
+"gestures_feedback_settings" = "Gestos e resposta";

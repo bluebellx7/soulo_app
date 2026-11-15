@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// One episode drawer for inline and fullscreen playback, sized to leave a
 /// tappable area of the video visible even on a narrow phone.
@@ -9,6 +10,9 @@ struct FileVideoEpisodeDrawer: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.videoFullscreenInsets) private var windowInsets
     @State private var settingsVisible = false
+    @State private var sourcesVisible = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var episodeMinimumWidth: CGFloat = 52
 
     func body(content: Content) -> some View {
         ZStack {
@@ -38,11 +42,24 @@ struct FileVideoEpisodeDrawer: ViewModifier {
             }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: isPresented)
+        .onAppear { updateEpisodeWidth() }
+        .onCompatibleChange(of: playlist?.episodes) { _, _ in updateEpisodeWidth() }
+        .onCompatibleChange(of: dynamicTypeSize) { _, _ in updateEpisodeWidth() }
+        .onCompatibleChange(of: playlist?.failure) { _, failure in
+            // Decoder failure can arrive after the selection drawer has closed.
+            // Present the error and retry in the active fullscreen surface.
+            if failure != nil { isPresented = true }
+        }
         .sheet(isPresented: $settingsVisible) {
             NavigationStack { VideoSettingsView().toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button(ToolText.text("done")) { settingsVisible = false } }
             } }
         }
+    }
+
+    private func updateEpisodeWidth() {
+        episodeMinimumWidth = EpisodeGridSizing.minimumWidth(titles: playlist?.episodes.map(\.title) ?? [],
+            font: UIFont.preferredFont(forTextStyle: .subheadline))
     }
 
     private func panel(_ playlist: FileVideoPlaylist) -> some View {
@@ -64,45 +81,59 @@ struct FileVideoEpisodeDrawer: ViewModifier {
             }
             .padding(.leading, 20).padding(.trailing, 8).padding(.vertical, 8)
             if playlist.sources.count > 1 {
-                Menu {
-                    ForEach(playlist.sources, id: \.id) { source in
-                        Button { playlist.selectSource?(source.id) } label: {
-                            if source.id == playlist.selectedSourceID { Label(source.title, systemImage: "checkmark") }
-                            else { Text(source.title) }
-                        }
-                    }
-                } label: {
+                Button { sourcesVisible = true } label: {
                     HStack {
                         Text(playlist.sources.first { $0.id == playlist.selectedSourceID }?.title ?? ToolText.text("episodes")).lineLimit(1)
                         Spacer(); Image(systemName: "chevron.down").font(.caption)
-                    }.font(.subheadline).padding(.horizontal, 20).frame(minHeight: 44)
+                    }.font(.subheadline).padding(.horizontal, 20).frame(minHeight: 44).contentShape(Rectangle())
+                }
+                .accessibilityIdentifier("media.file.episodes.source")
+                .compatiblePopover(isPresented: $sourcesVisible) {
+                    VStack(spacing: 0) {
+                        ForEach(playlist.sources, id: \.id) { source in
+                            Button {
+                                playlist.selectSource?(source.id); sourcesVisible = false
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: source.id == playlist.selectedSourceID ? "checkmark" : "").frame(width: 18)
+                                    Text(source.title).frame(maxWidth: .infinity, alignment: .leading)
+                                }.padding(.horizontal, 12).frame(minHeight: 44).contentShape(Rectangle())
+                            }.buttonStyle(.plain).accessibilityLabel(source.title)
+                        }
+                    }.padding(8).frame(width: 220).compatiblePopoverAdaptation().videoPopoverSurface()
                 }
             }
             if let failure = playlist.failure {
-                Text(failure).font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 20).padding(.bottom, 10)
+                HStack(alignment: .top, spacing: 8) {
+                    Text(failure).font(.footnote).lineLimit(3).frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("media.file.episodes.failure.text")
+                    if let retry = playlist.retry { Button(ToolText.text("retry"), action: retry).font(.subheadline.weight(.semibold)).accessibilityIdentifier("media.file.episodes.retry") }
+                }
+                .foregroundStyle(fullscreen ? Color.white.opacity(0.85) : .secondary)
+                .padding(.horizontal, 20).padding(.bottom, 10)
+                .accessibilityIdentifier("media.file.episodes.failure")
             }
             Divider().overlay(fullscreen ? Color.white.opacity(0.12) : Color.clear)
             ScrollViewReader { reader in
                 ScrollView {
-                    LazyVStack(spacing: 4) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: episodeMinimumWidth), spacing: 10)], spacing: 10) {
                         ForEach(playlist.episodes) { episode in
                             let selected = episode.id == playlist.selectedID
                             Button {
-                                if !playlist.asynchronous { isPresented = false }
+                                isPresented = false
                                 playlist.select(episode.id)
                             } label: {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "play.fill").font(.caption)
-                                        .opacity(selected ? 1 : 0).frame(width: 16)
+                                HStack(spacing: 5) {
+                                    if selected { Image(systemName: "play.fill").font(.caption2).accessibilityHidden(true) }
                                     Text(episode.title).font(.subheadline.weight(selected ? .semibold : .regular))
-                                        .lineLimit(2).truncationMode(.middle)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                    if playlist.resolvingID == episode.id { ProgressView().controlSize(.small) }
+                                        .lineLimit(2).truncationMode(.tail)
+                                        .multilineTextAlignment(.center)
                                 }
                                 .foregroundStyle(selected ? Color.themePrimary : fullscreen ? Color.white.opacity(0.9) : Color.primary)
-                                .padding(.horizontal, 14).padding(.vertical, 12)
-                                .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-                                .background(selected ? Color.themePrimary.opacity(fullscreen ? 0.22 : 0.1) : .clear,
+                                .padding(.horizontal, 6).padding(.vertical, 10)
+                                .frame(maxWidth: .infinity, minHeight: 48)
+                                .background(selected ? Color.themePrimary.opacity(fullscreen ? 0.22 : 0.1)
+                                            : fullscreen ? Color.white.opacity(0.08) : Color(uiColor: .tertiarySystemFill),
                                             in: RoundedRectangle(cornerRadius: 10))
                                 .contentShape(Rectangle())
                             }
@@ -114,11 +145,19 @@ struct FileVideoEpisodeDrawer: ViewModifier {
                     }.padding(10)
                 }
                 .onAppear { reader.scrollTo(playlist.selectedID, anchor: .center) }
-                .onCompatibleChange(of: playlist.selectedID) { _, _ in if playlist.asynchronous { isPresented = false } }
             }
             .frame(maxHeight: .infinity, alignment: .top)
         }
         .frame(maxHeight: .infinity, alignment: .top)
         .buttonStyle(.plain)
+    }
+}
+
+/// Use one width for the source, measured only when its titles or type size
+/// change. Short episode numbers fit more columns; long names stay bounded.
+enum EpisodeGridSizing {
+    static func minimumWidth(titles: [String], font: UIFont) -> CGFloat {
+        let longest = titles.reduce(CGFloat.zero) { max($0, ($1 as NSString).size(withAttributes: [.font: font]).width) }
+        return min(140, max(52, ceil(longest) + 30))
     }
 }

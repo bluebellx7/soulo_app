@@ -81,3 +81,58 @@
 "Website cache" = "Verkkosivuston välimuisti";
 "Website icons" = "Verkkosivuston kuvakkeet";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "iCloud-synkronointi tallentaa varmuuskopion ennen asetusten muutoksia. Viimeisimmät %lld kopiota ja alkuperäinen kopio säilytetään.";
+
+"Move tab to new window" = "Siirrä uuteen ikkunaan";
+
+"Save webpage" = "Tallenna verkkosivu";
+
+"Webpage" = "Verkkosivu";
+
+"Website data" = "Sivustotiedot";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Sisältää tallennetut artikkelit, kirjaluettelon, kannet ja lukemisen edistymisen. Kirjat lasketaan ladattuihin tiedostoihin.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Koot ovat arvioita. IndexedDB sisältää tietokannat ja mediatiedot. Tuntematon koko näkyy merkillä —.";
+"Extension temporary cache" = "Laajennusten tilapäinen välimuisti";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Poistaa laajennusten tilapäisen median. Säilyttää asetukset, komentosarjat, edistymisen ja ladatut tiedostot. Sulje ensin laajennus- ja videosivut ja viimeistele lataukset.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Tilapäiset tiedot ovat yhä käytössä. Sulje laajennus- ja videosivut, viimeistele lataukset ja yritä uudelleen.";
+"Deleting website data can sign you out and remove offline content." = "Tietojen poistaminen voi kirjata sinut ulos ja poistaa offline-sisältöä.";
+
+"Extension startup timed out." = "Laajennuksen käynnistyksen aikakatkaisu.";
+
+"soulo_extensions" = "Soulo-laajennukset";
+
+"Add to Quick Links" = "Lisää pikalinkkeihin";
+"Remove from Quick Links" = "Poista pikalinkeistä";
+"Mark bookmarks with a heart to show them here." = "Paina kirjanmerkkiä pitkään ja merkitse se sydämellä, niin se näkyy tässä.";
+
+"Type %@ to confirm." = "Vahvista kirjoittamalla %@.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Kirjanmerkit yhdistetään laitteiden välillä. Vain nimenomainen poistaminen poistaa kohteita.";
+"This deletion also syncs to your other devices." = "Tämä poisto synkronoidaan myös muihin laitteisiisi.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Kopioi kehote, lisää vaatimuksesi ja lähetä se tekoälylle. Liitä sitten sen JSON tähän tuontia varten.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "JSON-tiedoston ryhmänimet ovat etusijalla. Samat ryhmät yhdistetään poistamatta nykyisiä alustoja.";
+"Imported %1$d platforms into %2$d groups." = "Tuotiin %1$d alustaa %2$d ryhmään.";
+"No new platforms or group entries." = "Ei uusia alustoja tai ryhmämerkintöjä.";
+
+"App size" = "Apin koko";
+"App data" = "Apin tiedot";
+"Wallpaper cache" = "Taustakuvavälimuisti";
+"Other caches" = "Muut välimuistit";
+"Temporary files" = "Tilapäiset tiedostot";
+"Download task data" = "Lataustehtävien tiedot";
+"Settings and records" = "Asetukset ja merkinnät";
+"Shared app data" = "Jaetut appitiedot";
+"Other app data" = "Muut appitiedot";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Apin tiedot eivät sisällä asennettua ohjelmaa. Levyllä oleva koko voi poiketa iOS-asetuksista.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Poista tallennettu sisältö sen omasta luettelosta. Käytössä olevat tilapäiset tiedostot ja järjestelmän välimuistitietokannat vapautetaan, kun se on turvallista.";
+
+"Current platforms" = "Nykyiset alustat";
+"Import mode" = "Tuontitapa";
+"Append" = "Lisää";
+"Replace all" = "Korvaa kaikki";
+"Replace all platforms?" = "Korvataanko kaikki alustat?";
+"A settings backup is saved before replacement." = "Asetuksista tallennetaan varmuuskopio ennen korvaamista.";
+
+"Take over web players" = "Korvaa verkkosoittimet";
+"Only takes over website fullscreen. Extension players stay independent." = "Korvaa vain verkkosivun koko näytön toiston. Laajennusten soittimet toimivat itsenäisesti.";
+
+"App size is the installed program and resources, not the App Store download size." = "Apin koko tarkoittaa asennettua ohjelmaa ja resursseja, ei App Store -latauksen kokoa.";
+"App data is the total of the categories below." = "Apin tiedot ovat alla olevien luokkien summa.";

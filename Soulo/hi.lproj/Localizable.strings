@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "एक प्रश्न, 40+ प्लेटफार्म";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "यूआरएल खोजें या दर्ज करें";
 "privacy_search_placeholder" = "निजी खोज या यूआरएल दर्ज करें";
 "search" = "खोजें";
@@ -354,7 +354,7 @@
 "voice_stop" = "रुकें";
 "voice_record" = "अभिलेख";
 "batch_import" = "बैच आयात";
-"batch_import_format" = "JSON को नीचे दिए गए प्रारूप में चिपकाएँ";
+"batch_import_format" = "यहाँ JSON पेस्ट करें";
 "batch_import_group" = "समूह में जोड़ें (वैकल्पिक)";
 "batch_import_group_placeholder" = "जैसे चलचित्र";
 "batch_import_film_entry" = "मूवी प्लेटफ़ॉर्म प्रीसेट खोलें";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "एक्सटेंशन स्थापित नहीं किया जा सका";
 "extension_permissions_summary" = "%d अनुमतियाँ · %d वेबसाइट नियम";
 "extension_untitled" = "शीर्षक रहित एक्सटेंशन";
-"web_extension_install_footer" = "संगत स्टोर लिंक से एक्सटेंशन इंस्टॉल करें या CRX, XPI, ZIP अथवा एक्सटेंशन फ़ोल्डर इंपोर्ट करें। पहले अनुमतियाँ और संगतता जाँचें; कुछ डेस्कटॉप सुविधाएँ उपलब्ध नहीं हैं।";
+"web_extension_install_footer" = "इंस्टॉल करने के बाद एक्सटेंशन के प्रबंधन पेज में अनुमतियाँ बदल सकते हैं।";
 "web_extension_install_store_link" = "स्टोर लिंक से इंस्टॉल करें...";
 "web_extension_browse_sources" = "एक्सटेंशन स्टोर ब्राउज़ करें";
 "web_extension_browse_sources_footer" = "स्टोर गेट बटन केवल उनके अपने डेस्कटॉप ब्राउज़र का समर्थन करते हैं। एक एक्सटेंशन विवरण पृष्ठ लिंक कॉपी करें, फिर Soulo में स्टोर लिंक से इंस्टॉल का उपयोग करें।";
 "web_extension_store_install_title" = "स्टोर एक्सटेंशन इंस्टॉल करें";
 "extension_page_banner_title" = "Soulo के साथ इंस्टॉल करें";
-"extension_page_banner_desc" = "इंस्टॉल करने से पहले संगतता और अनुमतियाँ जाँचें।";
-"web_extension_store_install_desc" = "Chrome, Edge या Firefox एक्सटेंशन के विवरण पेज का लिंक पेस्ट करें और इंस्टॉल की पुष्टि से पहले संगतता व अनुमतियाँ जाँचें।";
+"extension_page_banner_desc" = "इंस्टॉल करने के बाद एक्सटेंशन के प्रबंधन पेज में अनुमतियाँ बदल सकते हैं।";
+"web_extension_store_install_desc" = "इंस्टॉल करने के बाद एक्सटेंशन के प्रबंधन पेज में अनुमतियाँ बदल सकते हैं।";
 "web_extension_store_link_placeholder" = "एक्सटेंशन पेज लिंक या क्रोम एक्सटेंशन आईडी";
 "web_extension_store_invalid_link" = "क्रोम, एज, या फ़ायरफ़ॉक्स से एक एक्सटेंशन विवरण पृष्ठ लिंक, एक क्रोम एक्सटेंशन आईडी, या एक सीधा सीआरएक्स, एक्सपीआई, या ज़िप लिंक चिपकाएँ।";
 "web_extension_store_https_required" = "एक्सटेंशन पैकेज को एक सुरक्षित HTTPS लिंक का उपयोग करना चाहिए।";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "यहाँ सेट किए गए शॉर्टकट इस्तेमाल करने के लिए होम स्क्रीन पर Soulo आइकन को दबाकर रखें।";
 
 "ad_block_scope_hint" = "वेब विज्ञापन, प्रचार ओवरले और अनचाहे पॉप-अप फ़िल्टर करता है। अगर कोई साइट काम करना बंद कर दे, तो सिर्फ़ उस साइट के लिए फ़िल्टर बंद कर सकते हैं।";
+
+"privacy_clear_browsing_on_exit" = "बाहर निकलने पर ब्राउज़िंग इतिहास मिटाएँ";
+"privacy_clear_browsing_on_exit_desc" = "बैकग्राउंड में जाने या फिर शुरू होने पर देखे गए पृष्ठों का इतिहास मिटाएँ। खोज शब्द बनाए रखें।";

@@ -417,7 +417,7 @@
 "media_audio_tracks" = "オーディオトラック";
 "media_subtitles" = "字幕";
 "media_track_off" = "オフ";
-"video_settings" = "ビデオ";
+"video_settings" = "動画設定";
 "video_show_tools" = "ビデオツールを表示する";
 "video_show_tools_desc" = "Web ビデオ上に再生速度、ダウンロード、全画面表示のためのツールを表示します。";
 "video_default_player" = "デフォルトのプレーヤー";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "すりガラス";
 "wallpaper_blur_amount" = "ぼかしの強さ";
 
-"auto_hide_platform_bar_hint" = "検索結果のページを開くと、プラットフォームバーが自動的に隠れます。検索結果に戻るか、新しく検索すると再表示されます。このメニューでオフにできます。";
+"auto_hide_platform_bar_hint" = "ウェブページの内容をタップした後にのみプラットフォームバーを非表示にします。自動リダイレクトやスクロールでは非表示になりません。検索結果に戻るか、新しい検索を始めると再表示します。";
+
+"ad_subscription_add" = "フィルタを追加";
+"ad_subscription_name" = "名前";
+"ad_subscription_url" = "購読URL";
+"ad_subscription_invalid" = "名前と有効なHTTPまたはHTTPSの購読URLを入力してください。";
+"ad_subscription_duplicate" = "この購読URLはすでに追加されています。";
+
+"feedback_settings" = "サウンドと触覚";
+"feedback_settings_hint" = "アプリ全体の振動と操作音を設定します。ウェブページ、動画、音声の再生には影響しません。";
+
+"home_display_settings" = "ホーム画面の表示";
+"browsing_display_settings" = "ブラウズ画面の表示";
+
+"web_video_download" = "ウェブ動画のダウンロード";
+"web_video_download_description" = "ウェブページ、エピソード一覧、プレーヤーに動画のダウンロード操作を表示します。再生や既存のダウンロードには影響しません。";
+"builtin_extension" = "内蔵拡張機能";
+
+"wallpaper_overlay_amount" = "オーバーレイの強度";
+"feedback_contact_required" = "返信できるよう、メールアドレスなどの連絡先を入力してください。";
+"torrent_incomplete" = "未完了";
+"extend_page_background" = "ページ背景を延長";
+"extend_page_background_desc" = "ページ上部と下部の色をブラウザの端まで延長します。グラデーションにも対応します。";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "グループを折りたたむ";
+"tab_group_expand" = "グループを展開";
+"freeze_page_background_on_scroll" = "最初の色を保持";
+"freeze_page_background_on_scroll_desc" = "スクロール後も最初に検出した色を保持し、再取得を停止します。新しいページでは再検出します。";
+"page_background_gradient" = "グラデーションで延長";
+"page_background_gradient_desc" = "検出した色をグラデーションにします。オフの場合、上下の端にそれぞれ単色を使用します。";
+
+
+"gestures_feedback_settings" = "ジェスチャとフィードバック";

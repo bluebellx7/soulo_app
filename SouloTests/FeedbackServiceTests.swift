@@ -14,11 +14,16 @@ final class FeedbackServiceTests: XCTestCase {
         XCTAssertTrue(payload.page_url.contains("(\(SouloFeedbackService.buildNumber))"))
     }
 
-    func testDiagnosticOptOutAndEmptyContactAreRespected() throws {
-        let request = try SouloFeedbackService.makeRequest(type: "other", content: "Hello", contactInfo: " \n", diagnostics: nil)
+    func testDiagnosticOptOutAndRequiredContact() throws {
+        let request = try SouloFeedbackService.makeRequest(type: "other", content: "Hello", contactInfo: "QQ 123", diagnostics: nil)
         let payload = try JSONDecoder().decode(SouloFeedbackService.Payload.self, from: XCTUnwrap(request.httpBody))
-        XCTAssertNil(payload.contact_info)
+        XCTAssertEqual(payload.contact_info, "QQ 123")
         XCTAssertEqual(payload.device_info, "{}")
+        for contact in [nil, "", " \n\t", "　"] as [String?] {
+            XCTAssertThrowsError(try SouloFeedbackService.makeRequest(type: "bug", content: "A valid report", contactInfo: contact, diagnostics: nil)) {
+                XCTAssertEqual($0 as? SouloFeedbackService.SubmissionError, .missingContact)
+            }
+        }
         for value in [" \n", String(repeating: "a", count: 2001)] {
             XCTAssertThrowsError(try SouloFeedbackService.makeRequest(type: "bug", content: value, contactInfo: nil, diagnostics: nil))
         }
@@ -37,9 +42,9 @@ final class FeedbackServiceTests: XCTestCase {
         configuration.protocolClasses = [FeedbackStubProtocol.self]
         let session = URLSession(configuration: configuration)
         defer { session.invalidateAndCancel() }
-        try await SouloFeedbackService.submit(type: "bug", content: "accepted fixture", contactInfo: nil, diagnostics: nil, session: session)
+        try await SouloFeedbackService.submit(type: "bug", content: "accepted fixture", contactInfo: "person@example.com", diagnostics: nil, session: session)
         do {
-            try await SouloFeedbackService.submit(type: "bug", content: "rejected fixture", contactInfo: nil, diagnostics: nil, session: session)
+            try await SouloFeedbackService.submit(type: "bug", content: "rejected fixture", contactInfo: "person@example.com", diagnostics: nil, session: session)
             XCTFail("Failed submissions must not show success")
         } catch {
             XCTAssertEqual((error as? URLError)?.code, .badServerResponse)

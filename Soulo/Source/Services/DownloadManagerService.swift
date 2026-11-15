@@ -258,6 +258,20 @@ final class DownloadManagerService: ObservableObject {
         progressPersistence.schedule { [weak self] in self?.save() }
     }
 
+    /// AVAssetDownloadTask reports loaded playback time, not a byte total.
+    /// Keep that fraction separate from measured network/cache bytes.
+    func updateHLSProgress(id: UUID, fraction: Double, receivedBytes: Int64?) {
+        guard fraction.isFinite, let index = downloads.firstIndex(where: { $0.id == id }),
+              downloads[index].transport == .hls, downloads[index].status == .inProgress else { return }
+        var item = downloads[index]
+        item.progress = min(max(fraction, 0), 1)
+        item.receivedBytes = receivedBytes.map { max(0, $0) } ?? (item.expectedBytes == 1_000_000 ? 0 : item.receivedBytes)
+        item.expectedBytes = 0 // The system has not supplied a whole-file size.
+        guard downloads[index] != item else { return }
+        downloads[index] = item
+        progressPersistence.schedule { [weak self] in self?.save() }
+    }
+
     func markPaused(id: UUID, resumeData: Data?) {
         guard let resumeData, !resumeData.isEmpty,
               downloads.contains(where: { $0.id == id && $0.status == .inProgress }) else { return }
@@ -503,6 +517,11 @@ final class DownloadManagerService: ObservableObject {
                 return
             }
             downloads = decoded
+            for index in downloads.indices where downloads[index].transport == .hls && downloads[index].expectedBytes == 1_000_000 {
+                // Older builds persisted scaled time units as a fictitious 1 MB.
+                downloads[index].receivedBytes = 0
+                downloads[index].expectedBytes = 0
+            }
         }
         // iOS can relocate the data container during an update. Resolve only
         // files owned by this download directory before checking for missing

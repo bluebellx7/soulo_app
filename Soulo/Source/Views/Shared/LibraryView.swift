@@ -37,6 +37,7 @@ struct LibraryView: View {
     @State private var compactSections: Set<LibrarySection> = []
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pageProgress: CGFloat
+    @State private var showReadingList = false
 
     init(
         initialSection: LibrarySection = .bookmarks,
@@ -57,6 +58,7 @@ struct LibraryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
         .mediaPlayerNavigation()
+        .navigationDestination(isPresented: $showReadingList) { ReadingListView() }
         .onReceive(NotificationCenter.default.publisher(for: .openSouloFiles)) { _ in
             selectedSection = .files
         }
@@ -98,8 +100,8 @@ struct LibraryView: View {
     @ViewBuilder
     private func page(_ section: LibrarySection) -> some View {
         switch section {
-        case .bookmarks: BookmarksContentView(searchVM: searchVM, onOpen: openSelection)
-        case .history: SearchHistoryContentView(searchVM: searchVM, onOpen: openSelection)
+        case .bookmarks: BookmarksContentView(searchVM: searchVM, onOpen: openSelection, embeddedInLibrary: true, onReadingListOpen: { showReadingList = true })
+        case .history: SearchHistoryContentView(searchVM: searchVM, onOpen: openSelection, embeddedInLibrary: true)
         case .downloads: DownloadManagerContentView(embeddedInLibrary: true)
         case .files: LibraryFilesView(embeddedInLibrary: true)
         }
@@ -154,6 +156,7 @@ struct LibraryPager<Content: View>: View {
     @Binding var progress: CGFloat
     @Environment(\.layoutDirection) private var layoutDirection
     @StateObject private var gestures = LibraryPagingGestures()
+    @State private var loadedSections: Set<LibrarySection> = []
     @ViewBuilder let content: (LibrarySection) -> Content
 
     @ViewBuilder var body: some View {
@@ -190,7 +193,10 @@ struct LibraryPager<Content: View>: View {
                 ScrollView(.horizontal) {
                     HStack(spacing: 0) {
                         ForEach(LibrarySection.allCases, id: \.self) { section in
-                            content(section)
+                            Group {
+                                if section == selectedSection || loadedSections.contains(section) { content(section) }
+                                else { Color.clear }
+                            }
                                 .environment(\.libraryPageIsActive, selectedSection == section)
                                 .frame(width: viewport.size.width, height: viewport.size.height)
                                 .accessibilityHidden(selectedSection != section)
@@ -209,7 +215,17 @@ struct LibraryPager<Content: View>: View {
                 ), anchor: .center)
                 .environment(\.libraryPagingGestures, gestures)
                 .accessibilityIdentifier("library.pages")
-                .onAppear { proxy.scrollTo(selectedSection, anchor: .center) }
+                .onAppear { loadedSections.insert(selectedSection); proxy.scrollTo(selectedSection, anchor: .center) }
+                .onCompatibleChange(of: selectedSection) { _, section in loadedSections.insert(section) }
+                .onCompatibleChange(of: progress) { _, value in
+                    // Materialize only pages reached by a swipe, then retain
+                    // their state. Navigation destinations stay in a regular
+                    // container rather than an unsupported lazy ancestor.
+                    guard value.isFinite else { return }
+                    for index in [Int(floor(value)), Int(ceil(value))] where LibrarySection.allCases.indices.contains(index) {
+                        loadedSections.insert(LibrarySection.allCases[index])
+                    }
+                }
                 .onCompatibleChange(of: viewport.size.width) { _, width in
                     guard width > 0 else { return }
                     proxy.scrollTo(selectedSection, anchor: .center)

@@ -81,3 +81,58 @@
 "Website cache" = "Predpomnilnik spletnega mesta";
 "Website icons" = "Ikone spletne strani";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "Sinhronizacija iCloud shrani kopijo pred spremembo nastavitev. Ohranijo se zadnjih %lld kopij in začetna kopija.";
+
+"Move tab to new window" = "Premakni v novo okno";
+
+"Save webpage" = "Shrani stran";
+
+"Webpage" = "Spletna stran";
+
+"Website data" = "Podatki spletnih mest";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Vključuje shranjene članke, kazalo knjig, naslovnice in napredek branja. Knjižne datoteke se štejejo med prenesene datoteke.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Velikosti so ocenjene. IndexedDB vključuje zbirke podatkov in predstavnost. Nerazpoložljive velikosti so prikazane kot —.";
+"Extension temporary cache" = "Začasni predpomnilnik razširitev";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Odstrani začasno predstavnost razširitev. Ohrani nastavitve, skripte, napredek in prenesene datoteke. Najprej zaprite strani razširitev in videov ter dokončajte prenose.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Začasni podatki so še v uporabi. Zaprite strani razširitev in videov, dokončajte prenose in poskusite znova.";
+"Deleting website data can sign you out and remove offline content." = "Brisanje podatkov vas lahko odjavi in odstrani vsebino brez povezave.";
+
+"Extension startup timed out." = "Čas za zagon razširitve je potekel.";
+
+"soulo_extensions" = "Razširitve Soulo";
+
+"Add to Quick Links" = "Dodaj med hitre povezave";
+"Remove from Quick Links" = "Odstrani iz hitrih povezav";
+"Mark bookmarks with a heart to show them here." = "Pridržite zaznamek in ga označite s srcem, da bo prikazan tukaj.";
+
+"Type %@ to confirm." = "Za potrditev vnesite %@.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Zaznamki se združijo med napravami. Odstranijo se le z izrecnim brisanjem.";
+"This deletion also syncs to your other devices." = "Ta izbris se sinhronizira tudi z drugimi napravami.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Kopirajte poziv, dodajte zahteve in ga pošljite umetni inteligenci. Nato sem prilepite njen JSON za uvoz.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Imena skupin v JSON imajo prednost. Ujemajoče skupine se združijo brez odstranjevanja obstoječih platform.";
+"Imported %1$d platforms into %2$d groups." = "Uvoženih %1$d platform v %2$d skupin.";
+"No new platforms or group entries." = "Ni novih platform ali vnosov skupin.";
+
+"App size" = "Velikost aplikacije";
+"App data" = "Podatki aplikacije";
+"Wallpaper cache" = "Predpomnilnik ozadij";
+"Other caches" = "Drugi predpomnilniki";
+"Temporary files" = "Začasne datoteke";
+"Download task data" = "Podatki opravil prenosov";
+"Settings and records" = "Nastavitve in zapisi";
+"Shared app data" = "Podatki aplikacije v skupni rabi";
+"Other app data" = "Drugi podatki aplikacije";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Podatki ne vključujejo nameščenega programa. Velikost na disku se lahko razlikuje od Nastavitev iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Shranjeno vsebino izbrišite na njenem seznamu. Aktivne začasne datoteke in sistemske zbirke predpomnilnika se sprostijo, ko je varno.";
+
+"Current platforms" = "Trenutne platforme";
+"Import mode" = "Način uvoza";
+"Append" = "Dodaj";
+"Replace all" = "Zamenjaj vse";
+"Replace all platforms?" = "Želite zamenjati vse platforme?";
+"A settings backup is saved before replacement." = "Pred zamenjavo se shrani varnostna kopija nastavitev.";
+
+"Take over web players" = "Prevzemi spletne predvajalnike";
+"Only takes over website fullscreen. Extension players stay independent." = "Prevzame le celozaslonsko predvajanje strani. Predvajalniki razširitev ostanejo neodvisni.";
+
+"App size is the installed program and resources, not the App Store download size." = "Velikost aplikacije zajema nameščen program in vire, ne prenosa iz App Stora.";
+"App data is the total of the categories below." = "Podatki aplikacije so vsota spodnjih kategorij.";

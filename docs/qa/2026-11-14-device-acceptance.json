@@ -1,0 +1,132 @@
+{
+  "date": "2026-11-14",
+  "version": "1.2.15",
+  "build": 55,
+  "status": "available_native_sdk27_and_prior_physical_acceptance_complete_with_scope_limits",
+  "devices": {
+    "iPhone17": "27.2.1 (24B156), physical",
+    "iPadAirM3": "26.6.1, physical",
+    "iOS16": "16.0 boundary simulator"
+  },
+  "ad_filter_ios16": {
+    "fixture": {
+      "manual_rules": 500,
+      "trusted_domains": 200,
+      "allowed_sites": 200
+    },
+    "routes": [
+      "Settings→AdBlocking",
+      "Webpage→SiteInformation→AdBlocking"
+    ],
+    "subpages": [
+      "trusted domains",
+      "marked ads",
+      "built-in rules",
+      "filter lists",
+      "allowed sites"
+    ],
+    "rounds_per_entry": 3,
+    "total_successful_subpage_open_and_return_pairs": 30,
+    "passed": true,
+    "xcresult": "/tmp/soulo-20261114-device-acceptance/ios16-adblock-volume-14.xcresult",
+    "scope": "Populated real UI navigation, not just title construction. Existing iOS16 isolated-sheet navigation fix retained. No user-device crash log available to prove the exact root of each reported incident.",
+    "live_refresh_followup": {
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "xcresult": "/tmp/soulo-20261114-device-acceptance/ios16-adblock-live-refresh-23.xcresult",
+      "additional_successful_subpage_open_and_return_pairs": 15,
+      "actual_new_network_rules": 20000,
+      "scope": "Normal idle-home activation, actual local HTTP request observed before navigating, delayed200response overlaps navigation. All5populatedsubpages3rounds. Existing93MBsubscription archive retained; background initialization takes longer than assumed test delay. Test now awaits actual request. Earlier18/19/21failures retained; not application-hang evidence. Updatepolicy unchanged. Temporary fetch trace removed after diagnosis."
+    }
+  },
+  "physical_27_navigation_and_scrolling": {
+    "xcresult": "/tmp/soulo-20261114-device-acceptance/physical-ios27-navigation-scroll-16.xcresult",
+    "tests_passed": 2,
+    "extension_navigation": "Actual native extension origin with downloader.html?requestId=484; platform and store web pages loaded in ordinary tabs. Original WKWebView and JS document sentinel484 retained. Further normal-page links reuse the normal tab.",
+    "rapid_scrolling": {
+      "tabs": 60,
+      "source_snapshot_px": [
+        1920,
+        2560
+      ],
+      "scroll_jumps": 36,
+      "decoded_images_after_scroll": 10,
+      "max_decoded_dimension": 512,
+      "max_main_tick_seconds": 0.03226075000020501,
+      "original_preview_files_preserved": true
+    },
+    "home_restore": {
+      "fixture": "48 tabs and2 installed extensions",
+      "trace": "/tmp/soulo-20261114-device-acceptance/ios27-loaded-restore-trace.log",
+      "init_to_home_ms": 134.691375,
+      "largest_recorded_main_actor_delay_ms": 305,
+      "manual_menu_and_settings": "Observed responsive through iPhoneMirroring. Reported tool round trips include transport/capture/animation and are not raw touch latency."
+    }
+  },
+  "real_extensions": {
+    "xcresult": "/tmp/soulo-20261114-device-acceptance/physical-ios27-extensions-fixed-11.xcresult",
+    "tests_passed": 9,
+    "scope": [
+      "CatCatch actual MicrosoftStore package localized popup+media capture",
+      "CatCatch cache capture and playable online merge output",
+      "TYTY0.6.6 actual package messaging/proxy/download switches",
+      "ZIP/CRX/XPI integrity, corruption/traversal/encryption bounds",
+      "Aliased-container path canonicalization regression"
+    ],
+    "bilibili_test_url": "https://m.bilibili.com/video/BV15cs96zEvi",
+    "live_observation": "CatCatch captured43131012024-1-16.mp4 about10MB; Chinese popup width378/scrollWidth378 and bottom controls visually reviewed",
+    "limits": "Not a claim of support for every Chrome API or all third-party extensions. Live capture CDN tokenized URLs remain only in temporary test attachments."
+  },
+  "speech": {
+    "normal_iPad_start_and_stop": "/tmp/soulo-20261114-device-acceptance/ipad-normal-voice-status-2.txt",
+    "hardware_and_fixture_tests": "/tmp/soulo-20261114-device-acceptance/physical-ipad-live-audio-12.xcresult",
+    "passed": 2,
+    "verified": "Real microphone produced audio-level callbacks; cancel stopped callbacks; actual installed Chinese model transcribed fixture. English fixture passed previously on actual phone. Legacy permission paths9cases passed."
+  },
+  "eight_features": {
+    "1_webkit27": "NativeSDK27 scoped cookies and closed-shadow content world actual tests passed112/118.",
+    "2_continued_background": "Physical native coordinator start/background/progress/completion passed; real HLS export and cancellation cases passed separately",
+    "3_ipad_windows": "Two physical UI tests passed; live document/navigation preserved without extra page GET",
+    "4_speech": "Physical microphone/buffer/cancel and real installed-model transcription passed",
+    "5_accessibility": "Actual system ReduceTransparency/IncreaseContrast/ReduceMotion toggled, app reflected each, original settings restored",
+    "6_foundation_models": "Model generation unavailable(deviceNotEligible) on both physical devices. Deterministic fallback/cancellation passed; generation honestly skipped",
+    "7_intents": "Actual SaveWebPageIntent.perform and WebPageLinkIntent.perform passed, entity/privacy/idempotency tests passed. Full Siri speech and production app-group cross-process opening not exercised in isolated QA",
+    "8_subtitles27": "NativeSDK27 late-loaded legible tracks update the public system subtitle menu83/112/118PASS."
+  },
+  "current_builds": {
+    "signed_QA": "qa-device-build-20.log: TEST BUILD SUCCEEDED; includes current icon and extension-row UI; three browser-control regressions passed on physical iPad",
+    "production_Release": "SDK27 Release166 BUILD SUCCEEDED, generic iOS minimum16 unsigned; current source.",
+    "current_phone": "153 signed isolated QA TEST BUILD SUCCEEDED;159 home6-entry run blocked by device lock, not marked passed.",
+    "nativeSDK27": "162 test build passed;165 three actual worker/migration/media runtime cases passed."
+  },
+  "faststream": {
+    "priority": "Latest user steering explicitly requests generic actual-extension interop now; earlier remaining SDK/hardware items stay tracked",
+    "strategy": "User-installed standard ChromeStore extension compatibility; no built-in fork and no VLC removal",
+    "package": "/Users/shunfei.z/Downloads/FastStream 视频播放器 1.3.78.crx",
+    "test_url": "https://m.bilibili.com/video/BV15cs96zEvi",
+    "started_implementation": true,
+    "inspection_and_actual_package_tests_started": true,
+    "baseline": "Historical worker/non-entitled observations superseded by actual entitled host and nativeSDK27 simulator verification; no production entitlement modified.",
+    "latest": "Host164 old installed CRX unassisted touch/fullscreen/download UI2/2PASS. NativeSDK27 165 original package playback/actual files+decode, module transport/idempotent migration3/3PASS. Publisher modules retained."
+  },
+  "paid_API_used": false,
+  "committed_or_pushed": false,
+  "device_usage_constraint": "Latest user reauthorized iPhone27.2.1 as well as iPad/simulators; only isolated Acceptance bundle targeted. Current phone locked, iPad disconnected.",
+  "browser_control_navigation": {
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "device": "iPad Air M3 / iPadOS26.6.1",
+    "xcresult": "/tmp/soulo-20261114-device-acceptance/physical-ipad-browser-controls-20.xcresult",
+    "behavior": "Extension-origin downloader/store links open an ordinary tab, preserving extension DOM. Suppression is scoped to the search ID current when the explicit link was loaded; later search requests remain functional. Real rendered store and search documents asserted."
+  },
+  "file_importers": {
+    "passed": 2,
+    "device": "iPad Air M3 / iPadOS26.6.1",
+    "xcresult": "/tmp/soulo-20261114-device-acceptance/physical-ipad-import-17.xcresult",
+    "scope": "Extension file/folder and userscript picker each opened/canceled/reopened three times"
+  },
+  "requirements_master": "2026-11-14-consolidated-requirements.json"
+}

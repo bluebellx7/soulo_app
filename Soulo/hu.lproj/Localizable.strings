@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Egy lekérdezés, 40+ platform";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Keressen vagy írja be az URL-t";
 "privacy_search_placeholder" = "Privát keresés vagy URL megadása";
 "search" = "Keresés";
@@ -354,7 +354,7 @@
 "voice_stop" = "Állj";
 "voice_record" = "Felvétel";
 "batch_import" = "Kötegelt importálás";
-"batch_import_format" = "Illessze be a JSON-t az alábbi formátumban";
+"batch_import_format" = "Illessze ide a JSON-t";
 "batch_import_group" = "Hozzáadás a csoporthoz (opcionális)";
 "batch_import_group_placeholder" = "pl. Filmek";
 "batch_import_film_entry" = "Nyissa meg a filmplatform előbeállításait";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "A bővítményt nem sikerült telepíteni";
 "extension_permissions_summary" = "%d engedélyek · %d webhelyszabályok";
 "extension_untitled" = "Névtelen kiterjesztés";
-"web_extension_install_footer" = "Telepítsen kompatibilis bővítményeket áruházlinkről, vagy importáljon CRX-, XPI-, ZIP-fájlt vagy bővítménymappát. Ellenőrizze a jogosultságokat és a kompatibilitást; egyes asztali funkciók nem érhetők el.";
+"web_extension_install_footer" = "A telepítés után a bővítmény kezelőoldalán módosíthatod az engedélyeket.";
 "web_extension_install_store_link" = "Telepítés az Áruház linkjéről…";
 "web_extension_browse_sources" = "Böngésszen a bővítményboltok között";
 "web_extension_browse_sources_footer" = "A Store Get gombok csak a saját asztali böngészőjüket támogatják. Másolja ki a bővítmény részletes oldalának linkjét, majd használja a Telepítés az áruházból hivatkozást itt: Soulo.";
 "web_extension_store_install_title" = "Telepítsen egy boltbővítményt";
 "extension_page_banner_title" = "Telepítse a következővel: Soulo";
-"extension_page_banner_desc" = "Telepítés előtt ellenőrizze a kompatibilitást és a jogosultságokat.";
-"web_extension_store_install_desc" = "Illessze be egy Chrome-, Edge- vagy Firefox-bővítmény adatlapjának linkjét, és a telepítés megerősítése előtt ellenőrizze a kompatibilitást és a jogosultságokat.";
+"extension_page_banner_desc" = "A telepítés után a bővítmény kezelőoldalán módosíthatod az engedélyeket.";
+"web_extension_store_install_desc" = "A telepítés után a bővítmény kezelőoldalán módosíthatod az engedélyeket.";
 "web_extension_store_link_placeholder" = "Bővítményoldal linkje vagy Chrome-bővítményazonosítója";
 "web_extension_store_invalid_link" = "Illesszen be egy bővítmény részletes oldalának linkjét a Chrome-ból, az Edge-ből vagy a Firefoxból, egy Chrome-bővítményazonosítót vagy egy közvetlen CRX-, XPI- vagy ZIP-linket.";
 "web_extension_store_https_required" = "A bővítménycsomagoknak biztonságos HTTPS-hivatkozást kell használniuk.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Az itt beállított gyorsműveletekhez tartsa nyomva a Soulo ikonját a főképernyőn.";
 
 "ad_block_scope_hint" = "Szűri a webes hirdetéseket, promóciós fedvényeket és kéretlen felugró ablakokat. Ha egy webhely nem működik, csak azon a webhelyen is kikapcsolhatja a szűrést.";
+
+"privacy_clear_browsing_on_exit" = "Előzmények törlése kilépéskor";
+"privacy_clear_browsing_on_exit_desc" = "Törli a meglátogatott oldalakat háttérbe lépéskor vagy újraindításkor. A keresőkifejezések megmaradnak.";

@@ -81,3 +81,58 @@
 "Website cache" = "מטמון האתר";
 "Website icons" = "אייקונים של אתר אינטרנט";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "סנכרון iCloud שומר גיבוי לפני שינוי ההגדרות. נשמרים %lld הגיבויים האחרונים וגם העותק הראשוני.";
+
+"Move tab to new window" = "העברה לחלון חדש";
+
+"Save webpage" = "שמירת דף אינטרנט";
+
+"Webpage" = "דף אינטרנט";
+
+"Website data" = "נתוני אתרים";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "כולל מאמרים שמורים, אינדקס ספרים, כריכות והתקדמות קריאה. קובצי ספרים נספרים בקבצים שהורדו.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "הגדלים הם אומדן. IndexedDB כולל מסדי נתונים ומדיה. גודל לא זמין מוצג כ־—.";
+"Extension temporary cache" = "מטמון זמני של הרחבות";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "מסיר מדיה זמנית של הרחבות. שומר הגדרות, סקריפטים, התקדמות וקבצים שהורדו. יש לסגור תחילה דפי הרחבות וסרטונים ולהשלים הורדות.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "הנתונים הזמניים עדיין בשימוש. יש לסגור דפי הרחבות וסרטונים, להשלים הורדות ולנסות שוב.";
+"Deleting website data can sign you out and remove offline content." = "מחיקת נתונים עלולה לנתק אותך ולהסיר תוכן לא מקוון.";
+
+"Extension startup timed out." = "תם הזמן הקצוב להפעלת התוסף.";
+
+"soulo_extensions" = "הרחבות Soulo";
+
+"Add to Quick Links" = "הוספה לקישורים מהירים";
+"Remove from Quick Links" = "הסרה מקישורים מהירים";
+"Mark bookmarks with a heart to show them here." = "לחצו לחיצה ממושכת על סימנייה וסמנו אותה בלב כדי להציג אותה כאן.";
+
+"Type %@ to confirm." = "הקלידו %@ לאישור.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "הסימניות ממוזגות בין המכשירים. רק מחיקה מפורשת מסירה פריטים.";
+"This deletion also syncs to your other devices." = "המחיקה תסתנכרן גם למכשירים האחרים שלך.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "העתיקו את ההנחיה, הוסיפו דרישות ושלחו לבינה מלאכותית. לאחר מכן הדביקו כאן את ה-JSON לייבוא.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "שמות הקבוצות ב-JSON מקבלים עדיפות. קבוצות תואמות מתמזגות בלי להסיר פלטפורמות קיימות.";
+"Imported %1$d platforms into %2$d groups." = "יובאו %1$d פלטפורמות אל %2$d קבוצות.";
+"No new platforms or group entries." = "אין פלטפורמות או רשומות קבוצה חדשות.";
+
+"App size" = "גודל היישום";
+"App data" = "נתוני היישום";
+"Wallpaper cache" = "מטמון טפטים";
+"Other caches" = "מטמונים אחרים";
+"Temporary files" = "קבצים זמניים";
+"Download task data" = "נתוני משימות הורדה";
+"Settings and records" = "הגדרות ורשומות";
+"Shared app data" = "נתוני יישום משותפים";
+"Other app data" = "נתוני יישום אחרים";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "נתוני היישום אינם כוללים את התוכנה המותקנת. הגודל בדיסק עשוי להיות שונה מהגדרות iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "מחקו תוכן שמור מהרשימה שלו. קבצים זמניים פעילים ומסדי מטמון של המערכת משתחררים כשבטוח לעשות זאת.";
+
+"Current platforms" = "הפלטפורמות הנוכחיות";
+"Import mode" = "מצב ייבוא";
+"Append" = "הוספה";
+"Replace all" = "החלפת הכול";
+"Replace all platforms?" = "להחליף את כל הפלטפורמות?";
+"A settings backup is saved before replacement." = "גיבוי ההגדרות יישמר לפני ההחלפה.";
+
+"Take over web players" = "החלפת נגני אתרים";
+"Only takes over website fullscreen. Extension players stay independent." = "מחליף רק את הניגון במסך מלא באתר. נגני תוספים נשארים עצמאיים.";
+
+"App size is the installed program and resources, not the App Store download size." = "גודל היישום כולל את התוכנית והמשאבים המותקנים, ולא את ההורדה מ-App Store.";
+"App data is the total of the categories below." = "נתוני היישום הם סכום הקטגוריות שלהלן.";

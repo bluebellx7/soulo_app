@@ -24,6 +24,7 @@ struct LibraryFilesView: View {
     @State private var hasLoaded = false
     @ObservedObject private var recentPlayback = RecentLocalPlaybackStore.shared
     @ObservedObject private var bookLibrary = BookLibrary.shared
+    @ObservedObject private var torrents = TorrentDownloadService.shared
     @State private var recentMedia: LocalFile?
     @State private var recentBook: LibraryBook?
     @State private var selected = Set<String>()
@@ -146,7 +147,7 @@ struct LibraryFilesView: View {
         }
         .navigationTitle(embeddedInLibrary ? LanguageManager.shared.localizedString("library") : directory == BookLibrary.directory ? ToolText.text("files") : directory.lastPathComponent)
         .navigationBarTitleDisplayMode(.inline)
-        .mediaPlayerNavigation()
+        .mediaPlayerNavigation(enabled: !embeddedInLibrary)
         .toolbar {
             if libraryPageIsActive {
                 ToolbarItemGroup(placement: .topBarTrailing) {
@@ -562,13 +563,27 @@ struct LibraryFilesView: View {
     }
 
     private func fileMetadata(_ file: LocalFile) -> some View {
-        HStack(spacing: 8) {
-            if file.directory {
-                Text(ToolText.text("file_folder")).font(.caption)
-            } else {
-                Text(file.info.badge)
-                    .font(.system(.caption2, design: .rounded).weight(.semibold))
-                Text(ByteCountFormatter.string(fromByteCount: file.info.size, countStyle: .file))
+        let partial = file.directory ? nil : torrents.partialFileProgress(for: file.url)
+        return VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 8) {
+                if file.directory {
+                    Text(ToolText.text("file_folder")).font(.caption)
+                } else {
+                    Text(file.info.badge)
+                        .font(.system(.caption2, design: .rounded).weight(.semibold))
+                    if let partial {
+                        Text("\(ToolText.text("torrent_incomplete")) · \(partial.progress.formatted(.percent.precision(.fractionLength(1))))")
+                            .font(.caption.monospacedDigit())
+                            .accessibilityIdentifier("files.partial.\(file.url.lastPathComponent)")
+                    } else {
+                        Text(ByteCountFormatter.string(fromByteCount: file.info.size, countStyle: .file))
+                            .font(.caption.monospacedDigit())
+                            .accessibilityIdentifier("files.size.\(file.url.lastPathComponent)")
+                    }
+                }
+            }
+            if let partial {
+                Text("\(ByteCountFormatter.string(fromByteCount: partial.completed, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: partial.total, countStyle: .file))")
                     .font(.caption.monospacedDigit())
                     .accessibilityIdentifier("files.size.\(file.url.lastPathComponent)")
             }

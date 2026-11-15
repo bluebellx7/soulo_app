@@ -16,9 +16,24 @@ struct TorrentDownloadJob: Codable, Identifiable, Equatable {
     var directory: String
     // Nil in older ledgers. Only system interruptions opt into automatic resume.
     var resumeAfterSystemPause: Bool? = nil
+    var verifiedFileBytes: [Int64]? = nil
     var isActive: Bool { [.metadata, .starting, .downloading].contains(state) }
     var priorities: [Bool] { files.map { selected.contains($0.index) && !$0.pad } }
     var selectedBytes: Int64 { files.filter { selected.contains($0.index) && !$0.pad }.reduce(0) { $0 + $1.size } }
+
+    func verifiedProgress(in snapshot: TorrentSnapshot) -> (completed: Int64, total: Int64)? {
+        guard !snapshot.checking, !selected.isEmpty else { return nil }
+        // Wanted totals can include boundary pieces from unselected files.
+        // Prefer the engine's verified per-file bytes for the actual selection.
+        if snapshot.fileProgress.count == files.count, files.allSatisfy({ snapshot.fileProgress.indices.contains($0.index) }) {
+            let completed = files.filter { selected.contains($0.index) && !$0.pad }.reduce(Int64(0)) {
+                $0 + min($1.size, max(0, snapshot.fileProgress[$1.index]))
+            }
+            return (completed, selectedBytes)
+        }
+        guard snapshot.total == selectedBytes else { return nil }
+        return (min(selectedBytes, max(0, snapshot.completed)), selectedBytes)
+    }
 }
 
 @MainActor
@@ -111,6 +126,20 @@ final class TorrentDownloadService: ObservableObject {
             guard let file = job.files.first(where: { $0.path.precomposedStringWithCanonicalMapping == relative }),
                   canStream(job.id, file: file) else { return nil }
             return (job.id, file)
+        }
+        return nil
+    }
+
+    func partialFileProgress(for url: URL) -> (completed: Int64, total: Int64, progress: Double)? {
+        let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+        for job in jobs where job.state != .finished {
+            let root = URL(fileURLWithPath: job.directory).standardizedFileURL.resolvingSymlinksInPath().path + "/"
+            guard path.hasPrefix(root), let file = job.files.first(where: {
+                $0.path.precomposedStringWithCanonicalMapping == String(path.dropFirst(root.count)).precomposedStringWithCanonicalMapping
+            }), !file.pad else { continue }
+            let values = snapshots[job.id].flatMap { $0.checking ? nil : $0.fileProgress } ?? job.verifiedFileBytes ?? []
+            let bytes = values.indices.contains(file.index) ? min(file.size, max(0, values[file.index])) : 0
+            return (bytes, file.size, file.size > 0 ? Double(bytes) / Double(file.size) : 0)
         }
         return nil
     }
@@ -249,6 +278,7 @@ final class TorrentDownloadService: ObservableObject {
         do {
             if let data = try await worker.save(id: id, pause: pause), self.job(id) != nil {
                 try data.write(to: dataURL(id, "resume"), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+                persist()
             }
         } catch { storageError = error.localizedDescription }
     }
@@ -290,6 +320,9 @@ final class TorrentDownloadService: ObservableObject {
         for value in values {
             guard let job = job(value.id), job.isActive else { continue }
             snapshots[value.id] = value
+            if !value.checking, value.fileProgress.count == job.files.count, let index = jobs.firstIndex(where: { $0.id == job.id }) {
+                jobs[index].verifiedFileBytes = value.fileProgress
+            }
             if !value.error.isEmpty { fail(value.id, error: NSError(domain: "Torrent", code: 1, userInfo: [NSLocalizedDescriptionKey: value.error])); continue }
             if job.state == .metadata, let metadata = value.metadata {
                 generations[job.id] = UUID()
@@ -302,11 +335,11 @@ final class TorrentDownloadService: ObservableObject {
                 await checkpointPause(job.id).value
             } else if job.state == .metadata && Date().timeIntervalSince(metadataStarted[job.id] ?? Date()) > 300 {
                 fail(job.id, error: TorrentTaskError.metadataTimeout)
-            } else if job.state == .downloading, !value.checking, value.total == job.selectedBytes {
+            } else if job.state == .downloading, let progress = job.verifiedProgress(in: value) {
                 // Initial checking/priority snapshots can temporarily report zero.
                 // Only replace persisted progress once the selected data is verified.
-                self.manager.updateProgress(id: job.id, completed: value.completed, total: value.total)
-                if value.finished && !job.selected.isEmpty && value.completed >= job.selectedBytes {
+                self.manager.updateProgress(id: job.id, completed: progress.completed, total: progress.total)
+                if value.finished && progress.completed >= job.selectedBytes {
                     mutate(job.id) { $0.state = .finished }
                     await checkpointPause(job.id).value // Do not seed after completion.
                     self.manager.markFinished(id: job.id)

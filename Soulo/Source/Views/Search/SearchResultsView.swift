@@ -41,8 +41,15 @@ struct SearchResultsView: View {
     @State private var showTopTabRecovery = false
     @State private var topTabRecoveryTask: Task<Void, Never>?
     @State private var showGroupPicker = false
-    @State private var platformNavigationLeftRoot = false
+    @State private var platformBarHiddenByPageTap = false
     @State private var pageReady = false
+    @State private var pageEdgePalette: WebPageEdgePalette?
+    @AppStorage(AppConstants.StorageKeys.extendPageBackground) private var extendPageBackground = false
+    @AppStorage(AppConstants.StorageKeys.pageBackgroundGradient) private var pageBackgroundGradient = false
+    private var displayedPageEdgePalette: WebPageEdgePalette? { pageEdgePalette?.forDisplay(gradients: pageBackgroundGradient) }
+    private var pageEdgePublisher: AnyPublisher<WebPageEdgePalette?, Never> {
+        tabManager.activeWebViewModel?.$pageEdgePalette.eraseToAnyPublisher() ?? Just(nil).eraseToAnyPublisher()
+    }
     @State private var userScriptOpenedTabs: [String: UUID] = [:]
     /// Incremented each time performSearch runs; compared to detect new vs. returning
     @State private var lastSearchID: UUID = UUID()
@@ -80,16 +87,28 @@ struct SearchResultsView: View {
         return !platformStore.visiblePlatforms(for: searchVM.selectedRegion).isEmpty
     }
 
-    private var platformNavigationPublisher: AnyPublisher<Bool, Never> {
+    private struct PlatformSelectionState: Equatable {
+        let id: UUID
+        let region: PlatformRegion
+        let isVisible: Bool
+    }
+    // Platform equality compares identity only. Keep the selected engine valid
+    // when a drag changes its region or a visibility control removes it.
+    private var platformSelectionState: [PlatformSelectionState] {
+        platformStore.platforms.map { .init(id: $0.id, region: $0.region, isVisible: $0.isVisible) }
+    }
+
+    private var platformBarAutoHidePublisher: AnyPublisher<Bool, Never> {
         if let model = tabManager.activeWebViewModel {
-            return model.$hasNavigatedFromPlatformSearch.removeDuplicates().eraseToAnyPublisher()
+            return model.$platformBarHiddenByPageTap.removeDuplicates().eraseToAnyPublisher()
         }
         return Just(false).eraseToAnyPublisher()
     }
 
     var body: some View {
         browserSurface
-        .onReceive(platformNavigationPublisher) { platformNavigationLeftRoot = $0 }
+        .onReceive(pageEdgePublisher) { pageEdgePalette = $0 }
+        .onReceive(platformBarAutoHidePublisher) { platformBarHiddenByPageTap = $0 }
         .onCompatibleChange(of: tabManager.activeTab?.id) { _, _ in
             cancelAIInteraction()
             if let vm = tabManager.activeWebViewModel {
@@ -143,6 +162,7 @@ struct SearchResultsView: View {
             }
         }
         .onAppear {
+            tabManager.activeWebViewModel?.resetPlatformBarAutoHide()
             if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
                !searchVM.isIncognito, #available(iOS 18.4, *) {
                 NativeWebExtensionRuntime.shared.attach(tabManager: tabManager)
@@ -153,6 +173,22 @@ struct SearchResultsView: View {
                 voiceOverEnabled: voiceOverEnabled
             ) {
                 isFullscreen = true
+            }
+
+            // Extension actions already loaded their own document. Restoring
+            // the last platform is not a request to replace that download page.
+            if tabManager.activeWebViewModel?.currentURL?.scheme?.lowercased() == "webkit-extension" {
+                lastSearchID = searchVM.searchID
+                return
+            }
+
+            // A link chosen in browser controls already has an explicit
+            // destination. Only suppress the request that was current then; a
+            // later search must still replace that page.
+            if let tab = tabManager.activeTab,
+               tab.browserControlSearchID == searchVM.searchID {
+                lastSearchID = searchVM.searchID
+                return
             }
 
             // Selection search already created and loaded its own tab before
@@ -199,6 +235,11 @@ struct SearchResultsView: View {
             lastSearchID = searchVM.searchID
             loadCurrentPlatformURL()
         }
+        .onCompatibleChange(of: autoHidePlatformBar) { _, _ in
+            // Enabling waits for a fresh page tap, including when toggled from
+            // platform management or the home search menu.
+            for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
+        }
         .onCompatibleChange(of: keepFullscreenBrowsing) { _, enabled in
             guard PersistentFullscreenBehavior.shouldEnter(
                 enabled: enabled,
@@ -211,7 +252,7 @@ struct SearchResultsView: View {
         }
         .onCompatibleChange(of: defaultSearch.overrides) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
         .onCompatibleChange(of: platformStore.customGroups) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
-        .onCompatibleChange(of: platformStore.platforms) { _, _ in
+        .onCompatibleChange(of: platformSelectionState) { _, _ in
             synchronizeSelectedPlatformAfterStoreChange()
         }
         .background {
@@ -261,7 +302,7 @@ struct SearchResultsView: View {
 
                         platformSwitcher
                     }
-                    .environment(\.colorScheme, usesDarkBrowserChrome ? .dark : appColorScheme)
+                    .environment(\.colorScheme, extendedTopScheme ?? (usesDarkBrowserChrome ? .dark : appColorScheme))
                 }
 
                 // WebView — mount only the active tab; WebViewModel keeps the WKWebView alive for instant restores.
@@ -305,6 +346,7 @@ struct SearchResultsView: View {
                             bottomSafeAreaInset: geo.safeAreaInsets.bottom
                         )
                         .id(activeTab.id)
+                        .environment(\.colorScheme, extendPageBackground ? (displayedPageEdgePalette?.bottomScheme ?? appColorScheme) : appColorScheme)
                         .transition(.opacity)
                     }
 
@@ -347,6 +389,8 @@ struct SearchResultsView: View {
             Group {
                 if isShowingNewTabPage {
                     Color.clear
+                } else if extendPageBackground, let model = tabManager.activeWebViewModel {
+                    WebPageEdgeBackground(model: model)
                 } else if showsInitialLoading {
                     // Match the loading canvas through the chrome and safe
                     // areas, independently of webpage dark-mode preferences.
@@ -391,6 +435,7 @@ struct SearchResultsView: View {
         // Keep page controls clear of cameras and system bars on either side.
         .ignoresSafeArea(isFullscreen ? .container : [], edges: .vertical)
         .statusBarHidden(isFullscreen)
+        .preferredColorScheme(extendedTopScheme)
         .persistentSystemOverlays(isFullscreen ? .hidden : .automatic)
         .overlay(alignment: .top) {
             if showLoginAlert {
@@ -420,6 +465,10 @@ struct SearchResultsView: View {
                 }
             }
         }
+    }
+
+    private var extendedTopScheme: ColorScheme? {
+        extendPageBackground && !isShowingNewTabPage ? displayedPageEdgePalette?.topScheme : nil
     }
 
     private var usesDarkBrowserChrome: Bool {
@@ -515,14 +564,15 @@ struct SearchResultsView: View {
     private var platformSwitcher: some View {
         Group {
             if hasVisiblePlatforms && (!searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch)
-                && (!autoHidePlatformBar || !platformNavigationLeftRoot) {
+                && (!autoHidePlatformBar || !platformBarHiddenByPageTap) {
                 platformBar
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: autoHidePlatformBar && platformNavigationLeftRoot)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: autoHidePlatformBar && platformBarHiddenByPageTap)
         .onCompatibleChange(of: searchVM.selectedPlatform?.id) { _, _ in
             guard !searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch else { return }
+            guard tabManager.activeWebViewModel?.currentURL?.scheme?.lowercased() != "webkit-extension" else { return }
             loadCurrentPlatformURL()
         }
     }
@@ -532,7 +582,8 @@ struct SearchResultsView: View {
             PlatformTabBar(
                 platforms: currentPlatforms,
                 selectedPlatform: $searchVM.selectedPlatform,
-                usesContrastingControlSurface: !showTopSearchBar
+                usesContrastingControlSurface: !showTopSearchBar,
+                onSelection: { _ in loadCurrentPlatformURL() }
             )
             .frame(maxWidth: .infinity)
 
@@ -574,7 +625,7 @@ struct SearchResultsView: View {
                 ?? platformStore.regionDisplayName(for: searchVM.selectedRegion)
         )
         .accessibilityHint(languageManager.localizedString("accessibility_group_picker_hint"))
-        .popover(isPresented: $showGroupPicker, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+        .compatiblePopover(isPresented: $showGroupPicker, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 0) {
@@ -685,6 +736,7 @@ struct SearchResultsView: View {
 
         let target = platforms[targetIndex]
         searchVM.selectedPlatform = target
+        if !searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch { loadCurrentPlatformURL() }
         AppAccessibility.announce(
             AppAccessibility.formatted(
                 "accessibility_platform_loading",
@@ -718,10 +770,11 @@ struct SearchResultsView: View {
     }
 
     private func loadCurrentPlatformURL() {
-        guard let webVM = tabManager.activeWebViewModel else { return }
         guard let platform = searchVM.selectedPlatform ?? currentPlatforms.first else { return }
-        guard let tabID = tabManager.activeTab?.id else { return }
         let keyword = searchVM.currentKeyword
+        guard let tab = tabManager.prepareTabForPlatformNavigation(keyword: keyword, platform: platform) else { return }
+        let webVM = tab.webViewModel
+        let tabID = tab.id
         let request = SearchNavigationRequest(searchID: searchVM.searchID, tabID: tabID,
             platformID: platform.id, scopeID: searchVM.selectedSearchScope.id, template: platform.searchURLTemplate, keyword: keyword)
         guard lastNavigationRequest != request else { return }
@@ -971,6 +1024,6 @@ struct SearchResultsView: View {
             }
         }
 
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        HapticsManager.medium()
     }
 }

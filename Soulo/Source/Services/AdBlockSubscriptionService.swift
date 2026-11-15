@@ -49,6 +49,18 @@ struct AdBlockNetworkRule: Codable, Equatable, Hashable {
         case urlFilter, resourceTypes, loadTypes, ifDomains, unlessDomains, isException, caseSensitive, exceptionScope
     }
 
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(urlFilter, forKey: .urlFilter)
+        if !resourceTypes.isEmpty { try c.encode(resourceTypes, forKey: .resourceTypes) }
+        if !loadTypes.isEmpty { try c.encode(loadTypes, forKey: .loadTypes) }
+        if !ifDomains.isEmpty { try c.encode(ifDomains, forKey: .ifDomains) }
+        if !unlessDomains.isEmpty { try c.encode(unlessDomains, forKey: .unlessDomains) }
+        if isException { try c.encode(true, forKey: .isException) }
+        if caseSensitive { try c.encode(true, forKey: .caseSensitive) }
+        if exceptionScope != "network" { try c.encode(exceptionScope, forKey: .exceptionScope) }
+    }
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         urlFilter = try c.decode(String.self, forKey: .urlFilter)
@@ -71,6 +83,19 @@ struct AdBlockCosmeticRule: Codable, Equatable, Hashable {
         self.selector = selector
         self.ifDomains = ifDomains
         self.unlessDomains = unlessDomains
+    }
+    enum CodingKeys: String, CodingKey { case selector, ifDomains, unlessDomains }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        selector = try c.decode(String.self, forKey: .selector)
+        ifDomains = try c.decodeIfPresent([String].self, forKey: .ifDomains) ?? []
+        unlessDomains = try c.decodeIfPresent([String].self, forKey: .unlessDomains) ?? []
+    }
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(selector, forKey: .selector)
+        if !ifDomains.isEmpty { try c.encode(ifDomains, forKey: .ifDomains) }
+        if !unlessDomains.isEmpty { try c.encode(unlessDomains, forKey: .unlessDomains) }
     }
 }
 
@@ -104,6 +129,19 @@ struct ParsedAdBlockRules: Codable, Equatable {
         case networkURLFilters, cosmeticSelectors, networkRules, cosmeticRules, cosmeticExceptions, parserVersion
     }
 
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(networkRules, forKey: .networkRules)
+        try c.encode(cosmeticRules, forKey: .cosmeticRules)
+        if !cosmeticExceptions.isEmpty { try c.encode(cosmeticExceptions, forKey: .cosmeticExceptions) }
+        try c.encode(parserVersion, forKey: .parserVersion)
+        // Legacy projections are derived, not a second full copy of every rule.
+        let network = Array(Set(networkRules.filter { !$0.isException }.map(\.urlFilter))).sorted()
+        let cosmetic = Array(Set(cosmeticRules.filter { $0.ifDomains.isEmpty && $0.unlessDomains.isEmpty }.map(\.selector))).sorted()
+        if networkURLFilters != network { try c.encode(networkURLFilters, forKey: .networkURLFilters) }
+        if cosmeticSelectors != cosmetic { try c.encode(cosmeticSelectors, forKey: .cosmeticSelectors) }
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         networkURLFilters = try container.decodeIfPresent([String].self, forKey: .networkURLFilters) ?? []
@@ -114,6 +152,12 @@ struct ParsedAdBlockRules: Codable, Equatable {
         cosmeticExceptions = try container.decodeIfPresent([AdBlockCosmeticRule].self, forKey: .cosmeticExceptions) ?? []
         parserVersion = try container.decodeIfPresent(Int.self, forKey: .parserVersion) ?? 0
 
+        if !container.contains(.networkURLFilters) {
+            networkURLFilters = Array(Set(networkRules.filter { !$0.isException }.map(\.urlFilter))).sorted()
+        }
+        if !container.contains(.cosmeticSelectors) {
+            cosmeticSelectors = Array(Set(cosmeticRules.filter { $0.ifDomains.isEmpty && $0.unlessDomains.isEmpty }.map(\.selector))).sorted()
+        }
         if networkRules.isEmpty {
             networkRules = networkURLFilters.map {
                 AdBlockNetworkRule(urlFilter: $0, resourceTypes: ["script", "image", "raw", "popup"])
@@ -273,6 +317,11 @@ enum AdBlockRuleParser {
 
 @MainActor
 final class AdBlockSubscriptionService: ObservableObject {
+    enum SubscriptionInputError: Error, Equatable {
+        case invalidInput
+        case duplicateURL
+    }
+
     // Opening the app must not decode the entire subscription archive on the
     // main actor. The merged rules remain available to WebKit independently.
     static let shared = AdBlockSubscriptionService(loadStoredRulesAtInitialization: false)
@@ -291,6 +340,7 @@ final class AdBlockSubscriptionService: ObservableObject {
     private let session: URLSession
     private let rulesArchiveURL: URL?
     private let autoUpdateInterval: TimeInterval = 24 * 60 * 60
+    private var pendingSubscriptionIDs = Set<String>()
 
     init(
         subscriptionsKey: String = "soulo_ad_block_subscriptions",
@@ -346,6 +396,56 @@ final class AdBlockSubscriptionService: ObservableObject {
         subscriptions.filter(\.isEnabled).count
     }
 
+    nonisolated static func normalizedSubscriptionURL(_ value: String) -> URL? {
+        let text = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard text.count <= 4096,
+              text.rangeOfCharacter(from: .whitespacesAndNewlines.union(.controlCharacters)) == nil,
+              var components = URLComponents(string: text),
+              let scheme = components.scheme?.lowercased(), ["http", "https"].contains(scheme),
+              let host = components.host, !host.isEmpty,
+              components.user == nil, components.password == nil else { return nil }
+        if let port = components.port, !(1...65535).contains(port) { return nil }
+        components.scheme = scheme
+        components.host = host.lowercased()
+        components.fragment = nil
+        if components.path.isEmpty { components.path = "/" }
+        if components.port == (scheme == "https" ? 443 : 80) { components.port = nil }
+        return components.url
+    }
+
+    func addSubscription(name: String, urlString: String) throws -> AdBlockSubscription {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.count <= 80,
+              let url = Self.normalizedSubscriptionURL(urlString) else {
+            throw SubscriptionInputError.invalidInput
+        }
+        guard !subscriptions.contains(where: { Self.normalizedSubscriptionURL($0.urlString) == url }) else {
+            throw SubscriptionInputError.duplicateURL
+        }
+        let subscription = AdBlockSubscription(id: "custom-" + UUID().uuidString.lowercased(), name: name,
+            urlString: url.absoluteString, isEnabled: true, lastUpdatedAt: nil,
+            networkRuleCount: 0, cosmeticRuleCount: 0, errorMessage: "")
+        subscriptions.insert(subscription, at: 0)
+        userDefaults.removeObject(forKey: autoUpdateCheckKey)
+        saveSubscriptions()
+        return subscription
+    }
+
+    func isCustomSubscription(_ subscription: AdBlockSubscription) -> Bool {
+        !Self.defaultSubscriptions().contains { $0.id == subscription.id }
+    }
+
+    func removeSubscription(_ subscription: AdBlockSubscription) {
+        guard isCustomSubscription(subscription), subscriptions.contains(where: { $0.id == subscription.id }) else { return }
+        var storedRules = storedParsedRulesByID()
+        storedRules.removeValue(forKey: subscription.id)
+        pendingSubscriptionIDs.remove(subscription.id)
+        subscriptions.removeAll { $0.id == subscription.id }
+        saveSubscriptions()
+        if let data = try? JSONEncoder().encode(storedRules) { saveParsedRulesArchive(data) }
+        rebuildCacheFrom(parsedByID: storedRules)
+    }
+
     func setEnabled(_ enabled: Bool, for subscription: AdBlockSubscription) {
         guard let index = subscriptions.firstIndex(where: { $0.id == subscription.id }) else { return }
         let storedRules = storedParsedRulesByID()
@@ -360,6 +460,7 @@ final class AdBlockSubscriptionService: ObservableObject {
     }
 
     func updateEnabledSubscriptionsIfNeeded() async {
+        await compactArchivesIfNeeded()
         guard enabledSubscriptionCount > 0, !isUpdating else { return }
         let defaults = userDefaults, key = cachedRulesKey
         let rules = await Task.detached(priority: .utility) {
@@ -373,8 +474,30 @@ final class AdBlockSubscriptionService: ObservableObject {
     }
 
     func updateEnabledSubscriptions(reportErrors: Bool = true, recordAutomaticCheck: Bool = false) async {
+        await updateSubscriptions(ids: nil, reportErrors: reportErrors, recordAutomaticCheck: recordAutomaticCheck)
+        await updatePendingSubscriptions()
+    }
+
+    func updateSubscription(_ subscription: AdBlockSubscription) async {
+        if isUpdating {
+            pendingSubscriptionIDs.insert(subscription.id)
+            return
+        }
+        await updateSubscriptions(ids: [subscription.id], reportErrors: true, recordAutomaticCheck: false)
+        await updatePendingSubscriptions()
+    }
+
+    private func updatePendingSubscriptions() async {
+        while !pendingSubscriptionIDs.isEmpty, !isUpdating, !Task.isCancelled {
+            let pending = pendingSubscriptionIDs
+            pendingSubscriptionIDs.removeAll()
+            await updateSubscriptions(ids: pending, reportErrors: true, recordAutomaticCheck: false)
+        }
+    }
+
+    private func updateSubscriptions(ids: Set<String>?, reportErrors: Bool, recordAutomaticCheck: Bool) async {
         guard !isUpdating else { return }
-        let candidates = subscriptions.filter(\.isEnabled)
+        let candidates = subscriptions.filter { $0.isEnabled && (ids?.contains($0.id) ?? true) }
         completedUpdates = 0; totalUpdates = candidates.count
         isUpdating = true
         if reportErrors {
@@ -455,9 +578,12 @@ final class AdBlockSubscriptionService: ObservableObject {
     }
 
     func resetToDefaults() {
-        let storedRules = storedParsedRulesByID()
+        pendingSubscriptionIDs.removeAll()
+        let defaultIDs = Set(Self.defaultSubscriptions().map(\.id))
+        let storedRules = storedParsedRulesByID().filter { defaultIDs.contains($0.key) }
         subscriptions = Self.defaultSubscriptions()
         saveSubscriptions()
+        if let data = try? JSONEncoder().encode(storedRules) { saveParsedRulesArchive(data) }
         rebuildCacheFrom(parsedByID: storedRules)
     }
 
@@ -470,6 +596,60 @@ final class AdBlockSubscriptionService: ObservableObject {
         } else {
             subscriptions = Self.defaultSubscriptions()
             if persistChanges { saveSubscriptions() }
+        }
+    }
+
+    private var archiveCompactionTask: Task<Void, Never>?
+    func compactArchivesIfNeeded() async {
+        if let task = archiveCompactionTask { await task.value; return }
+        let urls = [rulesArchiveURL, Self.mergedArchiveURL(userDefaults: userDefaults, key: cachedRulesKey)].compactMap { $0 }
+        let task = Task { @MainActor in
+            let prepared = await Task.detached(priority: .utility) {
+                urls.compactMap { url -> (URL, Date, Int, Data)? in
+                    guard let values = try? url.resourceValues(forKeys: [.isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey]),
+                          values.isSymbolicLink != true, let size = values.fileSize, size > 4096,
+                          let date = values.contentModificationDate, let data = try? Data(contentsOf: url),
+                          !AdBlockRuleArchive.isPacked(data), let packed = try? AdBlockRuleArchive.pack(data), packed.count < data.count else { return nil }
+                    return (url, date, size, packed)
+                }
+            }.value
+            for (original, date, size, packed) in prepared {
+                var url = original; url.removeAllCachedResourceValues()
+                guard let current = try? url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey]),
+                      current.fileSize == size, current.contentModificationDate == date else { continue }
+                // Commit on the owner actor so an update cannot race this
+                // atomic replacement with a newer downloaded rule archive.
+                let saved = userDefaults.data(forKey: AdBlockAutomaticUpdateState.storageKey)
+                    .flatMap { try? JSONDecoder().decode(AdBlockAutomaticUpdateState.self, from: $0) }
+                let validated = saved.flatMap { stamp in AdBlockAutomaticUpdateState.snapshot(archive: url, defaults: userDefaults, hasRules: stamp.hasRules).map { $0 == stamp } } == true
+                do {
+                    try packed.write(to: url, options: .atomic)
+                    if url.lastPathComponent == "merged-rules.json", validated, let saved {
+                        AdBlockAutomaticUpdateState.record(archive: url, defaults: userDefaults, hasRules: saved.hasRules)
+                    }
+                } catch { /* Keep the readable original when compaction fails. */ }
+            }
+        }
+        archiveCompactionTask = task
+        await task.value; archiveCompactionTask = nil
+    }
+
+    private var preferencesReloadTask: Task<Void, Never>?
+    /// Restoring a small settings backup must not decode and merge the entire
+    /// rule archive on the UI thread. Keep compiled rules active until ready.
+    func reloadFromDefaultsInBackground() {
+        preferencesReloadTask?.cancel()
+        load(rebuildForNewSubscriptions: false)
+        let archiveURL = rulesArchiveURL
+        let legacy = userDefaults.data(forKey: "\(cachedRulesKey)_by_id")
+        preferencesReloadTask = Task { [weak self] in
+            let stored = await Task.detached(priority: .utility) {
+                Self.readStoredRules(archiveURL: archiveURL, legacy: legacy)
+            }.value
+            guard let self, !Task.isCancelled else { return }
+            self.finishArchiveMigration(stored)
+            self.repairOutdatedRuleMetadata(stored.rules)
+            await self.saveUpdatedRulesInBackground(stored.rules, saveArchive: false)
         }
     }
 
@@ -547,7 +727,7 @@ final class AdBlockSubscriptionService: ObservableObject {
         guard let rulesArchiveURL else { return false }
         do {
             try FileManager.default.createDirectory(at: rulesArchiveURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try data.write(to: rulesArchiveURL, options: .atomic)
+            try AdBlockRuleArchive.pack(data).write(to: rulesArchiveURL, options: .atomic)
             return true
         } catch {
             lastError = error.localizedDescription
@@ -591,8 +771,8 @@ final class AdBlockSubscriptionService: ObservableObject {
         }
 
         return ParsedAdBlockRules(
-            networkURLFilters: network.values,
-            cosmeticSelectors: cosmetic.values,
+            networkURLFilters: network.values.sorted(),
+            cosmeticSelectors: cosmetic.values.sorted(),
             networkRules: structuredNetwork.values,
             cosmeticRules: structuredCosmetic.values,
             cosmeticExceptions: cosmeticExceptions.values
@@ -600,9 +780,6 @@ final class AdBlockSubscriptionService: ObservableObject {
     }
 
     private func saveUpdatedRulesInBackground(_ parsedByID: [String: ParsedAdBlockRules], saveArchive: Bool) async {
-        let archiveData = saveArchive ? await Task.detached(priority: .utility) {
-            try? JSONEncoder().encode(parsedByID)
-        }.value : nil
         // A toggle or iCloud refresh can arrive while the worker is preparing
         // the cache. Retry with the current subscriptions before committing.
         while true {
@@ -615,11 +792,17 @@ final class AdBlockSubscriptionService: ObservableObject {
                 defer { BrowserStartupTrace.markThread("subscription_merge_end") }
                 let merged = Self.mergeRules(parsedByID: parsedByID, subscriptions: snapshot)
                 let unchanged = Self.cachedRules(userDefaults: defaults, key: key) == merged
-                return (merged, unchanged, unchanged && hasVersion ? nil : try? JSONEncoder().encode(merged))
+                // A list may be deleted while its download/encoding is in flight.
+                // Never put deleted subscriptions back into the persistent archive.
+                let liveIDs = Set(snapshot.map(\.id))
+                let archive = saveArchive ? (try? AdBlockRuleArchive.pack(JSONEncoder().encode(parsedByID.filter { liveIDs.contains($0.key) }))) : nil
+                let encoded = unchanged && hasVersion ? nil : try? AdBlockRuleArchive.pack(JSONEncoder().encode(merged))
+                return (merged, unchanged, encoded, archive)
             }.value
+            guard !Task.isCancelled else { return }
             guard snapshot == subscriptions, revision == userDefaults.double(forKey: versionKey) else { continue }
             saveSubscriptions()
-            if let archiveData { saveParsedRulesArchive(archiveData) }
+            if let archiveData = prepared.3 { saveParsedRulesArchive(archiveData) }
             if prepared.1, userDefaults.object(forKey: versionKey) != nil {
                 recordValidatedAutomaticUpdateCache(prepared.0)
             } else if let data = prepared.2 {
@@ -633,7 +816,7 @@ final class AdBlockSubscriptionService: ObservableObject {
         if let url = Self.mergedArchiveURL(userDefaults: userDefaults, key: cachedRulesKey) {
             do {
                 try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try data.write(to: url, options: .atomic)
+                try AdBlockRuleArchive.pack(data).write(to: url, options: .atomic)
                 userDefaults.removeObject(forKey: cachedRulesKey)
                 Self.decodedCache.setObject(RuleBox(merged), forKey: url.path as NSString, cost: data.count)
             } catch {
@@ -677,7 +860,7 @@ final class AdBlockSubscriptionService: ObservableObject {
         let cacheKey = url.path as NSString
         if let box = decodedCache.object(forKey: cacheKey) { return box.rules }
         guard let data = try? Data(contentsOf: url),
-              let decoded = try? JSONDecoder().decode(ParsedAdBlockRules.self, from: data),
+              let decoded = try? AdBlockRuleArchive.decode(ParsedAdBlockRules.self, from: data),
               decoded.parserVersion == AdBlockRuleParser.version else { return .empty }
         decodedCache.setObject(RuleBox(decoded), forKey: cacheKey, cost: data.count)
         return decoded
@@ -693,7 +876,7 @@ final class AdBlockSubscriptionService: ObservableObject {
                 id: "easylist",
                 name: "EasyList",
                 urlString: "https://easylist.to/easylist/easylist.txt",
-                isEnabled: true,
+                isEnabled: false,
                 lastUpdatedAt: nil,
                 networkRuleCount: 0,
                 cosmeticRuleCount: 0,
@@ -713,7 +896,7 @@ final class AdBlockSubscriptionService: ObservableObject {
                 id: "easylist-china",
                 name: "EasyList China",
                 urlString: "https://easylist-downloads.adblockplus.org/easylistchina.txt",
-                isEnabled: true,
+                isEnabled: false,
                 lastUpdatedAt: nil,
                 networkRuleCount: 0,
                 cosmeticRuleCount: 0,
@@ -753,7 +936,7 @@ final class AdBlockSubscriptionService: ObservableObject {
                 id: "adguard-annoyances",
                 name: "AdGuard Annoyances Filter",
                 urlString: "https://filters.adtidy.org/extension/chromium/filters/14.txt",
-                isEnabled: true,
+                isEnabled: false,
                 lastUpdatedAt: nil,
                 networkRuleCount: 0,
                 cosmeticRuleCount: 0,
@@ -808,5 +991,23 @@ private struct OrderedCosmeticRuleSet {
         guard values.count < limit, !value.selector.isEmpty, !seen.contains(value) else { return }
         seen.insert(value)
         values.append(value)
+    }
+}
+
+/// Lossless local cache compression. Old JSON archives remain readable.
+enum AdBlockRuleArchive {
+    private static let header = Data("SouloRulesLZFSE1\n".utf8)
+    static func isPacked(_ data: Data) -> Bool { data.starts(with: header) }
+    static func pack(_ data: Data) throws -> Data {
+        guard data.count > 4096, !isPacked(data) else { return data }
+        let compressed = try (data as NSData).compressed(using: .lzfse) as Data
+        return compressed.count + header.count < data.count ? header + compressed : data
+    }
+    static func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
+        let json: Data
+        if data.starts(with: header) {
+            json = try (data.dropFirst(header.count) as NSData).decompressed(using: .lzfse) as Data
+        } else { json = data }
+        return try JSONDecoder().decode(type, from: json)
     }
 }

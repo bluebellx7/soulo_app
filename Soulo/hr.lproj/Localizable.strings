@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Jedan upit, 40+ platformi";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Pretražite ili unesite URL";
 "privacy_search_placeholder" = "Privatno pretraživanje ili unesite URL";
 "search" = "Traži";
@@ -354,7 +354,7 @@
 "voice_stop" = "Stani";
 "voice_record" = "Zapis";
 "batch_import" = "Skupni uvoz";
-"batch_import_format" = "Zalijepite JSON u donji format";
+"batch_import_format" = "Ovdje zalijepite JSON";
 "batch_import_group" = "Dodaj grupi (neobavezno)";
 "batch_import_group_placeholder" = "npr. Filmovi";
 "batch_import_film_entry" = "Otvorite unaprijed postavljene postavke filmske platforme";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Nije moguće instalirati proširenje";
 "extension_permissions_summary" = "%d dopuštenja · %d pravila web stranice";
 "extension_untitled" = "Proširenje bez naslova";
-"web_extension_install_footer" = "Instalirajte kompatibilna proširenja putem poveznice trgovine ili uvezite CRX, XPI, ZIP ili mapu proširenja. Provjerite dozvole i kompatibilnost; neke funkcije za računala nisu dostupne.";
+"web_extension_install_footer" = "Nakon instalacije možete promijeniti dopuštenja na stranici za upravljanje proširenjem.";
 "web_extension_install_store_link" = "Instaliraj iz trgovine Link…";
 "web_extension_browse_sources" = "Pregledajte trgovine proširenja";
 "web_extension_browse_sources_footer" = "Gumbi Store Get podržavaju samo vlastite preglednike stolnih računala. Kopirajte vezu na stranicu s pojedinostima proširenja, a zatim upotrijebite vezu Instaliraj iz trgovine u Soulo.";
 "web_extension_store_install_title" = "Instalirajte proširenje trgovine";
 "extension_page_banner_title" = "Instaliraj s Soulo";
-"extension_page_banner_desc" = "Prije instalacije provjerite kompatibilnost i dozvole.";
-"web_extension_store_install_desc" = "Zalijepite poveznicu na stranicu proširenja za Chrome, Edge ili Firefox te provjerite kompatibilnost i dozvole prije potvrde instalacije.";
+"extension_page_banner_desc" = "Nakon instalacije možete promijeniti dopuštenja na stranici za upravljanje proširenjem.";
+"web_extension_store_install_desc" = "Nakon instalacije možete promijeniti dopuštenja na stranici za upravljanje proširenjem.";
 "web_extension_store_link_placeholder" = "Veza na stranicu s proširenjem ili ID proširenja za Chrome";
 "web_extension_store_invalid_link" = "Zalijepite vezu stranice s pojedinostima proširenja iz Chromea, Edgea ili Firefoxa, ID Chrome proširenja ili izravnu CRX, XPI ili ZIP vezu.";
 "web_extension_store_https_required" = "Paketi proširenja moraju koristiti sigurnu HTTPS vezu.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Dodirnite i držite ikonu Soulo na početnom zaslonu za uporabu ovdje postavljenih prečaca.";
 
 "ad_block_scope_hint" = "Filtrira web-oglase, promotivne slojeve i neželjene skočne prozore. Ako stranica prestane raditi, filtriranje možete isključiti samo za nju.";
+
+"privacy_clear_browsing_on_exit" = "Izbriši povijest pri izlasku";
+"privacy_clear_browsing_on_exit_desc" = "Izbriši posjećene stranice pri prelasku u pozadinu ili ponovnom pokretanju. Zadrži pojmove pretraživanja.";

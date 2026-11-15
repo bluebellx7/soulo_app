@@ -1,6 +1,1 @@
-1.2.13
-
-• Separate bakgrunner for lyst og mørkt utseende og en bryter for bildelaget.
-• Forbedrede farger på startsiden; bakgrunnsvisningen følger appens tema.
-• Forhåndsvis, del og lagre bakgrunner i Bilder.
-• Innstillinger for øverste faner med ny fane og valgfri skjuling av plattformlinjen etter navigasjon.
+Forbedret iPad-vinduer, taleinndata, lokale sammendrag og tilgjengelighet. Forbedret medieeksport i bakgrunnen, Snarveier og kompatibilitet med utvidelser. Enkelte funksjoner avhenger av enhet, systemversjon og språk.

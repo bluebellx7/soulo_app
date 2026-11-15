@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Ääniraitoja";
 "media_subtitles" = "Tekstitykset";
 "media_track_off" = "Pois päältä";
-"video_settings" = "Video";
+"video_settings" = "Videoasetukset";
 "video_show_tools" = "Näytä videotyökalut";
 "video_show_tools_desc" = "Näytä työkaluja verkkovideoissa toiston nopeuden, latauksen ja koko näytön nopeutta varten.";
 "video_default_player" = "Oletussoitin";
@@ -497,4 +497,38 @@
 "wallpaper_image_blur" = "Huurrelasi";
 "wallpaper_blur_amount" = "Sumennuksen voimakkuus";
 
-"auto_hide_platform_bar_hint" = "Alustapalkki piilotetaan, kun avaat hakutuloksen. Palaa tuloksiin tai aloita uusi haku, niin palkki näkyy taas. Voit poistaa toiminnon käytöstä tässä valikossa.";
+"auto_hide_platform_bar_hint" = "Alustapalkki piilotetaan vasta, kun napautat verkkosivun sisältöä. Automaattiset uudelleenohjaukset ja vieritys eivät piilota sitä. Palaa hakutuloksiin tai aloita uusi haku näyttääksesi palkin uudelleen.";
+
+"ad_subscription_add" = "Lisää suodatinlista";
+"ad_subscription_name" = "Nimi";
+"ad_subscription_url" = "Tilauksen URL";
+"ad_subscription_invalid" = "Anna nimi ja kelvollinen HTTP- tai HTTPS-tilausosoite.";
+"ad_subscription_duplicate" = "Tämä tilausosoite on jo lisätty.";
+
+"feedback_settings" = "Äänet ja värinä";
+"feedback_settings_hint" = "Hallitse värinää ja käyttöliittymän ääniä koko sovelluksessa. Ei vaikuta verkkosivujen, videoiden tai äänen toistoon.";
+
+"home_display_settings" = "Aloitussivun näyttö";
+"browsing_display_settings" = "Selausnäkymä";
+
+"web_video_download" = "Verkkovideoiden lataus";
+"web_video_download_description" = "Näytä videon latauspainikkeet verkkosivuilla, jaksolistoissa ja soittimissa. Toisto ja nykyiset lataukset eivät muutu.";
+"builtin_extension" = "Sisäinen laajennus";
+
+"wallpaper_overlay_amount" = "Peittokerroksen voimakkuus";
+"feedback_contact_required" = "Anna sähköpostiosoite tai muu yhteystieto vastausta varten.";
+"torrent_incomplete" = "Keskeneräinen";
+"extend_page_background" = "Laajenna sivun taustaa";
+"extend_page_background_desc" = "Jatka sivun ylä- ja alareunan värejä selaimen reunoihin, myös liukuvärejä.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Kutista ryhmä";
+"tab_group_expand" = "Laajenna ryhmä";
+"freeze_page_background_on_scroll" = "Säilytä alkuperäiset värit";
+"freeze_page_background_on_scroll_desc" = "Säilytä ensin tunnistetut värit vierittämisen jälkeen. Uusien sivujen värit tunnistetaan uudelleen.";
+"page_background_gradient" = "Liukuvärilaajennus";
+"page_background_gradient_desc" = "Sekoita tunnistetut värit liukuväriksi. Pois käytöstä kukin reuna on yksivärinen.";
+
+
+
+"gestures_feedback_settings" = "Eleet ja palaute";

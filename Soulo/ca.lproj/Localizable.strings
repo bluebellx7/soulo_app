@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Una consulta, més de 40 plataformes";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Cerqueu o introduïu l'URL";
 "privacy_search_placeholder" = "Cerca privada o introduïu l'URL";
 "search" = "Cerca";
@@ -354,7 +354,7 @@
 "voice_stop" = "Atureu-vos";
 "voice_record" = "Registre";
 "batch_import" = "Importació per lots";
-"batch_import_format" = "Enganxeu JSON amb el format següent";
+"batch_import_format" = "Enganxa el JSON aquí";
 "batch_import_group" = "Afegeix al grup (opcional)";
 "batch_import_group_placeholder" = "p. ex. Pel·lícules";
 "batch_import_film_entry" = "Obre els valors predefinits de la plataforma de pel·lícules";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "No s'ha pogut instal·lar l'extensió";
 "extension_permissions_summary" = "%d permisos · %d regles del lloc web";
 "extension_untitled" = "Extensió sense títol";
-"web_extension_install_footer" = "Instal·la extensions compatibles des d’un enllaç de la botiga o importa CRX, XPI, ZIP o una carpeta d’extensió. Revisa permisos i compatibilitat; algunes funcions d’escriptori no estan disponibles.";
+"web_extension_install_footer" = "Després d’instal·lar l’extensió, pots canviar els permisos a la seva pàgina de gestió.";
 "web_extension_install_store_link" = "Instal·la des de l'enllaç de la botiga...";
 "web_extension_browse_sources" = "Explora les botigues d'extensions";
 "web_extension_browse_sources_footer" = "Els botons Store Get només admeten els seus propis navegadors d'escriptori. Copieu l'enllaç d'una pàgina de detalls de l'extensió i, a continuació, utilitzeu Instal·la des de l'enllaç de la botiga a Soulo.";
 "web_extension_store_install_title" = "Instal·leu una extensió de botiga";
 "extension_page_banner_title" = "Instal·leu amb Soulo";
-"extension_page_banner_desc" = "Revisa la compatibilitat i els permisos abans d’instal·lar.";
-"web_extension_store_install_desc" = "Enganxa l’enllaç de la pàgina d’una extensió de Chrome, Edge o Firefox i revisa’n la compatibilitat i els permisos abans de confirmar la instal·lació.";
+"extension_page_banner_desc" = "Després d’instal·lar l’extensió, pots canviar els permisos a la seva pàgina de gestió.";
+"web_extension_store_install_desc" = "Després d’instal·lar l’extensió, pots canviar els permisos a la seva pàgina de gestió.";
 "web_extension_store_link_placeholder" = "Enllaç a la pàgina d'extensió o identificador d'extensió de Chrome";
 "web_extension_store_invalid_link" = "Enganxeu un enllaç de pàgina de detalls de l'extensió de Chrome, Edge o Firefox, un ID d'extensió de Chrome o un enllaç CRX, XPI o ZIP directe.";
 "web_extension_store_https_required" = "Els paquets d'extensió han d'utilitzar un enllaç HTTPS segur.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Mantén premuda la icona de Soulo a la pantalla d’inici per fer servir les dreceres configurades aquí.";
 
 "ad_block_scope_hint" = "Filtra anuncis web, capes promocionals i finestres emergents no sol·licitades. Si un lloc deixa de funcionar, pots desactivar el filtre només per a aquell lloc.";
+
+"privacy_clear_browsing_on_exit" = "Esborra l’historial en sortir";
+"privacy_clear_browsing_on_exit_desc" = "Esborra les pàgines visitades en passar a segon pla o reiniciar. Conserva els termes de cerca.";

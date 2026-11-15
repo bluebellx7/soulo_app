@@ -1,0 +1,162 @@
+{
+  "scope": "优化公共扩展兼容层，并修复用户新增BP选集与FastStream并用导航问题。",
+  "preserve": "保留所有现有修改，不提交推送，不修改用户原始CRX。",
+  "items": [
+    {
+      "id": "bp_faststream_episode",
+      "task": "真实页面开启FastStream后选集跳转，检查SPA/框架/替换事件生命周期",
+      "state": "fixed_local_and_live_site_native27_passed"
+    },
+    {
+      "id": "faststream_tab_switch",
+      "task": "原页开启后切换/访问其他标签导致关闭；验证返回与两个标签并行视频的实例独立、生命周期恢复",
+      "state": "verified_native206_normal_MMS_and_bounded_memory_retention"
+    },
+    {
+      "id": "userscripts_execute",
+      "task": "通用userScripts.execute、目标框架、异步结果和权限校验",
+      "state": "verified_host207_native206"
+    },
+    {
+      "id": "userscripts_messaging",
+      "task": "隔离userScript消息/端口，与普通扩展消息区分、撤权和导航清理",
+      "state": "verified_host207_native206_including_first_targeted_message"
+    },
+    {
+      "id": "world_csp",
+      "task": "改进隔离world及CSP配置，保留真实拒绝和隔离边界",
+      "state": "verified_host207_native206_scoped_network_CSP"
+    },
+    {
+      "id": "acceptance",
+      "task": "真实扩展包、原有回归、SDK27 Release与范围记录",
+      "state": "completed_final_release270_and_scoped_regressions"
+    },
+    {
+      "id": "home_search_center",
+      "task": "最新追加：首页输入框在可用区垂直居中，不随标题/副标题或下方内容移动，收藏间距缩小",
+      "state": "verified_actual_simulator_UI213"
+    },
+    {
+      "id": "remove_area_text_sample",
+      "task": "删除区域文字提取官方示例，迁移移除旧内置记录，保留用户自建/导入脚本",
+      "state": "verified_host210_native212"
+    },
+    {
+      "id": "website_souju",
+      "task": "movies.html 加入 https://souju.ai，维护源数据和本地图标",
+      "state": "completed_website_check_passed"
+    },
+    {
+      "id": "resources_cloud_first",
+      "task": "resources.html 网盘导航/筛选/分类/结构化目录在磁力种子之前",
+      "state": "completed_website_check_passed"
+    },
+    {
+      "id": "soulo_extension_catalog",
+      "task": "手机优先扩展目录，Chrome/Edge官方链接、Soulo确认安装、推荐反馈入口；链接和理由选填",
+      "state": "verified_website_matrix_and_native218_installer_cancel"
+    },
+    {
+      "id": "hls_measured_bytes",
+      "task": "HLS时长进度不冒充字节，未知总量不展示假1MB；实际缓存体积异步限频采样",
+      "state": "verified_host235_253_255_native236_251_259_scoped_context_offline_and_failures"
+    },
+    {
+      "id": "direct_video_fullscreen",
+      "task": "独立原生视频文档退出全屏不弹错误的自动播放器接管失败",
+      "state": "verified_host217_native218_actual_UI"
+    },
+    {
+      "id": "developer_document_prompt",
+      "task": "开发文档和AI Prompt共享当前版本能力参考；明确GM与WebExtension、大小/网络/权限/Blob限制",
+      "state": "implemented_compiled_current227"
+    },
+    {
+      "id": "browser_toolbar_new_tab",
+      "task": "自定义浏览器工具栏及地址栏快捷位支持新标签页，保留旧布局",
+      "state": "verified_host217_native218_actual_UI"
+    },
+    {
+      "id": "newtab_bookmark_hearts",
+      "task": "新标签页居中/小图标；快速链接爱心优先，否则最近收藏；收藏重命名/爱心/全库筛选/空状态；旧数据库迁移及HTML往返",
+      "state": "verified_host_UI221_227_native_UI222_and_13_database_checks"
+    },
+    {
+      "id": "home_spacing_followup",
+      "task": "首页搜索框从居中上移半框；最近搜索额外8pt；无描述时标题下移靠近框",
+      "state": "verified_host222_native222_plus_latest_left_alignment_host227"
+    },
+    {
+      "id": "ipad_toolbar_eight",
+      "task": "iPad首页工具栏8项，宽小于搜索框，窄窗口换行，手机5项并保留隐藏iPad项",
+      "state": "host227_units_and_actual_UI_passed"
+    },
+    {
+      "id": "newtab_header_cleanup",
+      "task": "移除快速链接标题，顶部地球图标36pt，搜索位置不变",
+      "state": "implemented_host227_bookmark_newtab_UI_passed"
+    },
+    {
+      "id": "platform_batch_ai_groups",
+      "task": "批量导入示例右侧AI Prompt说明/复制页；命名多组JSON、同名追加、已有平台复用；兼容旧数组和选择组ID",
+      "state": "host234_actual_AI_copy_and_two_named_groups_UI_passed_22_import_audits_passed"
+    }
+  ],
+  "implementation": "公共userScripts.execute、专用消息与双向端口已实现；应用私有宿主通过公开WebKit API取得真实frame/document IDs，并翻译不同上下文的tab ID，发布者权限不变。Acorn8.15.0核对npm sha512并保留MIT许可，用真正AST边界保留原代码全局词法作用域/Promise完成值，不开放eval或放宽CSP。",
+  "evidence": {
+    "bp170": "测试夹具误用旧EP2标题，当前网站标题为第2集；已纠正。",
+    "bp173": "集数选择状态实际EP2→EP3通过，但扩展尚未缓冲时检查过早，不能当作视频源切换通过。",
+    "phone171": "手机实际解锁，测试runner IDE连接DTX被拒绝后code74退出；不是App功能失败，正在改用镜像。",
+    "build176": "当前编译公共兼容层和真实切换标签回归。",
+    "generic181": "基础执行/Promise/隔离/消息/端口/原始异常全部通过1.483秒。",
+    "generic183": "扩展至两个同URL子框架；与发布者原生webNavigation帧ID比较一致；frameIds/documentIds精确定位、跨次let共享、MAIN世界、CSP连接拒绝/允许均通过1.620秒。",
+    "fs185": "真正复现SPA原视频已请求/episode-two.mp4而原版FSsource仍/movie.mp4，失败前证据保留。",
+    "crossTab177": "真实TabManager/不同WK/SwiftUI拆装三轮切换未复现卸载，原iframe与原WK均保留；原生SDK27对比测试188进行中。",
+    "fix_source": "已添加条件启用的FastStream源码生命周期适配；不改原始CRX/发布者模块，仅原DOM真实HTTP源变化、单一匹配自有替换frame、权限复核后交给发布者setSource。Build187进行中。",
+    "BP192": "用户真实BP网址，原版扩展实际源随选集改变且ready>=2，19.764s通过。",
+    "FS193": "SDK27模拟器真实原始CRX：SPA11.635s、MMS跨标签12.091s、普通跨标签10.723s全部通过，返回后时钟实际推进。",
+    "generic195": "新增只有端口监听的第二接收文档，异步消息40ms回包、sender.origin非默认端口、撤权disconnect全部通过。",
+    "memory198": "真实原版FS双标签三轮切换后触发内存回收，后台标签isAlive=false，复现失败10.070s；保存真实blob/扩展frame媒体checkpoint。",
+    "memory_fix": "最多保护最近一个后台扩展媒体runtime，计入正常LRU预算，内存压力仍释放其他标签；真实frame.origin识别，不依赖扩展名称或发布者源码。",
+    "memory199": "内存修复+全部TabManager27及普通媒体恢复1，共29/29通过。",
+    "regression201": "3个扩展类86个用例，1可选商店网络skip，1首次targeted消息失败；原版FS实际拖动/全屏/保存UI2/2通过。三标签保护一个且移除iframe解除保留通过8.881s。",
+    "message203": "人工延迟宿主frame注册100ms，保留真实发布者ready消息/原生sender，稳定复现首次targeted无值3.021s。",
+    "message_fix": "只有原生证明来自自己扩展frame的sender，首次定向消息等待注册事件（上限1秒、128个）；接收端等待相同nonce握手；无普通页面全局延迟、不重复发送发布者消息。204构建验收中。",
+    "release200": "SDK27.2真实生产Release通过，最低iOS16.0版本1.2.15(55)，Acorn及MIT许可打包校验通过；消息时序修改后仍须最终重编。",
+    "first_message204": "100ms慢注册故障注入，修复后2.110秒通过；Native206也2.633秒通过。",
+    "regression207": "原首次消息问题和所有生命周期24/24通过；85/86扩展检查中仅权限期限浮点精度断言失败（显示同一秒、NSDate精度）；保留精确断言，改用整秒期限夹具。",
+    "native206": "API2.949s、延迟首次targeted2.633s、普通/MMS/三标签仅保留一个的内存保护通过；原版FastStream真实触摸/全屏/保存UI2/2通过。",
+    "release205": "最终生产SDK27.2 Release BUILD SUCCEEDED；此后仅修改测试夹具及QA记录，未再改生产代码。",
+    "website": "9页面静态检查、320/390/768/1440/明暗/中英文/成功失败反馈mock/选填字段已验。无真实反馈提交。",
+    "observer208": "将QA观察器放入生成bootstrap的尝试失败并已撤回；原WKUserScript恢复，页面加载前检查补回。212实际MP4/Bili/HLS/DASH能播放，剩余断言是暂停后readyState降低；改为暂停前采样，待218复验。",
+    "native212": "CatCatch在线合并/缓存捕获11.071s、MMS17.519s、SPA6.091s、TYTY2.002s、权限到期和两个内置迁移检查通过。",
+    "shipping217": "SDK27 Debug当前已编译通过；最新Release217进行中，新增目录/HLS/直接视频/文档/工具栏此前未包含于211。",
+    "host217": "39个相关单元检查通过，新工具栏/原生视频退出/目录取消安装三项实际UI通过。两个旧HLS请求上下文检查失败，追加本地请求头证据调查；不标记这些检查通过。",
+    "native218": "原版FastStream真实MP4/Bili/HLS/DASH播放38.933s及最新工具栏43.079s、原生视频退出33.564s、目录安装取消57.109s全部通过。",
+    "release217": "SDK27生产Release BUILD SUCCEEDED；此后最新收藏/位置/现代下载任务需最终构建。",
+    "host227": "首页工具栏6个配置检查（含手机5/iPad8保存与跨设备隐藏位）通过；实际收藏35.272s/iPad8按钮边界7.372s/首页位置与最近搜索左对齐19.346s全部通过。",
+    "native222": "13个数据库/书签导入导出检查、实际收藏58.063s及首页位置54.096s通过；Release222通过，但尚不含最新左对齐、8按钮、标题移除和globe36。",
+    "HLS_context": "普通HLS能播放/完成/离线解码，但背景系统请求UA未沿用导致严格UA断言失败；私有Cookie源会403失败。旧/现代公开创建API均复现，现代API未奏效已撤回，保持下载路径。新增创建前对照options检查228以排除WebKit采集丢失。",
+    "staging": "最新七文件通过唯一base64 JSON送入SDK27虚拟机；Host/Guest HomeToolbarConfigurationService SHA256 241437190640043a77592c1406f1f447646863d96bdbeadc23c3bf4021f127ee 一致，避免共享目录同名缓存旧内容。",
+    "build233": "本地TEST BUILD SUCCEEDED；50语言严格检查通过；批量导入相关单元及实际UI正在运行。未宣称此前全部功能已完成。",
+    "platform233": "AppFunctionalAuditTests 22/22 PASS 0.240s. AI页复制/输入/实际两组导入走通；回平台网格滚动复现主线程100%且卡住，sample全在SwiftUI嵌套LazyVStack/LazyVGrid测量。保留失败报告；已将外围分组容器改VStack，内部网格仍懒加载，234编译后复验。",
+    "platform234": "实际AI说明/复制→粘贴JSON→两命名组导入→网格滚动找两个组，46.053s PASS。外层分组VStack修复后未再卡死。",
+    "bookmark234": "5个收藏合并/显式删除/空快照不删除/字段编辑收敛/损坏journal原子拒绝检查通过；旧库与收藏标记库→排序迁移、过滤排序落盘、HTML顺序回传与原有导入测试通过；未声称实际两台设备iCloud服务传输已验证。",
+    "hls235": "4/4 PASS 4.388s：带UA的普通HLS、私有Cookie HLS边播边下/暂停恢复/完成后停源解码、私有AES下载离线可播放、原有公开AES离线材料。HTTP请求使用WebKit隔离会话，不写共享Cookie，分片直接落盘；AVAssetDownload丢UA/Cookie的原系统复现保留为显式opt-in研究测试。SDK27生产Release236运行中。",
+    "cloud248": "9/9通过0.294s，含真实CoreData保存→字段journal→文件传输→另一隔离库合并；首次开启前主动删除及favicon更新不污染journal。",
+    "layout245": "Debug模拟器布局测量：5000收藏资料库中位546.3→222.6ms，LazyHStack避免其它资料页预先构建；不作为真实触控/GPU帧率。",
+    "drag248": "实际资料库与NTP排序通过；排序后NTP长按能请求configuration但没有actionProvider，菜单失败，249改内容层contextMenu与集合拖动分离。",
+    "drag261": "Host26实际83s/Native27实际99.067s拖动+菜单通过。使用UICollectionViewController与delegate，禁用其默认legacy长按移动识别器，避免和drag/drop及menu竞争；保留框架自有手势，不改原始扩展。",
+    "pager259": "按需实例化普通HStack页面，并保留访问过的状态；5000收藏203.2ms、零navigationDestination lazy警告。Native27实际文件夹跨页119.350s/阅读列表27.181s/四页滑动和点击73.720s全部通过。",
+    "ios16_storage_regression": "新增Storage回调后，257存储空间入口复现SwiftUI traits/layout循环，sample主线程200%。显式捕获仍260b失败；262将仅WKWebExtension需要的回调限定18.4+，iOS16恢复独立route，正在验。保留原失败报告。",
+    "native251": "39项核心数据/导入/HLS高级验收及六个冷启动入口通过；driver时序包含同步等待，不宣称原始触摸延迟。",
+    "ios16_storage265": "完整Storage→AdBlocking→全部五个有数据规则页165.437s PASS；所有legacy层级通过通用StorageManagementLink独立sheet，没有unusedvalue注册，也不携带父页面dismiss回调。",
+    "ios16_storage267": "其余六个存储管理入口、阅读数据说明与返回全部通过；扩展临时缓存仅18.4+，测试按真实能力校验，不让16验证不存在功能。",
+    "release266": "生产Release BUILD SUCCEEDED；Info证实主App/Share/Widget版本1.2.15(55)，minimumOS16.0。",
+    "settings_final270": "根设置目标构造移入仅依赖route+稳定引用的SettingsDestinationView，隔离搜索/异步cacheSize等本地状态；Native269手动列表Storage→全部5个有数据规则页147.545s、iOS16同源270161.565s均通过。SourceHash最终Host/Native一致。",
+    "release270": "最新生产SDK27 Release BUILD SUCCEEDED；1.2.15(55) App/Widget/Share最低16.0。git diff、50语言strict、metadataJSON和websitecheck通过。"
+  },
+  "device_preference": "最新明确要求只能用模拟器，停止物理设备操作。",
+  "status": "completed_with_documented_simulator_only_limits"
+}

@@ -1,6 +1,1 @@
-1.2.13
-
-• Osobne tła dla jasnego i ciemnego wyglądu oraz przełącznik warstwy na obrazie.
-• Poprawione kolory strony głównej; podgląd tapety odpowiada motywowi aplikacji.
-• Przeglądaj, udostępniaj i zapisuj tapety w Zdjęciach.
-• Ustawienia górnych kart z nową kartą i opcjonalnym ukrywaniem paska platform po nawigacji.
+Ulepszono okna na iPadzie, wprowadzanie głosowe, lokalne podsumowania i dostępność. Ulepszono eksport multimediów w tle, Skróty i zgodność rozszerzeń. Niektóre funkcje zależą od urządzenia, wersji systemu i języka.

@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Ljudspår";
 "media_subtitles" = "Undertexter";
 "media_track_off" = "Av";
-"video_settings" = "Video";
+"video_settings" = "Videoinställningar";
 "video_show_tools" = "Visa videoverktyg";
 "video_show_tools_desc" = "Visa verktyg på webbvideor för uppspelningshastighet, nedladdningar och helskärm.";
 "video_default_player" = "Standardspelare";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Frostat glas";
 "wallpaper_blur_amount" = "Oskärpans styrka";
 
-"auto_hide_platform_bar_hint" = "Plattformsfältet döljs när du öppnar ett sökresultat. Gå tillbaka till resultaten eller börja en ny sökning för att visa det igen. Du kan stänga av detta i den här menyn.";
+"auto_hide_platform_bar_hint" = "Plattformsfältet döljs först när du trycker på sidans innehåll. Automatiska omdirigeringar och rullning döljer det inte. Gå tillbaka till sökresultaten eller starta en ny sökning för att visa det igen.";
+
+"ad_subscription_add" = "Lägg till filterlista";
+"ad_subscription_name" = "Namn";
+"ad_subscription_url" = "Prenumerationsadress";
+"ad_subscription_invalid" = "Ange ett namn och en giltig HTTP- eller HTTPS-prenumerationsadress.";
+"ad_subscription_duplicate" = "Den här prenumerationsadressen har redan lagts till.";
+
+"feedback_settings" = "Ljud och vibration";
+"feedback_settings_hint" = "Styr vibration och gränssnittsljud i hela appen. Uppspelning på webbsidor samt video och ljud påverkas inte.";
+
+"home_display_settings" = "Startsidesvisning";
+"browsing_display_settings" = "Webbläsarvisning";
+
+"web_video_download" = "Webbvideohämtning";
+"web_video_download_description" = "Visa kontroller för videohämtning på webbsidor, avsnittslistor och spelare. Uppspelning och befintliga hämtningar ändras inte.";
+"builtin_extension" = "Inbyggt tillägg";
+
+"wallpaper_overlay_amount" = "Överläggets styrka";
+"feedback_contact_required" = "Ange e-post eller annan kontaktinformation så att vi kan svara.";
+"torrent_incomplete" = "Ofullständig";
+"extend_page_background" = "Utöka sidbakgrunden";
+"extend_page_background_desc" = "Utöka sidans övre och nedre färger till webbläsarens kanter, även toningar.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Fäll ihop grupp";
+"tab_group_expand" = "Fäll ut grupp";
+"freeze_page_background_on_scroll" = "Behåll de första färgerna";
+"freeze_page_background_on_scroll_desc" = "Behåll de först identifierade färgerna efter rullning. Nya sidor analyseras på nytt.";
+"page_background_gradient" = "Utöka med toning";
+"page_background_gradient_desc" = "Blanda upptäckta färger till en toning. Avstängt får varje kant en enfärgad yta.";
+
+
+"gestures_feedback_settings" = "Gester och återkoppling";

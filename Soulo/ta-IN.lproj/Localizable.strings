@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "ஒரு வினவல், 40+ இயங்குதளங்கள்";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "தேடவும் அல்லது URL ஐ உள்ளிடவும்";
 "privacy_search_placeholder" = "தனிப்பட்ட தேடல் அல்லது URL ஐ உள்ளிடவும்";
 "search" = "தேடு";
@@ -354,7 +354,7 @@
 "voice_stop" = "நிறுத்து";
 "voice_record" = "பதிவு";
 "batch_import" = "தொகுதி இறக்குமதி";
-"batch_import_format" = "கீழே உள்ள வடிவமைப்பில் JSON ஐ ஒட்டவும்";
+"batch_import_format" = "JSON-ஐ இங்கே ஒட்டவும்";
 "batch_import_group" = "குழுவில் சேர் (விரும்பினால்)";
 "batch_import_group_placeholder" = "எ.கா. திரைப்படங்கள்";
 "batch_import_film_entry" = "மூவி இயங்குதள முன்னமைவுகளைத் திறக்கவும்";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "நீட்டிப்பை நிறுவ முடியவில்லை";
 "extension_permissions_summary" = "%d அனுமதிகள் · %d இணையதள விதிகள்";
 "extension_untitled" = "பெயரிடப்படாத நீட்டிப்பு";
-"web_extension_install_footer" = "இணக்கமான ஸ்டோர் இணைப்பிலிருந்து நீட்டிப்பை நிறுவவும் அல்லது CRX, XPI, ZIP அல்லது நீட்டிப்புக் கோப்புறையை இறக்குமதி செய்யவும். முதலில் அனுமதிகளையும் இணக்கத்தன்மையையும் சரிபார்க்கவும்; சில கணினி அம்சங்கள் கிடைக்காது.";
+"web_extension_install_footer" = "நிறுவிய பிறகு நீட்டிப்பின் நிர்வாகப் பக்கத்தில் அனுமதிகளை மாற்றலாம்.";
 "web_extension_install_store_link" = "ஸ்டோர் இணைப்பிலிருந்து நிறுவவும்…";
 "web_extension_browse_sources" = "நீட்டிப்புக் கடைகளில் உலாவவும்";
 "web_extension_browse_sources_footer" = "ஸ்டோர் கெட் பொத்தான்கள் அவற்றின் சொந்த டெஸ்க்டாப் உலாவிகளை மட்டுமே ஆதரிக்கின்றன. நீட்டிப்பு விவரம் பக்க இணைப்பை நகலெடுத்து, Soulo இல் உள்ள ஸ்டோர் இணைப்பிலிருந்து நிறுவு என்பதைப் பயன்படுத்தவும்.";
 "web_extension_store_install_title" = "ஸ்டோர் நீட்டிப்பை நிறுவவும்";
 "extension_page_banner_title" = "Soulo உடன் நிறுவவும்";
-"extension_page_banner_desc" = "நிறுவும் முன் இணக்கத்தன்மையையும் அனுமதிகளையும் சரிபார்க்கவும்.";
-"web_extension_store_install_desc" = "Chrome, Edge அல்லது Firefox நீட்டிப்பின் விவரப் பக்க இணைப்பை ஒட்டவும். நிறுவலை உறுதிசெய்யும் முன் இணக்கத்தன்மையையும் அனுமதிகளையும் சரிபார்க்கவும்.";
+"extension_page_banner_desc" = "நிறுவிய பிறகு நீட்டிப்பின் நிர்வாகப் பக்கத்தில் அனுமதிகளை மாற்றலாம்.";
+"web_extension_store_install_desc" = "நிறுவிய பிறகு நீட்டிப்பின் நிர்வாகப் பக்கத்தில் அனுமதிகளை மாற்றலாம்.";
 "web_extension_store_link_placeholder" = "நீட்டிப்பு பக்க இணைப்பு அல்லது Chrome நீட்டிப்பு ஐடி";
 "web_extension_store_invalid_link" = "Chrome, Edge அல்லது Firefox, Chrome நீட்டிப்பு ஐடி அல்லது நேரடி CRX, XPI அல்லது ZIP இணைப்பிலிருந்து நீட்டிப்பு விவரப் பக்க இணைப்பை ஒட்டவும்.";
 "web_extension_store_https_required" = "நீட்டிப்பு தொகுப்புகள் பாதுகாப்பான HTTPS இணைப்பைப் பயன்படுத்த வேண்டும்.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "இங்கே அமைத்த குறுக்குவழிகளைப் பயன்படுத்த, முகப்புத் திரையில் Soulo ஐகானைத் தொட்டுப் பிடிக்கவும்.";
 
 "ad_block_scope_hint" = "இணைய விளம்பரங்கள், விளம்பர மேலடுக்குகள் மற்றும் தேவையற்ற பாப்-அப்களை வடிகட்டும். ஒரு தளம் செயல்படவில்லை என்றால், அந்தத் தளத்திற்கு மட்டும் வடிகட்டலை முடக்கலாம்.";
+
+"privacy_clear_browsing_on_exit" = "வெளியேறும்போது உலாவல் வரலாற்றை அழி";
+"privacy_clear_browsing_on_exit_desc" = "பின்னணிக்குச் செல்லும்போது அல்லது மீண்டும் தொடங்கும்போது பார்த்த பக்கங்களின் வரலாற்றை அழிக்கும். தேடல் சொற்களை வைத்திருக்கும்.";

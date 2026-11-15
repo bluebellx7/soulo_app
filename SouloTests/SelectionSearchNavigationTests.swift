@@ -99,6 +99,59 @@ import WebKit
         withExtendedLifetime(container) {}
     }
 
+    func testExplicitBrowserLinkSurvivesAppearanceAndLaterSearchStillLoads() async throws {
+        let defaults = UserDefaults.standard
+        let keys = ["last_selected_region", "last_selected_group_id", "is_incognito"]
+        let saved = keys.map { defaults.object(forKey: $0) }
+        defer { for (key, value) in zip(keys, saved) { defaults.set(value, forKey: key) } }
+        defaults.set("", forKey: "last_selected_region")
+        defaults.set("", forKey: "last_selected_group_id")
+        defaults.set(true, forKey: "is_incognito")
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/store": Data("<body id='store'>Extension store</body>".utf8),
+            "/search": Data("<body id='search'>New search</body>".utf8)
+        ])
+        let base = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let platform = SearchPlatform(id: UUID(), name: "Link search fixture", iconName: "globe",
+            searchURLTemplate: base.appendingPathComponent("search").absoluteString + "?q=%@",
+            homeURL: base.absoluteString, region: .international, isBuiltIn: false,
+            isVisible: true, sortOrder: 999, usageCount: 0, isCustom: true)
+        let store = PlatformDataStore.shared, savedPlatforms = PlatformDataStore.shared.platforms
+        store.platforms.append(platform); defer { store.platforms = savedPlatforms }
+        let key = "soulo.test.explicit-link.\(UUID())"
+        defer { defaults.removeObject(forKey: key) }
+        let tabs = TabManager(storageKey: key), search = SearchViewModel()
+        search.selectedRegion = .international; search.selectedPlatform = platform
+        search.searchText = "stale search"; search.performSearch()
+        let tab = try XCTUnwrap(tabs.openURLFromBrowserControls(base.appendingPathComponent("store"), searchID: search.searchID))
+        let container = try LibraryStore(inMemory: true)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+        window.rootViewController = UIHostingController(rootView: ResultsHost(onlyWhenSearching: true)
+            .environmentObject(search).environmentObject(tabs)
+            .environmentObject(LanguageManager.shared).environment(\.managedObjectContext, container.mainContext))
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; tab.webViewModel.releaseWebViewRuntime(); previous?.makeKeyAndVisible() }
+        func waitFor(_ id: String) async throws {
+            for _ in 0..<200 {
+                if let web = tab.webViewModel.webView,
+                   (try? await web.evaluateJavaScript("!!document.getElementById('\(id)')")) as? Bool == true { return }
+                try await Task.sleep(for: .milliseconds(25))
+            }
+            XCTFail("Expected rendered \(id), got \(tab.webViewModel.currentURL?.path ?? "nil")")
+            throw URLError(.timedOut)
+        }
+        try await waitFor("store")
+        XCTAssertFalse(server.receivedRequests.contains { $0.path == "/search" }, "Appearance must not replay the old search over the store")
+        search.clearSearch()
+        try await Task.sleep(for: .milliseconds(200))
+        search.searchText = "new search"; search.performSearch()
+        try await waitFor("search")
+        XCTAssertTrue(server.receivedRequests.contains { $0.path == "/search" })
+        XCTAssertEqual(tabs.activeTab?.id, tab.id)
+        withExtendedLifetime(container) {}
+    }
+
     func testPreparedSelectionSearchRendersWithoutRestoringAnotherPlatform() async throws {
         try await verifySelectionSearch(useHome: false)
     }

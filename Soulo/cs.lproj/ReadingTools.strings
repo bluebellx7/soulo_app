@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Zvukové stopy";
 "media_subtitles" = "titulky";
 "media_track_off" = "Vypnuto";
-"video_settings" = "Video";
+"video_settings" = "Nastavení videa";
 "video_show_tools" = "Zobrazit video nástroje";
 "video_show_tools_desc" = "Zobrazte na webových videích nástroje pro rychlost přehrávání, stahování a celou obrazovku.";
 "video_default_player" = "Výchozí přehrávač";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Matné sklo";
 "wallpaper_blur_amount" = "Intenzita rozostření";
 
-"auto_hide_platform_bar_hint" = "Panel platforem se skryje po otevření výsledku hledání. Znovu se zobrazí po návratu k výsledkům nebo při novém hledání. V této nabídce lze funkci vypnout.";
+"auto_hide_platform_bar_hint" = "Lišta platforem se skryje až po klepnutí na obsah stránky. Automatické přesměrování ani posouvání ji neskryjí. Znovu se zobrazí po návratu k výsledkům nebo při novém hledání.";
+
+"ad_subscription_add" = "Přidat seznam filtrů";
+"ad_subscription_name" = "Název";
+"ad_subscription_url" = "URL odběru";
+"ad_subscription_invalid" = "Zadejte název a platnou adresu HTTP nebo HTTPS pro odběr.";
+"ad_subscription_duplicate" = "Tato adresa odběru již byla přidána.";
+
+"feedback_settings" = "Zvuky a vibrace";
+"feedback_settings_hint" = "Ovládá vibrace a zvuky rozhraní v celé aplikaci. Neovlivňuje přehrávání webových stránek, videa ani zvuku.";
+
+"home_display_settings" = "Zobrazení úvodní stránky";
+"browsing_display_settings" = "Zobrazení prohlížení";
+
+"web_video_download" = "Stahování webového videa";
+"web_video_download_description" = "Zobrazí ovládací prvky stahování videa na webových stránkách, v seznamech epizod a přehrávačích. Přehrávání ani stávající stahování se nemění.";
+"builtin_extension" = "Vestavěné rozšíření";
+
+"wallpaper_overlay_amount" = "Intenzita překrytí";
+"feedback_contact_required" = "Zadejte e-mail nebo jiný kontakt, abychom mohli odpovědět.";
+"torrent_incomplete" = "Nedokončeno";
+"extend_page_background" = "Rozšířit pozadí stránky";
+"extend_page_background_desc" = "Použije horní a dolní barvy stránky i v rozhraní prohlížeče, včetně přechodů.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Sbalit skupinu";
+"tab_group_expand" = "Rozbalit skupinu";
+"freeze_page_background_on_scroll" = "Ponechat počáteční barvy";
+"freeze_page_background_on_scroll_desc" = "Po posunutí ponechat první rozpoznané barvy. Na nové stránce se barvy znovu rozpoznají.";
+"page_background_gradient" = "Rozšíření přechodem";
+"page_background_gradient_desc" = "Propojí zjištěné barvy přechodem. Při vypnutí má každý okraj jednu plnou barvu.";
+
+
+"gestures_feedback_settings" = "Gesta a odezva";

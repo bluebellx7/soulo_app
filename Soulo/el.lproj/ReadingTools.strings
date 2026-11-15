@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Κομμάτια ήχου";
 "media_subtitles" = "Υπότιτλοι";
 "media_track_off" = "Απενεργοποίηση";
-"video_settings" = "Βίντεο";
+"video_settings" = "Ρυθμίσεις βίντεο";
 "video_show_tools" = "Εμφάνιση εργαλείων βίντεο";
 "video_show_tools_desc" = "Εμφάνιση εργαλείων σε βίντεο web για ταχύτητα αναπαραγωγής, λήψεις και πλήρη οθόνη.";
 "video_default_player" = "Προεπιλεγμένος παίκτης";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Θολό γυαλί";
 "wallpaper_blur_amount" = "Ένταση θόλωσης";
 
-"auto_hide_platform_bar_hint" = "Η γραμμή πλατφορμών κρύβεται όταν ανοίγετε ένα αποτέλεσμα αναζήτησης. Επιστρέψτε στα αποτελέσματα ή ξεκινήστε νέα αναζήτηση για να εμφανιστεί ξανά. Μπορείτε να το απενεργοποιήσετε σε αυτό το μενού.";
+"auto_hide_platform_bar_hint" = "Η γραμμή πλατφορμών κρύβεται μόνο όταν αγγίξετε το περιεχόμενο της σελίδας. Οι αυτόματες ανακατευθύνσεις και η κύλιση δεν την κρύβουν. Επιστρέψτε στα αποτελέσματα ή ξεκινήστε νέα αναζήτηση για να εμφανιστεί ξανά.";
+
+"ad_subscription_add" = "Προσθήκη λίστας φίλτρων";
+"ad_subscription_name" = "Όνομα";
+"ad_subscription_url" = "URL συνδρομής";
+"ad_subscription_invalid" = "Εισαγάγετε όνομα και έγκυρο URL συνδρομής HTTP ή HTTPS.";
+"ad_subscription_duplicate" = "Αυτό το URL συνδρομής έχει ήδη προστεθεί.";
+
+"feedback_settings" = "Ήχοι και δόνηση";
+"feedback_settings_hint" = "Ελέγξτε τη δόνηση και τους ήχους διεπαφής σε όλη την εφαρμογή. Δεν επηρεάζεται η αναπαραγωγή ιστοσελίδων, βίντεο και ήχου.";
+
+"home_display_settings" = "Εμφάνιση αρχικής σελίδας";
+"browsing_display_settings" = "Εμφάνιση περιήγησης";
+
+"web_video_download" = "Λήψεις βίντεο ιστού";
+"web_video_download_description" = "Εμφανίζει στοιχεία λήψης βίντεο σε ιστοσελίδες, λίστες επεισοδίων και προγράμματα αναπαραγωγής. Η αναπαραγωγή και οι υπάρχουσες λήψεις δεν αλλάζουν.";
+"builtin_extension" = "Ενσωματωμένη επέκταση";
+
+"wallpaper_overlay_amount" = "Ένταση επικάλυψης";
+"feedback_contact_required" = "Συμπληρώστε email ή άλλα στοιχεία επικοινωνίας για να απαντήσουμε.";
+"torrent_incomplete" = "Ημιτελές";
+"extend_page_background" = "Επέκταση φόντου σελίδας";
+"extend_page_background_desc" = "Επεκτείνει τα χρώματα πάνω και κάτω στη διεπαφή περιήγησης, μαζί με τις διαβαθμίσεις.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Σύμπτυξη ομάδας";
+"tab_group_expand" = "Ανάπτυξη ομάδας";
+"freeze_page_background_on_scroll" = "Διατήρηση αρχικών χρωμάτων";
+"freeze_page_background_on_scroll_desc" = "Μετά την κύλιση διατηρούνται τα πρώτα χρώματα που εντοπίστηκαν. Οι νέες σελίδες αναλύονται ξανά.";
+"page_background_gradient" = "Επέκταση διαβάθμισης";
+"page_background_gradient_desc" = "Αναμειγνύει τα χρώματα σε διαβάθμιση. Όταν είναι ανενεργό, κάθε άκρη έχει ένα ενιαίο χρώμα.";
+
+
+"gestures_feedback_settings" = "Χειρονομίες και ανάδραση";

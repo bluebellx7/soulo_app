@@ -1,0 +1,52 @@
+{
+  "date": "2026-11-13",
+  "feature": "Custom ad filter list subscriptions",
+  "version": "1.2.13",
+  "entry": "Settings > Ad Blocking > Filter lists > +",
+  "behavior": [
+    "Add a named HTTP or HTTPS filter list, normalize its URL, and reject invalid or duplicate URLs.",
+    "Persist custom subscriptions and show their URLs in the list.",
+    "Download a newly added list when ad blocking is enabled; queue it if another update is running.",
+    "Allow custom lists to be removed with a trailing swipe; preserve built-in lists.",
+    "Remove deleted rules from the merged cache and archive, including during an in-flight update.",
+    "Confirm before restoring default subscriptions.",
+    "Use a separate sheet for rule subpages on iOS 16 to avoid an observed nested NavigationStack invalidation loop."
+  ],
+  "validation": {
+    "service_tests": {
+      "status": "passed",
+      "tests": 20,
+      "failures": 0,
+      "result": "/tmp/soulo-ad-subscriptions-20261113/service-final-9.xcresult",
+      "network": "URLProtocol fixtures for subscription service tests"
+    },
+    "ui_test": {
+      "status": "passed",
+      "device": "iPhone 14 simulator, iOS 16.4",
+      "test": "HomeToolbarUITests/testCustomAdFilterListCanBeAddedValidatedRestoredAndDeleted",
+      "coverage": ["invalid URL", "clear stale validation error", "save", "duplicate URL", "relaunch persistence", "swipe to delete", "built-in list retained"],
+      "result": "/tmp/soulo-ad-subscriptions-20261113/ui-final-10.xcresult",
+      "screenshots_reviewed": [
+        "/tmp/soulo-ad-subscriptions-20261113/ui-final-10-attachments/DEA64924-10D9-467B-B601-482FD5593C86.png",
+        "/tmp/soulo-ad-subscriptions-20261113/ui-final-10-attachments/6D06C271-85F5-4DE4-92AC-F4E2302E012A.png"
+      ]
+    },
+    "simulator_build_for_testing": "passed",
+    "generic_ios_device_build": {
+      "status": "passed",
+      "log": "/tmp/soulo-ad-subscriptions-20261113/device-build-final-11.log",
+      "code_signing": false
+    },
+    "localization": "python3 scripts/check_localization.py --strict passed for all 50 locales",
+    "strings_syntax": "plutil -lint passed for all 50 ReadingTools.strings files",
+    "metadata": "python3 scripts/export_metadata_json.py --check passed; version and release metadata unchanged",
+    "whitespace": "git diff --check passed"
+  },
+  "limits": [
+    "No physical-device acceptance test for this feature.",
+    "No completed iOS 26 UI test; its earlier startup attempt was cancelled before a test case began.",
+    "Earlier combined-target test startup attempts stalled; final service and UI runs used separate xctestrun manifests."
+  ],
+  "paid_api_calls": 0,
+  "pushed": false
+}

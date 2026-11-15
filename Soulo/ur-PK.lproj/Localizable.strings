@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "ایک سوال، 40+ پلیٹ فارمز";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "URL تلاش کریں یا درج کریں۔";
 "privacy_search_placeholder" = "نجی تلاش کریں یا URL درج کریں۔";
 "search" = "تلاش کریں۔";
@@ -354,7 +354,7 @@
 "voice_stop" = "رک جاؤ";
 "voice_record" = "ریکارڈ";
 "batch_import" = "بیچ درآمد";
-"batch_import_format" = "JSON کو نیچے کی شکل میں چسپاں کریں۔";
+"batch_import_format" = "یہاں JSON پیسٹ کریں";
 "batch_import_group" = "گروپ میں شامل کریں (اختیاری)";
 "batch_import_group_placeholder" = "جیسے فلمیں";
 "batch_import_film_entry" = "مووی پلیٹ فارم کے پیش سیٹ کھولیں۔";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "ایکسٹینشن انسٹال نہیں ہو سکی";
 "extension_permissions_summary" = "%d اجازتیں · %d ویب سائٹ کے قواعد";
 "extension_untitled" = "بلا عنوان توسیع";
-"web_extension_install_footer" = "مطابقت رکھنے والی اسٹور لنک سے ایکسٹینشن نصب کریں یا CRX، XPI، ZIP یا ایکسٹینشن فولڈر درآمد کریں۔ پہلے اجازتیں اور مطابقت دیکھیں؛ کچھ ڈیسک ٹاپ خصوصیات دستیاب نہیں۔";
+"web_extension_install_footer" = "انسٹال کرنے کے بعد ایکسٹینشن کے انتظامی صفحے پر اجازتیں تبدیل کر سکتے ہیں۔";
 "web_extension_install_store_link" = "اسٹور لنک سے انسٹال کریں…";
 "web_extension_browse_sources" = "ایکسٹینشن اسٹورز کو براؤز کریں۔";
 "web_extension_browse_sources_footer" = "اسٹور گیٹ بٹن صرف ان کے اپنے ڈیسک ٹاپ براؤزرز کو سپورٹ کرتے ہیں۔ ایکسٹینشن کی تفصیل والے صفحہ کا لنک کاپی کریں، پھر Soulo میں اسٹور لنک سے انسٹال کا استعمال کریں۔";
 "web_extension_store_install_title" = "اسٹور ایکسٹینشن انسٹال کریں۔";
 "extension_page_banner_title" = "Soulo کے ساتھ انسٹال کریں۔";
-"extension_page_banner_desc" = "نصب کرنے سے پہلے مطابقت اور اجازتیں دیکھیں۔";
-"web_extension_store_install_desc" = "Chrome، Edge یا Firefox ایکسٹینشن کے تفصیلی صفحے کی لنک پیسٹ کریں اور تنصیب کی تصدیق سے پہلے مطابقت اور اجازتیں دیکھیں۔";
+"extension_page_banner_desc" = "انسٹال کرنے کے بعد ایکسٹینشن کے انتظامی صفحے پر اجازتیں تبدیل کر سکتے ہیں۔";
+"web_extension_store_install_desc" = "انسٹال کرنے کے بعد ایکسٹینشن کے انتظامی صفحے پر اجازتیں تبدیل کر سکتے ہیں۔";
 "web_extension_store_link_placeholder" = "ایکسٹینشن پیج کا لنک یا کروم ایکسٹینشن ID";
 "web_extension_store_invalid_link" = "کروم، ایج، یا فائر فاکس، ایک کروم ایکسٹینشن ID، یا براہ راست CRX، XPI، یا ZIP لنک سے ایکسٹینشن ڈیٹیل پیج کا لنک چسپاں کریں۔";
 "web_extension_store_https_required" = "ایکسٹینشن پیکجز کو ایک محفوظ HTTPS لنک استعمال کرنا چاہیے۔";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "یہاں طے کردہ شارٹ کٹس استعمال کرنے کے لیے ہوم اسکرین پر Soulo آئیکن کو دبا کر رکھیں۔";
 
 "ad_block_scope_hint" = "ویب اشتہارات، تشہیری اوورلے اور غیر مطلوب پاپ اَپس فلٹر کرتا ہے۔ اگر کوئی سائٹ کام نہ کرے تو صرف اسی سائٹ کے لیے فلٹر بند کر سکتے ہیں۔";
+
+"privacy_clear_browsing_on_exit" = "باہر نکلتے وقت براؤزنگ کی سرگزشت مٹائیں";
+"privacy_clear_browsing_on_exit_desc" = "پس منظر میں جانے یا دوبارہ کھولنے پر دیکھے گئے صفحات کی سرگزشت مٹائیں۔ تلاش کے الفاظ محفوظ رکھیں۔";

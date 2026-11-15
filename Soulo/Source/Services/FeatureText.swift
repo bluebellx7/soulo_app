@@ -5,8 +5,7 @@ import Foundation
 enum FeatureText {
     static func text(_ key: String) -> String {
         let language = UserDefaults.standard.string(forKey: "app_language") ?? Locale.preferredLanguages.first ?? "en-US"
-        let resolved = Bundle.preferredLocalizations(from: Bundle.main.localizations, forPreferences: [language]).first ?? "en-US"
-        let bundle = Bundle.main.path(forResource: resolved, ofType: "lproj").flatMap(Bundle.init(path:)) ?? .main
+        let bundle = LocalizedResourceBundles.selected(language)
         return bundle.localizedString(forKey: key, value: key, table: "FeatureImprovements")
     }
 }

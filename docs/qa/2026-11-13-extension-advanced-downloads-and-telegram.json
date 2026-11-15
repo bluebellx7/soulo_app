@@ -1,0 +1,201 @@
+{
+  "date": "2026-11-13",
+  "app_version": "1.2.14",
+  "build": 54,
+  "feature": "Generic extension Blob download, cache capture, online merge and Telegram feedback page",
+  "status": "Requested workflows implemented and verified",
+  "changes": [
+    "Native WKDownload handles Blob/data URLs without transferring whole media payloads as Base64 messages. Accepted downloads outlive their source extension document.",
+    "Use the normal download queue, owned IDs, progress, completion and native callback lastError semantics. Temporary merge inputs do not create user download history.",
+    "Read extension-origin Blobs and Blobs owned by already granted public browser tabs through a native disk-backed stream with 192 KiB chunks. Reject foreign extension origins, inaccessible/private tabs and arbitrary network/file URLs; clean staging files on stream close, permission loss, unload or expiry.",
+    "Preserve real Blob message arguments across the JSON runtime/tabs message boundary using owned Blob references and receive-side restoration; keep publisher JavaScript unchanged.",
+    "Scope the real ManagedMediaSource equivalent to synchronous MAIN-world file-injection setup on iPhone, restore website feature detection afterwards, including when an injected file throws. Preserve native callback errors and publisher result counts.",
+    "Expose declared extension commands by long pressing the extension action icon, using WKWebExtensionContext.performCommand. No website user-agent spoofing.",
+    "Settings bottom Telegram entry now opens a dedicated themed page with the exact selectable URL, Copy Link and Open. Open tries tg://resolve?domain=soulobrowser, then the HTTPS link."
+  ],
+  "cat_catch_package": {
+    "version": "2.7.4",
+    "sha256": "789df97eb3b9f21607b5257a504b9e46fd834887b63d6ab83beb85178f1461ea",
+    "publisher_javascript_rewritten": false,
+    "online_service": "https://ffmpeg.bmmmd.com/",
+    "media": "Locally generated 8-second color pattern and silent AAC; no third-party video"
+  },
+  "validation": {
+    "iphone_extension_regression": {
+      "passed": 47,
+      "failed": 0,
+      "skipped": 0,
+      "result": "/tmp/soulo-advanced-extensions-20261113/verified-regression.xcresult",
+      "includes": [
+        "Actual Cat Catch package",
+        "Pinned Tampermonkey lifecycle",
+        "TYTY 0.6.6",
+        "Popup rendering/lifetime",
+        "Download callbacks/permissions/privacy",
+        "Generic binary streaming and commands"
+      ]
+    },
+    "ipad_advanced_workflows": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "result": "/tmp/soulo-advanced-extensions-20261113/verified-ipad.xcresult"
+    },
+    "binary_download_cases": [
+      {
+        "kind": "blob",
+        "status": "finished",
+        "bytes": 33554449
+      },
+      {
+        "bytes": 1048583,
+        "kind": "data",
+        "status": "finished"
+      },
+      {
+        "kind": "data-native",
+        "status": "finished",
+        "bytes": 5
+      },
+      {
+        "status": "finished",
+        "bytes": 0,
+        "kind": "empty"
+      }
+    ],
+    "generic_streaming": {
+      "stream": {
+        "type": "application/x-soulo-fixture",
+        "bytes": 33554449,
+        "sha256": "2d1af88493ab410ff278fe255c876d4aabaf05dd6feaebe0b7392746a918cb2a"
+      },
+      "foreign": true,
+      "aborted": {
+        "error": "AbortError",
+        "message": "The operation was aborted."
+      }
+    },
+    "byte_verification": "Every binary download and the 32 MiB+17 cross-world stream matched the expected SHA-256",
+    "iphone_media": {
+      "cacheFile": {
+        "audioTracks": 1,
+        "bytes": 57633,
+        "duration": 8.133333333333333,
+        "playable": true,
+        "videoTracks": 1
+      },
+      "onlineFile": {
+        "audioTracks": 1,
+        "bytes": 57666,
+        "duration": 8,
+        "playable": true,
+        "videoTracks": 1
+      },
+      "cacheMergedFile": {
+        "audioTracks": 1,
+        "bytes": 57663,
+        "duration": 8,
+        "playable": true,
+        "videoTracks": 1
+      },
+      "capabilities": {
+        "managedMediaSource": "function",
+        "mediaSource": "undefined",
+        "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+        "wasm": "object"
+      },
+      "afterInjection": {
+        "managedMediaSource": "function",
+        "mediaSource": "undefined",
+        "scoped": false
+      },
+      "scopeAfterThrownScript": {
+        "mediaSource": "undefined",
+        "scoped": false,
+        "seen": "function"
+      }
+    },
+    "ipad_media": {
+      "cacheFile": {
+        "audioTracks": 1,
+        "bytes": 57633,
+        "duration": 8.133333333333333,
+        "playable": true,
+        "videoTracks": 1
+      },
+      "onlineFile": {
+        "audioTracks": 1,
+        "bytes": 57666,
+        "duration": 8,
+        "playable": true,
+        "videoTracks": 1
+      },
+      "cacheMergedFile": {
+        "audioTracks": 1,
+        "bytes": 57663,
+        "duration": 8,
+        "playable": true,
+        "videoTracks": 1
+      },
+      "capabilities": {
+        "managedMediaSource": "function",
+        "mediaSource": "function",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+        "wasm": "object"
+      },
+      "afterInjection": {
+        "managedMediaSource": "function",
+        "mediaSource": "function",
+        "scoped": false
+      },
+      "scopeAfterThrownScript": {
+        "mediaSource": "function",
+        "scoped": false,
+        "seen": "function"
+      }
+    },
+    "cache_merge_path": "Clicked the real cache-capture panel clean/FFmpeg/download controls after appending separate native audio/video SourceBuffers; publisher source -> content -> background -> online content -> real Wasm FFmpeg -> real WKDownload -> AVURLAsset playable file with both tracks.",
+    "telegram_ui": {
+      "iphone_result": "/tmp/soulo-advanced-extensions-20261113/telegram-iphone-verified.xcresult",
+      "ipad_result": "/tmp/soulo-advanced-extensions-20261113/telegram-ipad.xcresult",
+      "passed": 2,
+      "failed": 0,
+      "coverage": [
+        "Chinese/light",
+        "English/dark",
+        "Settings navigation and Back",
+        "Exact link visible",
+        "External Open button hittable"
+      ],
+      "external_app_handoff": "Uses UIApplication.open; Telegram is not installed on QA simulators, so live Telegram handoff was not exercised."
+    },
+    "unsigned_ios_device_build": "Succeeded: /tmp/soulo-advanced-extensions-20261113/verified-device.log",
+    "localization": "Strict checks passed for all 50 locales",
+    "app_store_metadata": "Generated JSON verification passed for all 50 locales; no version/metadata changes in this task",
+    "git_diff_check": "Passed"
+  },
+  "scope": [
+    "Native third-party extension engine requires iOS/iPadOS 18.4+. Tests ran on iPhone/iPad simulators; no physical-device execution.",
+    "These results cover the requested workflows and regression packages, not certification of every store extension or Chrome API.",
+    "Online FFmpeg needs its remote page/CDN to remain available. Huge-file/memory limits of third-party Wasm FFmpeg and encrypted-media restrictions are not removed."
+  ],
+  "cleanup": [
+    {
+      "device": "iphone",
+      "test_package_removed": true,
+      "previous_package_restored": false,
+      "temporary_blob_files_remaining": 0,
+      "other_existing_packages_preserved": true
+    },
+    {
+      "device": "ipad",
+      "test_package_removed": true,
+      "previous_package_restored": false,
+      "temporary_blob_files_remaining": 0,
+      "other_existing_packages_preserved": true
+    }
+  ],
+  "artifacts": "/tmp/soulo-advanced-extensions-20261113",
+  "paid_api_calls": 0,
+  "pushed": false
+}

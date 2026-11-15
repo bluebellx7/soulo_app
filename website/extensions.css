@@ -1,0 +1,67 @@
+.extensions-page { --catalog-paper:#fff; --catalog-ink:#242532; --catalog-muted:#656a78; --catalog-line:#e3e5ee; --catalog-accent:#6957bc; background:#f6f7fb; color:var(--catalog-ink); font-family:"Avenir Next","PingFang SC","Microsoft YaHei",sans-serif; }
+html[data-resolved-theme="dark"] .extensions-page { --catalog-paper:#22232e; --catalog-ink:#f0eff8; --catalog-muted:#b5b6c8; --catalog-line:#3b3c4c; --catalog-accent:#c5b8ff; background:#191a23; }
+.extensions-page *, .extensions-page *::before, .extensions-page *::after { box-sizing:border-box; }
+.catalog-wrap { width:min(860px,calc(100% - 40px)); margin:0 auto; padding:36px 0 max(44px,env(safe-area-inset-bottom)); }
+.catalog-intro { margin-bottom:28px; }
+.catalog-intro h1 { font-size:clamp(29px,5vw,38px); font-weight:650; letter-spacing:-1px; line-height:1.25; margin:0 0 10px; }
+.catalog-intro p { color:var(--catalog-muted); font-size:16px; line-height:1.65; margin:0 0 12px; }
+.recommend-link { display:inline-flex; align-items:center; min-height:44px; color:var(--catalog-accent); font-size:15px; text-underline-offset:4px; }
+.extension-list { display:grid; gap:20px; }
+.extension-card { padding:24px; background:var(--catalog-paper); border:1px solid var(--catalog-line); border-radius:22px; }
+.extension-identity { display:flex; gap:16px; align-items:center; }
+.extension-logo { width:64px; height:64px; flex:none; object-fit:contain; border-radius:14px; background:#fff; padding:5px; }
+.extension-identity h2 { margin:0; font-size:24px; letter-spacing:-.4px; line-height:1.3; font-weight:650; }
+.extension-subtitle { color:var(--catalog-muted); margin:3px 0 0; font-size:14px; }
+.extension-source { display:inline-flex; align-items:center; gap:7px; border:1px solid var(--catalog-line); padding:5px 10px; border-radius:8px; margin:18px 0 0; font-size:13px; font-weight:550; }
+.store-logo { width:18px; height:18px; flex:none; }
+.extension-description { font-size:16px; line-height:1.7; margin:16px 0; max-width:64ch; }
+.extension-tested { margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px 18px; list-style:none; color:var(--catalog-muted); font-size:14px; line-height:1.6; }
+.extension-tested li::before { content:'✓'; color:#278263; padding-right:6px; font-weight:700; }
+html[data-resolved-theme="dark"] .extension-tested li::before { color:#85cdb3; }
+.extension-version { margin:16px 0 0; color:var(--catalog-muted); font-size:12px; line-height:1.7; }
+.extension-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+.catalog-button { display:inline-flex; justify-content:center; align-items:center; gap:8px; min-height:48px; padding:11px 18px; border:1px solid var(--catalog-line); border-radius:12px; text-decoration:none; color:var(--catalog-ink); background:transparent; font:600 15px/1.5 "Avenir Next","PingFang SC",sans-serif; cursor:pointer; }
+.catalog-button.primary { color:#fff; border-color:#6957bc; background:#6957bc; }
+.catalog-button:hover { filter:brightness(.95); }
+.catalog-button:disabled { opacity:.6; cursor:wait; }
+.extension-note { color:var(--catalog-muted); font-size:13px; line-height:1.65; margin:14px 0 0; }
+.install-help { margin:28px 0 36px; border-left:3px solid var(--catalog-line); padding:0 0 0 16px; }
+.install-help h2 { font-size:17px; margin:0 0 8px; }
+.install-help p { color:var(--catalog-muted); font-size:14px; line-height:1.7; margin:7px 0; }
+.recommend-section { border-top:1px solid var(--catalog-line); padding-top:28px; scroll-margin-top:20px; }
+.recommend-section h2 { margin:0 0 8px; font-size:25px; letter-spacing:-.5px; }
+.recommend-section > p { color:var(--catalog-muted); font-size:15px; line-height:1.7; margin:0 0 22px; }
+#recommend-form { display:grid; grid-template-columns:1fr; max-width:620px; gap:8px; }
+#recommend-form label { font-size:14px; font-weight:600; margin-top:10px; }
+#recommend-form input, #recommend-form textarea { display:block; width:100%; min-height:48px; border:1px solid var(--catalog-line); border-radius:10px; padding:12px; background:var(--catalog-paper); color:var(--catalog-ink); font:400 16px/1.6 "Avenir Next","PingFang SC",sans-serif; }
+#recommend-form textarea { resize:vertical; min-height:100px; }
+.form-disclosure, .catalog-attribution { color:var(--catalog-muted); font-size:12px; line-height:1.8; }
+.form-disclosure a { color:var(--catalog-accent); text-underline-offset:3px; }
+#recommend-submit { justify-self:start; min-width:150px; }
+#recommend-status { min-height:1.7em; margin:5px 0 0; font-size:14px; line-height:1.7; overflow-wrap:anywhere; }
+#recommend-status[data-error="true"] { color:#bf4545; }
+.catalog-attribution { margin:32px 0 0; }
+.extensions-page a:focus-visible, .extensions-page button:focus-visible, .extensions-page input:focus-visible, .extensions-page textarea:focus-visible { outline:3px solid var(--catalog-accent); outline-offset:3px; }
+.extensions-page .site-footer { margin-top:0; padding-bottom:max(30px,env(safe-area-inset-bottom)); }
+@media(min-width:800px) { .extension-list { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; } .extension-actions { flex-direction:column; } }
+@media(max-width:480px) { .catalog-wrap { width:calc(100% - 32px); padding-top:28px; } .extension-card { padding:20px; border-radius:18px; } .extension-actions { display:grid; grid-template-columns:1fr; } .extension-logo { width:58px; height:58px; } .extension-identity { gap:12px; } .extension-identity h2 { font-size:23px; } #recommend-submit { width:100%; } }
+@media(prefers-reduced-motion:reduce) { .extensions-page * { scroll-behavior:auto!important; transition:none!important; } }
+
+/* Compact catalog rows; actions keep their full touch targets. */
+.extension-list { gap:14px; }
+.extension-card { padding:18px; border-radius:16px; }
+.extension-identity { gap:12px; }
+.extension-identity > div { min-width:0; }
+.extension-logo { width:44px; height:44px; padding:3px; border-radius:10px; }
+.extension-heading { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; }
+.extension-identity h2 { font-size:20px; }
+.extension-subtitle { font-size:12px; }
+.extension-source { margin:0; padding:3px 6px; font-size:10px; gap:4px; border-radius:6px; }
+.store-logo { width:14px; height:14px; }
+.extension-description { font-size:14px; line-height:1.65; margin:13px 0 11px; }
+.extension-tested { font-size:12px; gap:5px 12px; }
+.extension-version { margin-top:11px; font-size:11px; }
+.extension-actions { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:8px; margin-top:13px; }
+.catalog-button { min-height:44px; padding:10px 12px; font-size:13px; border-radius:10px; }
+.extension-note { margin-top:10px; font-size:11px; line-height:1.7; }
+@media(max-width:480px) { .extension-card { padding:16px; } .extension-identity h2 { font-size:19px; } }

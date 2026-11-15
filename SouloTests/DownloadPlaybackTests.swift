@@ -8,6 +8,134 @@ import CommonCrypto
 
 @MainActor
 final class DownloadPlaybackTests: XCTestCase {
+    func testLiveMtyySampleDownloadsIntoPlayableMP4() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_MTY_QA"] == "1", "Opt-in user-reported live download")
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.connectionProxyDictionary = [:]
+        configuration.timeoutIntervalForRequest = 20
+        let network = URLSession(configuration: configuration); defer { network.invalidateAndCancel() }
+        func get(_ url: URL) async throws -> Data {
+            var request = URLRequest(url: url)
+            request.setValue(AppConstants.mobileWebViewUserAgent, forHTTPHeaderField: "User-Agent")
+            let (data, response) = try await network.data(for: request)
+            XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+            return data
+        }
+        let page = URL(string: "https://www.mtyy5.com/vodplay/155698-4-1.html")!
+        let html = String(decoding: try await get(page), as: UTF8.self)
+        let start = try XCTUnwrap(html.range(of: "player_data="))
+        let end = try XCTUnwrap(html.range(of: "</script>", range: start.upperBound..<html.endIndex))
+        let raw = String(html[start.upperBound..<end.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let player = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any])
+        let token = try XCTUnwrap(player["url"] as? String)
+        let endpoint = URL(string: "https://www.mtyy5.com/static/player/art.php")!
+        var signed = URLComponents(url: endpoint, resolvingAgainstBaseURL: false)!
+        signed.queryItems = [.init(name: "get_signed_url", value: "1"), .init(name: "url", value: token)]
+        let signedData = try await get(signed.url!)
+        let first = try XCTUnwrap(JSONSerialization.jsonObject(with: signedData) as? [String: Any])
+        let signedURL = try XCTUnwrap(URL(string: try XCTUnwrap(first["signed_url"] as? String), relativeTo: endpoint)?.absoluteURL)
+        let metadataData = try await get(signedURL)
+        let metadata = try XCTUnwrap(JSONSerialization.jsonObject(with: metadataData) as? [String: Any])
+        let stream = try XCTUnwrap(URL(string: try XCTUnwrap(metadata["jmurl"] as? String)))
+        let text = String(decoding: try await get(stream), as: UTF8.self)
+        XCTAssertTrue(text.hasPrefix("#EXTM3U"))
+        // Fetch two real segments only; do not download the whole episode in QA.
+        var sample = ["#EXTM3U", "#EXT-X-VERSION:3", "#EXT-X-TARGETDURATION:30", "#EXT-X-PLAYLIST-TYPE:VOD"]
+        var duration = "", count = 0
+        for line in text.components(separatedBy: .newlines) {
+            if line.hasPrefix("#EXTINF:") { duration = line }
+            else if !line.isEmpty && !line.hasPrefix("#"), !duration.isEmpty {
+                sample += [duration, try XCTUnwrap(URL(string: line, relativeTo: stream)?.absoluteURL.absoluteString)]
+                count += 1; duration = ""
+                if count == 2 { break }
+            }
+        }
+        XCTAssertEqual(count, 2); sample.append("#EXT-X-ENDLIST")
+        let web = WKWebView()
+        WebMediaManifestCache.remember([stream.absoluteString: sample.joined(separator: "\n")], webView: web)
+        WebMediaManifestCache.rememberPolicy("no-referrer", urls: [stream], webView: web)
+        let resource = WebMediaResource(kind: .video, url: stream, title: "MTYY real sample", posterURL: nil, delivery: .hls, sourcePageURL: endpoint)
+        let manager = DownloadManagerService.shared
+        defer { if let item = manager.downloads.first(where: { $0.sourceURLString == stream.absoluteString }) { removeGeneratedDownload(item, manager: manager) } }
+        let file = try await StreamingMediaDownloadService.shared.downloadHLS(resource: resource, preferredFilename: "MTYY real sample.mp4", pageURL: endpoint, webView: web)
+        let asset = AVURLAsset(url: file)
+        let length = try await asset.load(.duration)
+        let tracks = try await asset.loadTracks(withMediaType: .video)
+        XCTAssertEqual(file.pathExtension, "mp4"); XCTAssertGreaterThan(length.seconds, 3); XCTAssertFalse(tracks.isEmpty)
+        let attachment = XCTAttachment(string: "Downloaded two real remote segments into MP4: duration=\(length.seconds), bytes=\((try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)")
+        attachment.name = "mtyy-real-sample-download"; attachment.lifetime = .keepAlways; add(attachment)
+    }
+
+    func testDecoratedHLSSegmentsPlayAndDownloadAsRealVideo() async throws {
+        let segment = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment0", withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
+        let bytes = try Data(contentsOf: segment)
+        let prefix = Data([137,80,78,71,13,10,26,10]) + Data(repeating: 0, count: 61)
+        let payload = prefix + bytes
+        XCTAssertEqual(HLSTransportPrefix.offset(in: payload), prefix.count)
+        XCTAssertNil(HLSTransportPrefix.offset(in: bytes))
+        XCTAssertNil(HLSTransportPrefix.offset(in: Data("<html>failure</html>".utf8)))
+        let playlist = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:2.022,\nsegment.ts\n#EXT-X-ENDLIST\n"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/video.m3u8": Data(playlist.utf8), "/segment.ts": payload],
+            responseHeaders: ["/segment.ts": ["Content-Type": "image/png"]])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let web = WKWebView(frame: .zero, configuration: config)
+        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("video.m3u8"), title: "Decorated TS", posterURL: nil, delivery: .hls)
+        let asset = await WebResourceMediaService.asset(for: resource, webView: web)
+        XCTAssertNotEqual(asset.url, resource.url, "Only verified decorated segments need a playback bridge")
+        let item = AVPlayerItem(asset: asset), output = AVPlayerItemVideoOutput(pixelBufferAttributes: nil)
+        item.add(output)
+        let player = AVPlayer(playerItem: item); player.play()
+        defer { player.pause(); player.replaceCurrentItem(with: nil) }
+        try await waitFor("Decorated HLS must decode a real frame through the scoped bridge") {
+            let time = output.itemTime(forHostTime: CACurrentMediaTime())
+            return player.currentTime().seconds > 0.2 && output.copyPixelBuffer(forItemTime: time, itemTimeForDisplay: nil) != nil
+        }
+        XCTAssertNil(item.error)
+        let manager = DownloadManagerService.shared
+        defer { if let saved = manager.downloads.first(where: { $0.sourceURLString == resource.url.absoluteString }) { removeGeneratedDownload(saved, manager: manager) } }
+        let file = try await StreamingMediaDownloadService.shared.downloadHLS(resource: resource,
+            preferredFilename: "Decorated TS QA.mp4", pageURL: nil, webView: web)
+        XCTAssertEqual(file.pathExtension, "mp4")
+        let downloaded = AVURLAsset(url: file)
+        let duration = try await downloaded.load(.duration)
+        let tracks = try await downloaded.loadTracks(withMediaType: .video)
+        XCTAssertGreaterThan(duration.seconds, 1)
+        XCTAssertFalse(tracks.isEmpty)
+    }
+
+    func testScopedHLSDownloadSessionPreservesConfiguredRequestContext() async throws {
+        try XCTSkipIf(ProcessInfo.processInfo.environment["SOULO_HLS_SYSTEM_CONTEXT_PROOF"] != "1",
+                      "Opt-in reproduction of the OS AVAssetDownload cookie/UA issue; production scoped fallback is covered separately")
+        var files: [String: Data] = [:]
+        var playlist = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+        for index in 0..<4 {
+            let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment\(index)", withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
+            files["/segment\(index).ts"] = try Data(contentsOf: file)
+            playlist += "#EXTINF:2.022,\nsegment\(index).ts\n"
+        }
+        files["/video.m3u8"] = Data((playlist + "#EXT-X-ENDLIST\n").utf8)
+        let server = try DownloadPlaybackHTTPFixture(files: files, requiredCookie: "scopedHLS=allowed")
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [.domain: "127.0.0.1", .path: "/", .name: "scopedHLS", .value: "allowed"]))
+        let jar = try XCTUnwrap(URLSessionConfiguration.ephemeral.httpCookieStorage)
+        jar.setCookies([cookie], for: root, mainDocumentURL: root)
+        let config = URLSessionConfiguration.background(withIdentifier: "Soulo.HLS.ContextProof." + UUID().uuidString)
+        config.httpCookieStorage = jar; config.httpShouldSetCookies = true
+        config.httpAdditionalHeaders = ["User-Agent": "Soulo-ScopedHLS-Proof"]
+        config.isDiscretionary = false
+        let delegate = HLSScopedContextProof()
+        let session = AVAssetDownloadURLSession(configuration: config, assetDownloadDelegate: delegate, delegateQueue: .main)
+        defer { session.invalidateAndCancel(); if let url = delegate.location { try? FileManager.default.removeItem(at: url) } }
+        let asset = AVURLAsset(url: root.appendingPathComponent("video.m3u8"), options: [AVURLAssetHTTPCookiesKey: [cookie], AVURLAssetHTTPUserAgentKey: "Soulo-ScopedHLS-Proof"])
+        let task = try XCTUnwrap(session.makeAssetDownloadTask(asset: asset, assetTitle: "Scoped HLS", assetArtworkData: nil, options: nil))
+        task.resume()
+        try await waitFor("Scoped HLS did not finish") { delegate.finished }
+        let requests = server.receivedRequests
+        XCTAssertNil(delegate.error, String(describing: requests))
+        XCTAssertTrue(requests.allSatisfy { $0.headers["cookie"]?.contains("scopedHLS=allowed") == true }, String(describing: requests))
+        XCTAssertTrue(requests.allSatisfy { $0.headers["user-agent"] == "Soulo-ScopedHLS-Proof" }, String(describing: requests))
+    }
     func testPrepareCompletedHLSForExportUI() async throws {
         try XCTSkipIf(ProcessInfo.processInfo.environment["SOULO_MP4_UI_FIXTURE"] != "1", "Prepare a completed download for the separate UI runner")
         let fixture = try encryptedPackage()
@@ -466,6 +594,91 @@ final class DownloadPlaybackTests: XCTestCase {
         try await checkEncryptedHLSDownload(authenticated: true)
     }
 
+    func testAuthenticatedFMP4ByteRangesAndSeparateAudioPlayOffline() async throws {
+        func media(_ name: String) throws -> Data {
+            let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: name, withExtension: "m4s", subdirectory: "ReadingFixtures/ExtensionMedia/DASH"))
+            return try Data(contentsOf: url)
+        }
+        let videoInit = try media("init-stream0"), video = try media("chunk-stream0-00001")
+        let audioInit = try media("init-stream1")
+        let audio = try (1...4).map { try media(String(format: "chunk-stream1-%05d", $0)) }
+        let header = "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:8\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+        let videoList = header + "#EXT-X-MAP:URI=\"video.mp4\",BYTERANGE=\"\(videoInit.count)@0\"\n#EXTINF:8.0,\n#EXT-X-BYTERANGE:\(video.count)@\(videoInit.count)\nvideo.mp4\n#EXT-X-ENDLIST\n"
+        var audioList = header + "#EXT-X-MAP:URI=\"audio.m4a\",BYTERANGE=\"\(audioInit.count)@0\"\n"
+        for index in audio.indices {
+            audioList += "#EXTINF:\(index == 0 ? "1.984" : "2.005333"),\n#EXT-X-BYTERANGE:\(audio[index].count)\(index == 0 ? "@\(audioInit.count)" : "")\naudio.m4a\n"
+        }
+        audioList += "#EXT-X-ENDLIST\n"
+        let master = "#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"sound\",NAME=\"Original\",DEFAULT=YES,AUTOSELECT=YES,URI=\"audio.m3u8\"\n#EXT-X-STREAM-INF:BANDWIDTH=100000,CODECS=\"avc1.64000a,mp4a.40.2\",AUDIO=\"sound\"\nvideo.m3u8\n"
+        let files = ["/master.m3u8": Data(master.utf8), "/video.m3u8": Data(videoList.utf8),
+                     "/audio.m3u8": Data(audioList.utf8), "/video.mp4": videoInit + video,
+                     "/audio.m4a": audio.reduce(audioInit, +)]
+        let server = try DownloadPlaybackHTTPFixture(files: files, requiredCookie: "fmp4Download=allowed",
+            responseHeaders: ["/audio.m4a": ["Content-Type": "audio/mp4"]])
+        let origin = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let web = WKWebView(frame: .zero, configuration: config); web.customUserAgent = "Soulo-FMP4-Download/1.0"
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [.domain: "127.0.0.1", .path: "/", .name: "fmp4Download", .value: "allowed"]))
+        await config.websiteDataStore.httpCookieStore.setCookie(cookie)
+        let resource = WebMediaResource(kind: .video, url: origin.appendingPathComponent("master.m3u8"), title: "Private fMP4", posterURL: nil, delivery: .hls)
+        let manager = DownloadManagerService.shared
+        defer { if let item = manager.downloads.first(where: { $0.sourceURLString == resource.url.absoluteString }) { removeGeneratedDownload(item, manager: manager) } }
+        let file = try await StreamingMediaDownloadService.shared.downloadHLS(resource: resource, preferredFilename: "Private fMP4.mp4", pageURL: nil, webView: web)
+        XCTAssertEqual(file.pathExtension, "hls")
+        let saved = try XCTUnwrap(manager.finishedDownload(for: resource.url))
+        XCTAssertEqual(saved.localURL.standardizedFileURL.path, file.standardizedFileURL.path)
+        let requests = server.receivedRequests
+        XCTAssertEqual(requests.filter { $0.headers["range"] != nil }.count, 7)
+        XCTAssertTrue(requests.allSatisfy { $0.headers["cookie"]?.contains("fmp4Download=allowed") == true && $0.headers["user-agent"] == web.customUserAgent })
+        server.stop()
+        let localSource = DownloadPlaybackSource(asset: AVURLAsset(url: try LocalHLSMedia.playlistURL(for: file)), pageURL: nil, webView: nil)
+        let prepared = try await SouloMediaPlaybackSource.prepare(native: localSource, originalURL: file)
+        let asset = try await prepared.systemAsset()
+        let item = AVPlayerItem(asset: asset), output = AVPlayerItemVideoOutput(pixelBufferAttributes: nil)
+        item.add(output)
+        let player = AVPlayer(playerItem: item); player.play()
+        defer { withExtendedLifetime(prepared) { player.pause(); player.replaceCurrentItem(with: nil) } }
+        try await waitFor("Saved fMP4 ranges and alternate audio must decode after the authenticated origin stops") {
+            let time = output.itemTime(forHostTime: CACurrentMediaTime())
+            return player.currentTime().seconds > 0.5 && output.copyPixelBuffer(forItemTime: time, itemTimeForDisplay: nil) != nil
+        }
+        XCTAssertNil(item.error)
+        XCTAssertEqual(item.tracks.filter { $0.assetTrack?.mediaType == .audio }.count, 1, "Alternate audio must be retained in the saved master")
+        let duration = try await asset.load(.duration)
+        XCTAssertGreaterThan(duration.seconds, 7.9)
+    }
+
+    func testAuthenticatedHLSCancelRemovesPartialFilesAndRejectsErrorPages() async throws {
+        let segmentURL = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment0", withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
+        let bytes = try Data(contentsOf: segmentURL)
+        let playlist = "#EXTM3U\n#EXT-X-TARGETDURATION:3\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:2.022,\nfirst.ts\n#EXTINF:2.022,\nlast.ts\n#EXT-X-ENDLIST\n"
+        let manager = DownloadManagerService.shared
+        for failing in [false, true] {
+            let server = try DownloadPlaybackHTTPFixture(files: ["/index.m3u8": Data(playlist.utf8), "/first.ts": bytes,
+                "/last.ts": failing ? Data("<html>Denied</html>".utf8) : bytes], heldPaths: failing ? [] : ["/last.ts"],
+                requiredCookie: "cancelHLS=allowed", responseHeaders: failing ? ["/last.ts": ["Content-Type": "text/html"]] : [:])
+            let origin = try await server.start(); defer { server.stop() }
+            let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+            let web = WKWebView(frame: .zero, configuration: config); web.customUserAgent = "Soulo-HLS-Cancel/1.0"
+            let cookie = try XCTUnwrap(HTTPCookie(properties: [.domain: "127.0.0.1", .path: "/", .name: "cancelHLS", .value: "allowed"]))
+            await config.websiteDataStore.httpCookieStore.setCookie(cookie)
+            let resource = WebMediaResource(kind: .video, url: origin.appendingPathComponent("index.m3u8"), title: "HLS cancellation", posterURL: nil, delivery: .hls)
+            let task = Task { try await StreamingMediaDownloadService.shared.downloadHLS(resource: resource, preferredFilename: "Canceled HLS.mp4", pageURL: nil, webView: web) }
+            try await waitFor("The first HLS fragment must publish actual received bytes") { (manager.activeDownload(for: resource.url)?.receivedBytes ?? 0) >= Int64(bytes.count) }
+            let id = try XCTUnwrap(manager.activeDownload(for: resource.url)?.id)
+            defer { if let item = manager.downloads.first(where: { $0.id == id }) { removeGeneratedDownload(item, manager: manager) } }
+            if !failing { StreamingMediaDownloadService.shared.cancel(itemID: id) }
+            do { _ = try await task.value; XCTFail("A canceled or HTML fragment download cannot finish") } catch { }
+            XCTAssertEqual(manager.downloads.first(where: { $0.id == id })?.status, failing ? .failed : .canceled)
+            XCTAssertFalse(AuthenticatedHLSDownloadService.shared.owns(id))
+            XCTAssertNil(manager.playbackSource(for: id))
+            let staging = FileManager.default.temporaryDirectory.appendingPathComponent("SouloAuthenticatedHLS/\(id).hls")
+            try await waitFor("Failed HLS staging must be removed") { !FileManager.default.fileExists(atPath: staging.path) }
+            if failing { XCTAssertEqual(server.receivedRequests.filter { $0.path == "/last.ts" }.count, 3, "Error pages must be retried within the fixed bound") }
+            server.stop()
+        }
+    }
+
     private func checkEncryptedHLSDownload(authenticated: Bool) async throws {
         let fixture = try encryptedPackage()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
@@ -775,6 +988,14 @@ final class DownloadPlaybackTests: XCTestCase {
             await config.websiteDataStore.httpCookieStore.setCookie(cookie)
         }
         let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("video.m3u8"), title: "Concurrent HLS", posterURL: nil, delivery: .hls)
+        let assetOptions = await WebResourceMediaService.networkAssetOptions(for: resource, webView: web)
+        XCTAssertEqual(assetOptions[AVURLAssetHTTPUserAgentKey] as? String, web.customUserAgent,
+                       "Verify the browser context before handing it to the system download task")
+        if authenticated {
+            let capturedCookies = assetOptions[AVURLAssetHTTPCookiesKey] as? [HTTPCookie] ?? []
+            XCTAssertTrue(capturedCookies.contains { $0.name == "hlsPlayback" && $0.value == "allowed" },
+                          "The private WebKit cookie must already be present in the asset options")
+        }
         let manager = DownloadManagerService.shared, session = MediaSession.shared
         let oldRate = session.rate; session.setRate(1)
         let download = Task { try await StreamingMediaDownloadService.shared.downloadHLS(resource: resource, preferredFilename: "concurrent-hls.mp4", pageURL: nil, webView: web) }
@@ -787,6 +1008,11 @@ final class DownloadPlaybackTests: XCTestCase {
         }
         defer {
             watchdog.cancel()
+            let details = server.receivedRequests.map { ["path": $0.path, "headers": $0.headers] as [String: Any] }
+            if let data = try? JSONSerialization.data(withJSONObject: details, options: [.prettyPrinted, .sortedKeys]) {
+                let evidence = XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
+                evidence.name = "hls-local-request-context-\(authenticated)"; evidence.lifetime = .keepAlways; add(evidence)
+            }
             session.stop(); session.setRate(oldRate)
             if let item = manager.downloads.first(where: { $0.sourceURLString == resource.url.absoluteString }) {
                 removeGeneratedDownload(item, manager: manager)
@@ -823,7 +1049,7 @@ final class DownloadPlaybackTests: XCTestCase {
         XCTAssertNil(session.error)
         let requests = server.receivedRequests
         XCTAssertGreaterThanOrEqual(requests.filter { $0.path == "/video.m3u8" }.count, 2)
-        XCTAssertTrue(requests.allSatisfy { $0.headers["user-agent"] == web.customUserAgent })
+        XCTAssertTrue(requests.allSatisfy { $0.headers["user-agent"] == web.customUserAgent }, String(describing: requests))
         if authenticated { XCTAssertTrue(requests.allSatisfy { $0.headers["cookie"]?.contains("hlsPlayback=allowed") == true }) }
         session.stop()
         server.stop()
@@ -839,4 +1065,15 @@ final class DownloadPlaybackTests: XCTestCase {
         }
         XCTAssertNil(offlineItem.error)
     }
+}
+
+@MainActor
+private final class HLSScopedContextProof: NSObject, @preconcurrency AVAssetDownloadDelegate {
+    var finished = false
+    var error: Error?
+    var location: URL?
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        self.error = error; finished = true
+    }
+    func urlSession(_ session: URLSession, assetDownloadTask: AVAssetDownloadTask, willDownloadTo location: URL) { self.location = location }
 }

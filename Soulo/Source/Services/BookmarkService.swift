@@ -3,6 +3,42 @@ import CoreData
 import CoreSpotlight
 
 struct BookmarkService {
+    static var sortDescriptors: [NSSortDescriptor] { [NSSortDescriptor(key: "sortOrder", ascending: true), NSSortDescriptor(key: "dateAdded", ascending: false), NSSortDescriptor(key: "id", ascending: true)] }
+
+    /// A filtered grid reorders only its own slots in the full bookmark order.
+    /// Persist once on drop, rather than saving repeatedly while the finger moves.
+    static func reorder(_ ids: [UUID], context: NSManagedObjectContext) throws {
+        let all = try context.fetch(BookmarkRecord.request(sortBy: sortDescriptors))
+        let records = Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0) })
+        let unique = Set(ids)
+        guard unique.count == ids.count, unique.isSubset(of: Set(records.keys)) else { return }
+        var replacement = ids.makeIterator()
+        let ordered = all.map { unique.contains($0.id) ? records[replacement.next()!]! : $0 }
+        for (index, item) in ordered.enumerated() where item.sortOrder != Int64(index + 1) { item.sortOrder = Int64(index + 1) }
+        if context.hasChanges { try context.save() }
+    }
+    /// Starred bookmarks from any folder win; otherwise use the newest saved
+    /// pages. Do not show duplicate URLs or non-web links on the landing page.
+    static func quickLinks(from bookmarks: [BookmarkRecord], limit: Int = 8) -> [BookmarkRecord] {
+        guard limit > 0 else { return [] }
+        var seen = Set<String>()
+        var result: [BookmarkRecord] = []
+        func append(_ item: BookmarkRecord) {
+            guard let url = item.url, ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host != nil,
+                  seen.insert(item.urlString).inserted else { return }
+            result.append(item)
+        }
+        for item in bookmarks where item.isFavorite {
+            append(item)
+            if result.count == limit { return result }
+        }
+        if !result.isEmpty { return result }
+        for item in bookmarks {
+            append(item)
+            if result.count == limit { break }
+        }
+        return result
+    }
 
     // MARK: - Add
 

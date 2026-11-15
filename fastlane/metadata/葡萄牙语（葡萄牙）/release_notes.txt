@@ -1,6 +1,1 @@
-1.2.13
-
-• Fundos separados para os modos claro e escuro e opção de camada sobre a imagem.
-• Cores da página inicial melhoradas; a pré-visualização do fundo segue o tema da app.
-• Pré-visualize, partilhe e guarde fundos em Fotografias.
-• Definições dos separadores superiores com novo separador e opção de ocultar a barra de plataformas após navegar.
+Melhorias nas janelas do iPad, na entrada por voz, nos resumos locais e na acessibilidade. Melhorias na exportação de multimédia em segundo plano, nos Atalhos e na compatibilidade com extensões. Algumas funcionalidades dependem do dispositivo, do sistema e do idioma.

@@ -1,6 +1,1 @@
-1.2.13
-
-• Nền riêng cho giao diện sáng và tối, cùng công tắc lớp phủ ảnh.
-• Cải thiện màu trang chủ; xem trước hình nền theo chủ đề ứng dụng.
-• Xem trước, chia sẻ và lưu hình nền vào Ảnh.
-• Cài đặt tab trên cùng có tab mới và tùy chọn ẩn thanh nền tảng sau khi chuyển trang.
+Cải thiện cửa sổ iPad, nhập bằng giọng nói, tóm tắt cục bộ và trợ năng. Cải thiện xuất phương tiện trong nền, Phím tắt và khả năng tương thích tiện ích. Một số tính năng phụ thuộc vào thiết bị, phiên bản hệ điều hành và ngôn ngữ.

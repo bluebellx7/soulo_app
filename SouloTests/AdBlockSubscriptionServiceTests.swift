@@ -3,6 +3,183 @@ import WebKit
 @testable import Soulo
 
 final class AdBlockSubscriptionServiceTests: XCTestCase {
+    func testCompactRulesRoundTripPreservesExceptionsAndLegacyArchives() throws {
+        let text = (0..<1000).map { "||ads.example/\($0)^" }.joined(separator: "\n")
+            + "\n@@||ads.example/allowed^\nexample.com##.ad\nexample.com#@#.exception"
+        let rules = AdBlockRuleParser.parse(text)
+        let json = try JSONEncoder().encode(rules)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: json) as? [String: Any])
+        XCTAssertNil(object["networkURLFilters"])
+        let archive = try AdBlockRuleArchive.pack(json)
+        XCTAssertLessThan(archive.count, json.count / 2)
+        XCTAssertEqual(try AdBlockRuleArchive.decode(ParsedAdBlockRules.self, from: archive), rules)
+        XCTAssertEqual(try AdBlockRuleArchive.decode(ParsedAdBlockRules.self, from: json), rules)
+        XCTAssertThrowsError(try AdBlockRuleArchive.decode(ParsedAdBlockRules.self, from: Data("SouloRulesLZFSE1\ninvalid".utf8)))
+    }
+
+    @MainActor func testDisabledDefaultSourcesAreNotDownloaded() async throws {
+        let suite = "DefaultFilterDownloads.\(UUID())", defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let config = URLSessionConfiguration.ephemeral; config.protocolClasses = [SubscriptionTestProtocol.self]
+        let session = URLSession(configuration: config)
+        defer { SubscriptionTestProtocol.handler = nil; session.invalidateAndCancel(); defaults.removePersistentDomain(forName: suite) }
+        let sources = AdBlockSubscriptionService.defaultSubscriptions()
+        XCTAssertEqual(Set(sources.filter(\.isEnabled).map(\.id)), ["adguard-base", "adguard-chinese", "adguard-mobile", "easyprivacy"])
+        let service = AdBlockSubscriptionService(userDefaults: defaults, session: session)
+        SubscriptionTestProtocol.handler = { request in
+            XCTAssertTrue(sources.contains { $0.isEnabled && $0.url == request.request.url })
+            request.respond(body: "##.ad", mimeType: "text/plain")
+        }
+        await service.updateEnabledSubscriptions()
+        XCTAssertTrue(service.subscriptions.filter { !$0.isEnabled }.allSatisfy { $0.lastUpdatedAt == nil })
+    }
+
+    @MainActor
+    func testNewCustomSubscriptionQueuesBehindAnInFlightRefresh() async throws {
+        let suite = "CustomSubscriptionQueue.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SubscriptionTestProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer {
+            SubscriptionTestProtocol.handler = nil
+            session.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: suite)
+        }
+        let service = AdBlockSubscriptionService(userDefaults: defaults, session: session)
+        let first = try service.addSubscription(name: "First", urlString: "https://filters.example/first.txt")
+        var added: AdBlockSubscription?
+        SubscriptionTestProtocol.handler = { request in
+            Task { @MainActor in
+                if request.request.url == first.url {
+                    do {
+                        let next = try service.addSubscription(name: "Added while updating", urlString: "https://filters.example/next.txt")
+                        added = next
+                        await service.updateSubscription(next)
+                    } catch { XCTFail("The new subscription should be accepted during a refresh: \(error)") }
+                    request.respond(body: "example.com##.first", mimeType: "text/plain")
+                } else {
+                    XCTAssertEqual(request.request.url, added?.url)
+                    request.respond(body: "example.com##.queued", mimeType: "text/plain")
+                }
+            }
+        }
+        await service.updateSubscription(first)
+        let queued = try XCTUnwrap(added)
+        XCTAssertNotNil(service.subscriptions.first { $0.id == queued.id }?.lastUpdatedAt)
+        XCTAssertEqual(Set(service.enabledRuleSummary.cosmeticRules.map(\.selector)), [".first", ".queued"])
+        XCTAssertFalse(service.isUpdating)
+    }
+
+    @MainActor
+    func testCustomSubscriptionValidatesCanonicalURLsAndPersists() throws {
+        let suite = "CustomSubscriptions.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let service = AdBlockSubscriptionService(userDefaults: defaults)
+        let custom = try service.addSubscription(name: "  Personal filters  ",
+            urlString: " HTTPS://FILTERS.EXAMPLE:443/list.txt#rules ")
+        XCTAssertEqual(custom.name, "Personal filters")
+        XCTAssertEqual(custom.urlString, "https://filters.example/list.txt")
+        XCTAssertTrue(custom.isEnabled)
+        XCTAssertTrue(service.isCustomSubscription(custom))
+        XCTAssertNil(custom.lastUpdatedAt)
+        for address in ["https://filters.example/list.txt", "https://FILTERS.EXAMPLE:443/list.txt#other",
+                        "https://easylist.to/easylist/easylist.txt"] {
+            XCTAssertThrowsError(try service.addSubscription(name: "Duplicate", urlString: address)) {
+                XCTAssertEqual($0 as? AdBlockSubscriptionService.SubscriptionInputError, .duplicateURL)
+            }
+        }
+        for address in ["", "example.com/filters.txt", "file:///tmp/filters.txt", "javascript:alert(1)",
+                        "https://user:password@example.com/filters.txt", "https://example.com/a b",
+                        "https://example.com:99999/filters.txt"] {
+            XCTAssertThrowsError(try service.addSubscription(name: "Invalid", urlString: address))
+        }
+        XCTAssertThrowsError(try service.addSubscription(name: "  ", urlString: "https://example.com/filters.txt"))
+        let restored = AdBlockSubscriptionService(userDefaults: defaults)
+        XCTAssertEqual(restored.subscriptions.first, custom)
+        let builtIn = try XCTUnwrap(restored.subscriptions.first { $0.id == "easylist" })
+        restored.removeSubscription(builtIn)
+        XCTAssertTrue(restored.subscriptions.contains { $0.id == builtIn.id }, "Built-in lists cannot be deleted")
+    }
+
+    @MainActor
+    func testCustomSubscriptionRefreshTargetsNewListAndDeletionClearsItsCache() async throws {
+        let suite = "CustomSubscriptionRefresh.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SubscriptionTestProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer {
+            SubscriptionTestProtocol.handler = nil
+            session.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: suite)
+        }
+        let service = AdBlockSubscriptionService(userDefaults: defaults, session: session)
+        let custom = try service.addSubscription(name: "Personal filters", urlString: "https://filters.example/list.txt")
+        SubscriptionTestProtocol.handler = { request in
+            XCTAssertEqual(request.request.url, custom.url, "Adding a list must not re-download all built-in lists")
+            request.respond(body: "||ads.custom.example^\nexample.com##.custom-ad", mimeType: "text/plain")
+        }
+        await service.updateSubscription(custom)
+        let refreshed = try XCTUnwrap(service.subscriptions.first { $0.id == custom.id })
+        XCTAssertNotNil(refreshed.lastUpdatedAt)
+        XCTAssertGreaterThan(refreshed.networkRuleCount, 0)
+        XCTAssertEqual(refreshed.cosmeticRuleCount, 1)
+        XCTAssertTrue(refreshed.errorMessage.isEmpty)
+        let rules = service.enabledRuleSummary
+        XCTAssertFalse(rules.networkRules.isEmpty)
+        XCTAssertEqual(rules.cosmeticRules.map(\.selector), [".custom-ad"])
+        service.setEnabled(false, for: custom)
+        XCTAssertEqual(service.enabledRuleSummary, .empty)
+        service.setEnabled(true, for: custom)
+        XCTAssertEqual(service.enabledRuleSummary, rules)
+        service.removeSubscription(custom)
+        XCTAssertEqual(service.enabledRuleSummary, .empty)
+        let archive = try JSONDecoder().decode([String: ParsedAdBlockRules].self,
+            from: XCTUnwrap(defaults.data(forKey: "soulo_ad_block_subscription_rules_by_id")))
+        XCTAssertNil(archive[custom.id])
+        let restored = AdBlockSubscriptionService(userDefaults: defaults, session: session)
+        XCTAssertFalse(restored.subscriptions.contains { $0.id == custom.id })
+        XCTAssertEqual(restored.enabledRuleSummary, .empty)
+    }
+
+    @MainActor
+    func testDeletingCustomListDuringAnotherRefreshCannotRestoreItsArchive() async throws {
+        let suite = "CustomSubscriptionRace.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SubscriptionTestProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer {
+            SubscriptionTestProtocol.handler = nil
+            session.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: suite)
+        }
+        let service = AdBlockSubscriptionService(userDefaults: defaults, session: session)
+        let active = try service.addSubscription(name: "Keep", urlString: "https://filters.example/keep.txt")
+        let removed = try service.addSubscription(name: "Remove", urlString: "https://filters.example/remove.txt")
+        defaults.set(try JSONEncoder().encode([
+            active.id: AdBlockRuleParser.parse("example.com##.keep"),
+            removed.id: AdBlockRuleParser.parse("example.com##.removed")
+        ]), forKey: "soulo_ad_block_subscription_rules_by_id")
+        service.reloadFromDefaults()
+        SubscriptionTestProtocol.handler = { request in
+            Task { @MainActor in
+                service.removeSubscription(removed)
+                request.respond(body: "example.com##.updated", mimeType: "text/plain")
+            }
+        }
+        await service.updateSubscription(active)
+        XCTAssertEqual(service.enabledRuleSummary.cosmeticRules.map(\.selector), [".updated"])
+        let archive = try JSONDecoder().decode([String: ParsedAdBlockRules].self,
+            from: XCTUnwrap(defaults.data(forKey: "soulo_ad_block_subscription_rules_by_id")))
+        XCTAssertNil(archive[removed.id], "A refresh snapshot must not persist a deleted list")
+        XCTAssertNotNil(archive[active.id])
+        service.resetToDefaults()
+        XCTAssertFalse(service.subscriptions.contains { $0.id == active.id })
+        XCTAssertEqual(service.enabledRuleSummary, .empty)
+    }
+
     @MainActor
     func testDeferredStartupKeepsRulesAfterFailedRefreshAndMigratesOnlyWhenNeeded() async throws {
         let suite = "DeferredSubscriptions.\(UUID())"
@@ -39,7 +216,7 @@ final class AdBlockSubscriptionServiceTests: XCTestCase {
         await service.updateEnabledSubscriptionsIfNeeded()
         XCTAssertEqual(service.enabledRuleSummary, rules, "A failed refresh must retain the last valid subscription")
         XCTAssertNil(defaults.data(forKey: legacyKey))
-        XCTAssertEqual(try JSONDecoder().decode([String: ParsedAdBlockRules].self, from: Data(contentsOf: archive))["easylist"], rules)
+        XCTAssertEqual(try AdBlockRuleArchive.decode([String: ParsedAdBlockRules].self, from: Data(contentsOf: archive))["easylist"], rules)
         XCTAssertFalse(defaults.bool(forKey: "ad_block_enabled"))
         let revision = AdBlockSubscriptionService.rulesSignature(userDefaults: defaults)
         SubscriptionTestProtocol.handler = { _ in XCTFail("Valid rules must not be fetched again within the update interval") }
@@ -92,9 +269,12 @@ final class AdBlockSubscriptionServiceTests: XCTestCase {
         let key = "soulo_ad_block_subscription_rules_by_id"
         defaults.set(try JSONEncoder().encode(["easylist": rules]), forKey: key)
         defaults.set(false, forKey: "ad_block_enabled")
+        var selectedSources = AdBlockSubscriptionService.defaultSubscriptions()
+        for i in selectedSources.indices { selectedSources[i].isEnabled = selectedSources[i].id == "easylist" }
+        defaults.set(try JSONEncoder().encode(selectedSources), forKey: "soulo_ad_block_subscriptions")
         let service = AdBlockSubscriptionService(userDefaults: defaults, rulesArchiveURL: archive)
         XCTAssertNil(defaults.data(forKey: key))
-        let saved = try JSONDecoder().decode([String: ParsedAdBlockRules].self, from: Data(contentsOf: archive))
+        let saved = try AdBlockRuleArchive.decode([String: ParsedAdBlockRules].self, from: Data(contentsOf: archive))
         XCTAssertEqual(saved["easylist"], rules)
         XCTAssertEqual(service.enabledRuleSummary.networkRules, rules.networkRules)
         XCTAssertFalse(defaults.bool(forKey: "ad_block_enabled"))
@@ -118,6 +298,9 @@ final class AdBlockSubscriptionServiceTests: XCTestCase {
         let key = "soulo_ad_block_subscription_rules_by_id"
         let data = try JSONEncoder().encode(["easylist": rules])
         defaults.set(data, forKey: key)
+        var selectedSources = AdBlockSubscriptionService.defaultSubscriptions()
+        for i in selectedSources.indices { selectedSources[i].isEnabled = selectedSources[i].id == "easylist" }
+        defaults.set(try JSONEncoder().encode(selectedSources), forKey: "soulo_ad_block_subscriptions")
         let service = AdBlockSubscriptionService(userDefaults: defaults, rulesArchiveURL: blocker.appendingPathComponent("rules.json"))
         XCTAssertEqual(defaults.data(forKey: key), data)
         XCTAssertEqual(service.enabledRuleSummary.networkRules, rules.networkRules)
@@ -256,6 +439,9 @@ final class AdBlockSubscriptionServiceTests: XCTestCase {
         XCTAssertEqual(blocks.networkRules.count, 5_100)
         XCTAssertEqual(blocks.cosmeticRules.count, 2_100)
         defaults.set(try JSONEncoder().encode(["easylist": blocks, "easylist-china": exceptions]), forKey: "soulo_ad_block_subscription_rules_by_id")
+        var sources = AdBlockSubscriptionService.defaultSubscriptions()
+        for i in sources.indices { sources[i].isEnabled = ["easylist", "easylist-china"].contains(sources[i].id) }
+        defaults.set(try JSONEncoder().encode(sources), forKey: "soulo_ad_block_subscriptions")
         let service = AdBlockSubscriptionService(userDefaults: defaults)
         XCTAssertEqual(service.enabledRuleSummary.networkRules.count, 5_101)
         XCTAssertEqual(service.enabledRuleSummary.cosmeticRules.count, 2_100)

@@ -46,6 +46,34 @@ final class SouloURLRouteTests: XCTestCase {
         }
     }
 
+    func testExtensionInstallOnlyOpensConfirmationForValidSources() throws {
+        for address in [
+            "https://chromewebstore.google.com/detail/faststream-video-player/kkeakohpadmbldjaiggikmnldlfkdfog",
+            "https://microsoftedge.microsoft.com/addons/detail/oohmdefbjalncfplafanlagojlakmjci"
+        ] {
+            var link = URLComponents(string: "soulo://install-extension")!
+            link.queryItems = [URLQueryItem(name: "url", value: address)]
+            XCTAssertEqual(SouloURLRoute.parse(try XCTUnwrap(link.url)), .installExtension(try XCTUnwrap(URL(string: address))))
+        }
+        for address in ["http://example.com/a.crx", "file:///a.crx", "javascript:alert(1)", "https://example.com/page", "https://name:secret@example.com/a.crx"] {
+            var link = URLComponents(string: "soulo://install-extension")!
+            link.queryItems = [URLQueryItem(name: "url", value: address)]
+            XCTAssertNil(SouloURLRoute.parse(try XCTUnwrap(link.url)))
+        }
+    }
+
+    func testNativeVideoDocumentRequiresASuccessfulActualMediaResponse() throws {
+        let url = try XCTUnwrap(URL(string: "https://example.org/stream?id=1"))
+        for code in [200, 206] {
+            let response = HTTPURLResponse(url: url, statusCode: code, httpVersion: nil, headerFields: ["Content-Type": "video/mp4"])!
+            XCTAssertTrue(BrowserDirectMediaPolicy.isVideoDocument(response))
+        }
+        for (code, mime) in [(403, "video/mp4"), (404, "video/mp4"), (200, "text/html"), (200, "audio/mpeg")] {
+            let response = HTTPURLResponse(url: url, statusCode: code, httpVersion: nil, headerFields: ["Content-Type": mime])!
+            XCTAssertFalse(BrowserDirectMediaPolicy.isVideoDocument(response))
+        }
+    }
+
     func testInvalidAndReservedRoutesDoNotNavigateOrDownload() throws {
         for source in ["file:///etc/hosts", "javascript:alert(1)", "soulo://action", "soulo://open", "soulo://download", "soulo://download?url=file%3A%2F%2F%2Fetc%2Fhosts", "soulo://open?url=javascript%3Aalert(1)", "soulo://open?url=https%3A%2F%2F", "soulo://download?url=not-a-url", "soulo://file:///example"] {
             XCTAssertNil(SouloURLRoute.parse(try XCTUnwrap(URL(string: source))), source)

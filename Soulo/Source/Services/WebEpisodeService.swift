@@ -1,13 +1,24 @@
 import WebKit
 
+struct WebEpisodeAction: Codable, Equatable {
+    let token: String
+    let scope: String
+    let isCurrent: Bool
+}
+
 struct WebEpisode: Codable, Identifiable, Equatable {
     let title: String
     let url: URL
     var resourcePageURL: URL? = nil
-    var id: String { url.absoluteString }
+    var action: WebEpisodeAction? = nil
+    var id: String { action.map { "button:" + $0.token } ?? url.absoluteString }
+
+    func matchesCurrentPage(_ pageURL: URL) -> Bool {
+        action?.isCurrent ?? WebEpisodeList.matches(url, pageURL)
+    }
 
     var directMediaResource: WebMediaResource? {
-        guard ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+        guard action == nil, ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
               url.host != nil, url.user == nil, url.password == nil,
               ["m3u8", "mp4", "m4v", "mov", "webm"].contains(url.pathExtension.lowercased()) else { return nil }
         return WebMediaResource(kind: .video, url: url, title: title, posterURL: nil,
@@ -31,7 +42,12 @@ struct WebEpisodeList: Codable, Equatable {
     let sources: [WebEpisodeSource]
 
     var currentSource: WebEpisodeSource? {
-        sources.first { source in source.episodes.contains { Self.matches($0.url, pageURL) } } ?? sources.first
+        sources.first { source in source.episodes.contains { $0.matchesCurrentPage(pageURL) } } ?? sources.first
+    }
+
+    var actionScope: String? {
+        let scopes = Set(sources.flatMap(\.episodes).compactMap { $0.action?.scope })
+        return scopes.count == 1 ? scopes.first : nil
     }
 
     static func matches(_ lhs: URL, _ rhs: URL) -> Bool {
@@ -59,16 +75,19 @@ struct WebEpisodeList: Codable, Equatable {
               matches(list.pageURL, pageURL), list.sources.count <= 20,
               list.sources.reduce(0, { $0 + $1.episodes.count }) <= 5_000 else { return nil }
         let sources = list.sources.compactMap { source -> WebEpisodeSource? in
-            var seen = Set<URL>()
-            let episodes = source.episodes.filter {
-                !$0.title.isEmpty && $0.title.count <= 160
-                    && ["http", "https"].contains($0.url.scheme?.lowercased() ?? "")
-                    && $0.url.host != nil
-                    && $0.url.user == nil && $0.url.password == nil
-                    && ($0.resourcePageURL.map { matches($0, pageURL) } ?? true)
-                    && (Self.belongsToEpisodeSite($0.url, pageURL: pageURL)
-                        || ($0.resourcePageURL != nil && $0.isResourcePlaybackURL))
-                    && seen.insert($0.url).inserted
+            var seen = Set<String>()
+            let episodes = source.episodes.filter { item in
+                !item.title.isEmpty && item.title.count <= 160
+                    && ["http", "https"].contains(item.url.scheme?.lowercased() ?? "")
+                    && item.url.host != nil && item.url.user == nil && item.url.password == nil
+                    && (item.resourcePageURL.map { matches($0, pageURL) } ?? true)
+                    && (item.action.map { action in
+                        UUID(uuidString: action.token) != nil && UUID(uuidString: action.scope) != nil
+                            && matches(item.url, pageURL)
+                    } ?? true)
+                    && (Self.belongsToEpisodeSite(item.url, pageURL: pageURL)
+                        || (item.resourcePageURL != nil && item.isResourcePlaybackURL))
+                    && seen.insert(item.id).inserted
             }
             return episodes.isEmpty ? nil : WebEpisodeSource(title: String(source.title.prefix(100)), episodes: episodes)
         }
@@ -94,8 +113,8 @@ enum WebOverlayControlsRuntime {
 enum WebEpisodeRuntime {
     static let world = WKContentWorld.world(name: "SouloEpisodes")
     static let handler = "souloEpisodes"
-    // Read DOM links only. Never evaluate a site's player configuration or click
-    // its controls: native navigation avoids delegated advertising handlers.
+    // Prefer real links. Button-only SPA catalogs keep opaque, document-bound
+    // actions; only an explicit episode selection can activate a registered node.
     static let script: String = {
         guard let url = Bundle.main.url(forResource: "episode-detector", withExtension: "js", subdirectory: "UserScripts") else { return "" }
         return WebOverlayControlsRuntime.source + "\n" + ((try? String(contentsOf: url, encoding: .utf8)) ?? "")
@@ -112,6 +131,43 @@ enum WebEpisodeRuntime {
         let json = (try? JSONSerialization.data(withJSONObject: configuration))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
         return script + "\nwindow.__souloEpisodes?.configure(\(json));"
+    }
+
+    @MainActor static func activate(_ episode: WebEpisode, in webView: WKWebView) async throws {
+        guard let action = episode.action,
+              let current = webView.url, current.scheme == episode.url.scheme,
+              current.host == episode.url.host else { throw WebEpisodeDownloadError.unavailable }
+        let result = try await webView.callAsyncJavaScript(
+            "return window.__souloEpisodes?.activate(token,scope)===true;",
+            arguments: ["token": action.token, "scope": action.scope], in: nil, contentWorld: world)
+        guard result as? Bool == true else { throw WebEpisodeDownloadError.unavailable }
+    }
+
+    @MainActor static func resolveActionMedia(_ episode: WebEpisode, in webView: WKWebView,
+                                             timeout: TimeInterval, excluding previousResourceURL: URL? = nil) async throws -> WebMediaResource {
+        func current() async -> WebMediaResource? {
+            let token = (try? await webView.evaluateJavaScript("Array.from(document.querySelectorAll('video[data-soulo-media-id]')).sort((a,b)=>b.getBoundingClientRect().width*b.getBoundingClientRect().height-a.getBoundingClientRect().width*a.getBoundingClientRect().height)[0]?.getAttribute('data-soulo-media-id')??'__soulo_configured'")) as? String ?? "__soulo_configured"
+            return await WebResourceInspectionService.currentVideoResource(webView:webView,frame:nil,token:token)
+        }
+        let before = await current()
+        try await activate(episode,in:webView)
+        let deadline = ProcessInfo.processInfo.systemUptime + timeout
+        var previous: URL?
+        while ProcessInfo.processInfo.systemUptime < deadline {
+            try Task.checkCancellation()
+            if let media = await current(), media.delivery != .dash, media.url != previousResourceURL,
+               media.url != before?.url || episode.action?.isCurrent == true {
+                if previous == media.url {
+                    _ = try? await webView.evaluateJavaScript("document.querySelectorAll('video').forEach(v=>v.pause());true")
+                    return WebMediaResource(kind:.video,url:media.url,title:episode.title,posterURL:media.posterURL,
+                        delivery:media.delivery,companionAudioURL:media.companionAudioURL,
+                        sourcePageURL:media.sourcePageURL ?? webView.url)
+                }
+                previous = media.url
+            } else { previous = nil }
+            try await Task.sleep(for:.milliseconds(250))
+        }
+        throw WebEpisodeDownloadError.unavailable
     }
 
 }

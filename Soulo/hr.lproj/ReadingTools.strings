@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Audio zapisi";
 "media_subtitles" = "titlovi";
 "media_track_off" = "Isključeno";
-"video_settings" = "Video";
+"video_settings" = "Postavke videozapisa";
 "video_show_tools" = "Prikaži video alate";
 "video_show_tools_desc" = "Pokažite alate na web videozapisima za brzinu reprodukcije, preuzimanja i prikaz na cijelom zaslonu.";
 "video_default_player" = "Zadani igrač";
@@ -497,4 +497,38 @@
 "wallpaper_image_blur" = "Mutno staklo";
 "wallpaper_blur_amount" = "Jačina zamućenja";
 
-"auto_hide_platform_bar_hint" = "Traka platformi skriva se kada otvorite rezultat pretraživanja. Vratite se na rezultate ili pokrenite novo pretraživanje da se ponovno prikaže. To možete isključiti u ovom izborniku.";
+"auto_hide_platform_bar_hint" = "Traka platformi skriva se tek kada dodirnete sadržaj stranice. Automatska preusmjeravanja i pomicanje ne skrivaju je. Vratite se na rezultate ili započnite novo pretraživanje za ponovni prikaz.";
+
+"ad_subscription_add" = "Dodaj popis filtara";
+"ad_subscription_name" = "Naziv";
+"ad_subscription_url" = "URL pretplate";
+"ad_subscription_invalid" = "Unesite naziv i valjani HTTP ili HTTPS URL pretplate.";
+"ad_subscription_duplicate" = "Ovaj URL pretplate već je dodan.";
+
+"feedback_settings" = "Zvukovi i vibracija";
+"feedback_settings_hint" = "Upravljajte vibracijom i zvukovima sučelja u cijeloj aplikaciji. Ne utječe na reprodukciju web-stranica, videozapisa i zvuka.";
+
+"home_display_settings" = "Prikaz početne stranice";
+"browsing_display_settings" = "Prikaz pregledavanja";
+
+"web_video_download" = "Preuzimanje web-videa";
+"web_video_download_description" = "Prikaži kontrole za preuzimanje videa na web-stranicama, popisima epizoda i reproduktorima. Reprodukcija i postojeća preuzimanja ostaju nepromijenjeni.";
+"builtin_extension" = "Ugrađeno proširenje";
+
+"wallpaper_overlay_amount" = "Jačina prekrivanja";
+"feedback_contact_required" = "Unesite e-poštu ili drugi kontakt kako bismo mogli odgovoriti.";
+"torrent_incomplete" = "Nedovršeno";
+"extend_page_background" = "Proširi pozadinu stranice";
+"extend_page_background_desc" = "Proširuje gornje i donje boje stranice na rubove preglednika, uključujući gradijente.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Sažmi grupu";
+"tab_group_expand" = "Proširi grupu";
+"freeze_page_background_on_scroll" = "Zadrži početne boje";
+"freeze_page_background_on_scroll_desc" = "Nakon pomicanja zadrži prve prepoznate boje. Na novim stranicama boje se ponovno prepoznaju.";
+"page_background_gradient" = "Proširenje prijelazom";
+"page_background_gradient_desc" = "Spoji prepoznate boje u prijelaz. Kad je isključeno, svaki rub ima jednu punu boju.";
+
+
+
+"gestures_feedback_settings" = "Geste i odziv";

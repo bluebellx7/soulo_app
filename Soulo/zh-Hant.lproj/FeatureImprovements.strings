@@ -81,3 +81,58 @@
 "Website cache" = "網頁快取";
 "Website icons" = "網站圖示";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "開啟 iCloud 設定同步後，會在設定變更前自動備份。保留最近 %lld 份備份和 1 份初始備份。";
+
+"Move tab to new window" = "移至新視窗";
+
+"Save webpage" = "收藏網頁";
+
+"Webpage" = "網頁";
+
+"Website data" = "網站資料";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "閱讀資料包含離線文章、書庫索引、封面和閱讀進度。書籍檔案計入下載檔案。";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "網站用量為估計值。IndexedDB 包括資料庫檔案和媒體資料；無法統計的用量顯示為 —。";
+"Extension temporary cache" = "擴充功能暫存";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "清除擴充功能的媒體暫存，保留設定、腳本、播放進度和已下載檔案。請先關閉擴充功能及影片頁面，並完成下載。";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "擴充功能暫存仍在使用。請關閉擴充功能及影片頁面、完成下載後重試。";
+"Deleting website data can sign you out and remove offline content." = "刪除網站資料可能會登出，並移除離線內容。";
+
+"Extension startup timed out." = "擴充功能啟動逾時。";
+
+"soulo_extensions" = "Soulo 擴充功能";
+
+"Add to Quick Links" = "加入快速連結";
+"Remove from Quick Links" = "移出快速連結";
+"Mark bookmarks with a heart to show them here." = "長按收藏並標記愛心，即可在這裡和新分頁中快速存取。";
+
+"Type %@ to confirm." = "輸入 %@ 以確認。";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "合併各裝置的收藏；只有明確的刪除操作才會移除內容。";
+"This deletion also syncs to your other devices." = "此刪除操作也會同步到你的其他裝置。";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "複製提示詞並補充需求，傳給 AI，再將產生的 JSON 貼到此處匯入。";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "優先使用 JSON 中的組名；同名組追加合併，保留已有平台。";
+"Imported %1$d platforms into %2$d groups." = "已將 %1$d 個平台匯入 %2$d 個分組。";
+"No new platforms or group entries." = "沒有新增平台或分組內容。";
+
+"App size" = "應用程式大小";
+"App data" = "應用程式資料";
+"Wallpaper cache" = "桌布快取";
+"Other caches" = "其他快取";
+"Temporary files" = "暫存檔案";
+"Download task data" = "下載任務資料";
+"Settings and records" = "設定與記錄";
+"Shared app data" = "共享應用程式資料";
+"Other app data" = "其他應用程式資料";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "應用程式資料不包含安裝程式。依磁碟實際用量統計，可能與 iOS 設定中的大小不同。";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "已儲存內容請進入對應列表刪除。使用中的暫存檔案和系統快取資料庫會在安全時釋放。";
+
+"Current platforms" = "目前平台";
+"Import mode" = "匯入方式";
+"Append" = "追加";
+"Replace all" = "全部覆寫";
+"Replace all platforms?" = "覆寫全部平台？";
+"A settings backup is saved before replacement." = "覆寫前會儲存一份設定備份。";
+
+"Take over web players" = "接管網頁播放器";
+"Only takes over website fullscreen. Extension players stay independent." = "開啟後接管網頁全螢幕播放；擴充功能播放器不受影響。";
+
+"App size is the installed program and resources, not the App Store download size." = "App 大小是已安裝的程式及資源大小，不是 App Store 下載大小。";
+"App data is the total of the categories below." = "App 資料是下方各分類的合計。";

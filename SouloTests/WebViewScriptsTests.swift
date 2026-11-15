@@ -7,6 +7,41 @@ import UIKit
 @testable import Soulo
 
 final class WebViewScriptsTests: XCTestCase {
+    @MainActor
+    func testStoreInstallBarCanCollapseMoveAndReflectOnlyItsOwnInstallState() async throws {
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 700))
+        let url = try XCTUnwrap(URL(string: "https://microsoftedge.microsoft.com/addons/detail/example/iikmkjmpaadaobahmlepeloendndfphd"))
+        web.loadHTMLString("<meta name='viewport' content='width=device-width,initial-scale=1'><button id='under' style='position:absolute;left:0;top:0;width:100%;height:80px'>Store content</button>", baseURL: url)
+        for _ in 0..<100 {
+            if (try? await web.evaluateJavaScript("!!document.getElementById('under')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        // Open the otherwise closed shadow only in this fixture so assertions
+        // inspect the real production bar, not a second test implementation.
+        _ = try await web.evaluateJavaScript("const attach=Element.prototype.attachShadow;Element.prototype.attachShadow=function(){return attach.call(this,{mode:'open'})};Element.prototype.setPointerCapture=function(){};true;")
+        _ = try await web.evaluateJavaScript(WebViewScripts.extensionInstallBridge(title: "Soulo", message: "Install", installButton: "Install", installingButton: "Installing…", logoDataURL: "", installedButton: "Installed"))
+        let result = try await web.evaluateJavaScript("""
+        (()=>{
+          const host=document.getElementById('__soulo-extension-install-host'),root=host.shadowRoot;
+          const [install,toggle]=root.querySelectorAll('button');
+          window.__souloSetExtensionInstallStatus('https://wrong.example/',true);
+          const rejectsStale=!install.disabled;
+          window.__souloSetExtensionInstallStatus(location.href,true);
+          const installed=install.disabled&&install.textContent==='Installed';
+          toggle.click();
+          const collapsed=host.getBoundingClientRect().width===44&&document.elementFromPoint(300,30).id==='under';
+          toggle.click();
+          toggle.dispatchEvent(new PointerEvent('pointerdown',{pointerId:1,clientX:360,clientY:30}));
+          toggle.dispatchEvent(new PointerEvent('pointermove',{pointerId:1,clientX:360,clientY:350}));
+          toggle.dispatchEvent(new PointerEvent('pointerup',{pointerId:1}));
+          const moved=host.getBoundingClientRect().top>200&&document.elementFromPoint(300,30).id==='under';
+          window.__souloSetExtensionInstallStatus(location.href,false);
+          return {rejectsStale,installed,collapsed,moved,removed:!install.disabled&&install.textContent==='Install'};
+        })()
+        """) as? [String: Bool]
+        for key in ["rejectsStale", "installed", "collapsed", "moved", "removed"] { XCTAssertEqual(result?[key], true, key) }
+    }
+
     private final class PageReadyCapture: NSObject, WKScriptMessageHandler {
         var count = 0
         func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -2589,6 +2624,8 @@ final class WebViewScriptsTests: XCTestCase {
     @MainActor
     func testBuiltInReadingProgressSampleIsDisabledAndRunsInWKWebView() async throws {
         let service = BrowserExtensionService.shared
+        XCTAssertNil(BuiltInUserScripts.definition(namespace: "com.dkluge.soulo.examples.page-marker"))
+        XCTAssertFalse(service.userScripts.contains { $0.isBuiltIn == true && $0.namespace == "com.dkluge.soulo.examples.page-marker" })
         let definition = try XCTUnwrap(BuiltInUserScripts.definition(
             namespace: "com.dkluge.soulo.examples.reading-progress"
         ))
@@ -2626,130 +2663,9 @@ final class WebViewScriptsTests: XCTestCase {
     }
 
     @MainActor
-    func testBuiltInAreaTextExtractorShowsLauncherAndStartsPicking() async throws {
-        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-        try await loadUserScriptTestPage(webView)
-        _ = try await evaluate(
-            "document.open(); document.write('<p>Important text for this page.</p>'); document.close();",
-            in: webView
-        )
-        let definition = try XCTUnwrap(BuiltInUserScripts.definition(
-            namespace: "com.dkluge.soulo.examples.page-marker"
-        ))
-        var script = definition.makeRecord()
-        script.matchPatterns = ["*"]
-        let result: Result<Any?, Error> = await withCheckedContinuation { continuation in
-            UserScriptRuntime.execute(script, on: webView) { result in
-                continuation.resume(returning: result)
-            }
-        }
-        if case let .failure(error) = result { throw error }
-
-        let launcherExists = try await evaluate(
-            "document.getElementById('soulo-area-text-extractor-host')?.shadowRoot.querySelector('.launcher') !== null",
-            in: webView
-        )
-        XCTAssertEqual(launcherExists as? Bool, true)
-        _ = try await evaluate(
-            "document.getElementById('soulo-area-text-extractor-host').shadowRoot.querySelector('.launcher').click()",
-            in: webView
-        )
-        let pickingIsActive = try await evaluate(
-            "document.getElementById('soulo-area-text-extractor-host').shadowRoot.querySelector('.guide').classList.contains('visible')",
-            in: webView
-        )
-        XCTAssertEqual(pickingIsActive as? Bool, true)
-    }
-
-    @MainActor
-    func testBuiltInAreaTextExtractorExtractsTappedRegion() async throws {
-        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-        try await loadUserScriptTestPage(webView)
-        _ = try await evaluate(
-            "document.open(); document.write('<section id=content><h2>Important title</h2><p>Text from this region.</p></section>'); document.close();",
-            in: webView
-        )
-        let definition = try XCTUnwrap(BuiltInUserScripts.definition(
-            namespace: "com.dkluge.soulo.examples.page-marker"
-        ))
-        var script = definition.makeRecord()
-        script.matchPatterns = ["*"]
-        let result: Result<Any?, Error> = await withCheckedContinuation { continuation in
-            UserScriptRuntime.execute(script, on: webView) { result in
-                continuation.resume(returning: result)
-            }
-        }
-        if case let .failure(error) = result { throw error }
-
-        _ = try await evaluate(
-            """
-            (function() {
-              var host = document.getElementById('soulo-area-text-extractor-host');
-              host.shadowRoot.querySelector('.launcher').click();
-              document.getElementById('content').dispatchEvent(new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true,
-                clientX: 20,
-                clientY: 20
-              }));
-            })();
-            """,
-            in: webView
-        )
-
-        let extractedText = try await evaluate(
-            "document.getElementById('soulo-area-text-extractor-host').shadowRoot.querySelector('.preview').textContent",
-            in: webView
-        )
-        XCTAssertEqual(extractedText as? String, "Important title\nText from this region.")
-        let panelIsVisible = try await evaluate(
-            "document.getElementById('soulo-area-text-extractor-host').shadowRoot.querySelector('.panel').classList.contains('visible')",
-            in: webView
-        )
-        XCTAssertEqual(panelIsVisible as? Bool, true)
-    }
-
-    @MainActor
-    func testBuiltInAreaTextExtractorLauncherCanBeDragged() async throws {
-        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-        try await loadUserScriptTestPage(webView)
-        _ = try await evaluate(
-            "document.open(); document.write('<p>Drag test</p>'); document.close();",
-            in: webView
-        )
-        let definition = try XCTUnwrap(BuiltInUserScripts.definition(
-            namespace: "com.dkluge.soulo.examples.page-marker"
-        ))
-        var script = definition.makeRecord()
-        script.matchPatterns = ["*"]
-        let result: Result<Any?, Error> = await withCheckedContinuation { continuation in
-            UserScriptRuntime.execute(script, on: webView) { result in
-                continuation.resume(returning: result)
-            }
-        }
-        if case let .failure(error) = result { throw error }
-
-        let position = try await evaluate(
-            """
-            (function() {
-              var button = document.getElementById('soulo-area-text-extractor-host').shadowRoot.querySelector('.launcher');
-              var rect = button.getBoundingClientRect();
-              button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9, button: 0, clientX: rect.left + 20, clientY: rect.top + 20 }));
-              button.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 9, button: 0, clientX: 90, clientY: 160 }));
-              button.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9, button: 0, clientX: 90, clientY: 160 }));
-              return { left: parseFloat(button.style.left), top: parseFloat(button.style.top) };
-            })();
-            """,
-            in: webView
-        ) as? [String: Any]
-        XCTAssertNotNil(position?["left"] as? Double)
-        XCTAssertNotNil(position?["top"] as? Double)
-    }
-
-    @MainActor
     func testBuiltInScriptRefreshPreservesUserState() throws {
         let definition = try XCTUnwrap(BuiltInUserScripts.definition(
-            namespace: "com.dkluge.soulo.examples.page-marker"
+            namespace: "com.dkluge.soulo.examples.reading-progress"
         ))
         var existing = definition.makeRecord()
         existing.isEnabled = true
@@ -2760,7 +2676,7 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertTrue(refreshed.isEnabled)
         XCTAssertEqual(refreshed.storedValues, existing.storedValues)
         XCTAssertEqual(refreshed.source, definition.source)
-        XCTAssertEqual(refreshed.version, "2.0.0")
+        XCTAssertEqual(refreshed.version, definition.metadata.version)
     }
 
     @MainActor

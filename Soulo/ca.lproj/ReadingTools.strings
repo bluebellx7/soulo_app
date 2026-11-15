@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Pistes d'àudio";
 "media_subtitles" = "Subtítols";
 "media_track_off" = "Apagat";
-"video_settings" = "Vídeo";
+"video_settings" = "Configuració de vídeo";
 "video_show_tools" = "Mostra les eines de vídeo";
 "video_show_tools_desc" = "Mostra les eines als vídeos web per a velocitat de reproducció, baixades i pantalla completa.";
 "video_default_player" = "Jugador per defecte";
@@ -497,4 +497,38 @@
 "wallpaper_image_blur" = "Vidre esmerilat";
 "wallpaper_blur_amount" = "Intensitat del desenfocament";
 
-"auto_hide_platform_bar_hint" = "La barra de plataformes s'amaga en obrir un resultat de cerca. Torna als resultats o inicia una cerca nova per mostrar-la. Pots desactivar-ho en aquest menú.";
+"auto_hide_platform_bar_hint" = "La barra de plataformes només s’amaga quan toques el contingut web. Les redireccions automàtiques i el desplaçament no l’amaguen. Torna als resultats o inicia una cerca nova per mostrar-la.";
+
+"ad_subscription_add" = "Afegeix una llista";
+"ad_subscription_name" = "Nom";
+"ad_subscription_url" = "URL de subscripció";
+"ad_subscription_invalid" = "Introduïu un nom i un URL de subscripció HTTP o HTTPS vàlid.";
+"ad_subscription_duplicate" = "Aquest URL de subscripció ja s’ha afegit.";
+
+"feedback_settings" = "Sons i vibració";
+"feedback_settings_hint" = "Controla la vibració i els sons de la interfície a tota l’app. No afecta la reproducció de pàgines web, vídeo ni àudio.";
+
+"home_display_settings" = "Visualització de l’inici";
+"browsing_display_settings" = "Visualització de navegació";
+
+"web_video_download" = "Descàrregues de vídeo web";
+"web_video_download_description" = "Mostra els controls de descàrrega de vídeo en pàgines web, llistes d’episodis i reproductors. No canvia la reproducció ni les descàrregues existents.";
+"builtin_extension" = "Extensió integrada";
+
+"wallpaper_overlay_amount" = "Intensitat de la capa";
+"feedback_contact_required" = "Introdueix un correu o un altre contacte per poder respondre.";
+"torrent_incomplete" = "Incomplet";
+"extend_page_background" = "Estén el fons web";
+"extend_page_background_desc" = "Estén els colors superior i inferior de la pàgina a la interfície, inclosos els degradats.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Replega el grup";
+"tab_group_expand" = "Desplega el grup";
+"freeze_page_background_on_scroll" = "Mantén els colors inicials";
+"freeze_page_background_on_scroll_desc" = "Després de desplaçar-te, conserva els primers colors detectats. Les pàgines noves es tornen a analitzar.";
+"page_background_gradient" = "Extensió amb degradat";
+"page_background_gradient_desc" = "Combina els colors detectats en un degradat. Desactivat, cada vora té un color uniforme.";
+
+
+
+"gestures_feedback_settings" = "Gestos i resposta";

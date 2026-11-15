@@ -29,6 +29,7 @@ struct WebNavigationPolicyService {
     ]
 
     func decision(for url: URL) -> WebNavigationDecision {
+        if let appURL = bilibiliAppHandoffURL(for: url) { return .external(appURL) }
         if let appURL = baiduAppHandoffURL(for: url) {
             return .external(appURL)
         }
@@ -44,6 +45,27 @@ struct WebNavigationPolicyService {
         }
 
         return .allow
+    }
+
+    private func bilibiliAppHandoffURL(for url: URL) -> URL? {
+        guard ["https", "http"].contains(url.scheme?.lowercased() ?? ""), url.host?.lowercased() == "d.bilibili.com",
+              url.path == "/download_app.html", url.port == nil || url.port == (url.scheme == "https" ? 443 : 80),
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
+        let values = components.queryItems?.filter { $0.name == "schema" } ?? []
+        guard values.count == 1, let text = values.first?.value, let target = URL(string: text),
+              target.scheme?.lowercased() == "bilibili" else { return nil }
+        return target
+    }
+
+    func browserFallbackURL(for url: URL) -> URL? {
+        guard bilibiliAppHandoffURL(for: url) != nil,
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
+        let values = components.queryItems?.filter { $0.name == "preUrl" } ?? []
+        guard values.count == 1, let text = values.first?.value, let fallback = URL(string: text),
+              ["http", "https"].contains(fallback.scheme?.lowercased() ?? ""), fallback.user == nil, fallback.password == nil,
+              let host = fallback.host?.lowercased(), host == "bilibili.com" || host.hasSuffix(".bilibili.com"),
+              ["/bangumi/play/", "/video/"].contains(where: { fallback.path.hasPrefix($0) }) else { return nil }
+        return fallback
     }
 
     /// A normal HTTPS navigation can itself invoke an installed app, without

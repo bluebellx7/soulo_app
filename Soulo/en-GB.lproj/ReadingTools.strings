@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Audio Tracks";
 "media_subtitles" = "Subtitles";
 "media_track_off" = "Off";
-"video_settings" = "Video";
+"video_settings" = "Video Settings";
 "video_show_tools" = "Show video tools";
 "video_show_tools_desc" = "Show tools on web videos for playback speed, downloads and fullscreen.";
 "video_default_player" = "Default player";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Frosted Glass";
 "wallpaper_blur_amount" = "Blur Strength";
 
-"auto_hide_platform_bar_hint" = "The platform bar hides when you open a search result. Go back to the results or start a new search to show it again. You can turn this off in this menu.";
+"auto_hide_platform_bar_hint" = "The platform bar hides only after you tap webpage content. Automatic redirects and scrolling do not hide it. Return to the search results or start a new search to show it again.";
+
+"ad_subscription_add" = "Add filter list";
+"ad_subscription_name" = "Name";
+"ad_subscription_url" = "Subscription URL";
+"ad_subscription_invalid" = "Enter a name and a valid HTTP or HTTPS subscription URL.";
+"ad_subscription_duplicate" = "This subscription URL has already been added.";
+
+"feedback_settings" = "Sounds & Haptics";
+"feedback_settings_hint" = "Control vibration and interface sounds throughout the app. Webpage, video, and audio playback are unaffected.";
+
+"home_display_settings" = "Home Display";
+"browsing_display_settings" = "Browsing Display";
+
+"web_video_download" = "Web Video Downloads";
+"web_video_download_description" = "Show video download controls on webpages, episode lists, and players. Playback and existing downloads stay unchanged.";
+"builtin_extension" = "Built-in extension";
+
+"wallpaper_overlay_amount" = "Overlay Strength";
+"feedback_contact_required" = "Enter an email or other contact details so we can reply.";
+"torrent_incomplete" = "Incomplete";
+"extend_page_background" = "Extend Page Background";
+"extend_page_background_desc" = "Extend the page’s top and bottom colors to the browser edges, including gradients.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Collapse group";
+"tab_group_expand" = "Expand group";
+"freeze_page_background_on_scroll" = "Keep initial colors";
+"freeze_page_background_on_scroll_desc" = "After scrolling, keep the first detected colors. New pages are sampled again.";
+"page_background_gradient" = "Gradient extension";
+"page_background_gradient_desc" = "Blend sampled colours into gradients. Turn off to use one solid colour at each edge.";
+
+
+"gestures_feedback_settings" = "Gestures & Feedback";

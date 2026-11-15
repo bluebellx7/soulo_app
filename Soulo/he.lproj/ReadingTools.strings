@@ -417,7 +417,7 @@
 "media_audio_tracks" = "רצועות אודיו";
 "media_subtitles" = "כתוביות";
 "media_track_off" = "כבוי";
-"video_settings" = "וידאו";
+"video_settings" = "הגדרות וידאו";
 "video_show_tools" = "הצג כלי וידאו";
 "video_show_tools_desc" = "הצג כלים בסרטוני אינטרנט למהירות הפעלה, הורדות ומסך מלא.";
 "video_default_player" = "שחקן ברירת מחדל";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "זכוכית חלבית";
 "wallpaper_blur_amount" = "עוצמת הטשטוש";
 
-"auto_hide_platform_bar_hint" = "סרגל הפלטפורמות מוסתר כשפותחים תוצאת חיפוש. חזרה לתוצאות או חיפוש חדש יציגו אותו שוב. אפשר לכבות זאת בתפריט זה.";
+"auto_hide_platform_bar_hint" = "סרגל הפלטפורמות יוסתר רק לאחר הקשה על תוכן הדף. הפניות אוטומטיות וגלילה לא יסתירו אותו. חזרו לתוצאות החיפוש או התחילו חיפוש חדש כדי להציגו שוב.";
+
+"ad_subscription_add" = "הוספת רשימת סינון";
+"ad_subscription_name" = "שם";
+"ad_subscription_url" = "כתובת המינוי";
+"ad_subscription_invalid" = "יש להזין שם וכתובת מינוי תקינה מסוג HTTP או HTTPS.";
+"ad_subscription_duplicate" = "כתובת המינוי הזו כבר נוספה.";
+
+"feedback_settings" = "צלילים ורטט";
+"feedback_settings_hint" = "שליטה ברטט ובצלילי הממשק בכל האפליקציה. ניגון דפי אינטרנט, וידאו ושמע אינו מושפע.";
+
+"home_display_settings" = "תצוגת דף הבית";
+"browsing_display_settings" = "תצוגת גלישה";
+
+"web_video_download" = "הורדת סרטונים מהאינטרנט";
+"web_video_download_description" = "הצגת פקדי הורדת וידאו בדפי אינטרנט, ברשימות פרקים ובנגנים. הניגון וההורדות הקיימות אינם משתנים.";
+"builtin_extension" = "הרחבה מובנית";
+
+"wallpaper_overlay_amount" = "עוצמת שכבת הכהיה";
+"feedback_contact_required" = "יש להזין אימייל או פרטי קשר אחרים כדי שנוכל להשיב.";
+"torrent_incomplete" = "לא הושלם";
+"extend_page_background" = "הרחבת רקע הדף";
+"extend_page_background_desc" = "הרחבת צבעי החלק העליון והתחתון של הדף לממשק הדפדפן, כולל מעברי צבע.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "כווץ קבוצה";
+"tab_group_expand" = "הרחב קבוצה";
+"freeze_page_background_on_scroll" = "שמירת הצבעים הראשונים";
+"freeze_page_background_on_scroll_desc" = "לאחר גלילה נשמרים הצבעים שזוהו לראשונה. בעמוד חדש הצבעים יזוהו מחדש.";
+"page_background_gradient" = "הרחבה במעבר צבעים";
+"page_background_gradient_desc" = "מיזוג הצבעים שזוהו למעבר צבעים. כשהאפשרות כבויה, לכל קצה צבע אחיד.";
+
+
+"gestures_feedback_settings" = "מחוות ומשוב";

@@ -1,0 +1,77 @@
+{
+  "date": "2026-11-13",
+  "version": "1.2.14",
+  "build": 54,
+  "status": "Implemented; iPhone and iPad simulator regressions passed; unsigned device build passed",
+  "issue": "Cat Catch's Open download directory button did nothing.",
+  "root_cause": {
+    "publisher_handler": "The unmodified Microsoft Store package's js/downloader.js and js/m3u8.js call chrome.downloads.show(downloadId), or chrome.downloads.showDefaultFolder() when there is no ID.",
+    "missing_bridge": "The compatibility layer already exposed chrome.downloads, but omitted both folder methods. Cat Catch's polyfill only supplies its fallback when the entire downloads object is absent.",
+    "api_reference": "https://developer.chrome.com/docs/extensions/reference/api/downloads"
+  },
+  "implementation": {
+    "scope": "Generic extension compatibility layer; no Cat Catch publisher HTML, CSS or JavaScript modified.",
+    "showDefaultFolder": "Present the existing native LibraryFilesView at the app's Documents/Downloads directory.",
+    "show": "Validate the extension-owned download ID and open the downloaded file's containing directory. This implementation does not select or scroll to an individual file.",
+    "javascript_signature": "Both methods return undefined, matching the Chrome void signatures. Invalid numeric IDs throw TypeError; asynchronous native failures are logged.",
+    "permissions": "Existing downloads permission gate remains active. Foreign or unknown download IDs cannot reveal files through show().",
+    "lifecycle": "Present the native file browser above the extension document, with a Done button. Closing it retains the source popup/page and JavaScript state. Repeated folder requests reuse the existing host.",
+    "existing_installations": "The native extension context loader refreshes its private compatibility script on load; reimporting the extension is not required.",
+    "download_execution_changed": false,
+    "new_user_facing_strings": false
+  },
+  "validation": {
+    "iphone": {
+      "system": "iOS 26.2 simulator",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "result": "/tmp/soulo-extension-download-folder-20261113/iphone.xcresult"
+    },
+    "ipad": {
+      "system": "iPadOS 26.2 simulator",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "result": "/tmp/soulo-extension-download-folder-20261113/ipad.xcresult"
+    },
+    "generic_download_test": [
+      "Real Blob and data downloads retain expected byte counts and SHA-256 hashes, including an empty file and a Blob larger than 32 MiB.",
+      "Both folder APIs return undefined and present the actual native file browser.",
+      "Repeated calls reuse the folder controller; dismissing preserves the source document sentinel.",
+      "A second extension cannot reveal another extension's download ID; the native failure reaches runtime.lastError."
+    ],
+    "real_cat_catch_test": [
+      "Used the unmodified Microsoft Store Cat Catch 2.7.4 package.",
+      "Called showDefaultFolder inside the actual publisher popup; verified native presentation and retained popup state after dismissal.",
+      "After a real cookie-bearing download completed, searched for its extension download ID and called show(id) inside the publisher popup; verified native presentation.",
+      "Existing popup localization, footer layout, media capture, completion events, playable preview, media controls and supplied Bilibili page checks passed."
+    ],
+    "permission_regression": "Existing undeclared-permissions native compatibility test passed on iPhone.",
+    "visual_review": {
+      "result": "Reviewed both screenshots: the native file list and Done action are visible with usable sheet layouts on iPhone and iPad.",
+      "iphone": "/tmp/soulo-extension-download-folder-20261113/iphone-screens/3161B10A-1D01-4375-85CB-308E49620A6F.png",
+      "ipad": "/tmp/soulo-extension-download-folder-20261113/ipad-screens/BB96893D-FA88-4801-AD69-F49D8B10A4E2.png"
+    },
+    "simulator_build": "TEST BUILD SUCCEEDED; simulator-build.log",
+    "unsigned_device_build": "BUILD SUCCEEDED; device-build.log",
+    "localization": "Strict check passed: 881 Localizable, 500 ReadingTools and 81 FeatureImprovements keys across 50 locales.",
+    "metadata": "Generated JSON check passed for 50 locales; version and store content unchanged.",
+    "diff_whitespace": "Passed"
+  },
+  "fixture_cleanup": {
+    "publisher_package_sha256": "789df97eb3b9f21607b5257a504b9e46fd834887b63d6ab83beb85178f1461ea",
+    "iphone": "Restored the pre-existing QA package from the byte-for-byte backup in the current app container.",
+    "ipad": "Removed only the newly staged QA package after verifying its hash in the current app container.",
+    "download_files": "Tests remove only their newly created downloads. Pre-existing files and extension installations are preserved.",
+    "record": "/tmp/soulo-extension-download-folder-20261113/fixture-cleanup.json"
+  },
+  "limits": [
+    "No physical-device execution; the device target compiled unsigned.",
+    "The real publisher popup tests invoke the folder APIs directly. The downloader.html Open directory handler was source-inspected, not clicked in an end-to-end UI test.",
+    "These tests cover the named APIs and regressions; they do not certify every Chrome extension feature."
+  ],
+  "artifacts": "/tmp/soulo-extension-download-folder-20261113",
+  "paid_api_used": false,
+  "committed_or_pushed": false
+}

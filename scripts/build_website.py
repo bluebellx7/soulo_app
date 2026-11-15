@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / 'website'
 BASE = 'https://soulo.dkluge.com/'
 ICONS = {
+    'puzzle': '<path d="M9 3h6v4a3 3 0 1 1 4 4h2v10H3V11h4a3 3 0 1 0 2-4V3Z"/>',
     'play': '<path d="m9 5 11 7-11 7V5Z"/>',
     'film': '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4m10 0h4M3 15h4m10 0h4"/>',
     'tv': '<rect x="3" y="7" width="18" height="14" rx="3"/><path d="m8 3 4 4 4-4"/>',
@@ -74,9 +75,9 @@ def jsonld(value):
 
 def navigation(page):
     template = (ROOT/'scripts/templates/navigation.html').read_text().strip()
-    for key, file in [('home', 'index.html'), ('sources', 'sources.html'), ('movies', 'movies.html'), ('resources', 'resources.html'), ('reading', 'reading.html'), ('music', 'music.html'), ('stocks', 'stocks.html')]:
+    for key, file in [('home', 'index.html'), ('sources', 'sources.html'), ('movies', 'movies.html'), ('resources', 'resources.html'), ('reading', 'reading.html'), ('music', 'music.html'), ('stocks', 'stocks.html'), ('extensions', 'extensions.html')]:
         template = template.replace('{{'+key+'_current}}', ' aria-current="page"' if page == file else '')
-    for name in ['search', 'play', 'grid', 'book', 'headphones', 'chart', 'wrench']:
+    for name in ['search', 'play', 'grid', 'book', 'headphones', 'chart', 'wrench', 'puzzle']:
         template = template.replace('{{nav_'+name+'}}', icon(name))
     return template
 
@@ -182,11 +183,46 @@ def build_movies():
     return build_directory(data, 'movies.html', 'movies.html', 'Soulo 影视导航', '影视导航', '影视网站目录', '影视网站入口，涵盖电影、剧集、动漫、字幕与影评')
 
 
+def build_extensions():
+    data = json.loads((SITE/'extensions.json').read_text())
+    chrome = '<svg class="store-logo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#db4437"/><path d="M12 12H23a11 11 0 0 1-16.5 9.5Z" fill="#0f9d58"/><path d="m12 12-5.5 9.5A11 11 0 0 1 2.5 6.5Z" fill="#f4b400"/><circle cx="12" cy="12" r="5" fill="#4285f4" stroke="white" stroke-width="1.5"/></svg>'
+    edge = '<svg class="store-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 15c-1 6-8 9-14 6-5-2-7-7-5-12 0 6 9 6 13 5 4-1 7-3 6 1Z" fill="#159c8b"/><path d="M3 15C-1 7 5 1 12 1c7 0 11 5 11 10 0 4-4 7-8 6 6-4 2-9-3-8-4 0-6 3-6 5 0 2 1 3 3 4-3 0-5-1-6-3Z" fill="#168bd2"/><path d="M11 9c6-1 9 4 4 8-3 1-7 0-8-2-2-3 0-6 4-6Z" fill="#0864b4"/></svg>'
+    cards = []
+    for item in data['extensions']:
+        assert item['store'] in ('chrome', 'edge') and urlparse(item['url']).scheme == 'https'
+        assert (SITE/item['icon']).is_file()
+        name, en = item['name'], item.get('name_en', item['name'])
+        deep_link = 'soulo://install-extension?url=' + quote(item['url'], safe='')
+        checks = ''.join(f'<li{bilingual(zh, en)}>{esc(zh)}</li>' for zh, en in zip(item['tested'], item['tested_en']))
+        cards.append(f'''<article class="extension-card" id="{esc(item['id'])}">
+          <div class="extension-identity"><img class="extension-logo" src="{esc(item['icon'])}" width="44" height="44" alt="" /><div><div class="extension-heading"><h2{bilingual(name, en)}>{esc(name)}</h2><span class="extension-source" title="{esc(item['storeName'])}" aria-label="{esc(item['storeName'])}">{chrome if item['store'] == 'chrome' else edge}<span>{'Chrome' if item['store'] == 'chrome' else 'Edge'}</span></span></div><p class="extension-subtitle"{bilingual(item['subtitle'], item['subtitle_en'])}>{esc(item['subtitle'])}</p></div></div>
+          <p class="extension-description"{bilingual(item['description'], item['description_en'])}>{esc(item['description'])}</p>
+          <ul class="extension-tested" aria-label="已验证功能"{label_language('已验证功能', 'Tested features')}>{checks}</ul>
+          <p class="extension-version"{bilingual('验证版本：'+item['version']+' ／ Soulo '+data['souloVersion'], 'Tested: '+item['version']+' / Soulo '+data['souloVersion'])}>验证版本：{esc(item['version'])} ／ Soulo {esc(data['souloVersion'])}</p>
+          <div class="extension-actions"><a class="catalog-button primary" href="{esc(deep_link)}" data-install-extension="{esc(item['id'])}"{bilingual('在 Soulo 中安装', 'Install in Soulo')}>在 Soulo 中安装</a><a class="catalog-button" href="{esc(item['url'])}" target="_blank" rel="noopener noreferrer"{bilingual('官方商店', 'Official store')}>官方商店</a></div>
+          <p class="extension-note"{bilingual(item['note'], item['note_en'])}>{esc(item['note'])}</p>
+        </article>''')
+    description = 'Soulo 扩展收录已验证的 FastStream 网页视频播放器与猫抓资源助手，标明 Chrome、Edge 官方来源，提供 Soulo 内安装入口与扩展推荐。'
+    graph = {'@context': 'https://schema.org', '@graph': [
+        {'@type': 'CollectionPage', '@id': BASE+'extensions.html#webpage', 'url': BASE+'extensions.html', 'name': 'Soulo 扩展', 'description': description, 'inLanguage': ['zh-CN', 'en'], 'dateModified': data['updated']},
+        {'@type': 'ItemList', 'name': '已验证的 Soulo 扩展', 'numberOfItems': len(data['extensions']), 'itemListElement': [
+            {'@type': 'ListItem', 'position': i+1, 'item': {'@type': 'SoftwareApplication', 'name': item['name'], 'url': item['url'], 'softwareVersion': item['version'], 'applicationCategory': 'BrowserApplication'}}
+            for i, item in enumerate(data['extensions'])]}
+    ]}
+    tokens = {'kind':'extensions', 'page_title':'Soulo 扩展 - 已验证的手机浏览器扩展', 'page_description':description,
+              'structured_data':jsonld(graph), 'page_locales':jsonld({'zh':{'page.title':'Soulo 扩展 - 已验证的手机浏览器扩展','page.description':description}, 'en':{'page.title':'Soulo Extensions - Tested mobile browser extensions','page.description':'Find tested FastStream and Cat Catch extensions, their official Chrome and Edge listings, installation in Soulo, and recommendations.'}, 'categories':{}}),
+              'navigation':navigation('extensions.html'), 'catalog':'\n'.join(cards)}
+    template = (ROOT/'scripts/templates/extensions.html').read_text()
+    for key, value in tokens.items(): template = template.replace('{{'+key+'}}', value)
+    assert not re.search(r'\{\{\w+\}\}', template), 'Unresolved extension template token'
+    return finish_page(template, 'extensions.html')
+
+
 def build_resources():
     magnets, pans = (json.loads((SITE/file).read_text()) for file in ('magnets.json', 'pans.json'))
     categories = [
         {**category, 'group': group, 'id': 'cloud-engine' if group == 'cloud' and category['id'] == 'engine' else category['id']}
-        for group, directory in [('magnet', magnets), ('cloud', pans)]
+        for group, directory in [('cloud', pans), ('magnet', magnets)]
         for category in directory['categories']
     ]
     sites = {site['url']: site for site in magnets['sites']}
@@ -200,14 +236,16 @@ def build_resources():
         if site['category'] == 'engine':
             site['category'] = 'cloud-engine'
         sites[site['url']] = site
-    filters = [('all', '全部', 'All', 'grid'), ('magnet', '磁力', 'Magnets', 'magnet'), ('cloud', '网盘', 'Cloud', 'cloud')]
+    filters = [('all', '全部', 'All', 'grid'), ('cloud', '网盘', 'Cloud', 'cloud'), ('magnet', '磁力', 'Magnets', 'magnet')]
     buttons = ''.join(f'<button type="button" data-resource-group="{key}" aria-pressed="{str(key == "all").lower()}">{icon(mark)}<span{bilingual(zh, en)}>{zh}</span></button>' for key, zh, en, mark in filters)
-    data = {'updated': max(magnets['updated'], pans['updated']), 'categories': categories, 'sites': list(sites.values())}
+    category_order = {category['id']: i for i, category in enumerate(categories)}
+    data = {'updated': max(magnets['updated'], pans['updated']), 'categories': categories,
+            'sites': sorted(sites.values(), key=lambda site: category_order[site['category']])}
     return build_search_directory(
         data, 'resources', '资源搜索', 'Resource Search',
-        '磁力、BT 种子与网盘搜索', 'Magnets, Torrents & Cloud Drives',
-        '查找磁力搜索引擎、BT 种子站、影视网盘和学习资料入口，支持分类筛选与收藏。',
-        'Browse magnet search engines, torrent sites, and cloud drive directories.',
+        '网盘、磁力与 BT 种子搜索', 'Cloud Drives, Magnets & Torrents',
+        '查找影视网盘、学习资料、磁力搜索引擎和 BT 种子站入口，支持分类筛选与收藏。',
+        'Browse cloud drive directories, magnet search engines, and torrent sites.',
         '试试网站名称、域名，或“DHT”“夸克”等关键词。',
         'Try a site name, domain, or a keyword such as DHT or Quark.',
         groups=f'<div class="directory-tabs resource-types" role="group" aria-label="资源类型"{label_language("资源类型", "Resource type")}>{buttons}</div>',
@@ -366,7 +404,7 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     changed = []
-    for file, content in [('movies.html', build_movies()), ('resources.html', build_resources()), ('stocks.html', build_stocks()), ('magnets.html', build_directory_redirect('magnet', 'engine')), ('pans.html', build_directory_redirect('cloud', 'cloud-engine')), ('reading.html', build_content_directory('reading')), ('music.html', build_content_directory('music')), ('sources.html', build_sources()), ('index.html', build_existing_page('index.html')), ('privacy.html', build_existing_page('privacy.html'))]:
+    for file, content in [('movies.html', build_movies()), ('extensions.html', build_extensions()), ('resources.html', build_resources()), ('stocks.html', build_stocks()), ('magnets.html', build_directory_redirect('magnet', 'engine')), ('pans.html', build_directory_redirect('cloud', 'cloud-engine')), ('reading.html', build_content_directory('reading')), ('music.html', build_content_directory('music')), ('sources.html', build_sources()), ('index.html', build_existing_page('index.html')), ('privacy.html', build_existing_page('privacy.html'))]:
         target = SITE/file
         if not target.exists() or target.read_text() != content:
             changed.append(file)

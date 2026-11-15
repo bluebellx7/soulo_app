@@ -23,10 +23,12 @@ struct BookmarksContentView: View {
     @Environment(\.libraryPageIsActive) private var libraryPageIsActive
     @Environment(\.managedObjectContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "dateAdded", ascending: false)]) private var bookmarks: FetchedResults<BookmarkRecord>
+    @FetchRequest(sortDescriptors: BookmarkService.sortDescriptors) private var bookmarks: FetchedResults<BookmarkRecord>
     @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "dateAdded", ascending: true)]) private var folders: FetchedResults<BookmarkFolderRecord>
     @ObservedObject var searchVM: SearchViewModel
     var onOpen: ((String) -> Void)? = nil
+    var embeddedInLibrary = false
+    var onReadingListOpen: (() -> Void)? = nil
     @State private var path: [UUID] = []
     @State private var importing = false
     @State private var showReadingList = false
@@ -40,6 +42,9 @@ struct BookmarksContentView: View {
     @State private var removingFolder: BookmarkFolderRecord?
     @State private var moving: BookmarkMoveTarget?
     @State private var search = ""
+    @State private var showOnlyFavorites = false
+    @State private var renamingBookmark: BookmarkRecord?
+    @State private var bookmarkName = ""
     @State private var selecting = false
     @State private var selectedIDs = Set<UUID>()
     @State private var confirmDeletion = false
@@ -47,19 +52,20 @@ struct BookmarksContentView: View {
 
     private var parentID: UUID? { path.last }
     private var visibleFolders: [BookmarkFolderRecord] {
+        guard !showOnlyFavorites else { return [] }
         return folders.filter { search.isEmpty ? $0.parentID == parentID : $0.title.localizedCaseInsensitiveContains(search) }
     }
     private var visibleBookmarks: [BookmarkRecord] {
         return bookmarks.filter { item in
-            let matches = search.isEmpty ? item.folderID == parentID : item.title.localizedCaseInsensitiveContains(search) || item.urlString.localizedCaseInsensitiveContains(search)
+            guard !showOnlyFavorites || item.isFavorite else { return false }
+            let matches = search.isEmpty ? (showOnlyFavorites || item.folderID == parentID) : item.title.localizedCaseInsensitiveContains(search) || item.urlString.localizedCaseInsensitiveContains(search)
             return matches
         }
     }
 
     var body: some View {
-        managedList
-        .mediaPlayerNavigation()
-        .navigationDestination(isPresented: $showReadingList) { ReadingListView() }
+        readingListNavigation
+        .mediaPlayerNavigation(enabled: !embeddedInLibrary)
         .fileImporter(isPresented: $importing, allowedContentTypes: [.html], allowsMultipleSelection: false) { result in
             switch result {
             case .success(let urls): if let url = urls.first { importBookmarks(url) }
@@ -96,6 +102,12 @@ struct BookmarksContentView: View {
                 removingFolder = nil
             }
         } message: { Text(ToolText.text("favorites_remove_note")) }
+        .alert(ToolText.text("favorites_rename"), isPresented: Binding(
+            get: { renamingBookmark != nil }, set: { if !$0 { renamingBookmark = nil } })) {
+            TextField(renamingBookmark?.title ?? "", text: $bookmarkName)
+            Button(ToolText.text("cancel"), role: .cancel) { renamingBookmark = nil }
+            Button(ToolText.text("done")) { saveBookmarkName() }
+        }
         .alert(ToolText.text("favorites_manage"), isPresented: Binding(
             get: { notice != nil }, set: { if !$0 { notice = nil } })) {
             Button(ToolText.text("done"), role: .cancel) { notice = nil }
@@ -119,8 +131,9 @@ struct BookmarksContentView: View {
     }
 
     private var bookmarksList: some View {
-        let counts = Dictionary(grouping: bookmarks, by: \.folderID).mapValues(\.count)
-        let childCounts = Dictionary(grouping: folders, by: \.parentID).mapValues(\.count)
+        let shownFolders = visibleFolders, shownBookmarks = visibleBookmarks
+        let counts = shownFolders.isEmpty ? [:] : Dictionary(grouping: bookmarks, by: \.folderID).mapValues(\.count)
+        let childCounts = shownFolders.isEmpty ? [:] : Dictionary(grouping: folders, by: \.parentID).mapValues(\.count)
         return List {
             Section {
                 HStack {
@@ -129,12 +142,24 @@ struct BookmarksContentView: View {
                         .autocorrectionDisabled().textInputAutocapitalization(.never)
                         .accessibilityIdentifier("favorites.search")
                     if !search.isEmpty { Button { search = "" } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.borderless) }
+                    Button {
+                        showOnlyFavorites.toggle()
+                        HapticsManager.selection()
+                    } label: {
+                        Image(systemName: showOnlyFavorites ? "heart.fill" : "heart")
+                            .foregroundStyle(showOnlyFavorites ? Color.themePrimary : Color.secondary)
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("ntp_quick_links"))
+                    .accessibilityIdentifier("favorites.heart-filter")
+                    .accessibilityAddTraits(showOnlyFavorites ? .isSelected : [])
                 }
                 .frame(minHeight: AppControlMetrics.minimumHitSize)
                 .preservesKeyboardFocusOnTap()
                 .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
             }
-            if let id = parentID, let folder = folders.first(where: { $0.id == id }) {
+            if !showOnlyFavorites, let id = parentID, let folder = folders.first(where: { $0.id == id }) {
                 Section {
                     Button { path.removeLast(); search = "" } label: {
                         Label(folder.title, systemImage: "chevron.left")
@@ -144,16 +169,39 @@ struct BookmarksContentView: View {
                     .accessibilityIdentifier("favorites.parent")
                 }
             }
-            if visibleFolders.isEmpty && visibleBookmarks.isEmpty {
+            if shownFolders.isEmpty && shownBookmarks.isEmpty {
                 Section {
-                    IllustratedToolEmptyState(scene: .bookmarks,
-                        title: LanguageManager.shared.localizedString("no_bookmarks"),
-                        message: ToolText.text("favorites_empty"))
+                    if showOnlyFavorites {
+                        VStack(spacing: 14) {
+                            Image(systemName: "heart")
+                                .font(.system(size: 30, weight: .light))
+                                .foregroundStyle(Color.themePrimary)
+                                .frame(width: 80, height: 80)
+                                .background(Color.themePrimary.opacity(0.08), in: Circle())
+                            Text(LanguageManager.shared.localizedString("ntp_quick_links")).font(.headline)
+                            Text(FeatureText.text("Mark bookmarks with a heart to show them here."))
+                                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 32)
+                        .accessibilityIdentifier("favorites.heart-empty")
+                    } else {
+                        IllustratedToolEmptyState(scene: .bookmarks,
+                            title: LanguageManager.shared.localizedString("no_bookmarks"),
+                            message: ToolText.text("favorites_empty"))
+                    }
                 }
             } else {
                 Section {
-                    ForEach(visibleFolders) { folder in folderRow(folder, count: (counts[folder.id] ?? 0) + (childCounts[folder.id] ?? 0)) }
-                    ForEach(visibleBookmarks) { item in bookmarkRow(item) }
+                    ForEach(shownFolders) { folder in folderRow(folder, count: (counts[folder.id] ?? 0) + (childCounts[folder.id] ?? 0)) }
+                    ForEach(shownBookmarks) { item in bookmarkRow(item) }
+                        .onMove { indices, destination in
+                            var ids = shownBookmarks.map(\.id)
+                            ids.move(fromOffsets: indices, toOffset: destination)
+                            do { try BookmarkService.reorder(ids, context: modelContext) }
+                            catch { modelContext.rollback(); notice = error.localizedDescription }
+                        }
+                        .moveDisabled(selecting)
                 }
             }
             Section {
@@ -164,6 +212,12 @@ struct BookmarksContentView: View {
         .compatibleListSectionSpacing(20)
         .compatibleScrollTopMargin(24)
 
+    }
+
+    @ViewBuilder private var readingListNavigation: some View {
+        if onReadingListOpen == nil {
+            managedList.navigationDestination(isPresented: $showReadingList) { ReadingListView() }
+        } else { managedList }
     }
 
     private var managedList: some View {
@@ -179,7 +233,7 @@ struct BookmarksContentView: View {
             if libraryPageIsActive {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Button { showReadingList = true } label: {
+                        Button { if let onReadingListOpen { onReadingListOpen() } else { showReadingList = true } } label: {
                             Label(FeatureText.text("Reading list"), systemImage: "text.book.closed")
                         }
                         Button { editingFolder = nil; folderName = ""; folderPrompt = true } label: {
@@ -223,7 +277,7 @@ struct BookmarksContentView: View {
                 } catch { modelContext.rollback(); notice = error.localizedDescription }
             }
         } message: { Text(String(format: FeatureText.text("Delete %lld selected bookmarks?"), Int64(selectedIDs.count))) }
-        .onCompatibleChange(of: bookmarks.map(\.id)) { _, ids in selectedIDs.formIntersection(Set(ids)) }
+        .onCompatibleChange(of: selecting ? bookmarks.map(\.id) : []) { _, ids in selectedIDs.formIntersection(Set(ids)) }
 
     }
 
@@ -275,8 +329,15 @@ struct BookmarksContentView: View {
                 BookmarkFaviconView(urlString: item.urlString, size: 28)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.title).font(.system(size: 15, weight: .medium)).foregroundStyle(.primary).lineLimit(1)
-                    Text(URL(string: item.urlString)?.host ?? item.urlString)
-                        .font(.system(size: 12)).foregroundStyle(.tertiary).lineLimit(1)
+                    HStack(spacing: 4) {
+                        if item.isFavorite {
+                            Image(systemName: "heart.fill").font(.system(size: 9))
+                                .foregroundStyle(Color.themePrimary)
+                                .accessibilityLabel(LanguageManager.shared.localizedString("ntp_quick_links"))
+                        }
+                        Text(URL(string: item.urlString)?.host ?? item.urlString)
+                            .font(.system(size: 12)).foregroundStyle(.tertiary).lineLimit(1)
+                    }
                 }
                 Spacer()
                 if let platform = item.platformName {
@@ -289,7 +350,14 @@ struct BookmarksContentView: View {
             }.contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("favorites.bookmark.\(item.id)")
         .contextMenu {
+            Button { toggleFavorite(item) } label: {
+                Label(FeatureText.text(item.isFavorite ? "Remove from Quick Links" : "Add to Quick Links"), systemImage: item.isFavorite ? "heart.slash" : "heart")
+            }
+            Button { renamingBookmark = item; bookmarkName = item.title } label: {
+                Label(ToolText.text("favorites_rename"), systemImage: "pencil")
+            }
             Button { moving = .bookmark(item) } label: { Label(ToolText.text("favorites_move"), systemImage: "folder") }
             ShareLink(item: item.urlString) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
             Button(role: .destructive) { BookmarkService.delete(item, context: modelContext) } label: {
@@ -304,6 +372,22 @@ struct BookmarksContentView: View {
                 .tint(.gray)
         }
         .background(LibrarySwipeActionsRegion())
+    }
+
+    private func toggleFavorite(_ item: BookmarkRecord) {
+        item.isFavorite.toggle()
+        do { try modelContext.save(); HapticsManager.selection() }
+        catch { modelContext.rollback(); notice = error.localizedDescription }
+    }
+
+    private func saveBookmarkName() {
+        guard let item = renamingBookmark, !item.isDeleted else { renamingBookmark = nil; return }
+        let name = bookmarkName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        item.title = name
+        do { try modelContext.save() }
+        catch { modelContext.rollback(); notice = error.localizedDescription }
+        renamingBookmark = nil
     }
 
     private func saveFolder() {

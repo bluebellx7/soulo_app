@@ -1,6 +1,1 @@
-1.2.13
-
-• Latar terpisah untuk tampilan terang dan gelap, dengan sakelar lapisan gambar.
-• Warna beranda ditingkatkan; pratinjau wallpaper mengikuti tema aplikasi.
-• Pratinjau, bagikan, dan simpan wallpaper ke Foto.
-• Pengaturan tab atas dengan tab baru dan opsi menyembunyikan bar platform setelah navigasi.
+Peningkatan jendela iPad, input suara, ringkasan lokal, dan aksesibilitas. Peningkatan ekspor media di latar belakang, Pintasan, dan kompatibilitas ekstensi. Beberapa fitur bergantung pada perangkat, versi sistem, dan bahasa.

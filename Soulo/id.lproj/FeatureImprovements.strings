@@ -81,3 +81,58 @@
 "Website cache" = "Tembolok situs web";
 "Website icons" = "Ikon situs web";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "Sinkronisasi iCloud menyimpan cadangan sebelum pengaturan berubah. %lld cadangan terbaru dan salinan awal tetap disimpan.";
+
+"Move tab to new window" = "Pindahkan ke jendela baru";
+
+"Save webpage" = "Simpan halaman web";
+
+"Webpage" = "Halaman web";
+
+"Website data" = "Data situs";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Mencakup artikel tersimpan, indeks buku, sampul, dan progres membaca. File buku dihitung sebagai file unduhan.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Ukuran berupa perkiraan. IndexedDB mencakup database dan media. Ukuran yang tidak tersedia ditampilkan sebagai —.";
+"Extension temporary cache" = "Cache sementara ekstensi";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Menghapus media sementara ekstensi. Pengaturan, skrip, progres, dan file unduhan tetap disimpan. Tutup halaman ekstensi dan video serta selesaikan unduhan terlebih dahulu.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Data sementara masih digunakan. Tutup halaman ekstensi dan video, selesaikan unduhan, lalu coba lagi.";
+"Deleting website data can sign you out and remove offline content." = "Menghapus data dapat mengeluarkan Anda dari akun dan menghapus konten offline.";
+
+"Extension startup timed out." = "Waktu memulai ekstensi habis.";
+
+"soulo_extensions" = "Ekstensi Soulo";
+
+"Add to Quick Links" = "Tambahkan ke tautan cepat";
+"Remove from Quick Links" = "Hapus dari tautan cepat";
+"Mark bookmarks with a heart to show them here." = "Tekan lama penanda lalu tandai dengan hati untuk menampilkannya di sini.";
+
+"Type %@ to confirm." = "Ketik %@ untuk mengonfirmasi.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Penanda digabungkan antarperangkat. Hanya penghapusan yang disengaja yang menghapus item.";
+"This deletion also syncs to your other devices." = "Penghapusan ini juga disinkronkan ke perangkat Anda yang lain.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Salin prompt ini, tambahkan kebutuhan Anda, lalu kirim ke AI. Setelah itu tempel JSON-nya di sini untuk mengimpor.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Nama grup dalam JSON diutamakan. Grup yang cocok digabungkan tanpa menghapus platform yang ada.";
+"Imported %1$d platforms into %2$d groups." = "%1$d platform diimpor ke %2$d grup.";
+"No new platforms or group entries." = "Tidak ada platform atau entri grup baru.";
+
+"App size" = "Ukuran app";
+"App data" = "Data app";
+"Wallpaper cache" = "Cache wallpaper";
+"Other caches" = "Cache lainnya";
+"Temporary files" = "File sementara";
+"Download task data" = "Data tugas unduhan";
+"Settings and records" = "Pengaturan dan catatan";
+"Shared app data" = "Data app bersama";
+"Other app data" = "Data app lainnya";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Data app tidak termasuk program terinstal. Ukuran disk dapat berbeda dari Pengaturan iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Hapus konten tersimpan dari daftarnya. File sementara aktif dan basis data cache sistem dilepas saat aman.";
+
+"Current platforms" = "Platform saat ini";
+"Import mode" = "Mode impor";
+"Append" = "Tambahkan";
+"Replace all" = "Ganti semua";
+"Replace all platforms?" = "Ganti semua platform?";
+"A settings backup is saved before replacement." = "Cadangan pengaturan disimpan sebelum penggantian.";
+
+"Take over web players" = "Ambil alih pemutar web";
+"Only takes over website fullscreen. Extension players stay independent." = "Hanya mengambil alih layar penuh situs. Pemutar ekstensi tetap independen.";
+
+"App size is the installed program and resources, not the App Store download size." = "Ukuran app mencakup program dan sumber daya terpasang, bukan unduhan App Store.";
+"App data is the total of the categories below." = "Data app adalah total kategori di bawah.";

@@ -484,7 +484,7 @@
 "media_track_off" = "关闭";
 
 /* Video preferences */
-"video_settings" = "视频";
+"video_settings" = "视频设置";
 "video_show_tools" = "显示视频工具";
 "video_show_tools_desc" = "在网页视频上显示工具按钮，可调节倍速、下载或进入全屏。";
 "video_default_player" = "默认播放器";
@@ -564,4 +564,37 @@
 "wallpaper_image_blur" = "毛玻璃";
 "wallpaper_blur_amount" = "模糊强度";
 
-"auto_hide_platform_bar_hint" = "进入搜索结果中的页面后，平台栏会自动收起。返回搜索结果或重新搜索时会再次显示，可在此菜单关闭。";
+"auto_hide_platform_bar_hint" = "手动点击网页内容后才隐藏平台栏，网页自动跳转和滚动不会触发。返回搜索结果或开始新搜索后重新显示。";
+
+"ad_subscription_add" = "添加规则";
+"ad_subscription_name" = "名称";
+"ad_subscription_url" = "订阅链接";
+"ad_subscription_invalid" = "请输入名称和有效的 HTTP 或 HTTPS 订阅链接。";
+"ad_subscription_duplicate" = "此订阅链接已添加。";
+
+"feedback_settings" = "声音与震动";
+"feedback_settings_hint" = "统一控制操作时的震动和提示音，不影响网页、视频及音频播放。";
+
+"home_display_settings" = "首页界面显示";
+"browsing_display_settings" = "浏览界面显示";
+
+"web_video_download" = "网页视频下载";
+"web_video_download_description" = "显示网页视频、选集及播放器中的下载入口。关闭后不影响播放和已有下载任务。";
+"builtin_extension" = "内置扩展";
+
+"wallpaper_overlay_amount" = "蒙层强度";
+"feedback_contact_required" = "请填写邮箱或其他联系方式，方便回复。";
+"torrent_incomplete" = "未完成";
+"extend_page_background" = "网页背景延伸";
+"extend_page_background_desc" = "分别识别网页顶部和底部的颜色，延伸到状态栏和底部；支持渐变背景。";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "折叠分组";
+"tab_group_expand" = "展开分组";
+"freeze_page_background_on_scroll" = "滚动后保持初始颜色";
+"freeze_page_background_on_scroll_desc" = "滚动后保留首次识别的颜色，停止重新取色；打开新页面时重新识别。";
+"page_background_gradient" = "渐变延伸";
+"page_background_gradient_desc" = "开启后延伸网页中的渐变色；关闭时顶部、底部分别使用一种纯色。";
+
+
+"gestures_feedback_settings" = "手势与反馈";

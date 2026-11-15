@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "שאילתה אחת, 40+ פלטפורמות";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "חפש או הזן כתובת URL";
 "privacy_search_placeholder" = "חפש פרטי או הזן כתובת URL";
 "search" = "חפש";
@@ -354,7 +354,7 @@
 "voice_stop" = "עצור";
 "voice_record" = "הקלט";
 "batch_import" = "ייבוא אצווה";
-"batch_import_format" = "הדבק JSON בפורמט למטה";
+"batch_import_format" = "הדביקו JSON כאן";
 "batch_import_group" = "הוסף לקבוצה (אופציונלי)";
 "batch_import_group_placeholder" = "למשל סרטים";
 "batch_import_film_entry" = "פתח הגדרות מוגדרות מראש של פלטפורמת הסרט";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "לא ניתן היה להתקין את ההרחבה";
 "extension_permissions_summary" = "%d הרשאות · %d כללי אתר";
 "extension_untitled" = "הרחבה ללא כותרת";
-"web_extension_install_footer" = "אפשר להתקין הרחבות תואמות מקישור לחנות או לייבא CRX, XPI, ZIP או תיקיית הרחבה. יש לבדוק הרשאות ותאימות לפני ההתקנה; חלק מתכונות המחשב אינן זמינות.";
+"web_extension_install_footer" = "לאחר ההתקנה, ניתן לשנות את ההרשאות בניהול התוסף.";
 "web_extension_install_store_link" = "התקן מקישור לחנות...";
 "web_extension_browse_sources" = "עיין בחנויות הרחבות";
 "web_extension_browse_sources_footer" = "לחצני Store Get תומכים רק בדפדפנים שולחניים משלהם. העתק קישור לדף פרטי הרחבה, ולאחר מכן השתמש ב- Install from Store Link ב-Soulo.";
 "web_extension_store_install_title" = "התקן תוסף לחנות";
 "extension_page_banner_title" = "התקן עם Soulo";
-"extension_page_banner_desc" = "יש לבדוק תאימות והרשאות לפני ההתקנה.";
-"web_extension_store_install_desc" = "יש להדביק קישור לדף הפרטים של הרחבת Chrome, Edge או Firefox ולבדוק תאימות והרשאות לפני אישור ההתקנה.";
+"extension_page_banner_desc" = "לאחר ההתקנה, ניתן לשנות את ההרשאות בניהול התוסף.";
+"web_extension_store_install_desc" = "לאחר ההתקנה, ניתן לשנות את ההרשאות בניהול התוסף.";
 "web_extension_store_link_placeholder" = "קישור לדף התוסף או מזהה תוסף של Chrome";
 "web_extension_store_invalid_link" = "הדבק קישור לדף פרטי תוסף מ-Chrome, Edge או Firefox, מזהה תוסף של Chrome או קישור ישיר של CRX, XPI או ZIP.";
 "web_extension_store_https_required" = "חבילות הרחבה חייבות להשתמש בקישור HTTPS מאובטח.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "לחצו ממושכות על הסמל של Soulo במסך הבית כדי להשתמש בקיצורים שהוגדרו כאן.";
 
 "ad_block_scope_hint" = "מסנן פרסומות באתרים, שכבות קידום וחלונות קופצים לא רצויים. אם אתר מפסיק לפעול, ניתן לכבות את הסינון רק עבורו.";
+
+"privacy_clear_browsing_on_exit" = "ניקוי היסטוריה ביציאה";
+"privacy_clear_browsing_on_exit_desc" = "ניקוי הדפים שביקרת בהם במעבר לרקע או בהפעלה מחדש. מונחי החיפוש נשמרים.";

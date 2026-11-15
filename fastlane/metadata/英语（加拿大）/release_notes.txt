@@ -1,6 +1,1 @@
-1.2.13
-
-• Set separate light and dark backgrounds, with an image overlay switch.
-• Improved home colors; wallpaper previews now follow the app theme.
-• Preview, share and save wallpapers to Photos.
-• Added top tab settings with New Tab, plus optional platform bar hiding after navigation.
+Improved iPad windows, voice input, local summaries and accessibility. Improved background media export, Shortcuts and extension compatibility. Some features depend on your device, OS version and language.

@@ -5,6 +5,66 @@ import Vision
 @testable import Soulo
 
 @MainActor final class TabOverviewLifecycleTests: XCTestCase {
+    func testRapidGroupedScrollingKeepsLargeSnapshotDecodingBoundedAndResponsive() async throws {
+        let defaults = UserDefaults.standard
+        let oldMode = defaults.object(forKey: "tab_overview_grouped"), oldPrivate = defaults.object(forKey: "is_incognito")
+        defaults.set(true, forKey: "tab_overview_grouped"); defaults.set(false, forKey: "is_incognito")
+        let key = "many-tabs-scroll-\(UUID())"
+        defaults.set(Data(#"{"tabs":[],"activeIndex":0}"#.utf8), forKey: key)
+        let manager = TabManager(storageKey: key)
+        let data = try XCTUnwrap(UIGraphicsImageRenderer(size: CGSize(width: 1920, height: 2560)).image { context in
+            UIColor.systemIndigo.setFill(); context.fill(CGRect(x: 0, y: 0, width: 1920, height: 2560))
+            UIColor.white.setFill()
+            for y in stride(from: 100, to: 2400, by: 90) { context.fill(CGRect(x: 100, y: y, width: 1600, height: 24)) }
+        }.jpegData(compressionQuality: 0.9))
+        let directory = WebViewModel.snapshotDirectory
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        manager.tabs = try (0..<60).map { index in
+            let tab = BrowserTab()
+            tab.webViewModel.loadCachedURL(URL(string: "https://group\(index / 10).example.test/\(index)")!)
+            tab.webViewModel.updateTitle("Large preview \(index)")
+            try data.write(to: directory.appendingPathComponent(tab.id.uuidString + ".jpg"))
+            return tab
+        }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+        window.rootViewController = UIHostingController(rootView: TabSwitcherOverlay(tabManager: manager,
+            onSelectTab: { _ in }, onGoHome: {}, onDismiss: {}))
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+            manager.tabs.forEach { $0.webViewModel.deletePersistedSnapshot() }
+            manager.saveToDisk(); defaults.removeObject(forKey: key)
+            defaults.set(oldMode, forKey: "tab_overview_grouped"); defaults.set(oldPrivate, forKey: "is_incognito")
+        }
+        func scrollViews(_ view: UIView) -> [UIScrollView] {
+            (view as? UIScrollView).map { [$0] } ?? view.subviews.flatMap(scrollViews)
+        }
+        let root = try XCTUnwrap(window.rootViewController?.view)
+        root.layoutIfNeeded(); try await Task.sleep(for: .milliseconds(250))
+        let scroll = try XCTUnwrap(scrollViews(root).first { $0.contentSize.height > $0.bounds.height })
+        var largestDelay = 0.0, previousTick = CACurrentMediaTime()
+        for index in 0..<36 {
+            let range = max(0, scroll.contentSize.height - scroll.bounds.height)
+            scroll.setContentOffset(CGPoint(x: 0, y: CGFloat(index % 6) / 5 * range), animated: false)
+            try await Task.sleep(for: .milliseconds(30))
+            let now = CACurrentMediaTime(); largestDelay = max(largestDelay, now - previousTick); previousTick = now
+        }
+        scroll.setContentOffset(.zero, animated: false)
+        try await Task.sleep(for: .milliseconds(350))
+        let decoded = manager.tabs.compactMap { $0.webViewModel.snapshot }
+        XCTAssertFalse(decoded.isEmpty)
+        XCTAssertLessThan(decoded.count, 30, "Offscreen previews must be evicted during repeated scrolling")
+        XCTAssertTrue(decoded.allSatisfy { max($0.size.width * $0.scale, $0.size.height * $0.scale) <= 512 })
+        XCTAssertLessThan(largestDelay, 1, "The main actor must keep processing scrolls and taps")
+        XCTAssertTrue(manager.tabs.allSatisfy { $0.webViewModel.webView == nil })
+        for tab in manager.tabs {
+            XCTAssertEqual(try Data(contentsOf: directory.appendingPathComponent(tab.id.uuidString + ".jpg")).count, data.count,
+                           "Downsampling must not overwrite the original preview")
+        }
+        print("TAB OVERVIEW SCROLL: tabs=60, decoded=\(decoded.count), max_main_tick=\(largestDelay)s")
+    }
+
     func testDomainGroupsPreserveTabOrderAndDoNotMergeUnrelatedHosts() throws {
         let urls: [String?] = ["https://www.example.com/a", "https://other.test", "http://example.com:8080/b",
             "https://alpha.github.io", "https://beta.github.io", "https://m.example.com", nil,

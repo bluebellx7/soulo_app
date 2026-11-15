@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-13",
+  "feature": "Third-party extension lifecycle improvements and TYTY compatibility diagnosis",
+  "changes": [
+    "Allow an installed extension to be disabled while it is loading; continue blocking changes during an installation transaction.",
+    "Skip stale queued enable operations and hide extension actions while disabled or loading.",
+    "Wrap native extension popups with a system Done control; prevent duplicate popups and dismiss only the owning extension popup when unloading.",
+    "Normalize explicit wildcard ports in externally_connectable matches in the private prepared manifest. Preserve fixed ports, hosts, paths, permissions and the original source package."
+  ],
+  "validation": {
+    "unit": {
+      "result": "/tmp/soulo-third-party-extensions-20261113/verified-regression.xcresult",
+      "status": "8 passed, 0 failures, 0 skipped on iOS 26.2 simulator",
+      "coverage": [
+        "Cancel repeated queued enable operations, retain disabled state and re-enable successfully",
+        "Popup close control exists; disabling another owner does not dismiss it; disabling its owner does",
+        "Failed enable restores disabled state and a diagnostic",
+        "Script updates retain stored values and disabled state; deletion removes script access",
+        "Wildcard-port normalization is idempotent and leaves numeric ports, source and permissions unchanged",
+        "A real native extension background receives and replies to an external localhost message on an ephemeral port",
+        "Existing background wrapper migration stays idempotent",
+        "Undeclared native compatibility permissions remain rejected"
+      ]
+    },
+    "popup_visual_review": "Reviewed exported third-party-extension-popup-close screenshot: extension content, title and system Done control visible.",
+    "simulator_build": "build-for-testing passed",
+    "generic_ios_device_build": "passed with CODE_SIGNING_ALLOWED=NO",
+    "localization": "check_localization.py --strict passed: 881 keys, 489 ReadingTools keys and 81 FeatureImprovements keys across 50 locales",
+    "metadata": "export_metadata_json.py --check passed; version and metadata unchanged",
+    "earlier_harness_failures": "Retained in artifacts. Fixed missing fixture destination directory and used a structured JavaScript reply/error envelope instead of a bare asynchronous result. Final assertions still require the actual native message reply."
+  },
+  "tyty": {
+    "source": "/Users/shunfei.z/Downloads/tyty.v0.6.6.crx",
+    "version": "0.6.6",
+    "sha256": "676fc17589eb40a32e1eb461e23d735d482eb494a5a25724c7e1dba589a9faa6",
+    "background_sha256": "21877195d29dc57a97ab457684674bf9fd4ab50915eb7687919044d1360e1036",
+    "original_file_modified": false,
+    "installation": "The package extracts, previews and loads into a native WKWebExtensionContext. Installation alone is not functional certification.",
+    "confirmed_findings": [
+      {
+        "issue": "Website expects a fixed Chrome extension ID",
+        "evidence": "The live website messaging code passes kmibgmblaakbhikfbjaincmnmabgnoim to chrome.runtime.sendMessage; this matches the CRX3 identity. Soulo assigns record.id.uuidString as context.uniqueIdentifier and has no Chrome-ID alias routing.",
+        "impact": "The website detection request targets a different ID, so it cannot reach this installed context.",
+        "status": "Dedicated compatibility work still required; native storage identity was not changed."
+      },
+      {
+        "issue": "Explicit wildcard ports in externally_connectable",
+        "patterns": [
+          "http://localhost:*/*",
+          "https://192.168.0.2:*/*"
+        ],
+        "evidence": "A minimal document-background control returned pong after port normalization; the production normalizer also passes an independent native round-trip regression.",
+        "status": "Fixed generically in private prepared manifests. This alone does not fix the website ID or background business code."
+      }
+    ],
+    "additional_diagnostic_observations": [
+      "Instrumented service-worker probes did not complete the startup callback within 8 seconds and returned no ping reply, including a minimal worker control. This does not establish that TYTY business code alone causes the startup failure.",
+      "Document-background adaptations of the original source hit a runtime syntax error even though static JSContext parsing passed. These adaptations were diagnostic only and are not shipped.",
+      "A diagnostic template-literal-transformed document background progressed to a native declarativeNetRequest error: rule ID 2 regexFilter was rejected as unsupported. Its synchronous startup call then prevents listener registration. This observation belongs to the adapted probe, not a functional certification of the stock worker.",
+      "The template transform, background replacement, logging instrumentation and rule stubs were not included in production."
+    ],
+    "status": "Resolved for the pinned 0.6.6 package in 1.2.14; real-package messaging, request forwarding, rules and lifecycle verification passed. See superseding report for scope and limits.",
+    "business_limits": "No account login, cloud file transfer, upload or deletion was attempted. No evidence established a conflict with built-in user scripts.",
+    "evidence": [
+      "/tmp/soulo-third-party-extensions-20261113/tyty-normalized-final.xcresult",
+      "/tmp/soulo-third-party-extensions-20261113/tyty-syntax-variants.xcresult",
+      "/tmp/soulo-third-party-extensions-20261113/ExtensionAuditTests.exploratory.swift",
+      "/tmp/soulo-third-party-extensions-20261113/site-YSSOwj0f.js"
+    ],
+    "initial_status": "Not fully supported or certified. A website ID bridge and validated background/network-rule adaptation remain necessary."
+  },
+  "artifacts": "/tmp/soulo-third-party-extensions-20261113",
+  "limits": [
+    "Simulator validation; no physical-device run.",
+    "Native extension tests require iOS 18.4 or later."
+  ],
+  "paid_api_calls": 0,
+  "pushed": false,
+  "snapshot_stage": "Initial diagnosis before the 1.2.14 follow-up; diagnostic observations below are historical.",
+  "superseded_by": "2026-11-13-1.2.14-completion.json"
+}

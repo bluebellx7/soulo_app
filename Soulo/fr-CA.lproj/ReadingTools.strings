@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Pistes audio";
 "media_subtitles" = "Sous-titres";
 "media_track_off" = "Désactivé";
-"video_settings" = "Vidéo";
+"video_settings" = "Réglages vidéo";
 "video_show_tools" = "Afficher les outils vidéo";
 "video_show_tools_desc" = "Affichez des outils sur les vidéos Web pour la vitesse de lecture, les téléchargements et le plein écran.";
 "video_default_player" = "Joueur par défaut";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Verre dépoli";
 "wallpaper_blur_amount" = "Intensité du flou";
 
-"auto_hide_platform_bar_hint" = "La barre des plateformes se masque à l’ouverture d’un résultat. Revenez aux résultats ou lancez une nouvelle recherche pour la réafficher. Vous pouvez désactiver cette option dans ce menu.";
+"auto_hide_platform_bar_hint" = "La barre des plateformes se masque uniquement lorsque vous touchez le contenu web. Les redirections automatiques et le défilement ne la masquent pas. Revenez aux résultats ou lancez une nouvelle recherche pour la réafficher.";
+
+"ad_subscription_add" = "Ajouter une liste";
+"ad_subscription_name" = "Nom";
+"ad_subscription_url" = "URL d’abonnement";
+"ad_subscription_invalid" = "Saisissez un nom et une URL d’abonnement HTTP ou HTTPS valide.";
+"ad_subscription_duplicate" = "Cette URL d’abonnement a déjà été ajoutée.";
+
+"feedback_settings" = "Sons et vibrations";
+"feedback_settings_hint" = "Contrôlez les vibrations et les sons de l’interface dans toute l’app. La lecture des pages web, des vidéos et de l’audio reste inchangée.";
+
+"home_display_settings" = "Affichage de l’accueil";
+"browsing_display_settings" = "Affichage de navigation";
+
+"web_video_download" = "Téléchargement vidéo web";
+"web_video_download_description" = "Affiche les commandes de téléchargement vidéo sur les pages web, listes d’épisodes et lecteurs. La lecture et les téléchargements existants restent inchangés.";
+"builtin_extension" = "Extension intégrée";
+
+"wallpaper_overlay_amount" = "Intensité du voile";
+"feedback_contact_required" = "Indiquez un e-mail ou un autre contact pour recevoir une réponse.";
+"torrent_incomplete" = "Incomplet";
+"extend_page_background" = "Étendre le fond web";
+"extend_page_background_desc" = "Prolonge les couleurs du haut et du bas de la page aux bords du navigateur, dégradés compris.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Réduire le groupe";
+"tab_group_expand" = "Développer le groupe";
+"freeze_page_background_on_scroll" = "Garder les couleurs initiales";
+"freeze_page_background_on_scroll_desc" = "Après le défilement, garder les premières couleurs détectées. Les nouvelles pages sont analysées de nouveau.";
+"page_background_gradient" = "Extension en dégradé";
+"page_background_gradient_desc" = "Mélange les couleurs détectées en dégradé. Désactivée, chaque bord utilise une couleur unie.";
+
+
+"gestures_feedback_settings" = "Gestes et retour";

@@ -2,6 +2,7 @@ import Foundation
 
 enum AppConstants {
     static let appName = "Soulo"
+    static let defaultHomeSubtitle = "Search anytime, anywhere."
     static let appVersion = "1.1.4"
     static let maxSearchHistoryCount = 500
     static let clipboardMaxLength = 200
@@ -115,6 +116,9 @@ enum AppConstants {
         static let browserToolbarAddressAction = "browser_toolbar_address_action"
         static let browserToolbarHidden = "browser_toolbar_hidden"
         static let keepPageAboveToolbar = "keep_page_above_toolbar"
+        static let extendPageBackground = "extend_page_background"
+        static let pageBackgroundGradient = "page_background_gradient"
+        static let freezePageBackgroundOnScroll = "freeze_page_background_on_scroll"
         static let wallpaperMode = "wallpaper_mode"
         static let customWallpaperData = "custom_wallpaper_data"
         static let bingWallpaperCache = "bing_wallpapers_cache"

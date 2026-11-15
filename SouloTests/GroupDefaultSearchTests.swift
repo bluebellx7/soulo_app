@@ -3,6 +3,128 @@ import XCTest
 
 @MainActor
 final class GroupDefaultSearchTests: XCTestCase {
+    func testWebPlayerTakeoverIsOptInAndIncludedInSettingsSync() throws {
+        let suite = "VideoTakeover." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertFalse(VideoPlaybackPreferences.takesOverWebPlayers(in: defaults))
+        defaults.set(true, forKey: VideoPlaybackPreferences.takesOverWebPlayersKey)
+        XCTAssertTrue(VideoPlaybackPreferences.takesOverWebPlayers(in: defaults))
+        XCTAssertTrue(CloudSyncService.syncedKeys.contains(VideoPlaybackPreferences.takesOverWebPlayersKey))
+        let values = CloudSettingsSyncEngine.snapshot(defaults)
+        XCTAssertEqual(values[VideoPlaybackPreferences.takesOverWebPlayersKey] as? Bool, true)
+        defaults.set(false, forKey: VideoPlaybackPreferences.takesOverWebPlayersKey)
+        XCTAssertFalse(VideoPlaybackPreferences.takesOverWebPlayers(in: defaults))
+    }
+
+    func testPlatformAIExportRoundTripsAllLinksAndReplacementBacksUpBeforeWriting() throws {
+        let store = PlatformDataStore.shared
+        let original = (store.platforms, store.customGroups, store.regionNameOverrides)
+        defer {
+            store.platforms = original.0; store.customGroups = original.1; store.regionNameOverrides = original.2
+            store.savePlatforms(); store.saveGroups(); store.saveRegionNames()
+        }
+        store.platforms = PlatformDataStore.defaultPlatforms()
+        store.platforms[0].isVisible = false
+        let a = store.platforms[0], b = store.platforms[1]
+        let group = CustomGroup(name: "Export group", platformIDs: [b.id, a.id])
+        store.customGroups = [group]; store.savePlatforms(); store.saveGroups()
+        let data = try store.exportPlatformLinks()
+        let document = try PlatformImportDocument.parse(String(decoding: data, as: UTF8.self))
+        XCTAssertEqual(document.rejectedPlatforms, 0)
+        let roundTrip = try store.replacementPlan(document)
+        XCTAssertEqual(Set(roundTrip.platforms.map(\.id)), Set(store.platforms.map(\.id)), "Every existing link survives export and parse")
+        XCTAssertEqual(roundTrip.platforms.first { $0.id == a.id }?.isVisible, false)
+        XCTAssertEqual(roundTrip.groups.first?.id, group.id)
+        XCTAssertEqual(roundTrip.groups.first?.platformIDs, [b.id, a.id])
+        let appended = store.applyImport(document, groupName: nil)
+        XCTAssertEqual(appended.addedPlatforms, 0)
+        XCTAssertEqual(store.customGroups.count, 1, "Regional export entries must not create duplicate custom groups")
+        let object: [String: Any] = ["groups": [["id": group.id.uuidString, "name": "Reorganized", "platforms": [
+            ["name": b.name, "url": b.searchURLTemplate, "id": b.id.uuidString],
+            ["name": "New link", "url": "https://new.example/search?q=%@"]]]]]
+        let source = String(decoding: try JSONSerialization.data(withJSONObject: object), as: UTF8.self)
+        let replacement = try PlatformImportDocument.parse(source)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let backups = CloudSettingsBackupStore(directory: directory)
+        let before = CloudSettingsSyncEngine.snapshot(.standard)
+        let peer = try CloudSettingsSyncEngine.seed(before, writerID: "peer", date: Date(timeIntervalSince1970: 1))
+        var local = try CloudSettingsSyncEngine.seed(before, writerID: "local", date: Date(timeIntervalSince1970: 1))
+        let result = try store.replacePlatforms(replacement, backupStore: backups)
+        XCTAssertTrue(result.hasChanges); XCTAssertEqual(store.platforms.count, 2)
+        XCTAssertEqual(store.platforms.first?.id, b.id, "Regrouping preserves matching identities and icons")
+        XCTAssertEqual(store.platforms.first?.iconName, b.iconName)
+        XCTAssertEqual(store.customGroups.first?.id, group.id)
+        XCTAssertEqual(store.customGroups.first?.name, "Reorganized")
+        XCTAssertFalse(store.platforms.contains { $0.id == a.id })
+        let saved = try XCTUnwrap(backups.list().first)
+        let values = try backups.values(for: saved)
+        let previous = try JSONDecoder().decode([SearchPlatform].self, from: XCTUnwrap(values["platform_config"] as? Data))
+        XCTAssertEqual(previous.count, PlatformDataStore.defaultPlatforms().count)
+        XCTAssertTrue(previous.contains { $0.id == a.id })
+        let after = CloudSettingsSyncEngine.snapshot(.standard)
+        XCTAssertTrue(try CloudSettingsSyncEngine.recordEdits(from: before, to: after, in: &local, date: Date(timeIntervalSince1970: 2)))
+        let merged = try CloudSettingsSyncEngine.merged([peer, local], onto: after)
+        let synced = try JSONDecoder().decode([SearchPlatform].self, from: XCTUnwrap(merged["platform_config"] as? Data))
+        XCTAssertEqual(Set(synced.map(\.id)), Set(store.platforms.map(\.id)), "An older peer cannot resurrect deliberately replaced links")
+    }
+
+    func testPlatformReplacementRejectsPartialInvalidEmptyAndUnbackedImports() throws {
+        let store = PlatformDataStore.shared
+        let original = (store.platforms, store.customGroups, store.regionNameOverrides)
+        defer {
+            store.platforms = original.0; store.customGroups = original.1; store.regionNameOverrides = original.2
+            store.savePlatforms(); store.saveGroups(); store.saveRegionNames()
+        }
+        let encoder = JSONEncoder(); encoder.outputFormatting = .sortedKeys
+        let before = try encoder.encode(store.platforms)
+        for source in [
+            #"{"groups":[{"name":"Bad","platforms":[{"name":"Good","url":"https://example.com/?q=%@"},{"name":"Broken","url":"javascript:alert(1)"}]}]}"#,
+            #"{"groups":[{"name":"Empty","platforms":[]}]}"#,
+            #"[{"name":"Unnamed","url":"https://example.com/?q=%@"}]"#
+        ] {
+            let document = try PlatformImportDocument.parse(source)
+            XCTAssertThrowsError(try store.replacementPlan(document))
+            XCTAssertEqual(try encoder.encode(store.platforms), before)
+        }
+        let valid = try PlatformImportDocument.parse(#"{"groups":[{"name":"Valid","platforms":[{"name":"Valid","url":"https://example.com/?q=%@"}]}]}"#)
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try Data("not a directory".utf8).write(to: file); defer { try? FileManager.default.removeItem(at: file) }
+        XCTAssertThrowsError(try store.replacePlatforms(valid, backupStore: CloudSettingsBackupStore(directory: file)))
+        XCTAssertEqual(try encoder.encode(store.platforms), before)
+        XCTAssertEqual(store.customGroups, original.1)
+    }
+
+    func testCrossGroupDropsMoveMembershipAndPersistOrderWithoutDuplicatingPlatforms() throws {
+        let store = PlatformDataStore.shared, originalPlatforms = store.platforms, originalGroups = store.customGroups
+        defer { store.platforms = originalPlatforms; store.customGroups = originalGroups; store.savePlatforms(); store.saveGroups() }
+        let examples = Array(PlatformDataStore.defaultPlatforms().prefix(3))
+        XCTAssertEqual(examples.count, 3)
+        let a = examples[0].id, b = examples[1].id, c = examples[2].id
+        var first = CustomGroup(name: "Drag A"), second = CustomGroup(name: "Drag B"), empty = CustomGroup(name: "Empty")
+        first.platformIDs = [a,b]; second.platformIDs = [c]
+        store.platforms = examples; store.customGroups = [first,second,empty]
+        XCTAssertTrue(store.movePlatform(a, from: .custom(first.id), to: .custom(second.id), relativeTo: c))
+        XCTAssertEqual(store.customGroups[0].platformIDs,[b]); XCTAssertEqual(store.customGroups[1].platformIDs,[a,c])
+        XCTAssertTrue(store.movePlatform(c, from: .custom(second.id), to: .custom(second.id), relativeTo: a))
+        XCTAssertEqual(store.customGroups[1].platformIDs,[c,a])
+        XCTAssertTrue(store.movePlatform(c, from: .custom(second.id), to: .custom(empty.id)))
+        XCTAssertEqual(store.customGroups[2].platformIDs,[c])
+        XCTAssertTrue(store.movePlatform(a, from: .custom(second.id), to: .region(.japan)))
+        XCTAssertTrue(store.customGroups[1].platformIDs.isEmpty)
+        XCTAssertEqual(store.platforms.first { $0.id == a }?.region,.japan)
+        XCTAssertTrue(store.movePlatform(a, from: .region(.japan), to: .custom(empty.id), relativeTo: c))
+        XCTAssertEqual(store.customGroups[2].platformIDs,[a,c])
+        XCTAssertEqual(store.platforms.first { $0.id == a }?.region,.japan,"Custom groups reference the shared regional catalog")
+        XCTAssertEqual(Set(store.platforms.map(\.id)).count,3)
+        let before = store.customGroups
+        XCTAssertFalse(store.movePlatform(b, from: .custom(first.id), to: .custom(UUID())))
+        XCTAssertEqual(store.customGroups,before,"Reject disappeared destinations without removing source membership")
+        let persisted = try JSONDecoder().decode([CustomGroup].self, from: XCTUnwrap(UserDefaults.standard.data(forKey:"custom_groups")))
+        XCTAssertEqual(persisted,store.customGroups)
+    }
+
     func testSavedShenmaDefaultsBecomeQuarkWithoutReplacingCustomTemplates() throws {
         let suite = "QuarkDefaults." + UUID().uuidString
         let defaults = UserDefaults(suiteName: suite)!

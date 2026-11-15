@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct FeedbackView: View {
+    private enum Field: Hashable { case content, contact }
+    @FocusState private var focusedField: Field?
     @Environment(\.dismiss) private var dismiss
     private let lm = LanguageManager.shared
 
@@ -89,6 +91,7 @@ struct FeedbackView: View {
                                     .foregroundStyle(content.count > 2000 ? .red : .secondary)
                             }
                             TextEditor(text: $content)
+                                .focused($focusedField, equals: .content)
                                 .accessibilityIdentifier("feedback.content")
                                 .frame(minHeight: 150)
                                 .scrollContentBackground(.hidden)
@@ -114,11 +117,14 @@ struct FeedbackView: View {
                                 Text(lm.localizedString("feedback_contact"))
                                     .font(.subheadline.bold())
                                     .foregroundStyle(.secondary)
-                                Text("(\(lm.localizedString("feedback_optional")))")
+                                Text("*")
                                     .font(.caption)
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(.red)
                             }
                             TextField(lm.localizedString("feedback_contact_hint"), text: $contactInfo)
+                                .focused($focusedField, equals: .contact)
+                                .submitLabel(.done)
+                                .onSubmit { focusedField = nil }
                                 .textContentType(.emailAddress)
                                 .keyboardType(.emailAddress)
                                 .textInputAutocapitalization(.never)
@@ -128,7 +134,7 @@ struct FeedbackView: View {
                                 .background(Color(uiColor: .tertiarySystemFill))
                                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-                            Text(lm.localizedString("feedback_contact_reply_hint"))
+                            Text(ToolText.text("feedback_contact_required"))
                                 .font(.caption)
                                 .foregroundStyle(.tertiary)
                                 .padding(.horizontal, 4)
@@ -228,6 +234,11 @@ struct FeedbackView: View {
             .navigationTitle(lm.localizedString("feedback_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(lm.localizedString("done")) { focusedField = nil }
+                        .accessibilityIdentifier("feedback.keyboard.done")
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button(lm.localizedString("cancel")) { dismiss() }.disabled(isSubmitting)
                 }
@@ -277,7 +288,7 @@ struct FeedbackView: View {
 
     private var canSubmit: Bool {
         let text = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !text.isEmpty && text.count <= 2000
+        return !text.isEmpty && text.count <= 2000 && !contactInfo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func diagnosticTitle(_ key: String) -> String {

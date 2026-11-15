@@ -207,6 +207,76 @@
     return !!group.closest('nav,[role="navigation"],.pagination,.pager,.stui-page__item,.related,.recommend,.recommendations,[data-recommendations],.ad,.ads,.advertisement,[data-ad]')
       || /(?:^|[-_\s])(?:pagination|recommend|related)(?:[-_\s]|$)/i.test(group.className || '');
   }
+  let actionKey='',actionScope='',buttonIDs=new WeakMap();
+  const buttonActions=new Map();
+  function uuid(){
+    if(typeof crypto.randomUUID==='function')return crypto.randomUUID();
+    const bytes=crypto.getRandomValues(new Uint8Array(16));bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+    const hex=[...bytes].map(v=>v.toString(16).padStart(2,'0')).join('');
+    return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20);
+  }
+  function catalogKey(){
+    const url=new URL(location.href);url.hash='';
+    for(const key of [...url.searchParams.keys()])if(/^(?:episode|episodeid|episode_id|ep|eid|part|p|line|lineid|line_id)$/i.test(key))url.searchParams.delete(key);
+    return url.href+'|'+clean(document.querySelector('h1')?.textContent);
+  }
+  function ensureActions(){
+    const key=catalogKey();if(key!==actionKey){actionKey=key;actionScope=uuid();buttonIDs=new WeakMap();buttonActions.clear();}
+    for(const [token,value]of buttonActions)if(!value.node.isConnected)buttonActions.delete(token);
+  }
+  function buttonTitle(node){return clean(node.getAttribute('title')||node.getAttribute('aria-label')||node.textContent);}
+  function usableButton(node){
+    const title=buttonTitle(node);
+    if(!(typeof node.click==='function'&&!node.matches(linkSelector)&&!node.closest('form,[disabled],[aria-disabled="true"],[aria-hidden="true"],[hidden]')
+      &&episodeLabel(title)&&(episodeNumber(title)??0)>0&&!excludedGroup(node)
+      &&(!plainNumber.test(labelText(title))||!node.querySelector('svg,img,input'))))return false;
+    const rect=node.getBoundingClientRect(),style=getComputedStyle(node);
+    return rect.width>0&&rect.height>0&&style.display!=='none'&&style.visibility!=='hidden';
+  }
+  function selectedButton(node){
+    const current=node.getAttribute('aria-current');
+    return !!current&&current!=='false'||node.getAttribute('aria-selected')==='true'||node.getAttribute('aria-pressed')==='true'
+      ||/(?:^|\s)[\w-]*(?:active|selected|current|primary)(?:\s|$)/i.test(node.getAttribute('class')||'');
+  }
+  function buttonSources(){
+    ensureActions();const groups=new Map();let scanned=0;
+    for(const node of document.querySelectorAll('button,[role="button"]')){
+      if(++scanned>3000)break;if(!usableButton(node))continue;
+      for(let group=node.parentElement,depth=0;group&&group!==document.body&&depth<6;group=group.parentElement,depth++){
+        if(excludedGroup(group))break;
+        if(!semanticGroup(group))continue;
+        if(!groups.has(group)&&groups.size<60){
+          const buttons=[...group.querySelectorAll('button,[role="button"]')].slice(0,1000).filter(usableButton);
+          if(new Set(buttons.map(n=>episodeNumber(buttonTitle(n)))).size>=2)groups.set(group,buttons);
+        }
+        if(groups.has(group))break;
+      }
+    }
+    const sources=[];let total=0;
+    for(const [group,buttons]of groups){
+      if(sources.length>=20||total>=5000)break;
+      if([...groups.keys()].some(other=>other!==group&&group.contains(other)))continue;
+      const episodes=[];const hasCurrent=buttons.some(selectedButton);
+      for(const [index,node]of buttons.entries()){
+        if(total++>=5000)break;
+        const title=buttonTitle(node);let token=buttonIDs.get(node);
+        if(!token){if(buttonActions.size>=5000)continue;token=uuid();buttonIDs.set(node,token);}
+        buttonActions.set(token,{node,group,title,scope:actionScope});
+        episodes.push({title,url:location.href,action:{token,scope:actionScope,isCurrent:hasCurrent&&selectedButton(node)}});
+      }
+      if(episodes.length)sources.push({title:headingText(group),episodes});
+    }
+    return sources;
+  }
+  function activateButton(token,scope){
+    if(!enabled||typeof token!=='string'||typeof scope!=='string')return false;
+    ensureActions();const entry=buttonActions.get(token);
+    if(!entry||scope!==actionScope||entry.scope!==scope||!entry.node.isConnected||!entry.group.contains(entry.node)
+      ||!semanticGroup(entry.group)||!usableButton(entry.node)||buttonTitle(entry.node)!==entry.title)return false;
+    const rect=entry.node.getBoundingClientRect(),style=getComputedStyle(entry.node);
+    if(rect.width<=0||rect.height<=0||style.display==='none'||style.visibility==='hidden')return false;
+    entry.node.click();setTimeout(()=>refresh(true),50);return true;
+  }
   function extract() {
     if (pageSources.length) return {pageURL:location.href,sources:pageSources};
     const resourceGroups = discoverResourceGroups();
@@ -282,26 +352,23 @@
       const lineTitle = lineIndex >= 0 ? group.closest('.tab-content')?.querySelectorAll('.play-tab a')[lineIndex]?.textContent : '';
       appendSource(lineTitle || headingText(group),episodes);
     }
+    if(!sources.length&&videoPage)sources.push(...buttonSources());
     return {pageURL:location.href,sources};
   }
   let dock=null,drag=null,available=false,label='Episodes',edge='right',fraction=.62,lastUp=0;
   function send(action,details={}){try{window.webkit.messageHandlers.souloEpisodes.postMessage({action,pageURL:location.href,...details})}catch{}}
-  function visiblePlayer(){
+  function visibleVideoTools(){
     // The media runtime also finds videos inside open shadow roots. Its visible
     // controls are a shared DOM signal even though this world cannot query those
     // videos through document.querySelectorAll().
     if([...document.querySelectorAll('[data-soulo-video-rotate]')].some(node=>{
-      const r=node.getBoundingClientRect();return r.width>1&&r.height>1&&getComputedStyle(node).display!=='none';
+      const r=node.getBoundingClientRect(),s=getComputedStyle(node);
+      return r.width>1&&r.height>1&&r.right>0&&r.left<innerWidth&&r.bottom>0&&r.top<innerHeight&&s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)!==0;
     }))return true;
-    return [...document.querySelectorAll(playerSelector)].some(node=>{
-    const r=node.getBoundingClientRect();
-    if(r.width<100||r.height<70||r.right<=0||r.left>=innerWidth||r.bottom<=0||r.top>=innerHeight)return false;
-    for(let parent=node;parent;parent=parent.parentElement){
-      const s=getComputedStyle(parent);
-      if(s.display==='none'||s.visibility==='hidden'||s.visibility==='collapse'||Number(s.opacity)===0)return false;
-    }
-    return true;
-  })}
+    // A video or iframe alone does not guarantee that Soulo's episode menu is
+    // present (disabled tools, cross-origin players and replacement players).
+    return false;
+  }
   function bounds(){const v=overlay.metrics();return {...v,top:v.top+12*v.unit,height:Math.max(0,v.height-144*v.unit)}}
   function positionDock(x,y){dock.style.setProperty('left',x+'px','important');dock.style.setProperty('top',y+'px','important')}
   function layoutDock(){
@@ -311,7 +378,7 @@
     dock.setAttribute('data-edge',edge);
   }
   function updateDock(){
-    if(!dockEnabled||!available||!enabled||visiblePlayer()){drag=null;dock?.remove();return}
+    if(!dockEnabled||!available||!enabled||visibleVideoTools()){drag=null;dock?.remove();return}
     if(!dock){
       dock=document.createElement('div');dock.id='soulo-episode-dock';
       dock.style.cssText='all:initial!important;position:fixed!important;z-index:2147483646!important;width:48px!important;height:48px!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important;';
@@ -367,7 +434,7 @@
     stateTimer=setTimeout(()=>{stateTimer=0;lastStateRefresh=performance.now();send('refresh')},wait);
   }
   function schedule() { if (watchChanges && !timer) timer = setTimeout(()=>refresh(true),300); }
-  window.__souloEpisodes = {extract,refresh() {
+  window.__souloEpisodes = {extract,activate:activateButton,refresh() {
     // Native state is reset when navigation starts, even when WebKit restores
     // this document and its unchanged DOM from the back-forward cache.
     previous='';return refresh(true);
@@ -390,7 +457,7 @@
     if(signature===pageSignature)return;
     pageSignature=signature;pageSources=value;refresh();
   }};
-  const observationOptions={childList:true,subtree:true,attributes:true,attributeFilter:['href','data-url','data-href','aria-current','class','style','hidden']};
+  const observationOptions={childList:true,subtree:true,attributes:true,attributeFilter:['href','data-url','data-href','aria-current','aria-selected','aria-pressed','title','disabled','class','style','hidden']};
   function observe() {
     observer = new MutationObserver(records => {
       if (records.some(record => {
@@ -398,14 +465,15 @@
         if(target?.hasAttribute('data-soulo-video-rotate')&&record.attributeName==='style')scheduleDock();
         if([...record.addedNodes,...record.removedNodes].some(node=>node instanceof Element&&node.hasAttribute('data-soulo-video-rotate')))scheduleDock();
         if(target?.closest('[data-soulo-video-rotate],#soulo-episode-dock'))return false;
+        if(record.type==='attributes'&&record.attributeName==='class'&&buttonIDs.has(target))return true;
         if(record.type==='attributes'&&['class','style','hidden'].includes(record.attributeName)){
           if(target?.matches(playerSelector)||target?.querySelector(playerSelector))scheduleDock();
           return false;
         }
         return record.type === 'attributes'
-          || target?.closest(linkSelector + ',' + listSelector + ',' + resourceTextSelector + ',' + stateSelector + ',li,tr,[role="listitem"],h1,h2,h3,title')
+          || target?.closest(linkSelector + ',' + listSelector + ',' + resourceTextSelector + ',' + stateSelector + ',button,[role="button"],li,tr,[role="listitem"],h1,h2,h3,title')
           || [...record.addedNodes,...record.removedNodes].some(node => node instanceof Element
-            && (node.matches(linkSelector + ',' + listSelector + ',' + resourceTextSelector + ',' + stateSelector + ',li,tr,video,iframe') || node.querySelector(linkSelector + ',' + resourceTextSelector + ',' + stateSelector + ',li,tr,video,iframe')));
+            && (node.matches(linkSelector + ',' + listSelector + ',' + resourceTextSelector + ',' + stateSelector + ',button,[role="button"],li,tr,video,iframe') || node.querySelector(linkSelector + ',' + resourceTextSelector + ',' + stateSelector + ',li,tr,video,iframe')));
       })) schedule();
     });
     if(watchChanges)observer.observe(document.documentElement,observationOptions);

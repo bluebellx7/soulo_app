@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Trek Audio";
 "media_subtitles" = "Subtitle";
 "media_track_off" = "Mati";
-"video_settings" = "Video";
+"video_settings" = "Pengaturan video";
 "video_show_tools" = "Tampilkan alat video";
 "video_show_tools_desc" = "Tampilkan alat di video web untuk kecepatan pemutaran, unduhan, dan layar penuh.";
 "video_default_player" = "Pemain bawaan";
@@ -497,4 +497,38 @@
 "wallpaper_image_blur" = "Kaca Buram";
 "wallpaper_blur_amount" = "Kekuatan Buram";
 
-"auto_hide_platform_bar_hint" = "Bilah platform disembunyikan saat membuka hasil pencarian. Kembali ke hasil atau mulai pencarian baru untuk menampilkannya lagi. Anda dapat mematikannya di menu ini.";
+"auto_hide_platform_bar_hint" = "Bilah platform hanya disembunyikan setelah Anda mengetuk konten halaman. Pengalihan otomatis dan menggulir tidak menyembunyikannya. Kembali ke hasil atau mulai pencarian baru untuk menampilkannya lagi.";
+
+"ad_subscription_add" = "Tambah daftar filter";
+"ad_subscription_name" = "Nama";
+"ad_subscription_url" = "URL langganan";
+"ad_subscription_invalid" = "Masukkan nama dan URL langganan HTTP atau HTTPS yang valid.";
+"ad_subscription_duplicate" = "URL langganan ini sudah ditambahkan.";
+
+"feedback_settings" = "Suara dan Getaran";
+"feedback_settings_hint" = "Atur getaran dan suara antarmuka di seluruh app. Pemutaran halaman web, video, dan audio tidak terpengaruh.";
+
+"home_display_settings" = "Tampilan Beranda";
+"browsing_display_settings" = "Tampilan Penjelajahan";
+
+"web_video_download" = "Unduhan Video Web";
+"web_video_download_description" = "Tampilkan kontrol unduhan video di halaman web, daftar episode, dan pemutar. Pemutaran serta unduhan yang ada tidak berubah.";
+"builtin_extension" = "Ekstensi bawaan";
+
+"wallpaper_overlay_amount" = "Intensitas Lapisan";
+"feedback_contact_required" = "Masukkan email atau kontak lain agar kami dapat membalas.";
+"torrent_incomplete" = "Belum selesai";
+"extend_page_background" = "Perluas latar halaman";
+"extend_page_background_desc" = "Perluas warna atas dan bawah halaman ke tepi browser, termasuk gradasi.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Ciutkan grup";
+"tab_group_expand" = "Perluas grup";
+"freeze_page_background_on_scroll" = "Pertahankan warna awal";
+"freeze_page_background_on_scroll_desc" = "Setelah menggulir, pertahankan warna yang pertama terdeteksi. Warna halaman baru dideteksi kembali.";
+"page_background_gradient" = "Perluasan gradien";
+"page_background_gradient_desc" = "Padukan warna terdeteksi menjadi gradien. Jika nonaktif, tiap tepi memakai satu warna solid.";
+
+
+
+"gestures_feedback_settings" = "Gestur & Umpan Balik";

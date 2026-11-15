@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <fstream>
 #include <chrono>
+#include <algorithm>
 namespace lt = libtorrent;
 static NSString *str(std::string const& value) { return [[NSString alloc] initWithBytes:value.data() length:value.size() encoding:NSUTF8StringEncoding] ?: @""; }
 static void failure(NSError **error, std::exception const& e) {
@@ -40,6 +41,9 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
     bool _discoveryEnabled;
     std::map<std::string, lt::torrent_handle> _handles;
     std::set<std::string> _metadataOnly;
+    std::vector<std::string> _publicTrackers;
+    std::map<std::string, std::set<std::string>> _automaticTrackers;
+    std::set<std::string> _metadataTrackerPolicyApplied;
     struct PeerRefresh { std::vector<lt::tcp::endpoint> peers; std::vector<lt::download_priority_t> priorities; };
     std::map<std::string, PeerRefresh> _peerRefresh;
     std::map<std::string, std::map<lt::piece_index_t, std::chrono::steady_clock::time_point>> _streamPieces;
@@ -47,6 +51,9 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
 - (instancetype)initWithCertificateFile:(NSString *)certificateFile discoveryEnabled:(BOOL)discoveryEnabled {
     if ((self = [super init])) {
         _discoveryEnabled = discoveryEnabled;
+        _publicTrackers = {"udp://tracker.opentrackr.org:1337/announce",
+            "udp://open.stealth.si:80/announce", "udp://tracker.torrent.eu.org:451/announce",
+            "udp://open.demonii.com:1337/announce"};
         if (certificateFile.length) setenv("SSL_CERT_FILE", certificateFile.fileSystemRepresentation, 1);
         lt::settings_pack settings;
         settings.set_str(lt::settings_pack::user_agent, "Soulo libtorrent/2.0.15");
@@ -63,6 +70,7 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
         settings.set_bool(lt::settings_pack::enable_natpmp, false);
         settings.set_bool(lt::settings_pack::validate_https_trackers, true);
         settings.set_int(lt::settings_pack::connections_limit, 80);
+        settings.set_bool(lt::settings_pack::announce_to_all_tiers, true);
         settings.set_int(lt::settings_pack::active_downloads, 3);
         settings.set_int(lt::settings_pack::active_limit, 3);
         settings.set_int(lt::settings_pack::alert_mask, static_cast<int>(static_cast<std::uint32_t>(lt::alert_category::error)));
@@ -106,14 +114,6 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
         } else if (magnet.length) p = lt::parse_magnet_uri(magnet.UTF8String);
         else throw std::runtime_error("Missing torrent metadata");
         if (p.ti) describe(p.ti);
-        if (_discoveryEnabled && magnet.length && p.trackers.empty() && (!p.ti || !p.ti->priv())) {
-            // Bare magnets otherwise rely exclusively on DHT. Keep a bounded
-            // tracker fallback for networks where DHT cannot find peers. Explicit
-            // trackers, private metainfo and local-only sessions are untouched.
-            p.trackers = {"http://tracker.opentrackr.org:1337/announce",
-                          "udp://tracker.opentrackr.org:1337/announce"};
-            p.tracker_tiers = {0, 1};
-        }
         p.save_path = directory.fileSystemRepresentation;
         p.flags &= ~(lt::torrent_flags::paused | lt::torrent_flags::auto_managed | lt::torrent_flags::stop_when_ready);
         p.flags |= lt::torrent_flags::default_dont_download;
@@ -125,9 +125,55 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
         auto handle = _session->add_torrent(p, ec);
         if (ec) throw std::runtime_error(ec.message());
         _handles.emplace(identifier.UTF8String,handle);
+        [self refreshTrackers:identifier.UTF8String handle:handle];
         if (metadataOnly) _metadataOnly.insert(identifier.UTF8String);
         return YES;
     } catch (std::exception const& e) { failure(error,e); return NO; }
+}
+- (void)refreshTrackers:(std::string const&)identifier handle:(lt::torrent_handle const&)handle {
+    if (!_discoveryEnabled) return;
+    auto ti = handle.torrent_file();
+    bool privateTorrent = ti && ti->priv();
+    auto entries = handle.trackers();
+    auto &owned = _automaticTrackers[identifier];
+    entries.erase(std::remove_if(entries.begin(), entries.end(), [&](auto const& value) {
+        return owned.count(value.url) != 0;
+    }), entries.end());
+    owned.clear();
+    if (!privateTorrent) {
+        int tier = 0;
+        for (auto const& value : entries) tier = std::max(tier, int(value.tier) + 1);
+        for (auto const& url : _publicTrackers) {
+            if (std::any_of(entries.begin(), entries.end(), [&](auto const& value) { return value.url == url; })) continue;
+            lt::announce_entry entry(url); entry.tier = std::min(tier++, 255);
+            entries.push_back(entry); owned.insert(url);
+        }
+    }
+    handle.replace_trackers(entries);
+    if (ti) _metadataTrackerPolicyApplied.insert(identifier);
+}
+- (void)updatePublicTrackers:(NSArray<NSString *> *)trackers {
+    if (!_discoveryEnabled) return;
+    std::vector<std::string> values;
+    for (NSString *value in trackers) {
+        if (values.size() >= 24) break;
+        NSURL *url = [NSURL URLWithString:value];
+        if (value.length > 512 || !url.host.length || url.user.length || url.password.length
+            || ![@[@"udp", @"http", @"https"] containsObject:url.scheme.lowercaseString]) continue;
+        std::string text = value.UTF8String;
+        if (std::find(values.begin(), values.end(), text) == values.end()) values.push_back(text);
+    }
+    if (values.empty() || values == _publicTrackers) return;
+    _publicTrackers = std::move(values);
+    for (auto const& [identifier, handle] : _handles) {
+        try { [self refreshTrackers:identifier handle:handle]; } catch (std::exception const&) {}
+    }
+}
+- (NSArray<NSString *> *)trackerURLs:(NSString *)identifier {
+    NSMutableArray *urls = [NSMutableArray array];
+    auto found = _handles.find(identifier.UTF8String); if (found == _handles.end()) return urls;
+    try { for (auto const& entry : found->second.trackers()) [urls addObject:str(entry.url)]; } catch (std::exception const&) {}
+    return urls;
 }
 - (NSInteger)listeningPort { return _session->listen_port(); }
 - (void)connectIdentifier:(NSString *)identifier host:(NSString *)host port:(NSInteger)port {
@@ -140,6 +186,8 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
     for (auto [identifier, handle] : _handles) {
         try {
             auto s = handle.status();
+            if (s.has_metadata && !_metadataTrackerPolicyApplied.count(identifier))
+                [self refreshTrackers:identifier handle:handle];
             auto refresh = _peerRefresh.find(identifier);
             if (refresh != _peerRefresh.end() && handle.get_file_priorities() == refresh->second.priorities) {
                 // Metadata-only peers can be cached as upload-only/non-candidates.
@@ -228,6 +276,16 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
     try {
         auto it=_handles.find(identifier.UTF8String); if (it==_handles.end()) return nil;
         auto p=it->second.get_resume_data(lt::torrent_handle::save_info_dict);
+        // Automatic hints are refreshed separately; never persist them as if
+        // the publisher/user had supplied them (especially before private metadata).
+        auto owned = _automaticTrackers.find(identifier.UTF8String);
+        if (owned != _automaticTrackers.end()) {
+            std::vector<std::string> trackers; std::vector<int> tiers;
+            for (std::size_t n = 0; n < p.trackers.size(); ++n) if (!owned->second.count(p.trackers[n])) {
+                trackers.push_back(p.trackers[n]); tiers.push_back(n < p.tracker_tiers.size() ? p.tracker_tiers[n] : 0);
+            }
+            p.trackers = std::move(trackers); p.tracker_tiers = std::move(tiers);
+        }
         auto buffer=lt::write_resume_data_buf(p);
         return [NSData dataWithBytes:buffer.data() length:buffer.size()];
     } catch (std::exception const& e) { failure(error,e); return nil; }
@@ -267,6 +325,8 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
     _session->remove_torrent(it->second, deleteFiles ? lt::session::delete_files : lt::remove_flags_t{});
     _handles.erase(it);
     _metadataOnly.erase(identifier.UTF8String);
+    _automaticTrackers.erase(identifier.UTF8String);
+    _metadataTrackerPolicyApplied.erase(identifier.UTF8String);
     _peerRefresh.erase(identifier.UTF8String);
     _streamPieces.erase(identifier.UTF8String);
     return YES;

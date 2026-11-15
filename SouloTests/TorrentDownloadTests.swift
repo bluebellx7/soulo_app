@@ -6,6 +6,68 @@ import XCTest
 @testable import Soulo
 
 final class TorrentDownloadTests: XCTestCase {
+    func testPublicTrackerCacheRefreshesDailyKeepsLastGoodAndCoalescesRequests() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let cache = root.appendingPathComponent("trackers.json"), calls = TrackerFetchCounter()
+        let list = ["udp://one.example:1337/announce", "https://two.example/announce"]
+        let store = PublicTorrentTrackerStore(cacheURL: cache) { _ in
+            await calls.add(); try await Task.sleep(for: .milliseconds(100))
+            return Data(list.joined(separator: "\n").utf8)
+        }
+        let initial = await store.current(); XCTAssertEqual(initial, PublicTorrentTrackerStore.fallback)
+        let now = Date()
+        async let first = store.refreshIfNeeded(now: now)
+        async let second = store.refreshIfNeeded(now: now)
+        let results = await (first, second)
+        XCTAssertEqual(results.0, list); XCTAssertEqual(results.1, list)
+        let count = await calls.count; XCTAssertEqual(count, 1)
+        let daily = await store.refreshIfNeeded(now: now.addingTimeInterval(86399)); XCTAssertEqual(daily, list)
+        let countAfter = await calls.count; XCTAssertEqual(countAfter, 1)
+        let restored = PublicTorrentTrackerStore(cacheURL: cache) { _ in throw URLError(.notConnectedToInternet) }
+        let persisted = await restored.current(); XCTAssertEqual(persisted, list)
+        let offline = await restored.refreshIfNeeded(now: now.addingTimeInterval(86401)); XCTAssertEqual(offline, list)
+        let invalid = PublicTorrentTrackerStore(cacheURL: cache) { _ in Data("<html>service unavailable</html>".utf8) }
+        let malformed = await invalid.refreshIfNeeded(now: now.addingTimeInterval(172801)); XCTAssertEqual(malformed, list)
+    }
+
+    func testPublicTrackerParserRejectsUnsafeAndOversizedListsAndBoundsFanout() {
+        let invalid = ["file:///tmp/secret", "http://localhost/announce", "http://127.0.0.1/a", "udp://10.1.1.1:80/a", "http://172.16.0.1/a", "https://192.168.1.1/a", "https://user:password@example.com/a", "ftp://example.com/a"]
+        let expected = "udp://tracker.example:1337/announce"
+        XCTAssertEqual(PublicTorrentTrackerStore.parse(Data((invalid + [expected, expected]).joined(separator: "\n").utf8)), [expected])
+        XCTAssertTrue(PublicTorrentTrackerStore.parse(Data(repeating: 65, count: 128*1024+1)).isEmpty)
+        let many = (0..<100).map { "https://t\($0).example/announce" }.joined(separator: "\n")
+        XCTAssertEqual(PublicTorrentTrackerStore.parse(Data(many.utf8)).count, 24)
+    }
+
+    func testAutomaticTrackersPreservePublisherEntriesExcludePrivateAndAreNotSavedAsUserTrackers() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let publisher = "http://127.0.0.1:9/publisher", first = "http://127.0.0.1:9/public-first", second = "http://127.0.0.1:9/public-second"
+        let payload = Data(repeating: 73, count: 16384)
+        var info: [String: Any] = ["name": "tracker-fixture.bin", "length": payload.count, "piece length": 16384, "pieces": Data(Insecure.SHA1.hash(data: payload))]
+        let engine = SLTorrentEngine(certificateFile: "", discoveryEnabled: true)
+        engine.updatePublicTrackers([first])
+        try engine.addIdentifier("public", data: bencode(["announce": publisher, "info": info]), magnet: nil, directory: root.appendingPathComponent("public").path, resumeData: nil, priorities: [1], metadataOnly: true)
+        try await wait { Set(engine.trackerURLs("public")) == Set([publisher, first]) }
+        engine.updatePublicTrackers([second])
+        try await wait { Set(engine.trackerURLs("public")) == Set([publisher, second]) }
+        let resume = try XCTUnwrap(engine.pauseAndSave("public"))
+        XCTAssertNil(resume.range(of: Data(second.utf8)), "Injected hints must not become publisher trackers on resume")
+        XCTAssertNotNil(resume.range(of: Data(publisher.utf8)))
+        info["private"] = 1
+        try engine.addIdentifier("private", data: bencode(["announce": publisher, "info": info]), magnet: nil, directory: root.appendingPathComponent("private").path, resumeData: nil, priorities: [1], metadataOnly: true)
+        try await wait { engine.trackerURLs("private") == [publisher] }
+        engine.updatePublicTrackers([first, second])
+        try await wait { engine.trackerURLs("private") == [publisher] }
+        let local = SLTorrentEngine(certificateFile: "", discoveryEnabled: false)
+        local.updatePublicTrackers([first])
+        try local.addIdentifier("local", data: bencode(["info": info]), magnet: nil, directory: root.appendingPathComponent("local").path, resumeData: nil, priorities: [1], metadataOnly: true)
+        XCTAssertTrue(local.trackerURLs("local").isEmpty)
+        engine.remove("public", deleteFiles: false); engine.remove("private", deleteFiles: false); local.remove("local", deleteFiles: false)
+    }
+
     @MainActor
     func testVideoActuallyPlaysAndSeeksBeforeNativeTorrentFinishes() async throws {
         let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "torrent-stream-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
@@ -72,10 +134,15 @@ final class TorrentDownloadTests: XCTestCase {
         let url = URL(fileURLWithPath: job.directory).appendingPathComponent(file.path)
         try Data(count:100).write(to:url)
         XCTAssertEqual(service.playbackTarget(for:url)?.id, id)
+        let partial = try XCTUnwrap(service.partialFileProgress(for: url))
+        XCTAssertEqual(partial.total, 100)
+        XCTAssertEqual(partial.completed, 0, "A full-length sparse/preallocated file is not completed data")
+        XCTAssertEqual(partial.progress, 0)
         XCTAssertNil(service.playbackTarget(for:root.appendingPathComponent(name + ".mkv")))
         try FileManager.default.removeItem(at:url)
         let outside = root.appendingPathComponent("outside.mkv"); try Data(count:100).write(to:outside)
         try FileManager.default.createSymbolicLink(at:url,withDestinationURL:outside)
+        XCTAssertNil(service.partialFileProgress(for: url))
         XCTAssertNil(service.playbackTarget(for:url), "A torrent path must not expose an outside file through a symlink")
         service.select(id,indices:[])
         XCTAssertFalse(service.canStream(id,file:file))
@@ -261,6 +328,21 @@ final class TorrentDownloadTests: XCTestCase {
         manager.markFailed(id: normal.id, error: URLError(.networkConnectionLost))
         XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
     }
+    func testSelectedFileProgressIgnoresPieceBoundaryTotalsAndCheckingSnapshots() throws {
+        let id = UUID()
+        let job = TorrentDownloadJob(id: id, hash: "test", name: "Selection", files: [
+            TorrentFileEntry(index: 0, path: "sample.mkv", size: 100, pad: false),
+            TorrentFileEntry(index: 1, path: "movie.mkv", size: 1000, pad: false)
+        ], selected: [1], state: .downloading, directory: "/tmp/test")
+        let snapshot = try XCTUnwrap(TorrentSnapshot(["id": id.uuidString, "done": Int64(600), "total": Int64(1100), "fileProgress": [Int64(100), Int64(500)]]))
+        XCTAssertEqual(job.verifiedProgress(in: snapshot)?.completed, 500)
+        XCTAssertEqual(job.verifiedProgress(in: snapshot)?.total, 1000)
+        let checking = try XCTUnwrap(TorrentSnapshot(["id": id.uuidString, "checking": true, "fileProgress": [Int64(0), Int64(0)]]))
+        XCTAssertNil(job.verifiedProgress(in: checking))
+        let stale = try XCTUnwrap(TorrentSnapshot(["id": id.uuidString, "done": Int64(1100), "total": Int64(1100), "finished": true]))
+        XCTAssertNil(job.verifiedProgress(in: stale))
+    }
+
     @MainActor
     func testResumeCheckingKeepsSavedProgressUntilVerifiedSnapshotArrives() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -487,4 +569,9 @@ private actor ControlledTorrentEngine: TorrentEngine {
     func resumeMetadata(id: UUID) async { paused.remove(id) }
     func resume(id: UUID, priorities: [Bool]) async { resumes[id, default: 0] += 1; paused.remove(id) }
     func remove(id: UUID, deleteFiles: Bool) async -> Bool { ids.remove(id) != nil }
+}
+
+private actor TrackerFetchCounter {
+    private(set) var count = 0
+    func add() { count += 1 }
 }

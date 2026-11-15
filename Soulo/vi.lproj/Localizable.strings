@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Một lần nhập, hơn 40 nền tảng";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Tìm kiếm hoặc nhập URL";
 "privacy_search_placeholder" = "Tìm kiếm riêng tư hoặc nhập URL";
 "search" = "Tìm kiếm";
@@ -354,7 +354,7 @@
 "voice_stop" = "Dừng";
 "voice_record" = "Ghi âm";
 "batch_import" = "Nhập hàng loạt";
-"batch_import_format" = "Dán JSON theo định dạng bên dưới";
+"batch_import_format" = "Dán JSON vào đây";
 "batch_import_group" = "Thêm vào nhóm (tùy chọn)";
 "batch_import_group_placeholder" = "Ví dụ: Phim";
 "batch_import_film_entry" = "Mở cài đặt trước nền tảng phim";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Không thể cài đặt tiện ích mở rộng";
 "extension_permissions_summary" = "%d quyền · %d quy tắc trang web";
 "extension_untitled" = "Tiện ích mở rộng không có tiêu đề";
-"web_extension_install_footer" = "Cài tiện ích tương thích từ liên kết cửa hàng hoặc nhập CRX, XPI, ZIP hay thư mục tiện ích. Kiểm tra quyền và khả năng tương thích; một số tính năng máy tính không khả dụng.";
+"web_extension_install_footer" = "Sau khi cài đặt, bạn có thể thay đổi quyền trong trang quản lý tiện ích.";
 "web_extension_install_store_link" = "Cài đặt từ Liên kết cửa hàng…";
 "web_extension_browse_sources" = "Duyệt qua các cửa hàng tiện ích mở rộng";
 "web_extension_browse_sources_footer" = "Nút Store Get chỉ hỗ trợ các trình duyệt trên máy tính để bàn của riêng họ. Sao chép liên kết trang chi tiết tiện ích mở rộng, sau đó sử dụng Cài đặt từ Liên kết cửa hàng trong Soulo.";
 "web_extension_store_install_title" = "Cài đặt tiện ích mở rộng cửa hàng";
 "extension_page_banner_title" = "Cài đặt với Soulo";
-"extension_page_banner_desc" = "Kiểm tra khả năng tương thích và quyền trước khi cài.";
-"web_extension_store_install_desc" = "Dán liên kết trang chi tiết tiện ích Chrome, Edge hoặc Firefox, rồi kiểm tra khả năng tương thích và quyền trước khi xác nhận cài đặt.";
+"extension_page_banner_desc" = "Sau khi cài đặt, bạn có thể thay đổi quyền trong trang quản lý tiện ích.";
+"web_extension_store_install_desc" = "Sau khi cài đặt, bạn có thể thay đổi quyền trong trang quản lý tiện ích.";
 "web_extension_store_link_placeholder" = "Liên kết trang tiện ích mở rộng hoặc ID tiện ích mở rộng của Chrome";
 "web_extension_store_invalid_link" = "Dán liên kết trang chi tiết tiện ích mở rộng từ Chrome, Edge hoặc Firefox, ID tiện ích mở rộng Chrome hoặc liên kết CRX, XPI hoặc ZIP trực tiếp.";
 "web_extension_store_https_required" = "Các gói tiện ích mở rộng phải sử dụng liên kết HTTPS an toàn.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Chạm và giữ biểu tượng Soulo trên Màn hình chính để dùng các phím tắt được thiết lập tại đây.";
 
 "ad_block_scope_hint" = "Lọc quảng cáo web, lớp phủ quảng bá và cửa sổ bật lên ngoài ý muốn. Nếu trang web không hoạt động, bạn có thể tắt lọc riêng cho trang đó.";
+
+"privacy_clear_browsing_on_exit" = "Xóa lịch sử khi thoát";
+"privacy_clear_browsing_on_exit_desc" = "Xóa các trang đã truy cập khi vào nền hoặc mở lại ứng dụng. Giữ lại từ khóa tìm kiếm.";

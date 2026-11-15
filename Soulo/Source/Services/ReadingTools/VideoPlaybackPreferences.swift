@@ -1,10 +1,19 @@
 import Foundation
 
 enum VideoPlaybackPreferences {
+    static let takesOverWebPlayersKey = "video.takeOverWebPlayers"
+    static func takesOverWebPlayers(in defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: takesOverWebPlayersKey)
+    }
     static let showsToolsKey = "video.showsWebTools"
     static let defaultPlayerKey = "video.defaultPlayer"
     static let holdSpeedKey = "video.holdSpeed"
     static let showsEpisodeDockKey = "video.showsEpisodeDock"
+    // Presentation only: download transports and existing tasks never consult this key.
+    static let showsWebDownloadControlsKey = "video.showsWebDownloadControls"
+    static func showsWebDownloadControls(in defaults: UserDefaults = .standard) -> Bool {
+        defaults.object(forKey: showsWebDownloadControlsKey) == nil || defaults.bool(forKey: showsWebDownloadControlsKey)
+    }
     static func showsEpisodeDock(in defaults: UserDefaults = .standard) -> Bool {
         defaults.object(forKey: showsEpisodeDockKey) == nil || defaults.bool(forKey: showsEpisodeDockKey)
     }

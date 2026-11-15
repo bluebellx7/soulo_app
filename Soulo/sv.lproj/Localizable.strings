@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "En fråga, 40+ plattformar";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Sök eller ange URL";
 "privacy_search_placeholder" = "Privat sökning eller ange URL";
 "search" = "Sök";
@@ -354,7 +354,7 @@
 "voice_stop" = "Sluta";
 "voice_record" = "Spela in";
 "batch_import" = "Batchimport";
-"batch_import_format" = "Klistra in JSON i formatet nedan";
+"batch_import_format" = "Klistra in JSON här";
 "batch_import_group" = "Lägg till i grupp (valfritt)";
 "batch_import_group_placeholder" = "t.ex. Filmer";
 "batch_import_film_entry" = "Öppna filmplattformens förinställningar";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Tillägget kunde inte installeras";
 "extension_permissions_summary" = "%d behörigheter · %d webbplatsregler";
 "extension_untitled" = "Namnlös tillägg";
-"web_extension_install_footer" = "Installera kompatibla tillägg via en butikslänk eller importera CRX, XPI, ZIP eller en tilläggsmapp. Kontrollera behörigheter och kompatibilitet; vissa datorfunktioner är inte tillgängliga.";
+"web_extension_install_footer" = "Efter installationen kan du ändra behörigheter på tilläggets hanteringssida.";
 "web_extension_install_store_link" = "Installera från butikslänk...";
 "web_extension_browse_sources" = "Bläddra i tilläggsbutiker";
 "web_extension_browse_sources_footer" = "Store Get-knappar stöder endast deras egna webbläsare. Kopiera en länk till en tilläggsdetaljsida och använd sedan Installera från butikslänk i Soulo.";
 "web_extension_store_install_title" = "Installera en butikstillägg";
 "extension_page_banner_title" = "Installera med Soulo";
-"extension_page_banner_desc" = "Kontrollera kompatibilitet och behörigheter före installation.";
-"web_extension_store_install_desc" = "Klistra in länken till ett Chrome-, Edge- eller Firefox-tilläggs detaljsida och kontrollera kompatibilitet och behörigheter innan du bekräftar installationen.";
+"extension_page_banner_desc" = "Efter installationen kan du ändra behörigheter på tilläggets hanteringssida.";
+"web_extension_store_install_desc" = "Efter installationen kan du ändra behörigheter på tilläggets hanteringssida.";
 "web_extension_store_link_placeholder" = "Tilläggssidalänk eller Chrome-tilläggs-ID";
 "web_extension_store_invalid_link" = "Klistra in en länk till en tilläggsdetaljsida från Chrome, Edge eller Firefox, ett Chrome-tilläggs-ID eller en direkt CRX-, XPI- eller ZIP-länk.";
 "web_extension_store_https_required" = "Tilläggspaket måste använda en säker HTTPS-länk.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Tryck och håll på Soulo-symbolen på hemskärmen för att använda genvägarna som ställs in här.";
 
 "ad_block_scope_hint" = "Filtrerar webbannonser, reklamöverlägg och oönskade popupfönster. Om en webbplats slutar fungera kan du stänga av filtrering bara för den webbplatsen.";
+
+"privacy_clear_browsing_on_exit" = "Rensa historik vid avslut";
+"privacy_clear_browsing_on_exit_desc" = "Rensa besökta sidor när appen går till bakgrunden eller startas om. Behåll sökord.";

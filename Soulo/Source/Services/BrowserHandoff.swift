@@ -1,4 +1,5 @@
 import SwiftUI
+import AppIntents
 
 /// Only public web pages may leave the device through Handoff.
 enum BrowserHandoff {
@@ -27,6 +28,9 @@ struct BrowserHandoffModifier: ViewModifier {
             activity.isEligibleForSearch = false
             activity.isEligibleForPublicIndexing = false
             activity.isEligibleForPrediction = false
+            if #available(iOS 18.2, *), let page = SouloWebPageEntity(url: value, title: title) {
+                activity.appEntityIdentifier = EntityIdentifier(for: SouloWebPageEntity.self, identifier: page.id)
+            }
         }
     }
 }

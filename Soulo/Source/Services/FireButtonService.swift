@@ -47,14 +47,7 @@ enum BrowserCacheService {
             SearchHistoryService.clearBrowsingHistory(context: historyContext)
         }
 
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            WKWebsiteDataStore.default().removeData(
-                ofTypes: websiteCacheDataTypes,
-                modifiedSince: .distantPast
-            ) {
-                continuation.resume()
-            }
-        }
+        await WebsiteStorageService.clearBrowserCaches()
     }
 
     /// Returns an estimate of the recreatable browser data cleared by

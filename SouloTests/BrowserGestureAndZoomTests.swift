@@ -1,6 +1,7 @@
 import XCTest
 import WebKit
 import CoreMotion
+import AudioToolbox
 import Combine
 @testable import Soulo
 
@@ -284,5 +285,64 @@ final class BrowserGestureAndZoomTests: XCTestCase {
         }
         XCTAssertEqual(invalidations, 0, "The small hint observes touch movement without rebuilding webpage chrome at 60 Hz")
         withExtendedLifetime(observation) {}
+    }
+}
+
+final class AppFeedbackTests: XCTestCase {
+    private var suite: String!
+    private var defaults: UserDefaults!
+
+    override func setUp() {
+        super.setUp()
+        suite = "Soulo.AppFeedbackTests." + UUID().uuidString
+        defaults = UserDefaults(suiteName: suite)!
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: suite)
+        defaults = nil
+        super.tearDown()
+    }
+
+    func testExistingGesturePreferencesBecomeGlobalWithoutLosingValues() {
+        XCTAssertTrue(AppFeedbackPreferences.hapticsEnabled(in: defaults))
+        XCTAssertFalse(AppFeedbackPreferences.soundEnabled(in: defaults))
+        defaults.set(false, forKey: BrowserSwipePreferences.hapticsKey)
+        defaults.set(true, forKey: BrowserSwipePreferences.soundKey)
+        XCTAssertFalse(AppFeedbackPreferences.hapticsEnabled(in: defaults))
+        XCTAssertTrue(AppFeedbackPreferences.soundEnabled(in: defaults))
+        let restored = UserDefaults(suiteName: suite)!
+        XCTAssertFalse(AppFeedbackPreferences.hapticsEnabled(in: restored))
+        XCTAssertTrue(AppFeedbackPreferences.soundEnabled(in: restored))
+    }
+
+    func testAllHapticTypesAndSoundsHonorIndependentSwitchesImmediately() {
+        var haptics: [AppHapticFeedback] = []
+        var sounds: [SystemSoundID] = []
+        let player = AppFeedbackPlayer(defaults: defaults,
+            hapticPlayer: { haptics.append($0) }, soundPlayer: { sounds.append($0) })
+        for feedback in AppHapticFeedback.allCases { player.haptic(feedback) }
+        player.playSound(123)
+        XCTAssertEqual(haptics, AppHapticFeedback.allCases)
+        XCTAssertTrue(sounds.isEmpty)
+        haptics.removeAll()
+        defaults.set(false, forKey: AppFeedbackPreferences.hapticsKey)
+        defaults.set(true, forKey: AppFeedbackPreferences.soundKey)
+        for feedback in AppHapticFeedback.allCases { player.haptic(feedback) }
+        player.playSound(123)
+        player.playSound(0)
+        XCTAssertTrue(haptics.isEmpty)
+        XCTAssertEqual(sounds, [123])
+        defaults.set(true, forKey: AppFeedbackPreferences.hapticsKey)
+        defaults.set(false, forKey: AppFeedbackPreferences.soundKey)
+        player.haptic(.success)
+        player.playSound(456)
+        XCTAssertEqual(haptics, [.success])
+        XCTAssertEqual(sounds, [123])
+        defaults.set(false, forKey: AppFeedbackPreferences.hapticsKey)
+        player.haptic(.error)
+        player.playSound(456)
+        XCTAssertEqual(haptics, [.success])
+        XCTAssertEqual(sounds, [123])
     }
 }

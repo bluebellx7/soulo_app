@@ -2,10 +2,290 @@ import XCTest
 import AVFoundation
 import WebKit
 import UIKit
+import SwiftUI
 @testable import Soulo
 
 @MainActor
 final class WebEpisodeTests: XCTestCase {
+    func testLiveBilibiliBangumiPublishesItsWebEpisodesAndKeepsTheDockWithoutVideoTools() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_EPISODE_QA"]=="1","Live user-supplied page is opt-in")
+        let defaults=UserDefaults.standard,keys=[VideoPlaybackPreferences.showsToolsKey,VideoPlaybackPreferences.showsEpisodeDockKey]
+        let old=keys.map{defaults.object(forKey:$0)}
+        defaults.set(false,forKey:keys[0]);defaults.set(true,forKey:keys[1])
+        defer{for (key,value) in zip(keys,old){if let value{defaults.set(value,forKey:key)}else{defaults.removeObject(forKey:key)}}}
+        let model=WebViewModel(),scene=try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap{$0 as? UIWindowScene}.first)
+        let previous=scene.keyWindow,window=UIWindow(windowScene:scene)
+        window.rootViewController=UIHostingController(rootView:WebViewRepresentable(viewModel:model).frame(width:390,height:800))
+        window.makeKeyAndVisible();defer{model.releaseWebViewRuntime();window.isHidden=true;window.rootViewController=nil;previous?.makeKeyAndVisible()}
+        model.loadURL(try XCTUnwrap(URL(string:"https://m.bilibili.com/bangumi/play/ep733317")))
+        for _ in 0..<350 {
+            if model.episodeList?.sources.flatMap(\.episodes).contains(where:{$0.url.path.contains("ep733317")}) == true {break}
+            try await Task.sleep(for:.milliseconds(60))
+        }
+        let web=try XCTUnwrap(model.webView)
+        let page=try await web.evaluateJavaScript("({url:location.href,title:document.title,hasNext:!!document.getElementById('__NEXT_DATA__'),dock:!!document.getElementById('soulo-episode-dock'),buttons:document.querySelectorAll('[data-soulo-video-rotate]').length})")
+        var facts=[String:Any]();facts["page"]=page;facts["sources"]=model.episodeList?.sources.count ?? 0
+        facts["episodes"]=model.episodeList?.sources.reduce(0){$0+$1.episodes.count} ?? 0
+        let data=try JSONSerialization.data(withJSONObject:facts,options:[.prettyPrinted,.sortedKeys])
+        let attachment=XCTAttachment(data:data,uniformTypeIdentifier:"public.json");attachment.name="bilibili-bangumi-live-episodes";attachment.lifetime = .keepAlways;add(attachment)
+        XCTAssertTrue(model.episodeList?.sources.flatMap(\.episodes).contains(where:{$0.url.path.contains("ep733317")}) == true)
+        XCTAssertGreaterThan(model.episodeList?.sources.flatMap(\.episodes).count ?? 0,1)
+        XCTAssertTrue(model.episodeList?.sources.flatMap(\.episodes).allSatisfy{["http","https"].contains($0.url.scheme ?? "")} == true)
+        XCTAssertEqual((page as? [String:Any])?["dock"] as? Bool,true,"A visible video must not hide the only episode entry when video tools are disabled")
+    }
+
+    func testLiveSuppliedSPAExposesEpisodes() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_EPISODE_QA"]=="1","Live user-supplied page is opt-in")
+        let url=try XCTUnwrap(URL(string:"https://bpzhe5.com/player/av_40g7wcC77htD3WwsRS78SIhhvYGvU6kIkqJamfGTgP1r5yEr7wuOYVoeGIuYypiULHINMoVs6AlkhCs?from=%2F"))
+        let model=WebViewModel()
+        let scene=try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap{$0 as? UIWindowScene}.first)
+        let previous=scene.keyWindow,window=UIWindow(windowScene:scene)
+        window.rootViewController=UIHostingController(rootView:WebViewRepresentable(viewModel:model).frame(width:390,height:800))
+        window.makeKeyAndVisible()
+        defer{model.releaseWebViewRuntime();window.isHidden=true;window.rootViewController=nil;previous?.makeKeyAndVisible()}
+        model.loadURL(url)
+        for _ in 0..<300 {
+            if model.episodeList?.sources.isEmpty == false {break}
+            try await Task.sleep(for:.milliseconds(60))
+        }
+        let web=try XCTUnwrap(model.webView)
+        var facts=[String:Any]()
+        facts["page"] = try? await web.evaluateJavaScript("({url:location.href,title:document.title,text:document.body.innerText.slice(0,18000),html:document.body.innerHTML.slice(0,160000),anchors:Array.from(document.querySelectorAll('a[href]'),e=>({text:e.textContent,href:e.href})).slice(0,500),buttons:Array.from(document.querySelectorAll('button,[role=button]'),e=>({text:e.textContent,html:e.outerHTML.slice(0,1600)})).slice(0,250)})")
+        facts["pageState"] = try? await web.evaluateJavaScript(WebEpisodeSiteData.script)
+        facts["detected"] = model.episodeList.map{["sources":$0.sources.count,"episodes":$0.sources.reduce(0){$0+$1.episodes.count}]} ?? [:]
+        let data=try JSONSerialization.data(withJSONObject:facts,options:[.prettyPrinted,.sortedKeys])
+        let report=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0].appendingPathComponent("bpzhe5-live-episodes.json")
+        try data.write(to:report,options:.atomic)
+        let attachment=XCTAttachment(data:data,uniformTypeIdentifier:"public.json");attachment.name="live-generic-SPA-episodes";attachment.lifetime = .keepAlways;add(attachment)
+        XCTAssertFalse(model.episodeList?.sources.isEmpty ?? true,"The supplied page's real episode controls must be recognized; inspect captured DOM before choosing the generic adapter")
+    }
+
+    func testLiveSPAEpisodeNavigationSurvivesOriginalFastStreamReplacement() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_EPISODE_QA"] == "1", "Live user-supplied page is opt-in")
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Native extensions") }
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let crx = documents.appendingPathComponent("faststream-compatibility-qa.crx")
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: crx.path), "Original FastStream package fixture")
+        let defaults = UserDefaults.standard, oldPrivacy = defaults.object(forKey: "is_incognito")
+        defaults.set(false, forKey: "is_incognito"); defer { defaults.set(oldPrivacy, forKey: "is_incognito") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let service = BrowserExtensionService(extensionRoot: root)
+        let record = try await service.installWebExtension(from: crx)
+        defer { service.deleteWebExtension(record.id); try? FileManager.default.removeItem(at: root) }
+        let runtime = NativeWebExtensionRuntime.shared
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        let configuration = WKWebViewConfiguration(); runtime.apply(to: configuration)
+        configuration.allowsInlineMediaPlayback = true; configuration.mediaTypesRequiringUserActionForPlayback = []
+        let probe = ExtensionFrameMediaProbe()
+        configuration.userContentController.add(probe, name: "qaExtensionFrame")
+        configuration.userContentController.addUserScript(WKUserScript(source: ExtensionFrameMediaProbe.source,
+            injectionTime: .atDocumentStart, forMainFrameOnly: false))
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 850), configuration: configuration)
+        let model = WebViewModel(); model.webView = web
+        window.rootViewController = UIHostingController(rootView: WebViewRepresentable(viewModel: model).frame(width: 390, height: 850))
+        window.makeKeyAndVisible()
+        defer {
+            configuration.userContentController.removeScriptMessageHandler(forName: "qaExtensionFrame")
+            model.releaseWebViewRuntime(); runtime.unregister(web); window.isHidden = true
+            window.rootViewController = nil; previous?.makeKeyAndVisible()
+        }
+        var facts: [String: Any] = [:]
+        defer {
+            if let data = try? JSONSerialization.data(withJSONObject: facts, options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: documents.appendingPathComponent("bp-faststream-episodes.json"), options: .atomic)
+                let a = XCTAttachment(data: data, uniformTypeIdentifier: "public.json"); a.name = "bp-faststream-episodes"; a.lifetime = .keepAlways; add(a)
+            }
+        }
+        func state() async -> Any? {
+            try? await web.evaluateJavaScript("({url:location.href,text:document.body.innerText.slice(-6000),videos:Array.from(document.querySelectorAll('video'),v=>({src:v.currentSrc,attribute:v.getAttribute('src'),connected:v.isConnected,ready:v.readyState})),frames:Array.from(document.querySelectorAll('iframe'),f=>({src:f.getAttribute('src'),rect:f.getBoundingClientRect().toJSON()})),buttons:Array.from(document.querySelectorAll('.episode-grid button,[class*=episode] button'),b=>({title:b.title,class:b.className}))})")
+        }
+        model.loadURL(try XCTUnwrap(URL(string: "https://bpzhe5.com/player/av_40g7wcC77htD3WwsRS78SIhhvYGvU6kIkqJamfGTgP1r5yEr7wuOYVoeGIuYypiULHINMoVs6AlkhCs?from=%2F")))
+        for _ in 0..<500 {
+            if (model.episodeList?.sources.flatMap(\.episodes).count ?? 0) > 2,
+               (try? await web.evaluateJavaScript("!!document.querySelector('video')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(60))
+        }
+        facts["before"] = await state(); facts["catalog"] = model.episodeList?.sources.flatMap(\.episodes).map { ["title": $0.title, "action": $0.action != nil] }
+        let firstList = try XCTUnwrap(model.episodeList)
+        let second = try XCTUnwrap(firstList.sources.flatMap(\.episodes).dropFirst().first)
+        try await WebEpisodeRuntime.activate(second, in: web)
+        for _ in 0..<350 {
+            if model.episodeList?.sources.flatMap(\.episodes).first(where: { $0.action?.isCurrent == true })?.title == second.title { break }
+            try await Task.sleep(for: .milliseconds(60))
+        }
+        facts["withoutExtension"] = await state()
+        XCTAssertEqual(model.episodeList?.sources.flatMap(\.episodes).first(where: { $0.action?.isCurrent == true })?.title, second.title)
+        _ = try? await web.evaluateJavaScript("document.querySelector('video')?.play().catch(()=>{});true")
+        for _ in 0..<500 {
+            if (try? await web.evaluateJavaScript("document.querySelector('video')?.readyState>=2")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(60))
+        }
+        XCTAssertTrue(runtime.performAction(id: record.id))
+        for _ in 0..<500 {
+            if probe.latest["readyState"] as? Int ?? 0 >= 2 { break }
+            try await Task.sleep(for: .milliseconds(60))
+        }
+        facts["replacement"] = await state(); facts["playerBefore"] = probe.latest
+        XCTAssertNotNil(probe.frame, "The original extension must really replace this website's player")
+        XCTAssertGreaterThanOrEqual(probe.latest["readyState"] as? Int ?? 0, 2, "The real replacement must be buffered before testing episode changes")
+        let sourceBefore = probe.latest["source"] as? String
+        let third = try XCTUnwrap(model.episodeList?.sources.flatMap(\.episodes).dropFirst(2).first)
+        do { try await WebEpisodeRuntime.activate(third, in: web) }
+        catch { facts["activationError"] = error.localizedDescription; throw error }
+        for _ in 0..<500 {
+            if model.episodeList?.sources.flatMap(\.episodes).first(where: { $0.action?.isCurrent == true })?.title == third.title,
+               let source = probe.latest["source"] as? String, source != sourceBefore,
+               probe.latest["readyState"] as? Int ?? 0 >= 2 { break }
+            try await Task.sleep(for: .milliseconds(60))
+        }
+        facts["afterSelection"] = await state(); facts["playerAfter"] = probe.latest
+        XCTAssertEqual(model.episodeList?.sources.flatMap(\.episodes).first(where: { $0.action?.isCurrent == true })?.title, third.title, "Selecting the next episode must reach the site's real SPA handler after replacement")
+        XCTAssertNotEqual(probe.latest["source"] as? String, sourceBefore, "The actual replacement's source must change, not just the episode selection highlight")
+        XCTAssertGreaterThanOrEqual(probe.latest["readyState"] as? Int ?? 0, 2)
+        let image = XCTAttachment(image: UIGraphicsImageRenderer(bounds: window.bounds).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }); image.name = "bp-faststream-episode-selection"; image.lifetime = .keepAlways; add(image)
+    }
+
+    func testButtonOnlyCatalogBindsExplicitActionsAndRejectsStaleOrUnrelatedControls() async throws {
+        let (web,capture)=try await page(#"""
+        <h1>Fixture series</h1><video data-soulo-media-id="fixture" style="width:300px;height:180px"></video>
+        <div class="episode-grid"><button type="button" title="EP1" class="selected" onclick="clicks.push(1)">1</button>
+        <button type="button" title="EP2" onclick="clicks.push(2);history.replaceState(null,'','?episode=2');this.previousElementSibling.className='';this.className='selected'">2</button></div>
+        <nav><div class="episodes"><button title="EP99">99</button><button title="EP100">100</button></div></nav>
+        <div class="ad episodes"><button title="EP50">50</button><button title="EP51">51</button></div>
+        <script>window.clicks=[];</script>
+        """#,url:"https://generic.example/player/show")
+        let list=try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last),pageURL:try XCTUnwrap(web.url)))
+        let entries=list.sources.flatMap(\.episodes)
+        XCTAssertEqual(entries.map(\.title),["EP1","EP2"])
+        XCTAssertNotEqual(entries[0].id,entries[1].id)
+        XCTAssertEqual(list.currentSource?.episodes.first?.action?.isCurrent,true)
+        XCTAssertTrue(entries.allSatisfy{$0.action != nil && $0.directMediaResource == nil})
+        let noClicks=try await web.evaluateJavaScript("JSON.stringify(clicks)") as? String
+        XCTAssertEqual(noClicks,"[]","Scanning must not execute React handlers or advertisement controls")
+        try await WebEpisodeRuntime.activate(entries[1],in:web)
+        _ = try await web.evaluateCompatibleJavaScript("window.__souloEpisodes.refresh()",in:nil,contentWorld:WebEpisodeRuntime.world)
+        let updated=try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last),pageURL:try XCTUnwrap(web.url)))
+        XCTAssertEqual(updated.actionScope,list.actionScope,"Episode-only SPA query changes remain in the same catalog")
+        XCTAssertEqual(updated.sources[0].episodes.first(where:{$0.action?.isCurrent==true})?.title,"EP2")
+        _ = try await web.evaluateJavaScript("document.querySelector('button[title=EP2]').remove();true")
+        do { try await WebEpisodeRuntime.activate(entries[1],in:web);XCTFail("Removed controls must not be activated") } catch { }
+        _ = try await web.evaluateJavaScript("history.replaceState(null,'','?movie=other');true")
+        do { try await WebEpisodeRuntime.activate(entries[0],in:web);XCTFail("A different SPA catalog must invalidate old actions") } catch { }
+        let clicks=try await web.evaluateJavaScript("JSON.stringify(clicks)") as? String
+        XCTAssertEqual(clicks,"[2]")
+        let model=WebViewModel();model.webView=web;defer{model.webView=nil}
+        let downloads=WebEpisodeDownloadService()
+        XCTAssertEqual(downloads.enqueue(entries,pageTitle:"Fixture",viewModel:model),0,"A button action is not a transferable download URL")
+        XCTAssertTrue(downloads.jobs.isEmpty)
+    }
+
+    func testButtonEpisodeNativeResolverUsesTheNewRealVideoAndPausesItsWebSource() async throws {
+        let file=try XCTUnwrap(Bundle(for:Self.self).url(forResource:"playback-h264-aac",withExtension:"mp4",subdirectory:"ReadingFixtures"))
+        let html=#"""
+        <video data-soulo-media-id="fixture" src="/first.mp4" muted playsinline preload="auto" style="width:300px;height:180px"></video>
+        <div class="episodes"><button type="button" title="EP1" class="selected">1</button>
+        <button type="button" title="EP2" onclick="document.querySelector('video').src='/second.mp4';this.className='selected';this.previousElementSibling.className='';history.replaceState(null,'','?episode=2')">2</button></div>
+        """#
+        let server=try DownloadPlaybackHTTPFixture(files:["/index.html":Data(html.utf8),"/first.mp4":Data(contentsOf:file),"/second.mp4":Data(contentsOf:file)])
+        let base=try await server.start();server.releaseDownloads();defer{server.stop()}
+        let capture=Capture(),config=WKWebViewConfiguration()
+        config.userContentController.add(capture,contentWorld:WebEpisodeRuntime.world,name:WebEpisodeRuntime.handler)
+        config.userContentController.addUserScript(WKUserScript(source:WebEpisodeRuntime.script,injectionTime:.atDocumentEnd,forMainFrameOnly:true,in:WebEpisodeRuntime.world))
+        let web=WKWebView(frame:CGRect(x:0,y:0,width:390,height:700),configuration:config)
+        defer{web.stopLoading();config.userContentController.removeScriptMessageHandler(forName:WebEpisodeRuntime.handler,contentWorld:WebEpisodeRuntime.world)}
+        web.load(URLRequest(url:base.appendingPathComponent("index.html")))
+        for _ in 0..<100 { if !capture.bodies.isEmpty {break};try await Task.sleep(for:.milliseconds(30)) }
+        let list=try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last),pageURL:try XCTUnwrap(web.url)))
+        let media=try await WebEpisodeRuntime.resolveActionMedia(list.sources[0].episodes[1],in:web,timeout:5)
+        XCTAssertEqual(media.url.path,"/second.mp4")
+        let paused=try await web.evaluateJavaScript("document.querySelector('video').paused") as? Bool
+        XCTAssertEqual(paused,true)
+        let asset=AVURLAsset(url:media.url),playable=try await asset.load(.isPlayable)
+        XCTAssertTrue(playable)
+    }
+
+    func testPlaybackCatalogScopeAcceptsOnlyTheSameSPASeries() {
+        let page=URL(string:"https://generic.example/player/show?episode=1")!,scope=UUID().uuidString
+        func catalog(page:URL,scope:String)->WebEpisodeList {
+            .init(pageURL:page,sources:[.init(title:"Series",episodes:[.init(title:"EP1",url:page,action:.init(token:UUID().uuidString,scope:scope,isCurrent:true))])])
+        }
+        let list=catalog(page:page,scope:scope)
+        let resource=WebMediaResource(kind:.video,url:URL(string:"https://media.example/one.mp4")!,title:"EP1",posterURL:nil)
+        let context=WebMediaPlaybackContext(resource:resource,pageURL:page,sourceWebView:nil,episodeList:list)
+        XCTAssertTrue(context.accepts(catalog(page:URL(string:"https://generic.example/player/show?episode=2")!,scope:scope)))
+        XCTAssertFalse(context.accepts(catalog(page:page,scope:UUID().uuidString)))
+        XCTAssertFalse(context.accepts(catalog(page:URL(string:"https://other.example/player/show")!,scope:scope)))
+    }
+
+    func testWebVideoDownloadControlsDefaultToVisibleAndSurviveSettingsBackup() throws {
+        let suite = "Soulo.VideoDownloadControls." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertTrue(VideoPlaybackPreferences.showsWebDownloadControls(in: defaults))
+        defaults.set(false, forKey: VideoPlaybackPreferences.showsWebDownloadControlsKey)
+        XCTAssertFalse(VideoPlaybackPreferences.showsWebDownloadControls(in: defaults))
+        let snapshot = CloudSettingsSyncEngine.snapshot(defaults)
+        let restored = try CloudSettingsSyncEngine.values(CloudSettingsSyncEngine.propertyList(snapshot))
+        XCTAssertEqual(restored[VideoPlaybackPreferences.showsWebDownloadControlsKey] as? Bool, false)
+        XCTAssertNotNil(try CloudSettingsSyncEngine.flattened(restored)["setting." + VideoPlaybackPreferences.showsWebDownloadControlsKey])
+        defaults.set(true, forKey: VideoPlaybackPreferences.showsWebDownloadControlsKey)
+        XCTAssertTrue(VideoPlaybackPreferences.showsWebDownloadControls(in: defaults))
+    }
+
+    func testVideoDownloadVisibilityUpdatesWithoutRemovingPlaybackOrEpisodeTools() async throws {
+        let defaults = UserDefaults.standard
+        let original = defaults.object(forKey: VideoPlaybackPreferences.showsWebDownloadControlsKey)
+        let originalTools = defaults.object(forKey: VideoPlaybackPreferences.showsToolsKey)
+        defaults.set(true, forKey: VideoPlaybackPreferences.showsWebDownloadControlsKey)
+        defaults.set(true, forKey: VideoPlaybackPreferences.showsToolsKey)
+        defer {
+            defaults.set(original, forKey: VideoPlaybackPreferences.showsWebDownloadControlsKey)
+            defaults.set(originalTools, forKey: VideoPlaybackPreferences.showsToolsKey)
+        }
+        let (web, _) = try await page("<video style='display:block;width:300px;height:180px'></video>")
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(web); window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        _ = try await web.evaluateCompatibleJavaScript(WebVideoOrientationRuntime.script(), in: nil, contentWorld: WebVideoOrientationRuntime.world)
+        for _ in 0..<100 {
+            let ready = try await web.evaluateCompatibleJavaScript("!!document.querySelector('[data-video-download]')", in: nil, contentWorld: WebVideoOrientationRuntime.world)
+            if ready as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        _ = try await web.evaluateCompatibleJavaScript("""
+            window.__videoBeforeToggle=document.querySelector('video');
+            __videoBeforeToggle.playbackRate=1.5;
+            window.__souloVideoOrientation.setEpisodesAvailable(true);
+            document.querySelector('[data-video-toggle]').__souloVideoAction({isTrusted:true,preventDefault(){},stopImmediatePropagation(){}});null
+            """, in: nil, contentWorld: WebVideoOrientationRuntime.world)
+        for visible in [true, false, true] {
+            let state = try await web.evaluateCompatibleJavaScript("""
+                window.__souloVideoOrientation.setDownloadControlsVisible(\(visible));
+                (()=>{
+                  const button=document.querySelector('[data-video-download]'),group=button.parentElement;
+                  const actions=Array.from(group.querySelectorAll('[data-video-action]'));
+                  return {download:getComputedStyle(button).display!=='none',
+                    episodes:getComputedStyle(group.querySelector('[data-video-episodes]')).display!=='none',
+                    playback:getComputedStyle(actions[2]).display!=='none',speed:getComputedStyle(actions[1]).display!=='none',
+                    sameVideo:document.querySelector('video')===window.__videoBeforeToggle,rate:document.querySelector('video').playbackRate,
+                    visibleActions:actions.filter(a=>getComputedStyle(a).display!=='none').length};
+                })()
+                """, in: nil, contentWorld: WebVideoOrientationRuntime.world)
+            let snapshot = try XCTUnwrap(state as? [String: Any])
+            XCTAssertEqual(snapshot["download"] as? Bool, visible)
+            XCTAssertEqual(snapshot["episodes"] as? Bool, true)
+            XCTAssertEqual(snapshot["playback"] as? Bool, true)
+            XCTAssertEqual(snapshot["speed"] as? Bool, true)
+            XCTAssertEqual(snapshot["sameVideo"] as? Bool, true)
+            XCTAssertEqual(snapshot["rate"] as? Double, 1.5)
+            XCTAssertEqual(snapshot["visibleActions"] as? Int, visible ? 5 : 4)
+        }
+    }
+
     private final class Capture: NSObject, WKScriptMessageHandler {
         var bodies: [[String: Any]] = []
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -542,7 +822,7 @@ final class WebEpisodeTests: XCTestCase {
         }
     }
 
-    func testFallbackDockOnlyAppearsWithoutAVisiblePlayerAndRejectsSyntheticInput() async throws {
+    func testFallbackDockKeepsBarePlayersReachableAndRejectsSyntheticInput() async throws {
         let (web, capture) = try await page("<ul class='episode-list'><li><a href='/play/68351-1-1.html'>EP1</a></li><li><a href='/play/68351-1-2.html'>EP2</a></li></ul>")
         let dockVisible = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")
         XCTAssertEqual(dockVisible as? Bool,true)
@@ -550,15 +830,20 @@ final class WebEpisodeTests: XCTestCase {
         XCTAssertFalse(capture.bodies.contains { $0["action"] != nil })
         _ = try await web.evaluateJavaScript("const v=document.createElement('video');v.style.cssText='position:fixed;top:0;left:0;width:300px;height:180px';document.body.append(v);null")
         try await Task.sleep(for:.milliseconds(500))
-        let dockHidden = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")
-        XCTAssertEqual(dockHidden as? Bool,false)
+        let dockWithBareVideo = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")
+        XCTAssertEqual(dockWithBareVideo as? Bool,true,"A video alone is not an available Soulo episode menu")
+        _ = try await web.evaluateJavaScript("const tools=document.createElement('div');tools.setAttribute('data-soulo-video-rotate','');tools.style.cssText='position:fixed;top:10px;left:10px;width:44px;height:44px';document.body.append(tools);null")
+        _ = try await web.evaluateCompatibleJavaScript("window.__souloEpisodes.refresh()",in:nil,contentWorld:WebEpisodeRuntime.world)
+        let dockHidden=try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")
+        XCTAssertEqual(dockHidden as? Bool,false,"Visible native tools supply the alternate episode entry")
+        _ = try await web.evaluateJavaScript("document.querySelector('[data-soulo-video-rotate]').remove();null")
         _ = try await web.evaluateJavaScript("document.querySelector('video').remove();null")
         try await Task.sleep(for:.milliseconds(500))
         let dockRestored = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")
         XCTAssertEqual(dockRestored as? Bool,true)
     }
 
-    func testInvisiblePlayerDoesNotHideDockAndStyleChangesUpdateIt() async throws {
+    func testBarePlayerVisibilityNeverHidesTheOnlyEpisodeEntry() async throws {
         let (web, _) = try await page("""
         <div id='player' style='opacity:0'><video style='width:300px;height:180px'></video></div>
         <ul class='episode-list'><li><a href='/watch/1'>EP1</a></li><li><a href='/watch/2'>EP2</a></li></ul>
@@ -572,7 +857,7 @@ final class WebEpisodeTests: XCTestCase {
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
         let initial = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")
         XCTAssertEqual(initial as? Bool, true)
-        for (opacity, expected) in [("1", false), ("0", true)] {
+        for (opacity, expected) in [("1", true), ("0", true)] {
             _ = try await web.evaluateJavaScript("document.getElementById('player').style.opacity='\(opacity)';null")
             try await Task.sleep(for: .milliseconds(400))
             let present = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")

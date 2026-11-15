@@ -1,0 +1,968 @@
+{
+  "date": "2026-11-14",
+  "version": "1.2.15",
+  "build": 55,
+  "status": "completed_with_documented_simulator_only_limits",
+  "interpretation": "Consolidates visible requests and later corrections. Earlier test reports remain historical evidence; does not turn untested paths into passes. Latest explicit user steering prioritizes generic FastStream extension interoperability while preserving earlier pending items.",
+  "items": [
+    {
+      "id": "earlier-1",
+      "requirement": "顶部＋改为设置菜单，并提供新增标签页",
+      "status": "historical_evidence_retained",
+      "details": "顶部与标签管理页复用同一菜单，含新标签页、顶部栏开关及开关示意、关闭其他、关闭全部。关闭全部后保留一个空白标签。",
+      "verification": "本次补齐并交互验证",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "verified-ui / ipad-ui; BrowserTabBar.swift"
+    },
+    {
+      "id": "earlier-2",
+      "requirement": "网页内跳转后自动隐藏平台栏，默认关闭",
+      "status": "historical_evidence_retained",
+      "details": "分组下拉增加开关。按每个标签的搜索落地页跟踪导航；跳转隐藏、返回结果恢复、新搜索或换平台重置；忽略锚点变化。",
+      "verification": "本次补齐并交互验证",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "verified-ui; SearchResultsView.swift / WebViewModel.swift"
+    },
+    {
+      "id": "earlier-3",
+      "requirement": "图片壁纸需要可控制的蒙层",
+      "status": "historical_evidence_retained",
+      "details": "新增图片蒙层开关，默认开启，适用于个人照片和远程图片，保存后重启仍有效；纯色保持原色。",
+      "verification": "本次完成并验证",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "unit / ipad-ui; WallpaperManager.swift / WallpaperBackground.swift"
+    },
+    {
+      "id": "earlier-4",
+      "requirement": "壁纸预览背景跟随 App 主题",
+      "status": "historical_evidence_retained",
+      "details": "导出预览和全屏壁纸浏览的背景跟随系统背景色；移除导出预览强制深色，标题栏和操作区随主题变化。",
+      "verification": "本次完成并截图验证",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "ipad-ui: wallpaper-export-preview-two-actions / wallpaper-preview-follows-dark-theme"
+    },
+    {
+      "id": "earlier-5",
+      "requirement": "Nature 关键词仅在相应在线壁纸下显示",
+      "status": "historical_evidence_retained",
+      "details": "仅远程壁纸显示来源或搜索主题；个人照片、渐变和纯色不显示主题文字。",
+      "verification": "本次完成并验证",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "ipad-ui / iOS 16.0 screenshots; HomeView.swift"
+    },
+    {
+      "id": "earlier-6",
+      "requirement": "纯色背景去掉蒙层，避免发灰",
+      "status": "historical_evidence_retained",
+      "details": "纯色在两种外观下均不叠加蒙层。iOS 16.0 截图采样为原始 #18243E 和 #FFFFFF。",
+      "verification": "实现保留并回归验证",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "unit; ios16-light.png / ios16-dark.png"
+    },
+    {
+      "id": "earlier-7",
+      "requirement": "渐变、照片、纯色隐藏远程自动刷新设置",
+      "status": "historical_evidence_retained",
+      "details": "本地背景隐藏远程刷新选项并停止相应定时任务，避免隐藏设置自动切回远程来源。",
+      "verification": "实现保留并回归验证",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "unit / ipad-ui"
+    },
+    {
+      "id": "earlier-8",
+      "requirement": "浅色和深色背景分别配置",
+      "status": "historical_evidence_retained",
+      "details": "三类本地背景分别保存两种外观的值；旧设置和原照片作为兼容回退。编辑另一外观的照片不替换当前显示图片。",
+      "verification": "实现保留并回归验证",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "unit / ipad-ui; 2026-11-12-wallpaper-appearance-preview.json"
+    },
+    {
+      "id": "earlier-9",
+      "requirement": "下载壁纸先预览，底部分享和保存到相册",
+      "status": "historical_evidence_retained",
+      "details": "首页和壁纸浏览入口共用导出预览；优先保留原始图片字节。系统确认保存成功后才提示，权限或写入失败允许重试。",
+      "verification": "实现保留并回归验证",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "unit / ipad-ui: native share sheet + Photos save"
+    },
+    {
+      "id": "earlier-10",
+      "requirement": "首页文字图标自动适应背景明暗",
+      "status": "historical_evidence_retained",
+      "details": "标题、平台分组、菜单、搜索栏、建议和说明文字使用实际背景明暗。图片亮度在后台小图采样，关闭蒙层后使用未加蒙层的亮度。",
+      "verification": "实现保留并回归验证",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "unit; iOS 16.0 display smoke; prior iPhone/iPad contrast matrix"
+    },
+    {
+      "id": "earlier-11",
+      "requirement": "iPad 标签截图清晰度与横竖屏比例",
+      "status": "historical_evidence_retained",
+      "details": "按窗口和截图比例布局，iPad 使用更高像素上限；视口变化重新截取，不复用过期竖屏尺寸。",
+      "verification": "源码及既有证据核对，本次定向回归通过",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "unit / audit-regressions; TabOverviewLifecycleTests; 2026-11-12-video-gestures-and-ipad.json"
+    },
+    {
+      "id": "earlier-12",
+      "requirement": "播放器退出两层、侧边小卡片恢复缺少选集",
+      "status": "historical_evidence_retained",
+      "details": "区分关闭播放页与退出全屏；小卡片和解码器交接保留视频来源、选集与当前集。",
+      "verification": "源码及既有交互证据核对，本次上下文与切换回归通过",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "audit-regressions; 2026-11-12-player-close-and-mini-episodes.json"
+    },
+    {
+      "id": "earlier-13",
+      "requirement": "视频横向拖动与进度条不同步",
+      "status": "historical_evidence_retained",
+      "details": "两种播放器支持横向预览后松手跳转，缓冲期间保留目标进度，到达或超时后恢复实际进度；取消拖动恢复刷新。",
+      "verification": "源码及既有交互证据核对，本次进度用例通过",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "unit; IncrementalFeatureTests; 2026-11-12-video-gestures-and-ipad.json"
+    },
+    {
+      "id": "earlier-14",
+      "requirement": "暂停延迟一至两秒",
+      "status": "historical_evidence_retained",
+      "details": "优先暂停真实解码器，并使用最新播放意图；长按手势排除控件，避免延迟按钮触摸。",
+      "verification": "源码及真机既有证据核对，本次解码器回归通过",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "unit; 2026-11-12-player-pause.json"
+    },
+    {
+      "id": "earlier-15",
+      "requirement": "音量键变化反馈、五秒未播放提示、加载和播放图标重叠",
+      "status": "historical_evidence_retained",
+      "details": "实体音量反馈避开中央按钮，启动警告排除暂停和后台时间；加载和播放图标互斥。",
+      "verification": "源码与既有验证记录核对",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "2026-11-12-video-gestures-and-ipad.json / 2026-11-12-user-feedback-validation.json"
+    },
+    {
+      "id": "earlier-16",
+      "requirement": "平台管理长按排序",
+      "status": "historical_evidence_retained",
+      "details": "拖动顺序保存到对应区域或自定义分组。",
+      "verification": "源码与既有交互记录核对",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "2026-11-12-video-gestures-and-ipad.json; GroupDefaultSearchUITests"
+    },
+    {
+      "id": "earlier-17",
+      "requirement": "网页视频播放图标、iPad 全屏、额外浮动按钮",
+      "status": "historical_evidence_retained",
+      "details": "播放入口主动进入全屏，iPad 沿用窗口方向，iPhone 横屏；工具条可隐藏，避免重复入口。",
+      "verification": "源码与既有交互记录核对，本次桥接回归通过",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "audit-regressions; 2026-11-12-user-feedback-validation.json"
+    },
+    {
+      "id": "earlier-18",
+      "requirement": "跨域确认前不能先跳转，iPad 确认区域过宽",
+      "status": "historical_evidence_retained",
+      "details": "确认前维持来源页并暂缓新窗口；取消不访问目标，继续保留 POST/opener；iPad 卡片限制宽度。",
+      "verification": "源码与既有交互记录核对",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "2026-11-12-user-feedback-validation.json; WebNavigationPolicyService.swift"
+    },
+    {
+      "id": "earlier-19",
+      "requirement": "BT/种子下载显示百分比和进度条",
+      "status": "historical_evidence_retained",
+      "details": "任务列表和详情共用进度组件；暂停保留进度。",
+      "verification": "源码与既有截图记录核对",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "NewDownloadTaskView.swift; 2026-11-12-user-feedback-validation.json"
+    },
+    {
+      "id": "earlier-20",
+      "requirement": "新标签页快速链接图标缩小",
+      "status": "historical_evidence_retained",
+      "details": "图标显示为 28×28 点。",
+      "verification": "源码核对",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "NewTabPageView.swift"
+    },
+    {
+      "id": "earlier-21",
+      "requirement": "资源嗅探改为网页资源及界面文案优化",
+      "status": "historical_evidence_retained",
+      "details": "保留功能，使用网页资源等用户可理解的文案；50 种语言通过检查。",
+      "verification": "源码及本地化检查通过",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "check_localization.py --strict; prior review-copy validation"
+    },
+    {
+      "id": "earlier-22",
+      "requirement": "视频插件造成偶发整 App 无响应",
+      "status": "historical_evidence_retained",
+      "details": "桥接控制避免重复样式写入，布局与扫描合并调度，播放器退出释放有异步保护；本次媒体和选集回归正常。仍需具体复现场景才能归因新的偶发卡住。",
+      "verification": "源码与已有防护核对，不能据此认定所有场景彻底消除",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "WebMediaPlaybackBridge.swift / MatroskaPlayerView.swift; audit-regressions"
+    },
+    {
+      "id": "earlier-23",
+      "requirement": "备案公钥、证书 SHA-1 指纹",
+      "status": "historical_evidence_retained",
+      "details": "已从发布证书导出公钥与指纹；未导出私钥。桌面备案信息文件仍在。",
+      "verification": "此前已交付",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "/Users/shunfei.z/Desktop/Soulo-iOS-备案信息-20261112.txt"
+    },
+    {
+      "id": "earlier-24",
+      "requirement": "版本 1.2.13 和 fastlane/app_store_metadata.json",
+      "status": "historical_evidence_retained",
+      "details": "主 App、小组件、分享扩展均为 1.2.13 (53)，由 project.yml 重新生成工程。50 个语言的推广文本、描述、新增内容同步更新；名称、副标题、关键词审核后沿用。JSON 由导出脚本生成。",
+      "verification": "本次完成并校验",
+      "report": "2026-11-12-requirements-audit-1.2.13.json",
+      "evidence": "project.yml; metadata-field-audit.json: 300 fields; export_metadata_json.py --check"
+    },
+    {
+      "id": "followup-1",
+      "requirement": "自定义广告过滤规则订阅",
+      "status": "verified",
+      "details": "添加、校验重复、持久化、更新期间删除与队列；20 个服务测试和 iOS 16 实际界面流程。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-2",
+      "requirement": "统一声音与震动设置",
+      "status": "verified",
+      "details": "沿用原偏好键，界面提示声音和震动统一开关；不控制网页与媒体本身的音频。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-3",
+      "requirement": "整理设置层级",
+      "status": "verified",
+      "details": "首页保留两个入口；浏览界面显示、存储和清缓存归位；iCloud 并入备份；关于与支持及动态版本页脚。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-4",
+      "requirement": "网页视频下载内置扩展开关",
+      "status": "verified",
+      "details": "默认开启，仅控制网页、选集、播放器和网页资源的视频下载入口；真实带 Cookie 下载及已排队任务在关闭后仍完成。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-5",
+      "requirement": "图片蒙层可调强度",
+      "status": "verified",
+      "details": "图像源独立开关与强度，0–100%；保留毛玻璃独立控制及主题预设。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-6",
+      "requirement": "第三方扩展、篡改猴与 TYTY",
+      "status": "verified_for_pinned_packages",
+      "details": "加载中可关闭、弹窗可退出；TYTY 0.6.6 真实消息/网络/规则/启停；篡改猴 5.5.1 真实脚本安装、执行、GM 网络、存储、权限和规则设置。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-7",
+      "requirement": "反馈联系方式必填",
+      "status": "verified",
+      "details": "界面和请求构造两层检查，清空后禁用提交；未提交真实反馈。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-8",
+      "requirement": "缓存首页壁纸立即显示、首页交互",
+      "status": "verified",
+      "details": "同步小预览与后台大图解码；无固定加载延时；启动与前后台交互验证沿用 completion 报告。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-9",
+      "requirement": "种子进度和未完成文件大小",
+      "status": "verified",
+      "details": "按所选文件已验证字节、checking 期间保留进度；资料库明确显示未完成及已下载/总量。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-10",
+      "requirement": "网页背景延伸、默认关闭、独立首页壁纸",
+      "status": "verified",
+      "details": "原生渲染取上下边缘及渐变；仅开启生效；动态更新、跨页开关状态、返回首页、关闭恢复原色均验证。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-11",
+      "requirement": "浏览设置启用图例",
+      "status": "verified",
+      "details": "四个开关的说明图、实际开关和返回入口已打开检查。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-12",
+      "requirement": "版本及元数据",
+      "status": "verified",
+      "details": "三个编译制品均为 1.2.14 (54)；50 语言元数据一致，本地化严格检查通过。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-13",
+      "requirement": "几十个多标签滑动时有时整个 App 卡死",
+      "status": "verified",
+      "details": "截图在后台按预览尺寸解码；取消已离屏的排队任务；轮播只预备邻近卡片；比例一致时不绘制重复模糊背景。60 张大图、36 次反复滚动：iPhone 仅留 7 张解码图，主线程最大间隔 45 ms；iPad 留 16 张，最大间隔 66 ms。原始截图不改写。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-14",
+      "requirement": "分组视图可以折叠组",
+      "status": "verified",
+      "details": "整块标题可展开/折叠；保留组内标签及顺序；折叠后不创建预览网格；普通窗口持久化，隐私窗口不写入。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-15",
+      "requirement": "小卡片与视频菜单中的悬浮窗入口偶发无响应",
+      "status": "verified",
+      "details": "修复图层交接重试、暂停源首帧准备、AVKit 允许标志早于首帧的竞态，以及关闭回调中的重启请求；减少无效状态发布、隔离菜单与播放进度更新。两个入口 × 系统/Soulo 播放器共四个场景实际点击和系统浮窗截图均通过，包含播放中的菜单；保留启动反馈与失败提示。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-16",
+      "requirement": "颜色延伸注意性能；滚动后保持首次识别颜色，只停止重新取色",
+      "status": "verified",
+      "details": "仅主开关开启时显示子开关，默认关闭；滚动后保留当前延伸色，断开页面观察并取消取色；新页面重置。关闭时不取色，不影响首页。仅截上下窄条，节流并避开拖动/惯性滚动。实际网页修改 100 次，冻结后原生收不到取色消息；关闭子开关重新更新。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "followup-17",
+      "requirement": "TG 反馈群组移到设置上一层最下方，关于与支持下面",
+      "status": "verified",
+      "details": "设置首页的最后一行，在关于与支持入口后、版本页脚前；关于页面内原入口已移除。未打开 Telegram 或发送任何消息。",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "image_strength",
+      "requirement": "图片蒙层开关及强度；毛玻璃独立开关及模糊强度",
+      "status": "verified_in_prior_targeted_tests",
+      "report": "2026-11-13-wallpaper-overlay-strength.json"
+    },
+    {
+      "id": "wallpaper_tiles",
+      "requirement": "壁纸来源显示各源当前缓存图/渐变/纯色，并应用遮罩与模糊；取预览不改变首页",
+      "status": "verified_in_prior_targeted_tests",
+      "report": "2026-11-13-wallpaper-previews-and-solid-page-background.json"
+    },
+    {
+      "id": "wallpaper_selection",
+      "requirement": "选中Pixabay后仍可切换Pexels和必应；本地/远程设置正确分开",
+      "status": "verified_in_prior_targeted_tests",
+      "report": "2026-11-13-wallpaper-source-selection-regression.json"
+    },
+    {
+      "id": "page_color_style",
+      "requirement": "网页延伸默认纯色；渐变可选；滚动后保持首次颜色行和分隔线对齐",
+      "status": "verified_in_prior_targeted_tests",
+      "report": "2026-11-13-wallpaper-previews-and-solid-page-background.json"
+    },
+    {
+      "id": "group_arrow",
+      "requirement": "折叠组箭头颜色减浅",
+      "status": "source_and_prior_test_evidence",
+      "report": "2026-11-13-follow-up-audit.json"
+    },
+    {
+      "id": "tab_menu_rows",
+      "requirement": "新标签页/关闭其他/关闭全部整行可点；关闭顶部栏有恢复入口示例；顶部标签半透明",
+      "status": "verified_in_prior_targeted_tests",
+      "report": "2026-11-12-wallpaper-tabs-video-followup.json"
+    },
+    {
+      "id": "gesture_video",
+      "requirement": "双击播放/暂停、横滑更大步长、快进预览与真正跳转一致；视频盒子右上角工具和辅助入口互斥",
+      "status": "verified_in_prior_targeted_tests",
+      "report": "2026-11-12-wallpaper-tabs-video-followup.json"
+    },
+    {
+      "id": "preview_fit",
+      "requirement": "多标签卡片完整显示宽度，比例不足处以模糊底图补齐；左右选中边框完整",
+      "status": "verified_in_prior_targeted_tests",
+      "report": "2026-11-12-wallpaper-tabs-video-followup.json"
+    },
+    {
+      "id": "ios16_library",
+      "requirement": "iOS16标签布局切换立即刷新；资料库左滑删除等操作正常",
+      "status": "verified_in_prior_targeted_tests",
+      "report": "2026-11-13-wallpaper-source-selection-regression.json"
+    },
+    {
+      "id": "extension_popup",
+      "requirement": "使用发布者HTML/CSS/JS；通用i18n和原生API绑定；底部安全留白；不按猫抓专属CSS重画",
+      "status": "physical_real_package_passed",
+      "report": "2026-11-14-device-acceptance.json"
+    },
+    {
+      "id": "binary_downloads",
+      "requirement": "Blob/data真实下载、在线合并和缓存捕获；队列/取消/权限/来源隔离",
+      "status": "physical_pinned_package_workflows_passed",
+      "report": "2026-11-13-extension-advanced-downloads-and-telegram.json"
+    },
+    {
+      "id": "extension_folder",
+      "requirement": "猫抓打开下载目录入口接到原生下载目录浏览",
+      "status": "verified_in_prior_targeted_tests",
+      "report": "2026-11-13-extension-download-folder.json"
+    },
+    {
+      "id": "extension_store_navigation",
+      "requirement": "扩展downloader页面打开商店、平台和普通网页；保留原下载文档，后续新搜索正常",
+      "status": "physical_iPad_three_cases_passed",
+      "report": "2026-11-14-device-acceptance.json"
+    },
+    {
+      "id": "extension_row",
+      "requirement": "去除挤压名称的独立齿轮列；保留管理入口于长按/滑动/VoiceOver；名称正常字号",
+      "status": "verified_real_store_management_ui",
+      "report": "2026-11-14-device-acceptance.json",
+      "details": "109官方Edge商店两步安装、成功提示、长按管理、管理页删除实际UI通过；安装栏移动/状态94/95通过。"
+    },
+    {
+      "id": "compact_gestures",
+      "requirement": "摇动操作/网页手势/声音与震动合并为手势与反馈入口",
+      "status": "verified_in_prior_targeted_tests",
+      "report": "2026-11-13-popup-layout-platform-navigation-and-gesture-group.json"
+    },
+    {
+      "id": "telegram_page",
+      "requirement": "设置最底部Telegram反馈群打开专用页面，显示/复制https://t.me/soulobrowser，可打开外部App",
+      "status": "implemented_and_prior_verification_retained",
+      "report": "2026-11-13-extension-advanced-downloads-and-telegram.json"
+    },
+    {
+      "id": "remove_pronunciation",
+      "requirement": "按后续要求删除关于页音标和发音入口",
+      "status": "removed_supersedes_earlier_addition",
+      "report": "2026-11-13-wallpaper-previews-and-solid-page-background.json"
+    },
+    {
+      "id": "single_icon",
+      "requirement": "仅保留默认原生Liquid分层图标；删除选择设置；默认纯白底/白心、原logo放大；深色/透明/色调用清晰空心笔触与分叉尖尾矢量",
+      "status": "six_native_renders_and_builds_passed",
+      "report": "2026-11-14-vector-app-icon.json"
+    },
+    {
+      "id": "pickers",
+      "requirement": "脚本与扩展的选择文件/文件夹/脚本文件入口可打开取消重开",
+      "status": "physical_iPad_two_tests_passed",
+      "report": "2026-11-14-device-acceptance.json"
+    },
+    {
+      "id": "ad_pages",
+      "requirement": "iOS16广告过滤五个子页面、跳转白名单不冻结退出；大数据与自动更新并行",
+      "status": "45_populated_open_return_pairs_passed",
+      "report": "2026-11-14-device-acceptance.json"
+    },
+    {
+      "id": "home27",
+      "requirement": "实际27.2.1首页菜单及其他六入口；恢复48标签+2扩展；几十标签滚动",
+      "status": "physical_evidence_passed_reported_multi_second_stall_not_reproduced",
+      "report": "2026-11-14-device-acceptance.json"
+    },
+    {
+      "id": "rules_audit",
+      "requirement": "核对广告规则自动更新方式与七个默认源",
+      "status": "answered_read_only_update_policy_unchanged",
+      "report": "2026-11-14-device-acceptance.json"
+    },
+    {
+      "id": "faststream_email",
+      "requirement": "许可邮件包含AppStore链接，不提收费；草稿交付，未发送",
+      "status": "delivered_earlier",
+      "report": "/tmp/soulo-faststream-permission-email.txt"
+    },
+    {
+      "id": "faststream_generic",
+      "requirement": "完整检查用户安装的FastStream1.3.78 CRX，修复通用接口对接；用指定B站视频测试；无内置fork，无VLC移除",
+      "status": "verified_for_pinned_package_and_documented_matrix",
+      "report": "2026-11-14-faststream-common-runtime.json",
+      "evidence": "sim-common-runtime-regression-48.xcresult126/126 includes publisher sandbox userScripts and native saved-file decoding; new wide layout reopened separately.",
+      "latest_verified": "原版1.3.78 MP4/HLS/DASH/B站、真实进度拖动/全屏/文件保存及文件名dialog布局已通过；公共userScripts.execute/定向框架/异步消息/端口/CSP/首次消息时序和跨标签生命周期207/Native206通过，不宣称所有未来扩展完全兼容。",
+      "details": "原始1.3.78模块保持原字节；通用原生模块事件页恢复后台消息，164旧安装无诊断辅助的真实触摸/全屏/下载UI通过；165原生SDK27三种媒体保存+解码/B站实际播放通过，通用模块传输和迁移通过。"
+    },
+    {
+      "id": "platform-1",
+      "requirement": "iOS 27 WebKit 兼容层",
+      "status": "native27_cookie_and_closed_shadow_verified",
+      "details": "112/118同轮原生27 scoped Cookie及closed-shadow world验收通过。",
+      "report": "2026-11-13-1.2.15-plan.json"
+    },
+    {
+      "id": "platform-2",
+      "requirement": "iOS 26 后台媒体合并与导出",
+      "status": "implemented_physical_background_and_export_regressions_passed",
+      "details": "Physical iPad accepted and completed native continued-processing work after entering background with progress0.985. Separate real HLS/finalization/cancellation and four native media regressions passed. System expiration timing remains controlled by iOS; this is not unlimited-background certification.",
+      "report": "2026-11-13-1.2.15-plan.json"
+    },
+    {
+      "id": "platform-3",
+      "requirement": "iPad 多窗口与菜单操作",
+      "status": "implemented_physical_window_workflow_passed",
+      "details": "Two real iPad multi-window UI tests passed; the same WKWebView, live DOM sentinel and navigation history moved without another page GET. Focused-window menus and touch entries retained.",
+      "report": "2026-11-13-1.2.15-plan.json"
+    },
+    {
+      "id": "platform-4",
+      "requirement": "SpeechAnalyzer 设备端语音输入",
+      "status": "implemented_physical_microphone_and_transcription_passed",
+      "details": "Real iPad microphone buffers and cancellation passed; installed Chinese model transcribed the fixture. Normal non-XCTest app launch confirmed analyzer start/stop. Legacy authorization/locale/cancellation nine cases passed; installed English model fixture previously passed on physical phone.",
+      "report": "2026-11-13-1.2.15-plan.json"
+    },
+    {
+      "id": "platform-5",
+      "requirement": "Liquid Glass 与辅助功能适配",
+      "status": "implemented_physical_accessibility_validation_passed",
+      "details": "Light/dark native materials visually reviewed. Actual iPad system Reduce Transparency, Increase Contrast and Reduce Motion switches were toggled; app reflected all three and original settings restored.",
+      "report": "2026-11-13-1.2.15-plan.json"
+    },
+    {
+      "id": "platform-6",
+      "requirement": "Foundation Models 本地网页摘要",
+      "status": "implemented_unavailable_fallback_passed_eligible_model_pending",
+      "details": "Actual Foundation Models reports deviceNotEligible on both connected devices. Fallback, bounded-input and cancellation tests passed without sending page content externally. Actual generation was skipped, not claimed passed. Device settings were not changed to force eligibility.",
+      "report": "2026-11-13-1.2.15-plan.json"
+    },
+    {
+      "id": "platform-7",
+      "requirement": "Siri 网页实体与收藏操作",
+      "status": "implemented_physical_intent_perform_and_entity_tests_passed",
+      "details": "Actual SaveWebPageIntent.perform and WebPageLinkIntent.perform passed on device, together with entity lookup/privacy/idempotency checks. Full spoken Siri interaction and cross-process production app-group opening are outside isolated-QA validation; QA has no access to production group data.",
+      "report": "2026-11-13-1.2.15-plan.json"
+    },
+    {
+      "id": "platform-8",
+      "requirement": "iOS 27 生成字幕与字幕样式",
+      "status": "native27_late_tracks_verified",
+      "details": "112/118原生SDK27字幕轨道晚加载后系统菜单更新通过。",
+      "report": "2026-11-13-1.2.15-plan.json"
+    },
+    {
+      "id": "queued_favicon",
+      "requirement": "网站图标获取不到时显示占位，并提高可获取率",
+      "status": "implemented_24_offline_regressions_passed",
+      "order_constraint": "用户明确要求此前所有问题处理好后再处理这5项；不提前替换正在执行的FastStream和原验收任务。",
+      "details": "拒绝全透明/空白白色图标响应以保留地球占位；支持安全内嵌 data:image 图标并补同源常见图标路径；透明黑白图标自动使用对比底色。24 项离线用例通过，包括缓存/隐私/SVG 禁止外链与脚本。4 个 opt-in 实网用例未运行。",
+      "evidence": "sim-ipad-layout-diagnostic-favicons-52.xcresult: WebsiteFaviconServiceTests24/24；同一轮新 FastStream 高度用例失败，未计为整轮通过"
+    },
+    {
+      "id": "queued_last_tab_home",
+      "requirement": "多标签管理删除最后一个标签后回到首页",
+      "status": "verified_actual_ui_134",
+      "order_constraint": "用户明确要求此前所有问题处理好后再处理这5项；不提前替换正在执行的FastStream和原验收任务。",
+      "details": "实际UI关闭全部、再次打开仅剩空白卡并点X，均回到可操作首页，134通过。",
+      "evidence": "TabGroupClosingTests9/9，HomeColdStartUITests/testClosingAllAndLastTabReturnsToHome真实UI通过sim-episode-live-last-tab-ui-59；该轮另一个选集诊断失败，非整轮通过。"
+    },
+    {
+      "id": "queued_clear_on_exit",
+      "requirement": "隐私设置增加退出清除浏览记录开关，默认关闭",
+      "status": "verified_sqlite_memory_and_actual_background_ui",
+      "order_constraint": "用户明确要求此前所有问题处理好后再处理这5项；不提前替换正在执行的FastStream和原验收任务。",
+      "details": "默认关闭；777浏览记录批次清理、保留查询/新会话/未保存收藏已通过。140实际UI打开隐私开关，App真实进入后台再恢复后仅浏览记录清零、搜索词保留，通过26.245秒。",
+      "evidence": "sim-history-home-58.xcresult27/27；sim-history-backups-58.xcresult24/24；localization-history-exit-57.log"
+    },
+    {
+      "id": "queued_generic_episodes",
+      "requirement": "指定 bpzhe5.com/player/av_40g7wcC77htD3WwsRS78SIhhvYGvU6kIkqJamfGTgP1r5yEr7wuOYVoeGIuYypiULHINMoVs6AlkhCs?from=%2F 未识别选集；补齐通用选集识别",
+      "status": "implemented_live_recognition_native_action_fixture_and_link_download_regressions_passed",
+      "order_constraint": "用户明确要求此前所有问题处理好后再处理这5项；不提前替换正在执行的FastStream和原验收任务。",
+      "evidence": "sim-storage-68.xcresult:用户SPA按钮选集真实识别通过，绑定动作及过期拒绝/原生真实媒体切集/原选集回归38+11通过；真实站点第二集原生交接仍待验收。"
+    },
+    {
+      "id": "queued_bt_speed",
+      "requirement": "检查 BT 下载速度并优化；增加可动态更新的公共优选 Tracker 列表与缓存回退，核对 DHT 网络，引擎遵守私有种子限制",
+      "status": "verified_native_local_peer_and_cache_regressions",
+      "order_constraint": "用户明确要求此前所有问题处理好后再处理这5项；不提前替换正在执行的FastStream和原验收任务。",
+      "latest_user_steering": "已实现每日公共优选Tracker更新、24项上限、缓存/失败回退和运行中句柄更新，DHT已启用，私有种子不注入；验收134通过。",
+      "details": "动态公共优选Tracker列表：每日刷新、24项上限、失败一小时退避、最后有效缓存和内置回退；运行中任务更新、不重建handle；已知私有不添加、获得私有metadata后清理自动项、resume剔除自动项保留发布者项。134整轮BT20项/原生本地peer和选文件/断点续传/边播边下通过；公网实际速度仍受种子和网络约束。"
+    },
+    {
+      "id": "queued_extension_back",
+      "requirement": "扩展将当前网页导航到webkit-extension://后，返回键恢复原网页及其浏览状态",
+      "status": "verified_ios26_and_native27_actual_tabs_api",
+      "order_constraint": "用户要求继续完成全部此前事项，并在最后新增这3项；保留已有5项顺序。",
+      "details": "调整新WK model绑定与原生扩展注册顺序，避免unmanaged重复标签。实际chrome.tabs.update返回同一NativeID但URL为独立扩展新页，原WK表单不丢，返回源页且保留扩展WK；137/138通过。"
+    },
+    {
+      "id": "queued_extension_paste_menu",
+      "requirement": "猫抓按钮在手指触摸时偶发粘贴菜单；用真实触摸事件排查并通用修复",
+      "status": "verified",
+      "order_constraint": "用户要求继续完成全部此前事项，并在最后新增这3项；保留已有5项顺序。",
+      "details": "猫抓原版在复制/播放/下载前无条件readText；公共层仅自有扩展文档检查可选clipboardRead授权，拒绝未授权读取而保留writeText。sim89实际WK原生权限授予/撤销与复制测试通过。"
+    },
+    {
+      "id": "queued_direct_media_navigation",
+      "requirement": "视频直链显示插件处理的加载错误页，核对原生媒体接管与Chrome呈现差异",
+      "status": "verified_classifier_and_real_native_video_navigation",
+      "order_constraint": "用户要求继续完成全部此前事项，并在最后新增这3项；保留已有5项顺序。",
+      "details": "204媒体接管不作为失败；保留真正403/TLS等错误。137/138真实HTTP视频文档加载通过，未将过期B站签名URL冒充验证成功。",
+      "primary_reference": "https://github.com/WebKit/WebKit/blob/main/Source/WebKit/Shared/API/APIError.h"
+    },
+    {
+      "id": "faststream_ipad_height",
+      "requirement": "FastStream 替换 iPad B 站视频时高度变成底部窄条；使用 BV1814y1X7UJ 复现并修复通用容器尺寸适配",
+      "status": "live_ipad_geometry_and_generic_fixture_passed",
+      "source": "2026-11-14 用户截图：原区域高度约700，替换播放器约130（截图像素），不得仅以能播放宣称尺寸正确。",
+      "url": "https://m.bilibili.com/video/BV1814y1X7UJ",
+      "details": "BV1814y1X7UJ 实际原视频1024x576，旧替换框架1024x100；公共原生扩展适配器保留零高容器上方的 padding-ratio 视频区域，识别 WebKit 隐藏的 iframe URL，只调整布局、不增加权限。修复后1024x576、768x432、390x219，真实播放/暂停/seek及停用后作者原有刷新流程通过。另一个 DOM 回归验证 HTTP 框架不变、浮窗/固定布局优先、离开扩展源释放样式、原页面结构可恢复。",
+      "evidence": "sim-media-layout-56.xcresult2/2 pass,0skipped；实图已目视核对；扩展受影响回归运行中；sim-media-layout-regression-56.xcresult96/96受影响扩展与图标回归通过，无跳过。"
+    },
+    {
+      "id": "platform_management_auto_hide",
+      "requirement": "平台管理页面增加自动隐藏平台栏开关",
+      "status": "verified_ios26_and_native27_actual_ui",
+      "details": "137/138原生UI点击真实开关thumb、开启提示、切换list/grid以及关闭重开保持值均通过。早前center-tap仅点击Label，已纠正测试。"
+    },
+    {
+      "id": "extension_temporary_cache_cleanup",
+      "requirement": "FastStream视频缓存清理入口；现有清除浏览缓存覆盖可清理扩展缓存，保护脚本、设置、进度、下载与在用数据库。",
+      "status": "verified_57_plus_3_storage_cases",
+      "evidence": "sim-storage-68.xcresult:2个真实WKWebExtension来源隔离、保留设置/脚本/进度、缓存删除与占用保护用例通过；本轮57/57通过。单站用量及UI验收继续。",
+      "details": "57项存储回归和后续3项真实双站点/扩展数据体积清理隔离已通过68/74；在用保护，保留设置脚本和非临时数据库。"
+    },
+    {
+      "id": "storage_site_usage_and_management",
+      "requirement": "存储空间显示每站IndexedDB与网站用量，下载/收藏壁纸/阅读数据/过滤规则/设置备份可点击管理，取消收藏后占用减少并解释阅读数据。",
+      "status": "verified_routes_sizes_and_ios16_ad_navigation",
+      "evidence": "已有原生磁盘归属/旧格式/未知格式保护测试通过，已加入真实网站IDB和界面跳转验收，待运行。",
+      "details": "站点IndexedDB/CacheStorage等只读计量、六类管理跳转；68/74/80及Native84/95通过，iOS16 91广告页五入口15次返回通过；取消收藏实际体积减少回归通过。"
+    },
+    {
+      "id": "bilibili_bangumi_external_prompt_and_episode_dock",
+      "requirement": "修复 https://m.bilibili.com/bangumi/play/ep733317 选集跳外部App未提示、选集浮标未显示；旧download_app长链接为误发，但也是实际handoff包装形态。",
+      "status": "implemented_live_catalog_and_navigation_policy_verified_external_app_unavailable",
+      "details": "89真实ep733317目录/浮标和通用BP17集识别通过；修正d.bilibili.com包装URL解码以及同站唤起免提示路径，策略回归通过。当前可用手机未安装B站，未宣称真实跨App弹窗已验收。"
+    },
+    {
+      "id": "storage_ad_rules_nested_navigation",
+      "requirement": "存储空间→过滤规则→广告过滤→规则管理四项无法点击/无反应，逐项和跳转白名单验收。",
+      "status": "verified_ios16_storage_to_all_five_populated_rule_pages_265",
+      "evidence": "sim-storage-ad-routes-77重现首次白名单无法打开；统一StorageManagementRoute值路由后80.xcresult两个UI测试通过，五页×三轮15次打开返回+六类入口回归通过。",
+      "details": "单一值路由修复从存储空间嵌套进入后子页无响应。实际UI：26.2 sim80、27.2原生SDK sim84、16.0 x86 sim91各5页×3轮，全部通过。"
+    },
+    {
+      "id": "home_search_remove_shadow",
+      "requirement": "首页搜索框移除阴影",
+      "status": "verified",
+      "priority": "normal",
+      "details": "首页非紧凑搜索框阴影已移除；sim89清空品牌+搜索框交互验证通过。"
+    },
+    {
+      "id": "website_data_chinese_runtime",
+      "requirement": "Website data中文显示需实际中文界面验证，不能只验证资源文件",
+      "status": "verified",
+      "priority": "normal",
+      "details": "已核验中文网站数据标题/详情；sim94 iOS26.2、Native95 iOS27.2真实UI通过。另修复用量扫描期间入口空白，先显示入口和未知大小。"
+    },
+    {
+      "id": "home_empty_branding_stable_search",
+      "requirement": "首页标题与描述均清空时搜索框位置不变",
+      "status": "verified",
+      "priority": "normal",
+      "details": "保留不可见品牌文字布局槽位。sim89真实UI清空标题与副标题前后搜索框frame一致且仍可输入。"
+    },
+    {
+      "id": "faststream_seek_drag",
+      "requirement": "FastStream进度条点击有效但拖动无效，通用修复并验收真实触摸",
+      "status": "verified",
+      "priority": "normal",
+      "details": "sim97真实UITouch拖动原版FastStream 1.3.78进度条，8s媒体到6.076s；源截图已目视。公共层仅为自有扩展内鼠标控件转换可信单指手势，原生表单/指针/触摸控件保留原行为。"
+    },
+    {
+      "id": "faststream_lifecycle_reload",
+      "requirement": "FastStream偶发自动关闭、刷新后不能重新打开，需重启App；查生命周期及会话恢复",
+      "status": "regression_passed_reported_issue_not_reproduced",
+      "priority": "normal",
+      "details": "sim99原版扩展3轮刷新→关闭→重新开启，6次新文档都实际缓冲并播放，不需重启。偶发自动关闭未复现，继续查原生事件/长期场景。"
+    },
+    {
+      "id": "faststream_initial_source_flash",
+      "requirement": "FastStream加载前先闪现未加载任何视频源，初始化应正确呈现加载状态",
+      "status": "native27_generic_startup_regression_passed",
+      "priority": "normal",
+      "details": "通用独立扩展媒体启动加载面板，metadata/真实error/用户操作即消失，最长4秒；不改发布者文案、超时保留真实无源错误。iOS27 129真实WK验证通过。"
+    },
+    {
+      "id": "faststream_download_feedback",
+      "requirement": "FastStream下载按钮点击后需能找到文件，验证真实下载及入口反馈",
+      "status": "verified_actual_restored_unassisted_touch_download",
+      "priority": "normal",
+      "details": "155新安装、161旧安装实际下载定位通过；164移除诊断PING/trace后两项真实UI通过：拖动与全屏进退17.619秒、独立保存/完成提示/定位文件18.876秒。NativeSDK27 165原版三种媒体实际文件解码通过。"
+    },
+    {
+      "id": "faststream_fullscreen_exit_false_error",
+      "requirement": "FastStream退出全屏误报无法播放但仍正常播放，消除误报且保留实际失败提示",
+      "status": "fixed_actual_touch_fullscreen_exit_passed",
+      "priority": "normal",
+      "details": "自动全屏观察不接管扩展自有MSE；手动Soulo播放保留错误。原版真实触摸进出全屏通过115/123/133，对应下载另行验收。"
+    },
+    {
+      "id": "extension_navigation_new_tabs",
+      "requirement": "脚本与扩展的商店链接及独立扩展页面新标签打开，保留原网页；快捷弹出面板是否保留弹窗待可选回复",
+      "status": "verified_for_tested_routes",
+      "priority": "normal",
+      "details": "sim99平台/商店新标签保留原WK实例；137/138实际tabs.update跨入扩展页面返回同一NativeID，原页面表单保留，返回源页面且扩展WK保留。"
+    },
+    {
+      "id": "edge_tampermonkey_install_crash",
+      "requirement": "安装Edge商店篡改猴 iikmkjmpaadaobahmlepeloendndfphd 导致App闪退，下载当前官方包并隔离复现修复",
+      "status": "verified_ios26_and_native27_stock_functional",
+      "priority": "critical",
+      "details": "官方原包原始background SHA匹配，安装时权限回滚重复写相同字典导致通知/脚本注入反馈循环；仅写实际变化。26/27原包启动+保存脚本通过107/118/129；商店两步安装成功/长按管理删除109通过。"
+    },
+    {
+      "id": "extension_install_bar_collapse_move",
+      "requirement": "扩展安装条可移动及收起展开，避免挡住网页内容和操作",
+      "status": "verified",
+      "priority": "normal",
+      "details": "安装条支持收起展开和拖动；透明宿主不拦截条外触摸。sim94与Native95 WK真实DOM验证收起/拖动后被遮网页按钮可命中。"
+    },
+    {
+      "id": "extension_install_success_state",
+      "requirement": "扩展实际安装成功后明确提示，安装条显示已安装；重复安装和更新状态正确",
+      "status": "verified",
+      "priority": "normal",
+      "details": "109官方Edge商店两步安装和实际成功提示通过；安装条按当前页面身份显示已安装，拒绝旧页面回调，94/95实际DOM状态通过。"
+    },
+    {
+      "id": "extension_install_two_step_cancel",
+      "requirement": "商店安装缩短为安装条+弹窗确认两步，不再额外权限页；下载准备可取消，取消不残留半安装",
+      "status": "verified_two_step_and_real_network_cancel",
+      "priority": "normal",
+      "details": "109真实Edge商店安装仅两步、无额外权限页、有成功提示；133真实待完成网络下载取消0.276秒通过。此前背景fixture在网络开始前已经安装成功，不是“正在安装”，已换为真实待完成安装下载，保留原startup gate取消回归。"
+    },
+    {
+      "id": "extensions_delete_context_and_management",
+      "requirement": "脚本与扩展长按菜单增加删除，原生扩展管理页面底部也能删除，保留左滑并确认",
+      "status": "verified",
+      "priority": "normal",
+      "details": "用户脚本和浏览器扩展长按菜单新增删除；浏览器扩展管理页底部新增删除；保留左滑，删除前确认，内置脚本保留不可删除。109实际长按→管理→删除通过。"
+    },
+    {
+      "id": "followup-generic-userscripts",
+      "requirement": "公共userScripts.execute、真实frame/document目标、异步消息与端口、opt-in world消息、受限CSP及首次握手",
+      "status": "verified_native206_host207",
+      "details": "专用消息与端口/撤权/同URLframe目标通过；不承诺全部Chrome接口与全部CSP。"
+    },
+    {
+      "id": "followup-fs-spa-tabs",
+      "requirement": "FastStream选集SPA源更新与跨标签/内存回收保持",
+      "status": "verified_live_BP192_native193_206",
+      "details": "用户BP真实源更新且缓冲通过。最多保留一个后台扩展媒体runtime，MMS/普通双播放器及三标签释放策略通过。"
+    },
+    {
+      "id": "followup-home-position",
+      "requirement": "首页输入框上移半框，最近搜索上方增加8pt，无描述标题下移；删除品牌不移动输入框",
+      "status": "verified_actual_UI222",
+      "details": "iPad模拟器18.888s；按真实搜索框外框测量，不以内部TextField高度替代。"
+    },
+    {
+      "id": "followup-bookmark-hearts",
+      "requirement": "收藏重命名/爱心/网址前爱心/全库爱心筛选及空状态；新标签页优先爱心否则最近收藏，图标缩小搜索居中",
+      "status": "verified_host_UI221_and_migration222_native_final_pending",
+      "details": "UI34.301s；旧SQLite显式推断迁移，UUID/文件夹/2MB外部图标保留，爱心/重命名重启保留，HTML爱心属性往返通过。"
+    },
+    {
+      "id": "followup-retire-sample",
+      "requirement": "移除区域文字提取内置示例，保留用户自建导入脚本",
+      "status": "verified_host210_native212",
+      "details": "删除原资源，过滤旧namespace，迁移只移除isBuiltIn记录。"
+    },
+    {
+      "id": "followup-extension-catalog",
+      "requirement": "Soulo扩展导航/手机目录/官方Chrome与Edge链接/原生确认安装入口/推荐反馈",
+      "status": "verified_website_matrix_host217_native218",
+      "details": "320/390/768/1440明暗中英文无横向溢出；推荐名称联系方式必填，链接理由选填；反馈成功失败mock，无真实提交。安装取消保留源页，官方无镜像。"
+    },
+    {
+      "id": "followup-source-sites",
+      "requirement": "影视导航添加souju.ai，资源网盘在前；在线工具仅移出导航、footer保留",
+      "status": "verified_9_page_static_and_generator_checks",
+      "details": "维护源JSON和构建器，不手改生成目录绕过检查。"
+    },
+    {
+      "id": "followup-doc-prompt",
+      "requirement": "开发文档与复制AI Prompt更新当前能力和限制",
+      "status": "implemented_compiled217",
+      "details": "共用版本化API参考；GM XHR20MiB与原生下载区分、Cookie/@connect、Blob/脚本与WebExtension界限、Range/HLS注意事项。"
+    },
+    {
+      "id": "followup-toolbar-newtab",
+      "requirement": "浏览器工具栏与地址栏快捷位可选择新标签页",
+      "status": "verified_host217_native218_actual_UI",
+      "details": "复用现有标签创建与切换；保存恢复通过，原布局不变。"
+    },
+    {
+      "id": "followup-hls-progress",
+      "requirement": "HLS时长百分比不再冒充1MB字节大小；无法测量时显示百分比",
+      "status": "verified_scoped_authenticated_hls_native_and_host",
+      "details": "真实字节与时长分开；系统AVAsset丢UA/私有Cookie时采用隔离HTTP直写磁盘回退。普通/私有/AES、暂停恢复、完成离线、fMP4 Range及分轨音频、取消清理和错误页有限重试均通过；系统后台执行时长仍由OS控制。"
+    },
+    {
+      "id": "followup-direct-media",
+      "requirement": "独立原生视频文档退出全屏无错误接管弹窗",
+      "status": "verified_host217_native218_actual_fullscreen",
+      "details": "只识别成功实际video MIME响应，保留真正HTTP/播放失败提示；附用户URL Referer后206取样证据。"
+    },
+    {
+      "id": "platform-batch-ai-groups",
+      "requirement": "平台批量导入示例同行右侧AI Prompt；说明页可复制；JSON包含组名，可同时导入多个组",
+      "status": "compact_mobile_style_and_actual_two_group_import_passed_241",
+      "details": "支持groups封装/分组数组/单组和旧平台数组；同名组追加、复用URL不重复建平台，组UUID/既有内容保留。22单元检查、iPad实际UI46.053s/手机40.943s通过。 页面改为两快捷入口、折叠JSON示例、输入及分组卡片和固定底部导入；手机完整流程48.307s通过。 最新iOS16实际45.118s、Host25753.294s通过。"
+    },
+    {
+      "id": "bookmark-cloud-merge",
+      "requirement": "iPhone/iPad收藏加入iCloud合并，保留两端内容，只有主动删除才移除",
+      "status": "nine_engine_and_full_save_pipeline_checks_passed_248_real_transport_not_tested",
+      "details": "9项通过：独立数据库经实际保存观察器、协调文件IO合并；离线字段修改、主动删除、首次启用前删除、空设备和账号隔离。排除id/favicon缓存字段。签名profile允许CloudDocuments（服务通配符）；用户仅允许模拟器，不宣称真实iCloud双端传输已验。 平台配置与设置沿用现有iCloud设置同步；收藏为独立可选同步，不包含历史、Cookie及下载内容。"
+    },
+    {
+      "id": "bookmark-manual-order",
+      "requirement": "收藏/新标签页长按拖动排序，文件夹在前，顺序持久化",
+      "status": "verified_actual_drag_ios26_and_ios27_261",
+      "details": "资料库系统列表排序及新标签页集合拖放共享持久顺序；文件夹在前。Host255与Native261实际触摸通过。禁用UICollectionViewController自带legacy长按重排，保留drag/drop和上下文菜单，避免27中冲突。"
+    },
+    {
+      "id": "newtab-context-menu",
+      "requirement": "新标签页item长按菜单和文字再少一点",
+      "status": "verified_after_actual_drag_native261",
+      "details": "真实排序后Rename/AddtoQuickLinks等菜单可打开；文字8字形，完整辅助标签。Host25583s/Native26199.067s通过。"
+    },
+    {
+      "id": "home-restore-branding",
+      "requirement": "编辑首页标题与副标题增加恢复默认",
+      "status": "verified_actual_ui_ios26_and_ios16",
+      "details": "从界面实际编辑标题/副标题再恢复默认，Host25726.559s/iOS16 25732.225s通过。初测启动参数锁定值导致伪失败已纠正为真实UI编辑，不放宽恢复断言。"
+    },
+    {
+      "id": "browsing-color-section",
+      "requirement": "背景延伸、渐变延伸和滚动保持颜色三设置分为一组",
+      "status": "implemented_current_release236_compiled",
+      "details": "独立Section卡片，与其它浏览显示设置区别。"
+    },
+    {
+      "id": "video-settings-title",
+      "requirement": "视频设置改名，扩展入口翻译并更换图标",
+      "status": "implemented_50_locales_strict_check_passed",
+      "details": "50语言视频设置名已改；Soulo扩展入口改用正确FeatureImprovements表与蓝色图标。"
+    },
+    {
+      "id": "clear-bookmarks-typed-confirmation",
+      "requirement": "清除所有收藏必须输入确认文字才能执行，避免iCloud同步误删除",
+      "status": "verified_phone236",
+      "details": "独立确认页输入CLEAR后启用，输入不全禁用、可以取消；手机实际20.159s通过；启用收藏同步时说明删除也同步。"
+    },
+    {
+      "id": "extension-dialog-mobile-fit",
+      "requirement": "FastStream文件名弹窗溢出需通用适配",
+      "status": "verified_host_and_native236_real_original_extension_prompt",
+      "details": "仅作用于自有webkit-extension文档的通用dialog适配，真实原包保存文件名输入/取消/按钮边界通过，保留原脚本。"
+    }
+  ],
+  "superseded_requests": [
+    "1.2.13 and1.2.14 version requests superseded by1.2.15(55)",
+    "Icon picker/alternate icon choices superseded byLiquid-only primary icon",
+    "Pronunciation addition superseded bydeletion",
+    "FastStream built-in fork/VLC replacement superseded byuser-installed CRX compatibility"
+  ],
+  "current_pending": [],
+  "constraints": [
+    "Keep existing changes",
+    "No commit/push/upload requested in currentphase",
+    "No publisher-specific FastStream identifiers or UI rewrites in shipping generic fixes",
+    "No download execution-layer visibility gate",
+    "2026-11-15 最新用户要求只能使用模拟器；不连接、不操作物理设备。"
+  ],
+  "user_feedback": [
+    {
+      "date": "2026-11-14",
+      "platform": "iOS 16",
+      "version": "1.2.14",
+      "feedback": "用户反馈广告过滤页面已不再卡死",
+      "interpretation": "用户正向反馈，保留 1.2.15 相应回归；不替代其他页面和系统的测试证据。"
+    }
+  ],
+  "execution_plan": [
+    {
+      "phase": 0,
+      "items": [
+        "edge_tampermonkey_install_crash",
+        "faststream_lifecycle_reload"
+      ],
+      "status": "stock_tampermonkey_and_faststream_reload_regressions_passed"
+    },
+    {
+      "phase": 1,
+      "items": [
+        "home_search_remove_shadow",
+        "website_data_chinese_runtime",
+        "home_empty_branding_stable_search",
+        "storage_ad_rules_nested_navigation"
+      ],
+      "status": "verified_for_documented_routes"
+    },
+    {
+      "phase": 2,
+      "items": [
+        "faststream_seek_drag",
+        "faststream_initial_source_flash",
+        "faststream_download_feedback",
+        "faststream_fullscreen_exit_false_error"
+      ],
+      "status": "verified_for_original_pinned_faststream"
+    },
+    {
+      "phase": 3,
+      "items": [
+        "extension_navigation_new_tabs",
+        "queued_extension_paste_menu",
+        "queued_extension_back",
+        "queued_direct_media_navigation",
+        "extension_install_bar_collapse_move",
+        "extension_install_success_state",
+        "extension_install_two_step_cancel",
+        "extensions_delete_context_and_management"
+      ],
+      "status": "verified_for_documented_routes"
+    },
+    {
+      "phase": 4,
+      "items": [
+        "bilibili_bangumi_external_prompt_and_episode_dock",
+        "queued_generic_episodes",
+        "queued_bt_speed"
+      ],
+      "status": "implemented_and_targeted_tests_passed_external_app_handoff_not_available"
+    },
+    {
+      "phase": 5,
+      "requirement": "原八项剩余验收、最终Release、多语言、版本1.2.15与生成JSON检查",
+      "status": "native_sdk27_release_and_localization_complete_hardware_scope_limits_documented"
+    }
+  ],
+  "last_updated": "2026-11-15T11:13:00+08:00",
+  "final_checks": {
+    "release": "SDK27 production Release166 BUILD SUCCEEDED, unsigned generic iOS minimum16; no signing credentials copied to VM",
+    "affected_regression": "167 total63:62passed,1opt-in current-store transport skipped,0failed; actual store flow109 independently passed",
+    "actual_faststream_touch": "164 restored record/noPING/no trace2/2PASS",
+    "native27_faststream": "1653/3PASS realplayback/download/decode and moduletransport/migration",
+    "localization": "883+500+92 keys across50 locales strictPASS",
+    "metadata": "50 locales exporter --checkPASS version1.2.15",
+    "git_diff_check": "PASS",
+    "commit_push_upload": false
+  },
+  "follow_up_plan": "2026-11-15-generic-extension-plan.json",
+  "final_build": "Native270生产Release通过，主App/Widget/Share1.2.15(55)，最低iOS16.0；最终iOS16 270手动设置→Storage→五个有数据规则页161.565s通过，Native269同路径147.545s通过。",
+  "unverified_due_to_environment": [
+    "真实双端iCloud服务传输未实测：用户最终限定只能使用模拟器；9项合并/实际保存-传输-落库链路已通过。",
+    "设备端Foundation Models实际生成需要符合条件的设备；当前只能验证可用性与回退，不宣称实际模型生成通过。",
+    "iOS27.2模拟器通过不等于覆盖每台iOS27.2.1真机。"
+  ]
+}

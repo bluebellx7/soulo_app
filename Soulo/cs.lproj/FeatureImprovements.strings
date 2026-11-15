@@ -81,3 +81,58 @@
 "Website cache" = "Mezipaměť webu";
 "Website icons" = "Webové stránky ikony";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "Synchronizace iCloudu ukládá zálohu před změnou nastavení. Uchovává se posledních %lld záloh a původní kopie.";
+
+"Move tab to new window" = "Přesunout do nového okna";
+
+"Save webpage" = "Uložit stránku";
+
+"Webpage" = "Webová stránka";
+
+"Website data" = "Data webů";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Zahrnuje uložené články, rejstřík knih, obálky a průběh čtení. Soubory knih se počítají ke staženým souborům.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Velikosti jsou odhadované. IndexedDB zahrnuje databáze a média. Nedostupné velikosti se zobrazují jako —.";
+"Extension temporary cache" = "Dočasná mezipaměť rozšíření";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Odstraní dočasná média rozšíření. Zachová nastavení, skripty, průběh a stažené soubory. Nejprve zavřete stránky rozšíření a videí a dokončete stahování.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Dočasná data se stále používají. Zavřete stránky rozšíření a videí, dokončete stahování a zkuste to znovu.";
+"Deleting website data can sign you out and remove offline content." = "Smazání dat vás může odhlásit a odstranit offline obsah.";
+
+"Extension startup timed out." = "Vypršel čas pro spuštění rozšíření.";
+
+"soulo_extensions" = "Rozšíření Soulo";
+
+"Add to Quick Links" = "Přidat do rychlých odkazů";
+"Remove from Quick Links" = "Odebrat z rychlých odkazů";
+"Mark bookmarks with a heart to show them here." = "Podržte záložku a označte ji srdcem, aby se zobrazila zde.";
+
+"Type %@ to confirm." = "Pro potvrzení napište %@.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Záložky se mezi zařízeními sloučí. Odstraní je pouze výslovné smazání.";
+"This deletion also syncs to your other devices." = "Toto smazání se synchronizuje i do ostatních zařízení.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Zkopírujte zadání, doplňte požadavky a pošlete ho AI. Poté sem vložte její JSON a importujte.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Názvy skupin v JSON mají přednost. Shodné skupiny se sloučí bez odebrání stávajících platforem.";
+"Imported %1$d platforms into %2$d groups." = "Importováno %1$d platforem do %2$d skupin.";
+"No new platforms or group entries." = "Žádné nové platformy ani položky skupin.";
+
+"App size" = "Velikost aplikace";
+"App data" = "Data aplikace";
+"Wallpaper cache" = "Mezipaměť tapet";
+"Other caches" = "Ostatní mezipaměť";
+"Temporary files" = "Dočasné soubory";
+"Download task data" = "Data stahování";
+"Settings and records" = "Nastavení a záznamy";
+"Shared app data" = "Sdílená data aplikace";
+"Other app data" = "Ostatní data aplikace";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Data aplikace nezahrnují nainstalovaný program. Velikost na disku se může lišit od Nastavení iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Uložený obsah smažte v jeho seznamu. Používané dočasné soubory a systémové databáze mezipaměti se uvolní, až to bude bezpečné.";
+
+"Current platforms" = "Aktuální platformy";
+"Import mode" = "Režim importu";
+"Append" = "Přidat";
+"Replace all" = "Nahradit vše";
+"Replace all platforms?" = "Nahradit všechny platformy?";
+"A settings backup is saved before replacement." = "Před nahrazením se uloží záloha nastavení.";
+
+"Take over web players" = "Převzít webové přehrávače";
+"Only takes over website fullscreen. Extension players stay independent." = "Přebírá jen přehrávání webu na celé obrazovce. Přehrávače rozšíření zůstávají nezávislé.";
+
+"App size is the installed program and resources, not the App Store download size." = "Velikost aplikace zahrnuje nainstalovaný program a prostředky, nikoli stažení z App Storu.";
+"App data is the total of the categories below." = "Data aplikace jsou součtem kategorií níže.";

@@ -1,16 +1,46 @@
 import SwiftUI
 
+struct GesturesFeedbackSettingsView: View {
+    @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
+
+    var body: some View {
+        List {
+            Section {
+                SettingsSubpageLink {
+                    ShakeActionSettingsView()
+                } label: {
+                    SettingsDescriptionLabel(icon: "iphone.radiowaves.left.and.right", color: Color(uiColor: .secondaryLabel),
+                        title: LanguageManager.shared.localizedString("shake_action"),
+                        description: LanguageManager.shared.localizedString(BrowserShakeAction(rawValue: shakeAction)?.titleKey ?? BrowserShakeAction.none.titleKey))
+                }.accessibilityIdentifier("settings.interaction.shake")
+                SettingsSubpageLink {
+                    BrowserGestureSettingsView()
+                } label: {
+                    SettingsNavigationLabel(icon: "hand.draw", color: Color(uiColor: .secondaryLabel), title: ToolText.text("gesture_settings_title"))
+                }.accessibilityIdentifier("settings.interaction.gestures")
+                SettingsSubpageLink {
+                    AppFeedbackSettingsView()
+                } label: {
+                    SettingsNavigationLabel(icon: "speaker.wave.2", color: Color(uiColor: .secondaryLabel), title: ToolText.text("feedback_settings"))
+                }.accessibilityIdentifier("settings.interaction.feedback")
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle(ToolText.text("gestures_feedback_settings"))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 struct BrowserGestureSettingsView: View {
     @AppStorage(BrowserSwipePreferences.enabledKey) private var enabled = BrowserSwipePreferences.enabledByDefault
     @AppStorage(BrowserSwipePreferences.executionKey) private var execution = BrowserSwipeExecution.release.rawValue
-    @AppStorage(BrowserSwipePreferences.hapticsKey) private var haptics = true
-    @AppStorage(BrowserSwipePreferences.soundKey) private var sound = false
     @AppStorage(BrowserSwipePreferences.rightKey) private var right = BrowserSwipeDirection.right.defaultAction.rawValue
     @AppStorage(BrowserSwipePreferences.leftKey) private var left = BrowserSwipeDirection.left.defaultAction.rawValue
     @AppStorage(BrowserSwipePreferences.menuKey) private var menuValue = BrowserSwipePreferences.defaultMenuValue
     @AppStorage(BrowserSwipePreferences.noHistoryKey) private var noHistoryAction = BrowserSwipeAction.closeTab.rawValue
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var preview: BrowserSwipeRequest?
+    @State private var showsFeedbackSettings = false
 
     var body: some View {
         List {
@@ -65,16 +95,22 @@ struct BrowserGestureSettingsView: View {
                     .buttonStyle(.plain)
             }
 
-            Section(ToolText.text("gesture_feedback")) {
-                Toggle(isOn: $haptics) {
-                    SettingsRowLabel(icon: "waveform.path", color: .themePrimary, title: ToolText.text("gesture_haptics"))
-                }.accessibilityIdentifier("settings.gestures.haptics")
-                Toggle(isOn: $sound) {
-                    SettingsRowLabel(icon: "speaker.wave.2", color: .themePrimary, title: ToolText.text("gesture_sound"))
-                }.accessibilityIdentifier("settings.gestures.sound")
-                Button { BrowserSwipeFeedback.executed() } label: {
-                    SettingsRowLabel(icon: "play", color: .themePrimary, title: ToolText.text("gesture_feedback_preview"))
-                }.accessibilityIdentifier("settings.gestures.feedback.preview")
+            Section {
+                if #available(iOS 17.0, *) {
+                    NavigationLink {
+                        AppFeedbackSettingsView()
+                    } label: {
+                        SettingsRowLabel(icon: "speaker.wave.2", color: .themePrimary, title: ToolText.text("feedback_settings"))
+                    }.accessibilityIdentifier("settings.gestures.feedback")
+                } else {
+                    Button { showsFeedbackSettings = true } label: {
+                        HStack {
+                            SettingsRowLabel(icon: "speaker.wave.2", color: .themePrimary, title: ToolText.text("feedback_settings"))
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                        }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
+                    }.buttonStyle(.plain).accessibilityIdentifier("settings.gestures.feedback")
+                }
             }
 
             if right == BrowserSwipeAction.menu.rawValue || left == BrowserSwipeAction.menu.rawValue || noHistoryAction == BrowserSwipeAction.menu.rawValue {
@@ -107,6 +143,11 @@ struct BrowserGestureSettingsView: View {
         }
         .animation(reduceMotion ? nil : preview == nil ? .easeOut(duration: 0.14) : .spring(response: 0.25, dampingFraction: 0.88), value: preview?.id)
         .onDisappear { preview = nil }
+        .sheet(isPresented: $showsFeedbackSettings) {
+            // A separate hosting boundary avoids iOS 16's nested settings
+            // NavigationStack invalidation loop.
+            NavigationStack { AppFeedbackSettingsView(showsDoneButton: true) }
+        }
     }
 
     private func dismissPreview() { preview = nil }
@@ -173,6 +214,49 @@ struct BrowserGestureSettingsView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
         .padding(.vertical, 4).contentShape(Rectangle())
+    }
+}
+
+struct AppFeedbackSettingsView: View {
+    @AppStorage(AppFeedbackPreferences.hapticsKey) private var haptics = true
+    @AppStorage(AppFeedbackPreferences.soundKey) private var sound = false
+    var showsDoneButton = false
+
+    var body: some View {
+        List {
+            Section {
+                Toggle(isOn: $haptics) {
+                    SettingsRowLabel(icon: "waveform.path", color: .themePrimary, title: ToolText.text("gesture_haptics"))
+                }.accessibilityIdentifier("settings.feedback.haptics")
+                Toggle(isOn: $sound) {
+                    SettingsRowLabel(icon: "speaker.wave.2", color: .themePrimary, title: ToolText.text("gesture_sound"))
+                }.accessibilityIdentifier("settings.feedback.sound")
+            } footer: {
+                Text(ToolText.text("feedback_settings_hint"))
+            }
+            Section {
+                Button { BrowserSwipeFeedback.executed() } label: {
+                    SettingsRowLabel(icon: "play", color: .themePrimary, title: ToolText.text("gesture_feedback_preview"))
+                }
+                .disabled(!haptics && !sound)
+                .accessibilityIdentifier("settings.feedback.preview")
+            }
+        }
+        .listStyle(.insetGrouped).compatibleListSectionSpacing(24).tint(.themePrimary)
+        .navigationTitle(ToolText.text("feedback_settings"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if showsDoneButton {
+                ToolbarItem(placement: .cancellationAction) { FeedbackSettingsDoneButton() }
+            }
+        }
+    }
+}
+
+private struct FeedbackSettingsDoneButton: View {
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        Button(LanguageManager.shared.localizedString("done")) { dismiss() }
     }
 }
 

@@ -1,0 +1,108 @@
+{
+  "date": "2026-11-13",
+  "version": "1.2.14",
+  "build": 54,
+  "status": "Implemented and verified in simulators; unsigned device build passed",
+  "changes": {
+    "original_icon_white": {
+      "behavior": "Original Soulo preview stays white in light and dark themes. Primary app icon explicitly reuses the unchanged approved PNG for its dark rendition. Glass/Dark alternatives retain their own appearance renditions.",
+      "generator_updated": true,
+      "source_png_unchanged": true,
+      "source_sha256": "958479601cd58cc5f45b2fdbd597c26c1da732383cec821d1ff537d972e48762",
+      "report": "2026-11-13-app-icons-and-ad-filter-navigation.json"
+    },
+    "extension_popup": {
+      "behavior": "Compact-width popovers start at a fitted sheet height, capped at 80 percent of available height, and can expand to Large. Generic extension webviews use safe-area bounds with 12pt horizontal margins and a 16pt bottom gap in addition to the system safe area, keeping fixed HTML footers above rounded corners and the Home indicator.",
+      "publisher_html_css_js_rewritten": false,
+      "native_webview_identity_and_ui_callbacks_preserved": true,
+      "scope": "Public UIKit layout applied to all native action popups, not a Cat Catch-specific CSS patch."
+    },
+    "platform_navigation_from_extension_pages": {
+      "reproduction": "Loading a platform search directly in the extension-origin WKWebView failed to leave downloader.html?requestId=484 in the local reproduction; retained in popup-navigation-probe.xcresult.",
+      "behavior": "An explicit platform action from an extension document creates and loads an ordinary browser tab. The original extension tab, URL, WKWebView and JavaScript state stay intact. Further platform switches reuse the ordinary tab.",
+      "interaction": "Explicit platform selection has a callback even when tapping the currently selected icon. Automatic platform restoration does not replace an extension document. VoiceOver platform paging uses the same navigation route and preserves the URL-input guard.",
+      "permissions_or_navigation_protections_weakened": false
+    },
+    "settings_group": {
+      "root": "Browsing -> Gestures & Feedback / 浏览 -> 手势与反馈",
+      "children": [
+        "Shake Action / 摇动操作",
+        "Webpage Gestures / 网页手势",
+        "Sounds & Haptics / 声音与震动"
+      ],
+      "root_rows_removed": "Separate Shake Action, Webpage Gestures and Sounds & Haptics rows replaced by one entry.",
+      "preferences": "Existing preference keys, defaults and child settings pages retained. Settings search still supports the original child names and routes.",
+      "ios16": "Nested children use the existing isolated SettingsSubpageLink sheet boundary; newer systems use regular navigation.",
+      "localization": "New short parent title translated in all 50 runtime locales."
+    }
+  },
+  "validation": {
+    "original_icon_ui": {
+      "platform": "iOS 26.2 simulator",
+      "passed": 1,
+      "failed": 0,
+      "coverage": "English/light and Simplified Chinese/dark screenshots; original remains white and all three choices remain hittable.",
+      "result": "/tmp/soulo-icons-adblock-20261113/original-white-cards.xcresult"
+    },
+    "iphone_extensions": {
+      "platform": "iOS 26.2 simulator",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "coverage": [
+        "Origin-bound extension downloader -> platform search -> switch back; extension document sentinel and original WKWebView retained; subsequent ordinary searches reuse the tab",
+        "Generic fixed footer actually painted and hit-testable; footer above safe area; native callback forwarding, repeated action, window.close, fresh reopen and owner-specific dismissal",
+        "Actual Microsoft Store Cat Catch 2.7.4: translated popup and media capture, all 9 visible footer buttons within viewport, cookie-bearing download, playable preview, media speed control, supplied Bilibili page"
+      ],
+      "result": "/tmp/soulo-icons-adblock-20261113/followup-iphone.xcresult"
+    },
+    "ipad_extensions": {
+      "platform": "iPadOS 26.2 simulator",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "coverage": "Generic popup/footer lifecycle and extension-document-preserving platform navigation.",
+      "result": "/tmp/soulo-icons-adblock-20261113/followup-ipad.xcresult"
+    },
+    "settings_ios16": {
+      "platform": "iOS 16.4 simulator",
+      "passed": 1,
+      "failed": 0,
+      "coverage": "Open the grouped entry from normal settings, enter all three child pages, verify live controls and return to the group after each.",
+      "result": "/tmp/soulo-icons-adblock-20261113/grouped-settings-ios16.xcresult"
+    },
+    "final_ui_ios26": {
+      "platform": "iOS 26.2 simulator",
+      "passed": 2,
+      "failed": 0,
+      "coverage": "Grouped settings and all child navigation; ordinary platform bar auto-hide, Back restoration and new-search behavior.",
+      "result": "/tmp/soulo-icons-adblock-20261113/delivery-ui-ios26.xcresult"
+    },
+    "visual_review": "Reviewed original white icon in dark settings, the actual Cat Catch native popup with its complete footer and bottom gap, and the iOS 16 grouped settings screenshot.",
+    "simulator_build": "Passed: delivery-build.log",
+    "unsigned_device_build": "Passed: delivery-device.log",
+    "localization": "Strict check passed: 881 Localizable, 502 ReadingTools and 81 FeatureImprovements keys across 50 locales.",
+    "store_metadata": "Generated JSON check passed for 50 locales; no version or App Store content changes in this follow-up.",
+    "diff_whitespace": "Passed",
+    "earlier_failures": "Initial extension-to-web navigation failed before using a separate ordinary tab. One test-only cleanup reference used a nonexistent property; corrected to sourceURLString before accepting the build. Original failed artifacts retained."
+  },
+  "test_package": {
+    "source": "Official Microsoft Store Cat Catch package cached during the earlier user-requested audit",
+    "sha256": "789df97eb3b9f21607b5257a504b9e46fd834887b63d6ab83beb85178f1461ea",
+    "fixture_package_removed_after_test": true,
+    "test_created_downloads": "Only newly created downloads from the local fixture host were deleted by the test; pre-existing downloads preserved."
+  },
+  "limits": [
+    "No physical-device execution; device target compiled unsigned.",
+    "The earlier iOS 26.2 consecutive alternate-icon Code 35 issue remains recorded in the icon report. This follow-up fixes original icon appearance, not that platform refusal.",
+    "Popup layout and the named extension workflows are verified, not every arbitrary extension or desktop Chrome API."
+  ],
+  "artifacts": "/tmp/soulo-icons-adblock-20261113",
+  "paid_api_calls": 0,
+  "committed": false,
+  "pushed": false,
+  "icon_configuration_superseded_by": {
+    "report": "2026-11-13-liquid-default-icon.json",
+    "current_configuration": "Liquid Glass is now the sole default icon. Icon selection and runtime switching were removed at the user's request; previous picker screenshots and Code 35 failures are historical."
+  }
+}

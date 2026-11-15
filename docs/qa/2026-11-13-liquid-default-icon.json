@@ -1,0 +1,57 @@
+{
+  "date": "2026-11-13",
+  "app_version": "1.2.14",
+  "build": 54,
+  "request": "Use Liquid Glass as the default and sole app icon; remove icon selection settings",
+  "status": "Implemented; builds and targeted regression checks passed",
+  "changes": {
+    "default_icon": "project.yml sets ASSETCATALOG_COMPILER_APPICON_NAME to SouloGlass; the only app icon source is Soulo/Resources/AppIcons/SouloGlass.icon.",
+    "removed": [
+      "Alternate app icon declarations",
+      "Original AppIcon asset catalog and separate SouloDark.icon package",
+      "Three icon preview image sets",
+      "Icon choice UI, failure/retry alert, AppIconService and runtime alternate-icon API calls",
+      "Two obsolete icon-picker-only UI tests and picker-only strings in all 50 locales"
+    ],
+    "retained": "Existing shortcut customization page, preference keys, saved ordering, actions and guidance. Its title returns to Quick Actions / 长按快捷操作 in all 50 locales.",
+    "appearance": "Liquid Glass artwork is unchanged. System appearance renditions and older-iOS raster fallbacks are generated from this single Icon Composer source.",
+    "source_artwork": {
+      "path": "docs/design/assets/soulo-icon-original.png",
+      "sha256": "958479601cd58cc5f45b2fdbd597c26c1da732383cec821d1ff537d972e48762",
+      "preserved_byte_for_byte": true,
+      "included_in_app_bundle": false,
+      "generator": "scripts/generate_app_icon_variants.py now generates only SouloGlass.icon from the preserved source, with maximum white recomposition channel error 0/255."
+    },
+    "project_generation": "Regenerated with xcodegen generate after updating project.yml and removing the icon service."
+  },
+  "validation": {
+    "simulator_build": "Passed: /tmp/soulo-liquid-default-20261113/simulator-build.log",
+    "unsigned_device_build": "Passed: /tmp/soulo-liquid-default-20261113/device-build.log",
+    "compiled_info_plist": "Both simulator and device builds declare SouloGlass as the primary icon for iPhone and iPad; neither declares alternate icons.",
+    "compiled_asset_catalog": "Only icon names SouloGlass and SouloGlass/Original Soulo ring remain in Assets.car; no original or separate dark icon entries.",
+    "older_ios_icons": "SouloGlass60x60@2x.png and SouloGlass76x76@2x~ipad.png generated. The actual compiled 60pt fallback was visually inspected.",
+    "ios16_shortcuts": {
+      "platform": "iOS 16.4 simulator",
+      "passed": 2,
+      "failed": 0,
+      "coverage": "Default/saved shortcut ordering and actual UIApplication.shortcutItems update with preference restoration.",
+      "result": "/tmp/soulo-liquid-default-20261113/quick-actions-ios16.xcresult"
+    },
+    "quick_action_settings_ui": {
+      "platform": "iOS 26.2 simulator",
+      "passed": 1,
+      "failed": 0,
+      "coverage": "Existing settings guidance/navigation regression includes the restored Quick Actions search route and page screenshot.",
+      "result": "/tmp/soulo-liquid-default-20261113/quick-actions-ui-ios26.xcresult"
+    },
+    "localization": "Strict checks passed: 881 Localizable, 500 ReadingTools and 81 FeatureImprovements keys across 50 locales.",
+    "store_metadata": "Generated JSON check passed for all 50 locales; version and store content unchanged in this task.",
+    "diff_whitespace": "Passed"
+  },
+  "earlier_icon_switch_error": "The previous iOS 26.2 Code 35 reproduction remains historical evidence. The icon switching feature and API calls have now been removed, so that flow no longer exists in the app; this is not a claim to have fixed the OS error.",
+  "limits": "No physical-device execution; device target compiled unsigned.",
+  "artifacts": "/tmp/soulo-liquid-default-20261113",
+  "paid_api_calls": 0,
+  "committed": false,
+  "pushed": false
+}

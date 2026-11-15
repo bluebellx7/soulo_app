@@ -90,10 +90,16 @@ extension View {
 
 private struct BrowserToolbarButtonGlassModifier: ViewModifier {
     let tint: Color?
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
+        if reduceTransparency {
+            content
+                .background(Color(uiColor: .secondarySystemBackground), in: Circle())
+                .overlay { Circle().strokeBorder(Color.primary.opacity(contrast == .increased ? 0.5 : 0.18), lineWidth: 1) }
+        } else if #available(iOS 26.0, *) {
             content
                 .glassEffect(.regular.tint(tint).interactive(), in: Circle())
         } else {
@@ -117,10 +123,16 @@ private struct BrowserToolbarButtonGlassModifier: ViewModifier {
 
 private struct BrowserToolbarCapsuleGlassModifier: ViewModifier {
     let tint: Color?
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
+        if reduceTransparency {
+            content
+                .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
+                .overlay { Capsule().strokeBorder(Color.primary.opacity(contrast == .increased ? 0.5 : 0.18), lineWidth: 1) }
+        } else if #available(iOS 26.0, *) {
             content
                 .glassEffect(.regular.tint(tint).interactive(), in: Capsule())
         } else {

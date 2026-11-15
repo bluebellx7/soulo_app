@@ -24,6 +24,23 @@ final class AdBlockServiceTests: XCTestCase {
         super.tearDown()
     }
 
+    @MainActor func testFirstPartyBottomAdSlotsRespectFilteringAndAllowlist() async throws {
+        for allowed in [false, true] {
+            let web = WKWebView()
+            web.loadHTMLString("<div id='advert' class='ec-ad ads_w' data-id='bottom'>Ad</div><div id='video'>Real content</div>", baseURL: URL(string: "https://www.mtyy5.com/vodplay/155698-4-1.html"))
+            for _ in 0..<100 {
+                if (try? await web.evaluateJavaScript("!!document.getElementById('advert')")) as? Bool == true { break }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            _ = try await web.evaluateJavaScript(AdBlockService.adHidingScript(allowlistedHosts: allowed ? ["mtyy5.com"] : []) + "\nnull")
+            try await Task.sleep(for: .milliseconds(100))
+            let hidden = try await web.evaluateJavaScript("getComputedStyle(document.getElementById('advert')).display==='none'") as? Bool
+            XCTAssertEqual(hidden, !allowed)
+            let contentHidden = try await web.evaluateJavaScript("getComputedStyle(document.getElementById('video')).display==='none'") as? Bool
+            XCTAssertEqual(contentHidden, false)
+        }
+    }
+
     func testEveryNativeBatchKeepsCloudflareVerificationExceptions() throws {
         for json in AdBlockService.encodedContentRuleLists(batchSize: 2) {
             let data = try XCTUnwrap(json.data(using: .utf8))

@@ -16,6 +16,8 @@ struct PrivacySettingsView: View {
     @AppStorage("privacy_cookie_banner_enabled")
     private var cookieBannerEnabled = PrivacyFeatureDefaults.cookieBannerHandling
 
+    @AppStorage(BrowsingHistoryExitPolicy.preferenceKey) private var clearBrowsingOnExit = false
+
     @State private var showClearHistoryAlert = false
     @State private var showClearBookmarksAlert = false
     @State private var showClearCacheAlert = false
@@ -100,6 +102,13 @@ struct PrivacySettingsView: View {
 
                 // MARK: - Data Management
                 Section {
+                    PrivacyToggleRow(
+                        icon: "clock.badge.xmark", color: .orange,
+                        title: LanguageManager.shared.localizedString("privacy_clear_browsing_on_exit"),
+                        description: LanguageManager.shared.localizedString("privacy_clear_browsing_on_exit_desc"),
+                        isOn: $clearBrowsingOnExit
+                    )
+                    .accessibilityIdentifier("privacy.clear-browsing-on-exit")
                     // Clear Search History
                     DestructiveActionRow(
                         icon: "clock.arrow.circlepath",
@@ -135,19 +144,11 @@ struct PrivacySettingsView: View {
                     ) {
                         showClearBookmarksAlert = true
                     }
-                    .alert(
-                        LanguageManager.shared.localizedString("privacy_clear_bookmarks_confirm_title"),
-                        isPresented: $showClearBookmarksAlert
-                    ) {
-                        Button(
-                            LanguageManager.shared.localizedString("privacy_clear_action"),
-                            role: .destructive
-                        ) {
+                    .sheet(isPresented: $showClearBookmarksAlert) {
+                        ClearBookmarksConfirmationView {
+                            showClearBookmarksAlert = false
                             clearBookmarks()
                         }
-                        Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
-                    } message: {
-                        Text(LanguageManager.shared.localizedString("privacy_clear_bookmarks_confirm_message"))
                     }
 
                     // Clear browser cache without deleting account sessions.
@@ -173,7 +174,7 @@ struct PrivacySettingsView: View {
                         }
                         Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
                     } message: {
-                        Text(LanguageManager.shared.localizedString("privacy_clear_cache_confirm_message"))
+                        Text(LanguageManager.shared.localizedString("privacy_clear_cache_confirm_message") + "\n\n" + FeatureText.text("Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first."))
                     }
                 } header: {
                     SectionHeader(title: LanguageManager.shared.localizedString("privacy_section_data"))
@@ -435,5 +436,47 @@ struct CacheActionRow: View {
 #Preview {
     NavigationStack {
         PrivacySettingsView()
+    }
+}
+
+private struct ClearBookmarksConfirmationView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var confirmation = ""
+    let onConfirm: () -> Void
+
+    private var matches: Bool {
+        confirmation.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "CLEAR"
+    }
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Text(LanguageManager.shared.localizedString("privacy_clear_bookmarks_confirm_message"))
+                        .foregroundStyle(.secondary)
+                    if UserDefaults.standard.bool(forKey: BookmarkCloudSyncService.enabledKey) {
+                        Text(FeatureText.text("This deletion also syncs to your other devices.")).foregroundStyle(.secondary)
+                    }
+                    Text(String(format: FeatureText.text("Type %@ to confirm."), "CLEAR"))
+                    TextField("CLEAR", text: $confirmation)
+                        .textInputAutocapitalization(.characters).autocorrectionDisabled()
+                        .accessibilityIdentifier("privacy.clear-bookmarks.confirmation")
+                }
+                Section {
+                    Button(role: .destructive) {
+                        guard matches else { return }
+                        onConfirm()
+                    } label: {
+                        Label(LanguageManager.shared.localizedString("privacy_clear_action"), systemImage: "trash")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(!matches)
+                    .accessibilityIdentifier("privacy.clear-bookmarks.execute")
+                }
+            }
+            .navigationTitle(LanguageManager.shared.localizedString("privacy_clear_bookmarks_confirm_title"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button(LanguageManager.shared.localizedString("cancel")) { dismiss() } } }
+        }
+        .presentationDetents([.medium, .large])
     }
 }

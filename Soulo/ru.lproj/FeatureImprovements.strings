@@ -81,3 +81,58 @@
 "Website cache" = "Кэш сайта";
 "Website icons" = "Иконки веб-сайтов";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "Синхронизация iCloud сохраняет копию перед изменением настроек. Хранятся последние %lld копий и первоначальная копия.";
+
+"Move tab to new window" = "Переместить в новое окно";
+
+"Save webpage" = "Сохранить страницу";
+
+"Webpage" = "Веб-страница";
+
+"Website data" = "Данные сайтов";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Включают сохранённые статьи, индекс книг, обложки и прогресс чтения. Файлы книг учитываются среди загруженных файлов.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Размеры приблизительные. IndexedDB включает базы данных и медиафайлы. Недоступный размер обозначается как —.";
+"Extension temporary cache" = "Временный кэш расширений";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Удаляет временные медиафайлы расширений. Сохраняет настройки, скрипты, прогресс и загруженные файлы. Сначала закройте страницы расширений и видео и завершите загрузки.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Временные данные ещё используются. Закройте страницы расширений и видео, завершите загрузки и повторите попытку.";
+"Deleting website data can sign you out and remove offline content." = "Удаление данных может привести к выходу из аккаунта и удалению офлайн-контента.";
+
+"Extension startup timed out." = "Превышено время запуска расширения.";
+
+"soulo_extensions" = "Расширения Soulo";
+
+"Add to Quick Links" = "В быстрые ссылки";
+"Remove from Quick Links" = "Убрать из быстрых ссылок";
+"Mark bookmarks with a heart to show them here." = "Удерживайте закладку и отметьте её сердцем, чтобы она появилась здесь.";
+
+"Type %@ to confirm." = "Введите %@ для подтверждения.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Закладки объединяются между устройствами. Элементы удаляются только явным действием удаления.";
+"This deletion also syncs to your other devices." = "Это удаление синхронизируется и с другими вашими устройствами.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Скопируйте запрос, добавьте свои требования и отправьте ИИ. Затем вставьте полученный JSON сюда для импорта.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Имена групп в JSON имеют приоритет. Одноимённые группы объединяются без удаления существующих платформ.";
+"Imported %1$d platforms into %2$d groups." = "Импортировано %1$d платформ в %2$d групп.";
+"No new platforms or group entries." = "Нет новых платформ или записей групп.";
+
+"App size" = "Размер приложения";
+"App data" = "Данные приложения";
+"Wallpaper cache" = "Кэш обоев";
+"Other caches" = "Другой кэш";
+"Temporary files" = "Временные файлы";
+"Download task data" = "Данные заданий загрузки";
+"Settings and records" = "Настройки и записи";
+"Shared app data" = "Общие данные приложения";
+"Other app data" = "Другие данные приложения";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Данные не включают установленную программу. Размер на диске может отличаться от Настроек iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Удаляйте сохранённое содержимое в его списке. Используемые временные файлы и системные базы кэша освобождаются, когда это безопасно.";
+
+"Current platforms" = "Текущие платформы";
+"Import mode" = "Режим импорта";
+"Append" = "Добавить";
+"Replace all" = "Заменить всё";
+"Replace all platforms?" = "Заменить все платформы?";
+"A settings backup is saved before replacement." = "Перед заменой сохраняется резервная копия настроек.";
+
+"Take over web players" = "Перехватывать веб-плееры";
+"Only takes over website fullscreen. Extension players stay independent." = "Перехватывает только полноэкранное воспроизведение сайтов. Плееры расширений работают независимо.";
+
+"App size is the installed program and resources, not the App Store download size." = "Размер приложения включает установленную программу и ресурсы, а не загрузку из App Store.";
+"App data is the total of the categories below." = "Данные приложения — сумма категорий ниже.";

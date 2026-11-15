@@ -135,6 +135,10 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         var keyLoader: HLSKeyResourceLoader?
         var finalizationTask: Task<Void, Never>?
         var backgroundAssertion: UIBackgroundTaskIdentifier = .invalid
+        var loadedFraction: Double = 0
+        var receivedBytes: Int64?
+        var byteSampleTime: TimeInterval = 0
+        var byteSampleTask: Task<Void, Never>?
 
         init(
             itemID: UUID,
@@ -329,7 +333,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                         task.resume()
                     }
                 }
-                manager.reconcileHLSDownloads(activeIDs: activeIDs.union(self.hlsTransfers.values.map(\.itemID)))
+                manager.reconcileHLSDownloads(activeIDs: activeIDs.union(self.hlsTransfers.values.map(\.itemID)).union(AuthenticatedHLSDownloadService.shared.activeIDs))
             }
         }
     }
@@ -493,13 +497,19 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             preferredFilename ?? resource.suggestedFilename,
             fallback: resource.title
         )
+        let options = await WebResourceMediaService.networkAssetOptions(for: resource, webView: webView)
+        let scopedUserAgent = options[AVURLAssetHTTPUserAgentKey] as? String
+        let decoratedSegments = await HLSPlaybackBridge.requiresSegmentNormalization(resource: resource, webView: webView)
+        if decoratedSegments || (options[AVURLAssetHTTPCookiesKey] as? [HTTPCookie])?.isEmpty == false
+            || scopedUserAgent.map({ $0 != AppConstants.mobileWebViewUserAgent }) == true {
+            return try await AuthenticatedHLSDownloadService.shared.download(resource: resource, preferredName: filename, pageURL: pageURL, webView: webView)
+        }
         let (item, destinationURL) = manager.beginDownload(
             suggestedFilename: filename,
             sourceURL: resource.url,
             transport: .hls,
             hlsUsesPersistentCookies: webView.configuration.websiteDataStore.isPersistent
         )
-        let options = await WebResourceMediaService.networkAssetOptions(for: resource, webView: webView)
         let asset = AVURLAsset(url: resource.url, options: options)
         let playbackAsset = AVURLAsset(url: resource.url, options: options)
         let requestContext = VideoPlaybackRequestContext(
@@ -555,6 +565,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     func cancel(itemID: UUID) {
+        if AuthenticatedHLSDownloadService.shared.owns(itemID) { AuthenticatedHLSDownloadService.shared.cancel(itemID); return }
         if let identifier = identifiersByItemID[itemID],
            let transfer = transfers[identifier] {
             cancel(transfer)
@@ -564,6 +575,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     func pause(itemID: UUID) {
+        if AuthenticatedHLSDownloadService.shared.owns(itemID) { AuthenticatedHLSDownloadService.shared.pause(itemID); return }
         guard hlsTransfers.values.first(where: { $0.itemID == itemID })?.finalizationTask == nil else { return }
         if let identifier = identifiersByItemID[itemID],
            let transfer = transfers[identifier],
@@ -589,6 +601,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     func resume(itemID: UUID) {
+        if AuthenticatedHLSDownloadService.shared.owns(itemID) { AuthenticatedHLSDownloadService.shared.resume(itemID); return }
         if let identifier = identifiersByItemID[itemID],
            let transfer = transfers[identifier],
            !transfer.isCanceled,
@@ -619,6 +632,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     func cancelAll() {
+        AuthenticatedHLSDownloadService.shared.cancelAll()
         Array(transfers.values).forEach(cancel)
         Array(hlsTransfers.values.map(\.itemID)).forEach(cancelHLSTransfer)
     }
@@ -636,12 +650,29 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         }
         let expected = timeRangeExpectedToLoad.duration.seconds
         guard loaded.isFinite, expected.isFinite, expected > 0 else { return }
-        let scale: Int64 = 1_000_000
-        DownloadManagerService.shared.updateProgress(
-            id: transfer.itemID,
-            completed: Int64(min(max(loaded / expected, 0), 1) * Double(scale)),
-            total: scale
-        )
+        transfer.loadedFraction = min(max(loaded / expected, 0), 1)
+        if assetDownloadTask.countOfBytesReceived > 0 {
+            transfer.receivedBytes = max(transfer.receivedBytes ?? 0, assetDownloadTask.countOfBytesReceived)
+        }
+        DownloadManagerService.shared.updateHLSProgress(id: transfer.itemID,
+            fraction: transfer.loadedFraction, receivedBytes: transfer.receivedBytes)
+        // Some AVAssetDownloadURLSession implementations expose only time.
+        // Sample the actual saved package off the main actor, at most once/sec.
+        let now = ProcessInfo.processInfo.systemUptime
+        guard assetDownloadTask.countOfBytesReceived <= 0, transfer.byteSampleTask == nil,
+              now - transfer.byteSampleTime >= 1, let location = transfer.downloadedAssetURL else { return }
+        transfer.byteSampleTime = now
+        let taskID = assetDownloadTask.taskIdentifier
+        transfer.byteSampleTask = Task { @MainActor [weak self] in
+            defer { transfer.byteSampleTask = nil }
+            let work = Task.detached(priority: .utility) { FileStorageSize.bytes(at: location) }
+            let bytes = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            guard !Task.isCancelled, self?.hlsTransfers[taskID] === transfer,
+                  !transfer.isCanceled, let bytes else { return }
+            transfer.receivedBytes = max(transfer.receivedBytes ?? 0, bytes)
+            DownloadManagerService.shared.updateHLSProgress(id: transfer.itemID,
+                fraction: transfer.loadedFraction, receivedBytes: transfer.receivedBytes)
+        }
     }
 
     func urlSession(
@@ -676,6 +707,13 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             return
         }
         if let error {
+            if let context = transfer.requestContext, let continuation = transfer.continuation {
+                if let package = transfer.downloadedAssetURL { removeHLSCache(at: package, playbackAsset: playbackAsset) }
+                cleanupHLSTransfer(transfer)
+                AuthenticatedHLSDownloadService.shared.adopt(id: transfer.itemID, context: context,
+                    preferredName: transfer.destinationURL.lastPathComponent, continuation: continuation)
+                return
+            }
             DownloadManagerService.shared.markFailed(id: transfer.itemID, error: error)
             transfer.continuation?.resume(throwing: error)
             if let package = transfer.downloadedAssetURL { removeHLSCache(at: package, playbackAsset: playbackAsset) }
@@ -690,7 +728,9 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             return
         }
         transfer.backgroundAssertion = UIApplication.shared.beginBackgroundTask(withName: "Finish HLS download") {
-            Task { @MainActor in transfer.finalizationTask?.cancel() }
+            Task { @MainActor in
+                if !MediaExportBackgroundService.shared.isRunning { transfer.finalizationTask?.cancel() }
+            }
         }
         transfer.finalizationTask = Task { @MainActor in
             defer { cleanupHLSTransfer(transfer) }
@@ -740,6 +780,9 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                     completedURL = referenceURL
                 }
                 try Task.checkCancellation()
+                if let bytes = await Task.detached(priority: .utility, operation: { FileStorageSize.bytes(at: completedURL) }).value {
+                    DownloadManagerService.shared.updateProgress(id: transfer.itemID, completed: bytes, total: bytes)
+                }
                 DownloadManagerService.shared.markFinished(id: transfer.itemID)
                 transfer.continuation?.resume(returning: completedURL)
             } catch {
@@ -1105,6 +1148,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     private func cleanupHLSTransfer(_ transfer: HLSTransfer) {
+        transfer.byteSampleTask?.cancel(); transfer.byteSampleTask = nil
         if let key = hlsTransfers.first(where: { $0.value === transfer })?.key { hlsTransfers.removeValue(forKey: key) }
         transfer.finalizationTask = nil
         if transfer.backgroundAssertion != .invalid {
@@ -1162,23 +1206,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         exporter.outputURL = destinationURL
         exporter.outputFileType = .mp4
         exporter.shouldOptimizeForNetworkUse = true
-        let exporterBox = StreamingUncheckedSendable(value: exporter)
-        try Task.checkCancellation()
-        try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                exporter.exportAsynchronously {
-                    let exporter = exporterBox.value
-                    switch exporter.status {
-                    case .completed:
-                        continuation.resume()
-                    case .cancelled:
-                        continuation.resume(throwing: CancellationError())
-                    default:
-                        continuation.resume(throwing: exporter.error ?? StreamingMediaDownloadError.exportFailed(""))
-                    }
-                }
-            }
-        } onCancel: { exporterBox.value.cancelExport() }
+        try await MediaExportBackgroundService.shared.export(exporter)
         try Task.checkCancellation()
         let output = AVURLAsset(url: destinationURL)
         let size = (try? destinationURL.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
@@ -1247,20 +1275,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         exporter.outputFileType = .mp4
         exporter.shouldOptimizeForNetworkUse = true
         onExporter?(exporter)
-        let exporterBox = StreamingUncheckedSendable(value: exporter)
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            exporter.exportAsynchronously {
-                let exporter = exporterBox.value
-                switch exporter.status {
-                case .completed:
-                    continuation.resume()
-                case .cancelled:
-                    continuation.resume(throwing: CancellationError())
-                default:
-                    continuation.resume(throwing: exporter.error ?? StreamingMediaDownloadError.exportFailed(""))
-                }
-            }
-        }
+        try await MediaExportBackgroundService.shared.export(exporter)
     }
 
     private static func isYouTubePage(_ url: URL?) -> Bool {

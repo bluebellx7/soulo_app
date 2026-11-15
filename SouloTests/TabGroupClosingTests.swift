@@ -78,7 +78,8 @@ import XCTest
         XCTAssertEqual(manager.tabs.count, 1)
         XCTAssertNil(manager.activeTab?.webViewModel.currentURL)
         XCTAssertEqual(manager.activeTabIndex, 0)
-        XCTAssertTrue(manager.showTabOverview)
+        XCTAssertFalse(manager.showTabOverview)
+        XCTAssertEqual(manager.lastTabClosedRevision, 1)
         XCTAssertEqual(Set(manager.recentlyClosed.map(\.id)), [first.id, second.id])
     }
 
@@ -91,6 +92,26 @@ import XCTest
         XCTAssertEqual(manager.tabs.map(\.id), [current.id])
         XCTAssertEqual(manager.activeTab?.lastAccessedAt, visit)
         XCTAssertTrue(manager.recentlyClosed.isEmpty)
+        XCTAssertEqual(manager.lastTabClosedRevision, 0)
+    }
+
+    func testClosingLastSingleTabOrAllTabsRequestsHomeOnce() {
+        let manager = makeManager()
+        manager.createTab(keyword: "previous search")
+        manager.showTabOverview = true
+        manager.closeTab(at: 0)
+        XCTAssertEqual(manager.tabs.count, 1)
+        XCTAssertNil(manager.activeTab?.keyword)
+        XCTAssertFalse(manager.showTabOverview)
+        XCTAssertEqual(manager.lastTabClosedRevision, 1)
+        manager.createTab(keyword: "another search")
+        manager.showTabOverview = true
+        manager.closeAllTabs()
+        XCTAssertEqual(manager.tabs.count, 1)
+        XCTAssertFalse(manager.showTabOverview)
+        XCTAssertEqual(manager.lastTabClosedRevision, 2)
+        manager.resetTabsForPrivacy()
+        XCTAssertEqual(manager.lastTabClosedRevision, 2, "An internal privacy reset is not a user closing the last tab")
     }
 
     func testConfirmationSnapshotDoesNotCloseNewOrMovedTabs() throws {

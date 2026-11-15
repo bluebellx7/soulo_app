@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Satu Kueri, 40+ Platform";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Cari atau masukkan URL";
 "privacy_search_placeholder" = "Pencarian pribadi atau masukkan URL";
 "search" = "Cari";
@@ -354,7 +354,7 @@
 "voice_stop" = "Berhenti";
 "voice_record" = "Rekam";
 "batch_import" = "Impor Batch";
-"batch_import_format" = "Rekatkan JSON dalam format di bawah ini";
+"batch_import_format" = "Tempel JSON di sini";
 "batch_import_group" = "Tambahkan ke Grup (Opsional)";
 "batch_import_group_placeholder" = "misalnya Film";
 "batch_import_film_entry" = "Buka preset platform film";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Ekstensi Tidak Dapat Dipasang";
 "extension_permissions_summary" = "%d izin · %d aturan situs web";
 "extension_untitled" = "Ekstensi Tanpa Judul";
-"web_extension_install_footer" = "Pasang ekstensi kompatibel dari tautan toko atau impor CRX, XPI, ZIP, atau folder ekstensi. Periksa izin dan kompatibilitas; beberapa fitur desktop tidak tersedia.";
+"web_extension_install_footer" = "Setelah pemasangan, Anda dapat mengubah izin di halaman pengelolaan ekstensi.";
 "web_extension_install_store_link" = "Instal dari Tautan Toko…";
 "web_extension_browse_sources" = "Telusuri Toko Ekstensi";
 "web_extension_browse_sources_footer" = "Tombol Store Get hanya mendukung browser desktopnya sendiri. Salin tautan halaman detail ekstensi, lalu gunakan Tautan Instal dari Toko di Soulo.";
 "web_extension_store_install_title" = "Instal Ekstensi Toko";
 "extension_page_banner_title" = "Instal dengan Soulo";
-"extension_page_banner_desc" = "Periksa kompatibilitas dan izin sebelum memasang.";
-"web_extension_store_install_desc" = "Tempel tautan halaman detail ekstensi Chrome, Edge, atau Firefox, lalu periksa kompatibilitas dan izin sebelum mengonfirmasi pemasangan.";
+"extension_page_banner_desc" = "Setelah pemasangan, Anda dapat mengubah izin di halaman pengelolaan ekstensi.";
+"web_extension_store_install_desc" = "Setelah pemasangan, Anda dapat mengubah izin di halaman pengelolaan ekstensi.";
 "web_extension_store_link_placeholder" = "Tautan laman ekstensi atau ID ekstensi Chrome";
 "web_extension_store_invalid_link" = "Tempelkan tautan laman detail ekstensi dari Chrome, Edge, atau Firefox, ID ekstensi Chrome, atau tautan CRX, XPI, atau ZIP langsung.";
 "web_extension_store_https_required" = "Paket ekstensi harus menggunakan tautan HTTPS yang aman.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Sentuh dan tahan ikon Soulo di Layar Utama untuk memakai pintasan yang diatur di sini.";
 
 "ad_block_scope_hint" = "Memfilter iklan web, hamparan promosi, dan pop-up yang tidak diminta. Jika situs tidak berfungsi, Anda dapat mematikan filter hanya untuk situs tersebut.";
+
+"privacy_clear_browsing_on_exit" = "Hapus Riwayat Saat Keluar";
+"privacy_clear_browsing_on_exit_desc" = "Hapus halaman yang dikunjungi saat masuk latar belakang atau dibuka ulang. Istilah pencarian tetap disimpan.";

@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT/'website'
 BASE = 'https://soulo.dkluge.com/'
-PAGES = ['index.html', 'sources.html', 'movies.html', 'resources.html', 'stocks.html', 'reading.html', 'music.html', 'privacy.html']
+PAGES = ['index.html', 'sources.html', 'movies.html', 'resources.html', 'stocks.html', 'reading.html', 'music.html', 'privacy.html', 'extensions.html']
 
 
 class Page(HTMLParser):

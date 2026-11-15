@@ -124,6 +124,54 @@ class PlatformDataStore: ObservableObject {
         saveGroups()
     }
 
+    /// Commit a local drag once it is dropped. Custom groups reference shared
+    /// platform identities: moving between them removes only the source group's
+    /// membership; a region-to-custom drag adds that reference without deleting
+    /// the platform from its owning regional catalog.
+    @discardableResult
+    func movePlatform(_ id: UUID, from source: SearchGroupScope, to destination: SearchGroupScope,
+                      relativeTo target: UUID? = nil) -> Bool {
+        func ids(in scope: SearchGroupScope) -> [UUID]? {
+            switch scope {
+            case .region(let region): return platforms(for: region).map(\.id)
+            case .custom(let group): return customGroups.first { $0.id == group }?.platformIDs.filter { id in platforms.contains { $0.id == id } }
+            }
+        }
+        guard let sourceIDs = ids(in: source), sourceIDs.contains(id),
+              let destinationIDs = ids(in: destination),
+              target == nil || destinationIDs.contains(target!),
+              let platformIndex = platforms.firstIndex(where: { $0.id == id }) else { return false }
+        var updatedGroups = customGroups, updatedPlatforms = platforms
+        var ordered = destinationIDs.filter { $0 != id }
+        if target == id { ordered = destinationIDs }
+        else if let target, let insertion = ordered.firstIndex(of: target) {
+            let forward = source == destination && (destinationIDs.firstIndex(of: id) ?? Int.max) < (destinationIDs.firstIndex(of: target) ?? 0)
+            ordered.insert(id, at: insertion + (forward ? 1 : 0))
+        } else { ordered.append(id) }
+        if source != destination, case .custom(let groupID) = source,
+           let index = updatedGroups.firstIndex(where: { $0.id == groupID }) {
+            updatedGroups[index].platformIDs.removeAll { $0 == id }
+        }
+        switch destination {
+        case .custom(let groupID):
+            guard let index = updatedGroups.firstIndex(where: { $0.id == groupID }) else { return false }
+            updatedGroups[index].platformIDs = ordered
+        case .region(let region):
+            updatedPlatforms[platformIndex].region = region
+            for (order, platformID) in ordered.enumerated() {
+                if let index = updatedPlatforms.firstIndex(where: { $0.id == platformID }) { updatedPlatforms[index].sortOrder = order }
+            }
+        }
+        // SearchPlatform equality intentionally compares only identity. A drag
+        // keeps that identity, so compare the fields changed by this operation.
+        let platformsChanged = zip(updatedPlatforms, platforms).contains {
+            $0.region != $1.region || $0.sortOrder != $1.sortOrder
+        }
+        if platformsChanged { platforms = updatedPlatforms; _ = normalizeSortOrders(); savePlatforms() }
+        if updatedGroups != customGroups { customGroups = updatedGroups; saveGroups() }
+        return true
+    }
+
     func setPlatforms(_ platformIDs: [UUID], inGroup groupID: UUID) {
         guard let groupIndex = customGroups.firstIndex(where: { $0.id == groupID }) else { return }
         var seen = Set<UUID>()
@@ -184,53 +232,176 @@ class PlatformDataStore: ObservableObject {
         return "https://www.google.com/s2/favicons?domain=\(host)&sz=64"
     }
 
-    /// Batch import platforms from JSON string.
-    /// Format: [{"name": "xxx", "url": "https://...?wd=%@"}, ...]
+    /// Legacy arrays and grouped documents share a validated, bounded parser.
     func importPlatformsFromJSON(_ jsonString: String, groupName: String?, region: PlatformRegion = .international,
                                  intoGroupID: UUID? = nil) -> Int {
-        struct ImportItem: Decodable {
-            let name: String
-            let url: String
-        }
-        guard let data = jsonString.data(using: .utf8),
-              let items = try? JSONDecoder().decode([ImportItem].self, from: data),
-              !items.isEmpty else { return 0 }
+        guard let document = try? PlatformImportDocument.parse(jsonString) else { return 0 }
+        return importPlatforms(document, groupName: groupName, region: region, intoGroupID: intoGroupID)
+    }
 
-        if let intoGroupID, !customGroups.contains(where: { $0.id == intoGroupID }) { return 0 }
-        var knownTemplates = Set(platforms.map(\.searchURLTemplate))
-        let validItems = items.compactMap { item -> ImportItem? in
-            let name = item.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !name.isEmpty, let template = SearchPlatformURLInput.searchTemplate(item.url),
-                  knownTemplates.insert(template).inserted else { return nil }
-            return ImportItem(name: name, url: template)
-        }
-        guard !validItems.isEmpty else { return 0 }
+    func importPlatforms(_ document: PlatformImportDocument, groupName: String?, region: PlatformRegion = .international,
+                         intoGroupID: UUID? = nil) -> Int {
+        applyImport(document, groupName: groupName, region: region, intoGroupID: intoGroupID).addedPlatforms
+    }
 
-        // Resolve an existing selection by identity; group names need not be unique.
-        var groupID = intoGroupID
-        if groupID == nil, let gName = groupName?.trimmingCharacters(in: .whitespacesAndNewlines), !gName.isEmpty {
-            if let existing = customGroups.first(where: { $0.name == gName }) {
-                groupID = existing.id
-            } else {
-                let newGroup = CustomGroup(name: gName)
-                customGroups.append(newGroup)
-                saveGroups()
-                groupID = newGroup.id
+    func applyImport(_ document: PlatformImportDocument, groupName: String?, region: PlatformRegion = .international,
+                     intoGroupID: UUID? = nil) -> PlatformImportResult {
+        // Named JSON groups are independent of the legacy destination picker.
+        // An unnamed batch must never silently fall back when its group was deleted.
+        if document.groups.contains(where: { $0.name == nil }), let intoGroupID,
+           !customGroups.contains(where: { $0.id == intoGroupID }) { return .init() }
+        var updatedPlatforms = platforms, updatedGroups = customGroups
+        var known = Dictionary(platforms.map { ($0.searchURLTemplate, $0.id) }, uniquingKeysWith: { first, _ in first })
+        var nextOrders = Dictionary(uniqueKeysWithValues: PlatformRegion.allCases.map { value in
+            (value, (platforms.filter { $0.region == value }.map(\.sortOrder).max() ?? -1) + 1)
+        })
+        var result = PlatformImportResult()
+        var importedIDs = Set<UUID>(), changedGroupIDs = Set<UUID>()
+        for batch in document.groups {
+            let name = batch.region == nil ? (batch.name ?? groupName?.trimmingCharacters(in: .whitespacesAndNewlines)) : nil
+            let platformRegion = batch.region ?? region
+            var target = batch.region == nil && batch.name == nil ? intoGroupID : nil
+            if target == nil, let name, !name.isEmpty {
+                if let existing = updatedGroups.first(where: { $0.name == name }) { target = existing.id }
+                // Keep legacy duplicate-only imports from creating unwanted groups.
+                // Explicit JSON groups may intentionally reuse existing platforms.
+                else if !batch.platforms.isEmpty,
+                        batch.name != nil || batch.platforms.contains(where: { known[$0.url] == nil }) {
+                    let group = CustomGroup(name: name); updatedGroups.append(group); target = group.id
+                    changedGroupIDs.insert(group.id)
+                }
+            }
+            for item in batch.platforms {
+                let id: UUID
+                if let existing = known[item.url] { id = existing }
+                else {
+                    let home = item.homeURL ?? SearchPlatformURLInput.derivedHomeURL(from: item.url)
+                    let order = nextOrders[platformRegion, default: 0]
+                    let platform = SearchPlatform(id: UUID(), name: item.name, iconName: "icon_custom", searchURLTemplate: item.url,
+                        homeURL: home, region: platformRegion, isBuiltIn: false, isVisible: true, sortOrder: order, usageCount: 0,
+                        isCustom: true, requiresLogin: item.interactionType == .aiChat,
+                        interactionType: item.interactionType ?? .urlSearch, faviconURL: Self.faviconURL(from: home))
+                    nextOrders[platformRegion] = order + 1
+                    updatedPlatforms.append(platform); known[item.url] = platform.id; id = platform.id
+                    result.addedPlatforms += 1
+                }
+                if let target, let index = updatedGroups.firstIndex(where: { $0.id == target }), !updatedGroups[index].platformIDs.contains(id) {
+                    updatedGroups[index].platformIDs.append(id)
+                    changedGroupIDs.insert(target)
+                }
+                importedIDs.insert(id)
             }
         }
+        if updatedPlatforms != platforms { platforms = updatedPlatforms; savePlatforms() }
+        if updatedGroups != customGroups { customGroups = updatedGroups; saveGroups() }
+        result.matchedPlatforms = importedIDs.count
+        result.changedGroups = changedGroupIDs.count
+        return result
+    }
 
-        var count = 0
-        for item in validItems {
-            let homeURL = SearchPlatformURLInput.derivedHomeURL(from: item.url)
-
-            addCustomPlatform(name: item.name, searchURL: item.url, homeURL: homeURL, region: region)
-
-            if let gid = groupID, let newPlatform = platforms.last {
-                addPlatformToGroup(groupID: gid, platformID: newPlatform.id)
-            }
-            count += 1
+    /// Portable search links only: credentials, browsing data and unrelated
+    /// settings never enter the text sent to an AI or the exported document.
+    func exportPlatformLinks() throws -> Data {
+        func item(_ platform: SearchPlatform) -> [String: Any] {
+            ["id": platform.id.uuidString,
+             "name": LanguageManager.shared.localizedString(platform.name),
+             "url": platform.searchURLTemplate, "homeURL": platform.homeURL,
+             "isVisible": platform.isVisible, "interactionType": platform.interactionType.rawValue]
         }
-        return count
+        var groups: [[String: Any]] = PlatformRegion.allCases.map { region in
+            ["name": regionDisplayName(for: region), "region": region.rawValue,
+             "platforms": platforms(for: region).map(item)]
+        }
+        groups += customGroups.map { group in
+            ["id": group.id.uuidString, "name": group.name, "platforms": platformsForGroup(group).map(item)]
+        }
+        return try JSONSerialization.data(withJSONObject: ["version": 1, "groups": groups], options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
+    }
+
+    func replacementPlan(_ document: PlatformImportDocument) throws -> PlatformReplacementPlan {
+        guard document.rejectedPlatforms == 0, !document.groups.isEmpty,
+              document.groups.contains(where: { !$0.platforms.isEmpty }),
+              document.groups.allSatisfy({ $0.name != nil }) else { throw CocoaError(.coderReadCorrupt) }
+        let byID = Dictionary(platforms.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let byURL = Dictionary(grouping: platforms, by: { SearchPlatformURLInput.searchTemplate($0.searchURLTemplate) ?? $0.searchURLTemplate })
+        var next: [SearchPlatform] = [], groups: [CustomGroup] = [], names = Set<String>(), groupIDs = Set<UUID>()
+        var known: [String: UUID] = [:], assembledIDs = Set<UUID>(), regionalAssignments: [UUID: PlatformRegion] = [:]
+        var regionNames = regionNameOverrides
+        for batch in document.groups {
+            var ids: [UUID] = []
+            for item in batch.platforms {
+                let id: UUID
+                let identity = item.id.map { "id:" + $0.uuidString } ?? "url:" + item.url
+                if let existing = known[identity] { id = existing }
+                else {
+                    // The regional catalog may deliberately contain different
+                    // entries with the same URL. Exported IDs disambiguate them.
+                    let exact = item.id.flatMap { byID[$0] }.flatMap {
+                        (SearchPlatformURLInput.searchTemplate($0.searchURLTemplate) ?? $0.searchURLTemplate) == item.url ? $0 : nil
+                    }
+                    let candidates = byURL[item.url] ?? []
+                    let old = exact ?? candidates.first { !assembledIDs.contains($0.id) && (batch.region == nil || $0.region == batch.region) }
+                        ?? candidates.first { !assembledIDs.contains($0.id) }
+                    let home = item.homeURL ?? old?.homeURL ?? SearchPlatformURLInput.derivedHomeURL(from: item.url)
+                    var platform = old ?? SearchPlatform(id: UUID(), name: item.name, iconName: "icon_custom",
+                        searchURLTemplate: item.url, homeURL: home, region: batch.region ?? .international,
+                        isBuiltIn: false, isVisible: item.isVisible ?? true, sortOrder: 0, usageCount: 0,
+                        isCustom: true, requiresLogin: item.interactionType == .aiChat,
+                        interactionType: item.interactionType ?? .urlSearch, faviconURL: Self.faviconURL(from: home))
+                    if !platform.isBuiltIn || platform.isCustom { platform.name = item.name }
+                    platform.homeURL = home
+                    if let visible = item.isVisible { platform.isVisible = visible }
+                    id = platform.id
+                    if assembledIDs.insert(id).inserted { next.append(platform) }
+                    known[identity] = id
+                }
+                if let region = batch.region {
+                    if let prior = regionalAssignments[id], prior != region { throw CocoaError(.coderReadCorrupt) }
+                    regionalAssignments[id] = region
+                }
+                if !ids.contains(id) { ids.append(id) }
+            }
+            if let region = batch.region { regionNames[region.rawValue] = batch.name! }
+            else {
+                let name = batch.name!
+                guard names.insert(name).inserted else { throw CocoaError(.coderReadCorrupt) }
+                let existing = batch.id.flatMap { id in customGroups.first { $0.id == id } }
+                    ?? customGroups.first { $0.name == name }
+                let id = existing?.id ?? UUID()
+                guard groupIDs.insert(id).inserted else { throw CocoaError(.coderReadCorrupt) }
+                groups.append(CustomGroup(id: id, name: name, platformIDs: ids))
+            }
+        }
+        var orders: [PlatformRegion: Int] = [:]
+        for index in next.indices {
+            if let region = regionalAssignments[next[index].id] { next[index].region = region }
+            let region = next[index].region
+            next[index].sortOrder = orders[region, default: 0]; orders[region, default: 0] += 1
+        }
+        return PlatformReplacementPlan(platforms: next, groups: groups, regionNames: regionNames)
+    }
+
+    /// Validate and encode first. If the durable backup cannot be saved, the
+    /// entire replacement fails without changing any platform or group.
+    @discardableResult
+    func replacePlatforms(_ document: PlatformImportDocument, backupStore: CloudSettingsBackupStore? = nil) throws -> PlatformImportResult {
+        let plan = try replacementPlan(document), encoder = JSONEncoder()
+        let platformData = try encoder.encode(plan.platforms), groupData = try encoder.encode(plan.groups)
+        let namesData = try encoder.encode(plan.regionNames)
+        var previous = CloudSettingsSyncEngine.snapshot(.standard)
+        previous["platform_config"] = try encoder.encode(platforms)
+        previous["custom_groups"] = try encoder.encode(customGroups)
+        previous["region_name_overrides"] = try encoder.encode(regionNameOverrides)
+        try (backupStore ?? CloudSettingsBackupStore()).save(previous)
+        let oldIDs = Set(platforms.map(\.id))
+        platforms = plan.platforms; customGroups = plan.groups; regionNameOverrides = plan.regionNames
+        // A single main-actor turn publishes all collections before cloud sync
+        // can snapshot them; normal sync journaling records explicit removals.
+        UserDefaults.standard.set(platformData, forKey: userDefaultsKey)
+        UserDefaults.standard.set(groupData, forKey: groupsKey)
+        UserDefaults.standard.set(namesData, forKey: regionNamesKey)
+        return PlatformImportResult(addedPlatforms: plan.platforms.filter { !oldIDs.contains($0.id) }.count,
+            matchedPlatforms: plan.platforms.count, changedGroups: plan.groups.count, replaced: true)
     }
 
     func updatePlatform(id: UUID, name: String, searchURL: String, homeURL: String) {
@@ -807,4 +978,76 @@ class PlatformDataStore: ObservableObject {
         "platform_doubao",
         "platform_qianwen"
     ]
+}
+
+
+struct PlatformReplacementPlan {
+    let platforms: [SearchPlatform]
+    let groups: [CustomGroup]
+    let regionNames: [String: String]
+}
+
+struct PlatformImportResult {
+    var addedPlatforms = 0
+    var matchedPlatforms = 0
+    var changedGroups = 0
+    var replaced = false
+    var hasChanges: Bool { replaced || addedPlatforms > 0 || changedGroups > 0 }
+}
+
+struct PlatformImportDocument: Sendable {
+    struct Item: Decodable, Sendable {
+        var name: String
+        var url: String
+        var homeURL: String?
+        var id: UUID? = nil
+        var isVisible: Bool? = nil
+        var interactionType: PlatformInteractionType? = nil
+    }
+    struct Group: Decodable, Sendable {
+        var name: String?
+        var platforms: [Item]
+        var id: UUID? = nil
+        var region: PlatformRegion? = nil
+    }
+    let groups: [Group]
+    var rejectedPlatforms = 0
+    static func parse(_ source: String) throws -> Self {
+        guard let data = source.data(using: .utf8), data.count <= 4 * 1_024 * 1_024 else { throw CocoaError(.fileReadTooLarge) }
+        let decoder = JSONDecoder()
+        struct Envelope: Decodable { let groups: [Group] }
+        var groups: [Group]
+        if let legacy = try? decoder.decode([Item].self, from: data) { groups = [.init(name: nil, platforms: legacy)] }
+        else if let envelope = try? decoder.decode(Envelope.self, from: data) { groups = envelope.groups }
+        else if let multiple = try? decoder.decode([Group].self, from: data) { groups = multiple }
+        else { groups = [try decoder.decode(Group.self, from: data)] }
+        guard groups.count <= 100, groups.reduce(0, { $0 + $1.platforms.count }) <= 2_000 else { throw CocoaError(.fileReadTooLarge) }
+        var rejected = 0
+        for index in groups.indices {
+            if let name = groups[index].name {
+                let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty, trimmed.utf8.count <= 256 else { throw CocoaError(.coderReadCorrupt) }
+                groups[index].name = trimmed
+            }
+            let originalCount = groups[index].platforms.count
+            groups[index].platforms = groups[index].platforms.compactMap { item in
+                let name = item.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                let template = item.url.trimmingCharacters(in: .whitespacesAndNewlines)
+                let placeholders = template.components(separatedBy: "%@").count - 1
+                guard !name.isEmpty, name.utf8.count <= 512, template.utf8.count <= 8_192,
+                      item.interactionType == .aiChat ? placeholders <= 1 : placeholders == 1,
+                      let url = SearchPlatformURLInput.webURL(from: template.replacingOccurrences(of: "%@", with: "test")),
+                      url.user == nil, url.password == nil else { return nil }
+                let home: String?
+                if let provided = item.homeURL, !provided.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    guard provided.utf8.count <= 8_192, let url = SearchPlatformURLInput.webURL(from: provided),
+                          url.user == nil, url.password == nil else { return nil }
+                    home = url.absoluteString
+                } else { home = nil }
+                return .init(name: name, url: template, homeURL: home, id: item.id, isVisible: item.isVisible, interactionType: item.interactionType)
+            }
+            rejected += originalCount - groups[index].platforms.count
+        }
+        return .init(groups: groups, rejectedPlatforms: rejected)
+    }
 }

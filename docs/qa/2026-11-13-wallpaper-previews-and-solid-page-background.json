@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-13",
+  "version": "1.2.14",
+  "build": 54,
+  "changes": [
+    "Removed the About page pronunciation label, playback control and implementation.",
+    "Wallpaper source tiles show source-specific cached image previews, the chosen gradient or the chosen solid color. Image previews include the current overlay and blur settings.",
+    "Preview loading is deduplicated, uses small disk-cached thumbnails and does not change Home, the selected source, gallery, search topic or appearance.",
+    "Page background extension uses one solid color at each edge by default. The optional Gradient extension switch restores sampled gradients.",
+    "Keep initial colors now shares the icon column, label layout and separator alignment of the other browsing display settings."
+  ],
+  "validation": {
+    "unit": {
+      "unique_cases": 37,
+      "status": "All cases passed across the initial run and targeted rerun.",
+      "initial_result": "/tmp/soulo-wallpaper-previews-unit.xcresult",
+      "rerun_result": "/tmp/soulo-wallpaper-preview-cache-verified.xcresult",
+      "rerun_reason": "Corrected the Pixabay mock URL path: Foundation normalizes /api/ to /api. The cache/deduplication test then passed.",
+      "coverage": [
+        "Three remote preview sources, request deduplication, disk cache restoration, blocked preview rejection and unchanged Home state",
+        "Rendered pixels for overlay and blur; exact black/white solid previews",
+        "Rendered solid default and opt-in gradients; raw sampled colors retained",
+        "Existing wallpaper, page color sampling and portable settings backup behavior"
+      ]
+    },
+    "ui": {
+      "status": "3 passed, 0 failures on iOS 16.4",
+      "result": "/tmp/soulo-wallpaper-previews-ui.xcresult",
+      "coverage": [
+        "Solid page background extension, dynamic colors, disabled state, examples and Home wallpaper isolation",
+        "Conditional gradient/freeze controls, default-off gradient setting, shared switch alignment and persistence after relaunch",
+        "Wallpaper overlay/blur controls and actual source previews"
+      ],
+      "visual_review": "Reviewed the browsing settings alignment and wallpaper thumbnail/effect screenshots.",
+      "fixture_cleanup": "Restored all seven seeded simulator cache/photo files from the backup manifest."
+    },
+    "build_for_testing": "passed",
+    "generic_ios_device_build": "passed with CODE_SIGNING_ALLOWED=NO",
+    "localization": "Strict checks passed: Localizable 881, ReadingTools 499 and FeatureImprovements 81 keys across all 50 locales.",
+    "metadata": "export_metadata_json.py --check passed for all 50 locales; version and store metadata unchanged by these changes.",
+    "whitespace": "git diff --check passed"
+  },
+  "limits": ["Validation used simulators and an unsigned device build; no physical-device run."],
+  "paid_api_calls": 0,
+  "pushed": false
+}

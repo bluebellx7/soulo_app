@@ -53,6 +53,7 @@ final class TorrentStreamServer: @unchecked Sendable {
     private let reader: Reader
     private let path: String
     private var localFiles: [String: URL] = [:]
+    private var resourceProvider: (@Sendable (String) async throws -> URL?)?
     private(set) var url: URL!
 
     private init(size: Int64, name: String, reader: @escaping Reader) throws {
@@ -85,11 +86,19 @@ final class TorrentStreamServer: @unchecked Sendable {
         for file in files {
             let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
             guard values.isRegularFile == true, values.isSymbolicLink != true,
-                  ["m3u8", "ts", "bin"].contains(file.pathExtension.lowercased()) else { continue }
+                  ["m3u8", "ts", "bin", "key", "mp4", "m4s", "m4a", "cmfv", "cmfa"].contains(file.pathExtension.lowercased()) else { continue }
             var path = URLComponents(); path.path = prefix + file.lastPathComponent
             server.localFiles[path.percentEncodedPath] = file
         }
         guard server.localFiles[server.path] != nil else { throw TorrentTaskError.invalid }
+        return try await server.start()
+    }
+
+    /// A playback lease can lazily materialize a bounded set of remote HLS
+    /// resources. Requests stay under the random loopback-only directory.
+    static func startHLSResources(provider: @escaping @Sendable (String) async throws -> URL?) async throws -> TorrentStreamServer {
+        let server = try TorrentStreamServer(size: 1, name: "index.m3u8", reader: { _, _ in nil })
+        server.resourceProvider = provider
         return try await server.start()
     }
 
@@ -193,14 +202,33 @@ final class TorrentStreamServer: @unchecked Sendable {
         let request = (lines.first ?? "").split(separator: " ")
         guard request.count == 3 else { try await reject("400 Bad Request", connection: connection); return }
         let size: Int64, contentType: String, reader: Reader
-        if let file = localFiles[String(request[1])] {
+        var resourceHandle: FileHandle?
+        defer { try? resourceHandle?.close() }
+        let suppliedFile: URL?
+        if let resourceProvider {
+            let requested = String(request[1]), prefix = String(path.prefix(through: path.lastIndex(of: "/")!))
+            guard requested.hasPrefix(prefix), !requested.dropFirst(prefix.count).contains("/"),
+                  !requested.contains("%"), !requested.contains("?"), !requested.contains("..") else {
+                try await reject("404 Not Found", connection: connection); return
+            }
+            suppliedFile = try await resourceProvider(String(requested.dropFirst(prefix.count)))
+            guard suppliedFile != nil else { try await reject("404 Not Found", connection: connection); return }
+        } else { suppliedFile = nil }
+        if let file = suppliedFile ?? localFiles[String(request[1])] {
             size = Int64(try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0)
             switch file.pathExtension.lowercased() {
             case "m3u8": contentType = "application/vnd.apple.mpegurl"
             case "ts": contentType = "video/mp2t"
+            case "mp4", "m4s", "cmfv": contentType = "video/mp4"
+            case "m4a", "cmfa": contentType = "audio/mp4"
             default: contentType = "application/octet-stream"
             }
-            reader = Self.fileReader(file)
+            if suppliedFile != nil {
+                let handle = try FileHandle(forReadingFrom: file); resourceHandle = handle
+                reader = { offset, count in
+                    try handle.seek(toOffset: UInt64(offset)); return try handle.read(upToCount: count)
+                }
+            } else { reader = Self.fileReader(file) }
         } else {
             guard localFiles.isEmpty, request[1] == Substring(path) else { try await reject("404 Not Found", connection: connection); return }
             size = self.size; contentType = self.contentType; reader = self.reader

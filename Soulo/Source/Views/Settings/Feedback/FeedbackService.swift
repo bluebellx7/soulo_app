@@ -62,9 +62,11 @@ struct FeedbackDiagnostics: Equatable {
 }
 
 enum SouloFeedbackService {
-    enum SubmissionError: LocalizedError {
-        case invalidContent
-        var errorDescription: String? { ToolText.text("feedback_invalid_content") }
+    enum SubmissionError: LocalizedError, Equatable {
+        case invalidContent, missingContact
+        var errorDescription: String? {
+            ToolText.text(self == .missingContact ? "feedback_contact_required" : "feedback_invalid_content")
+        }
     }
     struct Payload: Codable {
         let type: String
@@ -87,8 +89,9 @@ enum SouloFeedbackService {
             throw SubmissionError.invalidContent
         }
         let contact = contactInfo?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let contact, !contact.isEmpty else { throw SubmissionError.missingContact }
         let json = try JSONEncoder().encode(diagnostics?.values ?? [:])
-        let payload = Payload(type: type, content: text, contact_info: contact?.isEmpty == false ? contact : nil,
+        let payload = Payload(type: type, content: text, contact_info: contact,
             device_info: String(decoding: json, as: UTF8.self), page_url: "\(appName) v\(appVersion) (\(buildNumber))")
         var request = URLRequest(url: URL(string: "https://api.dkluge.com/api/feedback")!)
         request.httpMethod = "POST"

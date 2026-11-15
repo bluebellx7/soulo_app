@@ -16,6 +16,7 @@ struct BookmarkArchive: Sendable, Equatable {
         var title: String
         var url: String
         var dateAdded: Date
+        var isFavorite = false
     }
     var folders: [Folder] = []
     var links: [Link] = []
@@ -89,7 +90,8 @@ enum BookmarkHTML {
                       ["https", "http", "ftp"].contains(url.scheme?.lowercased() ?? ""),
                       let host = url.host, !host.isEmpty {
                 archive.links.append(.init(folderID: stack.last ?? nil,
-                    title: title.isEmpty ? href : title, url: usableURL, dateAdded: date(value.attrs)))
+                    title: title.isEmpty ? href : title, url: usableURL, dateAdded: date(value.attrs),
+                    isFavorite: value.attrs["data-soulo-favorite"] == "1"))
             } else { archive.skipped += 1 }
         }
         tokens.enumerateMatches(in: html, range: NSRange(html.startIndex..., in: html)) { match, _, stop in
@@ -176,7 +178,8 @@ enum BookmarkHTML {
                     pending.append(.close)
                     enqueueChildren(folder.id)
                 case .link(let link):
-                    output.append("<DT><A HREF=\"\(escape(link.url))\" ADD_DATE=\"\(timestamp(link.dateAdded))\">\(escape(link.title))</A>")
+                    let favorite = link.isFavorite ? " DATA-SOULO-FAVORITE=\"1\"" : ""
+                    output.append("<DT><A HREF=\"\(escape(link.url))\" ADD_DATE=\"\(timestamp(link.dateAdded))\"\(favorite)>\(escape(link.title))</A>")
                 case .close: output.append("</DL><p>")
                 }
             }

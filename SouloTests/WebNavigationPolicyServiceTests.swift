@@ -3,6 +3,21 @@ import WebKit
 @testable import Soulo
 
 final class WebNavigationPolicyServiceTests: XCTestCase {
+    func testBilibiliEpisodeDownloadWrapperUsesTheExternalConfirmationAndKeepsItsWebFallback() throws {
+        let app=try XCTUnwrap(URL(string:"bilibili://pgc/season/ep/733317?from_spmid=main.h5.0.0.0"))
+        let web=try XCTUnwrap(URL(string:"https://m.bilibili.com/bangumi/play/ep733317"))
+        var wrapper=URLComponents(string:"https://d.bilibili.com/download_app.html")!
+        wrapper.queryItems=[.init(name:"schema",value:app.absoluteString),.init(name:"preUrl",value:web.absoluteString)]
+        let url=try XCTUnwrap(wrapper.url),policy=WebNavigationPolicyService.shared
+        XCTAssertEqual(policy.decision(for:url),.external(app))
+        XCTAssertEqual(policy.browserFallbackURL(for:url),web)
+        wrapper.queryItems?.append(.init(name:"schema",value:"anotherapp://injected"))
+        XCTAssertEqual(policy.decision(for:try XCTUnwrap(wrapper.url)),.allow,"Ambiguous schemes must not be unwrapped")
+        wrapper.queryItems=[.init(name:"schema",value:app.absoluteString),.init(name:"preUrl",value:"https://unrelated.example/video/733317")]
+        XCTAssertNil(policy.browserFallbackURL(for:try XCTUnwrap(wrapper.url)))
+        wrapper.host="unrelated.example"
+        XCTAssertEqual(policy.decision(for:try XCTUnwrap(wrapper.url)),.allow)
+    }
     func testBilibiliUniversalAppLinksHaveExactHostAndWebFallback() throws {
         let policy = WebNavigationPolicyService.shared
         for raw in ["https://www.bilibili.com/video/BV1test", "https://m.bilibili.com/video/BV1test", "https://b23.tv/example"] {
@@ -192,6 +207,15 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
         XCTAssertFalse(WebNavigationErrorClassifier.isExpectedInterruption(
             NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
         ))
+    }
+
+    func testNativeMediaHandoffDoesNotHideActualTransportOrPluginFailures() {
+        XCTAssertTrue(WebNavigationErrorClassifier.isExpectedInterruption(NSError(domain: "WebKitErrorDomain", code: 204)))
+        XCTAssertTrue(WebNavigationErrorClassifier.isMediaHandoff(NSError(domain: "WebKitErrorDomain", code: 204)))
+        for (domain, code) in [(NSURLErrorDomain, 204), (NSURLErrorDomain, NSURLErrorSecureConnectionFailed),
+                               ("HTTP", 403), ("WebKitErrorDomain", 203), ("WebKitErrorDomain", 201)] {
+            XCTAssertFalse(WebNavigationErrorClassifier.isExpectedInterruption(NSError(domain: domain, code: code)))
+        }
     }
 
     func testPageRequestedDownloadUsesNativeDownload() {

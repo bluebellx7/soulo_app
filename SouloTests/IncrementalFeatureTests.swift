@@ -7,6 +7,15 @@ import UniformTypeIdentifiers
 @testable import Soulo
 
 final class IncrementalFeatureTests: XCTestCase {
+    @MainActor func testEpisodeGridFitsNumbersAndCapsLongLabels() {
+        let font = UIFont.preferredFont(forTextStyle: .subheadline)
+        XCTAssertEqual(EpisodeGridSizing.minimumWidth(titles: ["01", "36"], font: font), 52)
+        let normal = EpisodeGridSizing.minimumWidth(titles: ["Episode 1", "Episode 12"], font: font)
+        XCTAssertGreaterThan(normal, 52)
+        XCTAssertLessThanOrEqual(normal, 140)
+        XCTAssertEqual(EpisodeGridSizing.minimumWidth(titles: [String(repeating: "Long episode title ", count: 20)], font: font), 140)
+    }
+
     func testHoldSpeedDefaultsAndRejectsInvalidSavedValues() throws {
         let suite = "HoldSpeed-\(UUID())", defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -356,6 +365,24 @@ final class IncrementalFeatureTests: XCTestCase {
         pip.pictureInPictureControllerDidStopPictureInPicture(controller)
         XCTAssertFalse(session.isPlaybackRequested)
         XCTAssertEqual(session.player.rate, 0, "Closing PiP in the background must not leave video audio playing")
+    }
+
+    @MainActor func testUnknownDurationNeverShowsACompletedTimeline() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        let root = UIHostingController(rootView: VideoPlaybackTimeline(elapsed: 4, duration: 0, identifier: "timeline.unknown", seek: { _ in XCTFail("Unknown duration cannot seek") }))
+        window.rootViewController = root; window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        try await Task.sleep(for: .milliseconds(100))
+        func slider(in view: UIView) -> UISlider? {
+            if let slider = view as? UISlider { return slider }
+            return view.subviews.lazy.compactMap { slider(in: $0) }.first
+        }
+        let control = try XCTUnwrap(slider(in: root.view))
+        XCTAssertFalse(control.isEnabled); XCTAssertEqual(control.value, 0)
+        root.rootView = VideoPlaybackTimeline(elapsed: 4, duration: 20, identifier: "timeline.unknown", seek: { _ in })
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertTrue(control.isEnabled); XCTAssertEqual(control.value, 4, accuracy: 0.01)
     }
 
     @MainActor func testTimelineResumesProgressAfterCancelledScrubbing() async throws {

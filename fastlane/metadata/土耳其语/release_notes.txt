@@ -1,6 +1,1 @@
-1.2.13
-
-• Açık ve koyu görünüm için ayrı arka planlar ve görüntü katmanı anahtarı.
-• Ana sayfa renkleri iyileştirildi; duvar kâğıdı önizlemesi uygulama temasını izler.
-• Duvar kâğıtlarını önizleyin, paylaşın ve Fotoğraflar’a kaydedin.
-• Üst sekme ayarlarına yeni sekme ve gezinme sonrası platform çubuğunu gizleme seçeneği eklendi.
+iPad pencereleri, sesli giriş, yerel özetler ve erişilebilirlik iyileştirildi. Arka planda medya dışa aktarma, Kestirmeler ve uzantı uyumluluğu geliştirildi. Bazı özellikler aygıta, sistem sürümüne ve dile bağlıdır.

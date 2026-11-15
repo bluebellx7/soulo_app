@@ -1,0 +1,21 @@
+{
+  "source": "../playback-h264-aac.mp4",
+  "source_sha256": "2055da29a58c105ca7838ecc87483c480720cdbea7c185e3ae3f5075c62e2ad9",
+  "content": "8-second synthetic FFmpeg test pattern and silent audio; no third-party media",
+  "generation": {
+    "cache-muxed.mp4": "ffmpeg -i ../playback-h264-aac.mp4 -c copy -movflags frag_keyframe+empty_moov+default_base_moof cache-muxed.mp4",
+    "video.mp4": "ffmpeg -i ../playback-h264-aac.mp4 -an -c copy -movflags frag_keyframe+empty_moov+default_base_moof video.mp4",
+    "audio.m4a": "ffmpeg -i ../playback-h264-aac.mp4 -vn -c copy -movflags frag_keyframe+empty_moov+default_base_moof audio.m4a",
+    "DASH/manifest.mpd": "ffmpeg -i ../playback-h264-aac.mp4 -map 0:v -map 0:a -c copy -seg_duration 2 -use_template 1 -use_timeline 1 -adaptation_sets 'id=0,streams=v id=1,streams=a' -f dash DASH/manifest.mpd"
+  },
+  "dash_fixture_sha256": {
+    "chunk-stream0-00001.m4s": "131ecdb501c1835b5791353beaa7a1b2c08aac1cb45fb641b5284832fa6951ec",
+    "chunk-stream1-00001.m4s": "c597f1e942acc5f388165abdf844540b1cb51c1c66e07045665dff48538ce68d",
+    "chunk-stream1-00002.m4s": "ddccfa3fcef4b7e2af787623baf119117c23537d53280c25fc72125a57435c68",
+    "chunk-stream1-00003.m4s": "f6f38b31dd50a51c229373f84847afee7898ad02445a39281f8c81892764faf5",
+    "chunk-stream1-00004.m4s": "d7ed17b3062bad152c9657d9713e8078bd821ea86804aeddbf8afc3fddd8bb26",
+    "init-stream0.m4s": "af9efc7e93075fe979a5f106f0877864d54ad3a57a22d77ac525a0c497228dd7",
+    "init-stream1.m4s": "5bcc02265179a20d2c21216ffa8e47695380488f740f6e81a2add4ef55943c55",
+    "manifest.mpd": "d2e928cc338d50d9b11cd30ed01dbb15741cfbaa4b0d10a81b188a59d5245f7f"
+  }
+}

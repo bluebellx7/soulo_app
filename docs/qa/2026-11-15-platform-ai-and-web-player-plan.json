@@ -1,0 +1,276 @@
+{
+  "status": "completed_with_documented_simulator_scope",
+  "requests": [
+    {
+      "id": "fullscreen",
+      "status": "verified",
+      "report": "docs/qa/2026-11-15-video-fullscreen-only.json",
+      "evidence": [
+        "/tmp/soulo-video-fullscreen-only-20261115/ipad4.log",
+        "/tmp/soulo-ui-followups-20261115/menu19.log"
+      ]
+    },
+    {
+      "id": "platform_ai",
+      "status": "verified",
+      "scope": [
+        "copy all current platform links as grouped JSON",
+        "export JSON",
+        "AI regrouping instructions",
+        "explicit replace mode with backup and confirmation",
+        "preserve matched platform identities/metadata; validate entire replacement before writing"
+      ],
+      "evidence": [
+        "/tmp/soulo-platform-ai-regroup-20261115/phone4.log",
+        "/tmp/soulo-platform-ai-regroup-20261115/phone5.log",
+        "/tmp/soulo-platform-ai-regroup-20261115/ipad4.log"
+      ]
+    },
+    {
+      "id": "web_video_ownership",
+      "status": "verified",
+      "scope": [
+        "Video Settings: optional automatic web fullscreen takeover, default off",
+        "No patching of website fullscreen prototypes; native fullscreen is observed",
+        "Automatic handoff only when enabled; extension/direct media documents are excluded",
+        "Explicit Soulo tools, resources and episodes remain available",
+        "Verify off/on, unchanged website playback and setting persistence"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/phone11.log",
+        "/tmp/soulo-ui-followups-20261115/mtyy-ipad21.log"
+      ]
+    },
+    {
+      "id": "mtyy_playback",
+      "status": "verified",
+      "site": "https://www.mtyy5.com/vodplay/155698-4-1.html",
+      "scope": [
+        "two real episodes and explicit fullscreen playback",
+        "visible loading/buffering/error and retry",
+        "unknown duration must never appear as 100 percent"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/mtyy16.log",
+        "/tmp/soulo-ui-followups-20261115/resolver21.log",
+        "/tmp/soulo-ui-followups-20261115/mtyy-ipad21.log",
+        "/tmp/soulo-ui-followups-20261115/media19.log"
+      ],
+      "result": {
+        "cause": [
+          "Signed playlist expires after about five seconds",
+          "Image-prefixed MPEG-TS segments",
+          "Document no-referrer policy lost at native handoff",
+          "MSE blob controller source absent from episode inspection"
+        ],
+        "fix": "Reuse bounded in-memory playlists, preserve no-referrer across redirects, normalize validated TS prefixes through a bounded disk-backed bridge, inspect current HLS controller",
+        "verified": "Two live episodes decode with both engines; real fullscreen episode switch plays; two real remote segments download as playable MP4",
+        "download_scope": "QA uses two real segments rather than downloading the entire episode"
+      }
+    },
+    {
+      "id": "fullscreen_menus_rotation",
+      "status": "verified",
+      "scope": [
+        "common dropdown text/background contrast",
+        "iPad windowed canvas rotation fallback without geometry error",
+        "no URL-bearing preview page"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/menu22.log",
+        "/tmp/soulo-ui-followups-20261115/menu22-attachments/manifest.json"
+      ],
+      "visual_review": "Source and options panels use an explicit surface/foreground pair; visually confirmed readable labels and successful source switch in both engines."
+    },
+    {
+      "id": "storage_explanation_cleanup",
+      "status": "verified",
+      "scope": [
+        "Explain installed program size and data total",
+        "Group direct clear icons",
+        "App data bulk cleanup with safe defaults and explicit saved-data choices"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/unit17.log",
+        "/tmp/soulo-ui-followups-20261115/ios16-storage21.log"
+      ]
+    },
+    {
+      "id": "episode_adaptive_width",
+      "status": "verified",
+      "scope": [
+        "Size columns from longest label with bounds and cached font measurement"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/phone9.log",
+        "/tmp/soulo-ui-followups-20261115/mtyy-ipad21.log"
+      ]
+    },
+    {
+      "id": "mtyy_bottom_ads",
+      "status": "verified_markup_and_filtering_regression",
+      "scope": [
+        "Verify first-party ec-ad/ads_w selector",
+        "Preserve player and episode list"
+      ],
+      "evidence": [
+        "/tmp/soulo-mtyy-player-20261115/page.html",
+        "/tmp/soulo-ui-followups-20261115/unit17.log"
+      ],
+      "verification_scope": "Live HTML confirmed first-party ec-ad/ads_w slots; enabled/allowlisted WebKit regression hides only the ad slots and preserves normal content."
+    },
+    {
+      "id": "subtitle_default",
+      "status": "verified",
+      "scope": [
+        "Search anytime, anywhere. across languages",
+        "Keep existing custom/empty subtitle; reset uses new default"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/ipad16.log",
+        "/tmp/soulo-ui-followups-20261115/localization19.log"
+      ]
+    },
+    {
+      "id": "ad_settings_alignment",
+      "status": "verified",
+      "scope": [
+        "Shared icon width and label spacing, preserve iOS 16 route boundary"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/ios16-arm16.log",
+        "/tmp/soulo-ui-followups-20261115/ios16-storage21.log"
+      ]
+    },
+    {
+      "id": "ios16_backup_restore",
+      "status": "verified",
+      "scope": [
+        "Measure restore stall",
+        "Move subscription archive decode/merge off main",
+        "Close confirmation before applying settings; avoid unchanged defaults notifications",
+        "Explain configuration-only scope"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/ios16-arm16.log",
+        "/tmp/soulo-ui-followups-20261115/ios16-storage21.log"
+      ],
+      "result": {
+        "measured_return_to_interactive_seconds": [
+          1.968,
+          2.105
+        ],
+        "scope": "Configuration, appearance, privacy, platforms/groups; not downloaded files, browsing history, login sessions or bookmarks"
+      }
+    },
+    {
+      "id": "rule_cache_footprint",
+      "status": "verified",
+      "scope": [
+        "Audit seven default-enabled sources overlap",
+        "Do not download disabled sources",
+        "Remove redundant archived representations without losing user choices"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/ipad12.log",
+        "/tmp/soulo-ui-followups-20261115/final-media21.log"
+      ],
+      "result": {
+        "before_iPad_archive_bytes": 148580401,
+        "after_iPad_archive_bytes": 10886849,
+        "format": "Lossless LZFSE with backwards-compatible JSON reader; preserves exceptions and current user choices",
+        "new_default_enabled": [
+          "adguard-base",
+          "adguard-chinese",
+          "adguard-mobile",
+          "easyprivacy"
+        ],
+        "duplicate": "EasyListChina exact rules covered by AdGuardChinese in the inspected archive; disabled sources are not fetched"
+      }
+    },
+    {
+      "id": "ios16_popovers",
+      "status": "verified",
+      "scope": [
+        "All nine popover entry points retain content-sized panels on iOS 16.0–16.3",
+        "Preserve environment, source anchor, dismissal, appearance and content updates"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/ios16-arm17.log"
+      ]
+    },
+    {
+      "id": "fullscreen_loading_layout",
+      "status": "verified",
+      "scope": [
+        "Loading and errors overlay the video canvas",
+        "Timeline and transport positions never change with buffering"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/mtyy-ipad21.log",
+        "/tmp/soulo-ui-followups-20261115/menu19.log"
+      ]
+    },
+    {
+      "id": "new_tab_move_up_latest",
+      "status": "verified",
+      "scope": "Move heading, search and quick links up together by another 0.30 search-field heights; preserve spacing and minimum fit in short windows",
+      "file": "Soulo/Source/Views/WebView/NewTabPageView.swift",
+      "verification": "Search position assertion and rendered screenshot passed with shared bookmark quick link.",
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/newtab24.log",
+        "/tmp/soulo-ui-followups-20261115/newtab24-attachments/manifest.json"
+      ]
+    },
+    {
+      "id": "faststream_native_tool_handoff",
+      "status": "verified",
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/faststream-ipad19.log",
+        "/tmp/soulo-ui-followups-20261115/faststream-phone22.log"
+      ],
+      "scope": "Unmodified 1.3.78 package selected source resolves through common video inspection and decodes in AVPlayer; MP4/HLS/DASH extension playback and saved files verified",
+      "phone_followup": "Passed with the original package. The harness now activates FastStream on a different hostname when not already auto-enabled, matching publisher behavior; app behavior was not changed to force auto-enable."
+    },
+    {
+      "id": "episode_selection_centered_loading",
+      "status": "verified",
+      "scope": [
+        "Close the player episode drawer immediately after a selection",
+        "Use the existing centered video loading indicator throughout resolution and decoder startup",
+        "No per-episode loading indicator or timeline layout change",
+        "Reopen the drawer for failure and retry"
+      ],
+      "evidence": [
+        "/tmp/soulo-ui-followups-20261115/episode-loading25.log",
+        "/tmp/soulo-ui-followups-20261115/episode-loading24-attachments/B9034D83-A711-41D2-AA7F-951FC0233F17.png"
+      ]
+    }
+  ],
+  "previous_completed": "docs/qa/2026-11-15-platform-storage-episodes.json",
+  "constraints": [
+    "simulator only",
+    "no commit/push/upload"
+  ],
+  "updated": "2026-11-15T21:22:36.032964+08:00",
+  "validation_limits": [
+    "Only simulators, as most recently instructed; no physical device was operated.",
+    "Local SDK is 26.2; current changes have not been run on iOS 27.2.1. Historical SDK 27 report remains separate.",
+    "Live download QA uses two real segments and verifies a playable MP4; it does not download the entire episode.",
+    "Ad regression uses the inspected live markup and validates filtering/allowlist behavior in WKWebView."
+  ],
+  "final_checks": {
+    "release": "/tmp/soulo-ui-followups-20261115/release24.log",
+    "debug_tests": "/tmp/soulo-ui-followups-20261115/build25.log",
+    "minimum_iOS16_build": "/tmp/soulo-ui-followups-20261115/ios16-arm-build24.log",
+    "localization": "/tmp/soulo-ui-followups-20261115/localization25.log",
+    "metadata": "/tmp/soulo-ui-followups-20261115/metadata25.log",
+    "diff": "/tmp/soulo-ui-followups-20261115/diff25.log",
+    "version": "1.2.15 (55)",
+    "sdk": "26.2",
+    "minimumOS": "16.0",
+    "commit_push_upload": false,
+    "paid_APIs": false
+  },
+  "release_changes": "docs/release-notes/1.2.15.zh-Hans.txt"
+}

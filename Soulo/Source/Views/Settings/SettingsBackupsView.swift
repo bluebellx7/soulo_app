@@ -3,6 +3,9 @@ import UniformTypeIdentifiers
 
 struct SettingsBackupsView: View {
     @ObservedObject private var sync = CloudSyncService.shared
+    @ObservedObject private var bookmarkSync = BookmarkCloudSyncService.shared
+    @AppStorage(BookmarkCloudSyncService.enabledKey) private var bookmarkSyncEnabled = false
+    @AppStorage(AppConstants.StorageKeys.iCloudSyncEnabled) private var iCloudSyncEnabled = false
     @State private var backups: [CloudSettingsBackup] = []
     @State private var selectedBackup: CloudSettingsBackup?
     @State private var deletingBackup: CloudSettingsBackup?
@@ -12,6 +15,7 @@ struct SettingsBackupsView: View {
     @State private var exportDocument = SettingsBackupDocument(data: Data())
     @State private var importNotice = false
     @State private var clearNotice = false
+    @State private var restoring = false
 
     var body: some View {
         List {
@@ -19,6 +23,44 @@ struct SettingsBackupsView: View {
                 IllustratedFeatureIntro(scene: .files,
                     message: FeatureText.text("Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list."),
                     accessibilityID: "settings.backups.explanation")
+            }
+            Section {
+                Toggle(isOn: $iCloudSyncEnabled) {
+                    SettingsDescriptionLabel(
+                        icon: "icloud.fill",
+                        color: iCloudSyncEnabled ? Color.themePrimary : Color(uiColor: .systemGray3),
+                        title: LanguageManager.shared.localizedString("icloud_settings_sync"),
+                        description: LanguageManager.shared.localizedString("icloud_settings_sync_desc")
+                    )
+                }
+                .tint(Color.themePrimary)
+                .onCompatibleChange(of: iCloudSyncEnabled) { _, enabled in
+                    CloudSyncService.shared.setEnabled(enabled)
+                }
+                .accessibilityIdentifier("settings.icloud-sync")
+                if sync.hasSyncIssue {
+                    Text(LanguageManager.shared.localizedString("settings_backup_error"))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    if iCloudSyncEnabled {
+                        Button(LanguageManager.shared.localizedString("retry")) { sync.refresh() }
+                    }
+                }
+            }
+            Section {
+                Toggle(isOn: $bookmarkSyncEnabled) {
+                    SettingsDescriptionLabel(icon: "bookmark.fill", color: bookmarkSyncEnabled ? .themePrimary : Color(uiColor: .systemGray3),
+                        title: "iCloud · " + LanguageManager.shared.localizedString("bookmarks"),
+                        description: FeatureText.text("Bookmarks merge across devices. Only explicit deletions remove items."))
+                }
+                .tint(.themePrimary)
+                .accessibilityIdentifier("settings.icloud-bookmarks")
+                .onCompatibleChange(of: bookmarkSyncEnabled) { _, value in bookmarkSync.setEnabled(value) }
+                if bookmarkSync.hasSyncIssue {
+                    Text(LanguageManager.shared.localizedString("settings_backup_error")).font(.footnote).foregroundStyle(.secondary)
+                    Button(LanguageManager.shared.localizedString("retry")) { bookmarkSync.refresh() }
+                }
+                if bookmarkSync.isSynchronizing { ProgressView().accessibilityLabel("iCloud") }
             }
             Section {
                 Button {
@@ -62,6 +104,8 @@ struct SettingsBackupsView: View {
             }
         }
         .navigationTitle(LanguageManager.shared.localizedString("settings_backups"))
+        .disabled(restoring)
+        .overlay { if restoring { ProgressView().accessibilityIdentifier("settings.backups.restoring") } }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button { importing = true } label: { Label(FeatureText.text("Import backup"), systemImage: "square.and.arrow.down") }
@@ -114,8 +158,16 @@ struct SettingsBackupsView: View {
             get: { selectedBackup != nil }, set: { if !$0 { selectedBackup = nil } }
         ), presenting: selectedBackup) { backup in
             Button(LanguageManager.shared.localizedString("restore")) {
-                do { try sync.restoreBackup(backup); selectedBackup = nil; load() }
-                catch { selectedBackup = nil; showError = true }
+                selectedBackup = nil
+                restoring = true
+                Task { @MainActor in
+                    // Finish dismissing the legacy alert before changing every
+                    // AppStorage observer in the settings navigation hierarchy.
+                    try? await Task.sleep(for: .milliseconds(200))
+                    do { try sync.restoreBackup(backup); load() }
+                    catch { showError = true }
+                    restoring = false
+                }
             }
             Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) { selectedBackup = nil }
         } message: { _ in

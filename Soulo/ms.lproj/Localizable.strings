@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Satu Pertanyaan, 40+ Platform";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Cari atau masukkan URL";
 "privacy_search_placeholder" = "Carian peribadi atau masukkan URL";
 "search" = "Cari";
@@ -354,7 +354,7 @@
 "voice_stop" = "Berhenti";
 "voice_record" = "Rekod";
 "batch_import" = "Import Kumpulan";
-"batch_import_format" = "Tampal JSON dalam format di bawah";
+"batch_import_format" = "Tampal JSON di sini";
 "batch_import_group" = "Tambahkan pada Kumpulan (Pilihan)";
 "batch_import_group_placeholder" = "cth. Filem";
 "batch_import_film_entry" = "Buka pratetap platform filem";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Sambungan Tidak Dapat Dipasang";
 "extension_permissions_summary" = "%d kebenaran · %d peraturan tapak web";
 "extension_untitled" = "Sambungan Tanpa Tajuk";
-"web_extension_install_footer" = "Pasang sambungan serasi melalui pautan gedung atau import CRX, XPI, ZIP atau folder sambungan. Semak kebenaran dan keserasian; sesetengah fungsi desktop tidak tersedia.";
+"web_extension_install_footer" = "Selepas pemasangan, anda boleh menukar kebenaran pada halaman pengurusan sambungan.";
 "web_extension_install_store_link" = "Pasang daripada Pautan Kedai…";
 "web_extension_browse_sources" = "Semak imbas Kedai Sambungan";
 "web_extension_browse_sources_footer" = "Butang Simpan Dapatkan hanya menyokong pelayar desktop mereka sendiri. Salin pautan halaman butiran sambungan, kemudian gunakan Pasang daripada Pautan Kedai dalam Soulo.";
 "web_extension_store_install_title" = "Pasang Sambungan Kedai";
 "extension_page_banner_title" = "Pasang dengan Soulo";
-"extension_page_banner_desc" = "Semak keserasian dan kebenaran sebelum memasang.";
-"web_extension_store_install_desc" = "Tampal pautan halaman butiran sambungan Chrome, Edge atau Firefox, kemudian semak keserasian dan kebenaran sebelum mengesahkan pemasangan.";
+"extension_page_banner_desc" = "Selepas pemasangan, anda boleh menukar kebenaran pada halaman pengurusan sambungan.";
+"web_extension_store_install_desc" = "Selepas pemasangan, anda boleh menukar kebenaran pada halaman pengurusan sambungan.";
 "web_extension_store_link_placeholder" = "Pautan halaman sambungan atau ID sambungan Chrome";
 "web_extension_store_invalid_link" = "Tampalkan pautan halaman butiran sambungan daripada Chrome, Edge atau Firefox, ID sambungan Chrome atau pautan CRX, XPI atau ZIP langsung.";
 "web_extension_store_https_required" = "Pakej sambungan mesti menggunakan pautan HTTPS yang selamat.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Sentuh dan tahan ikon Soulo pada Skrin Utama untuk menggunakan pintasan yang ditetapkan di sini.";
 
 "ad_block_scope_hint" = "Menapis iklan web, tindanan promosi dan tetingkap timbul yang tidak diminta. Jika laman tidak berfungsi, anda boleh mematikan penapisan untuk laman itu sahaja.";
+
+"privacy_clear_browsing_on_exit" = "Padam Sejarah Semasa Keluar";
+"privacy_clear_browsing_on_exit_desc" = "Padam halaman yang dilawati apabila ke latar belakang atau dimulakan semula. Kekalkan istilah carian.";

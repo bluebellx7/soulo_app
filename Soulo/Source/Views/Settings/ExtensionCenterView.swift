@@ -9,25 +9,30 @@ private enum ExtensionCenterTab: String, CaseIterable, Identifiable {
     var titleKey: String { self == .installed ? "userscripts_installed" : "userscripts_install" }
 }
 
+private enum ExtensionImportKind { case webExtension, userScript }
+
 struct ExtensionCenterView: View {
     @AppStorage("builtin_reader_enabled") private var readerEnabled = false
+    @AppStorage(VideoPlaybackPreferences.showsWebDownloadControlsKey) private var showsVideoDownloadControls = true
 
     var onOpenInBrowser: ((URL) -> Void)? = nil
 
     @ObservedObject private var service = BrowserExtensionService.shared
     @ObservedObject private var siteOptimizations = SiteOptimizationSettings.shared
     @State private var selectedTab: ExtensionCenterTab = .installed
-    @State private var importWebExtension = false
+    @State private var importKind: ExtensionImportKind = .webExtension
+    @State private var showsFileImporter = false
     @State private var showStoreLinkInstaller = false
-    @State private var importUserScript = false
     @State private var showNewScript = false
     @State private var isInstalling = false
     @State private var errorMessage: String?
     @State private var successMessage: String?
     @State private var scriptPendingDeletion: UserScriptRecord?
+    @State private var extensionPendingDeletion: WebExtensionRecord?
     @State private var extensionActionRevision = 0
     @State private var nativePreview: WebExtensionInstallPreview?
     @State private var showScriptUpdates = false
+    @State private var managedExtensionID: UUID?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -60,26 +65,17 @@ struct ExtensionCenterView: View {
             }
         }
         .navigationDestination(isPresented: $showScriptUpdates) { UserScriptUpdatesView() }
-        .fileImporter(
-            isPresented: $importWebExtension,
-            allowedContentTypes: webExtensionContentTypes,
-            allowsMultipleSelection: false
-        ) { result in
-            guard case let .success(urls) = result, let url = urls.first else {
-                if case let .failure(error) = result { errorMessage = error.localizedDescription }
-                return
-            }
-            isInstalling = true
-            Task {
-                do {
-                    nativePreview = try await service.previewWebExtension(from: url)
-                } catch {
-                    errorMessage = error.localizedDescription
-                    UINotificationFeedbackGenerator().notificationOccurred(.error)
-                }
-                isInstalling = false
-            }
+        .compatibleNavigationDestination(item: $managedExtensionID) { id in
+            WebExtensionManagementView(id: id)
         }
+        // SwiftUI gives fileImporter a shared presentation slot. Two modifiers
+        // on this view made only the final (userscript) picker respond.
+        .fileImporter(
+            isPresented: $showsFileImporter,
+            allowedContentTypes: importKind == .webExtension ? webExtensionContentTypes : userScriptContentTypes,
+            allowsMultipleSelection: false,
+            onCompletion: completeFileImport
+        )
         .sheet(isPresented: $showStoreLinkInstaller) {
             WebExtensionStoreInstallView()
                 .presentationDetents([.height(390), .large])
@@ -87,29 +83,6 @@ struct ExtensionCenterView: View {
         }
         .sheet(item: $nativePreview) { preview in
             WebExtensionReviewView(preview: preview) { _ in selectedTab = .installed }
-        }
-        .fileImporter(
-            isPresented: $importUserScript,
-            allowedContentTypes: userScriptContentTypes,
-            allowsMultipleSelection: false
-        ) { result in
-            guard case let .success(urls) = result, let url = urls.first else {
-                if case let .failure(error) = result { errorMessage = error.localizedDescription }
-                return
-            }
-            isInstalling = true
-            Task {
-                defer { isInstalling = false }
-                do {
-                    let script = try await service.importUserScript(from: url)
-                    selectedTab = .installed
-                    successMessage = AppAccessibility.formatted("extension_installed_success_desc", script.name)
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
-                } catch {
-                    errorMessage = error.localizedDescription
-                    UINotificationFeedbackGenerator().notificationOccurred(.error)
-                }
-            }
         }
         .navigationDestination(isPresented: $showNewScript) {
             UserScriptEditorView(script: nil)
@@ -169,6 +142,14 @@ struct ExtensionCenterView: View {
         .onReceive(NotificationCenter.default.publisher(for: .browserExtensionActionsChanged)) { _ in
             extensionActionRevision &+= 1
         }
+        .confirmationDialog(LanguageManager.shared.localizedString("delete"), isPresented: Binding(
+            get: { extensionPendingDeletion != nil }, set: { if !$0 { extensionPendingDeletion = nil } }
+        ), presenting: extensionPendingDeletion) { item in
+            Button(LanguageManager.shared.localizedString("delete"), role: .destructive) {
+                service.deleteWebExtension(item.id)
+                extensionPendingDeletion = nil
+            }
+        } message: { item in Text(AppAccessibility.formatted("userscript_delete_message", item.name)) }
     }
 
     private var readerTool: some View {
@@ -196,14 +177,6 @@ struct ExtensionCenterView: View {
                 userScriptExperimentalNotice
             }
 
-            if service.userScripts.isEmpty && SiteOptimizationRules.all.isEmpty {
-                CompatibleUnavailableView(
-                    LanguageManager.shared.localizedString("userscripts_empty"),
-                    systemImage: "puzzlepiece.extension",
-                    description: Text(LanguageManager.shared.localizedString("userscripts_empty_desc"))
-                )
-            }
-
             // Kept behind a feature flag for the next release's device testing.
             if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
                !service.webExtensions.isEmpty {
@@ -211,8 +184,9 @@ struct ExtensionCenterView: View {
                     ForEach(service.webExtensions) { item in
                         webExtensionRow(item)
                             .swipeActions {
+                                manageExtensionButton(item).tint(.blue)
                                 Button(role: .destructive) {
-                                    service.deleteWebExtension(item.id)
+                                    extensionPendingDeletion = item
                                 } label: {
                                     Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
                                 }.tint(.red)
@@ -221,52 +195,58 @@ struct ExtensionCenterView: View {
                 }
             }
 
-            if !service.userScripts.isEmpty || !SiteOptimizationRules.all.isEmpty {
-                Section {
-                    ForEach(SiteOptimizationRules.all) { rule in
-                        HStack(spacing: 12) {
-                            NavigationLink {
-                                UserScriptEditorView(script: rule.scriptRecord, builtInNotice: "")
-                            } label: {
-                                userScriptRow(rule.scriptRecord, showBuiltInBadge: false)
-                            }
-                            .accessibilityIdentifier("extensions.site-script.details." + rule.id)
-                            Toggle("", isOn: Binding(get: { siteOptimizations.isEnabled(rule) },
-                                                     set: { siteOptimizations.setEnabled($0, for: rule) }))
-                                .labelsHidden()
-                                .accessibilityIdentifier("extensions.site-plugin." + rule.id)
+            Section {
+                ForEach(SiteOptimizationRules.all) { rule in
+                    HStack(spacing: 12) {
+                        NavigationLink {
+                            UserScriptEditorView(script: rule.scriptRecord, builtInNotice: "")
+                        } label: {
+                            userScriptRow(rule.scriptRecord, showBuiltInBadge: false)
                         }
-                    }
-                    ForEach(service.userScripts) { script in
-                        HStack(spacing: 12) {
-                            NavigationLink {
-                                UserScriptEditorView(script: script)
-                            } label: {
-                                userScriptRow(script)
-                            }
-
-                            if service.loadingUserScripts.contains(script.id) {
-                                ProgressView().controlSize(.small)
-                            }
-                            Toggle("", isOn: Binding(
-                                get: { script.isEnabled },
-                                set: { service.setUserScriptEnabled(script.id, enabled: $0) }
-                            ))
+                        .accessibilityIdentifier("extensions.site-script.details." + rule.id)
+                        Toggle("", isOn: Binding(get: { siteOptimizations.isEnabled(rule) },
+                                                 set: { siteOptimizations.setEnabled($0, for: rule) }))
                             .labelsHidden()
+                            .accessibilityIdentifier("extensions.site-plugin." + rule.id)
+                    }
+                }
+                videoDownloadExtensionRow
+                ForEach(service.userScripts) { script in
+                    HStack(spacing: 12) {
+                        NavigationLink {
+                            UserScriptEditorView(script: script)
+                        } label: {
+                            userScriptRow(script)
                         }
-                        .swipeActions {
-                            if script.isBuiltIn != true {
-                                Button(role: .destructive) {
-                                    scriptPendingDeletion = script
-                                } label: {
-                                    Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
-                                }.tint(.red)
+
+                        if service.loadingUserScripts.contains(script.id) {
+                            ProgressView().controlSize(.small)
+                        }
+                        Toggle("", isOn: Binding(
+                            get: { script.isEnabled },
+                            set: { service.setUserScriptEnabled(script.id, enabled: $0) }
+                        ))
+                        .labelsHidden()
+                    }
+                    .swipeActions {
+                        if script.isBuiltIn != true {
+                            Button(role: .destructive) {
+                                scriptPendingDeletion = script
+                            } label: {
+                                Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+                            }.tint(.red)
+                        }
+                    }
+                    .contextMenu {
+                        if script.isBuiltIn != true {
+                            Button(role: .destructive) { scriptPendingDeletion = script } label: {
+                                Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
                             }
                         }
                     }
-                } header: {
-                    userScriptSectionHeader
                 }
+            } header: {
+                userScriptSectionHeader
             }
 
             Section {
@@ -289,28 +269,49 @@ struct ExtensionCenterView: View {
                     webExtensionActionLabel(item, action: action)
                 }
                 .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
                 .disabled(!action.isEnabled)
-                .accessibilityLabel(action.label)
+                .accessibilityLabel(item.name + ", " + action.label)
+                .accessibilityIdentifier("extensions.action-" + item.id.uuidString)
                 .id("\(item.id.uuidString)-\(extensionActionRevision)")
             } else {
-                webExtensionActionLabel(item, action: nil)
+                Button { managedExtensionID = item.id } label: {
+                    webExtensionActionLabel(item, action: nil)
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
             }
 
             if service.loadingWebExtensions.contains(item.id) { ProgressView().controlSize(.small) }
-            NavigationLink { WebExtensionManagementView(id: item.id) } label: {
-                Image(systemName: "gearshape")
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel(AppLocalization.string("extension_manage"))
-            .accessibilityIdentifier("extensions.manage-" + item.id.uuidString)
             Toggle("", isOn: Binding(
                 get: { item.isEnabled },
                 set: { service.setWebExtensionEnabled(item.id, enabled: $0) }
             ))
             .labelsHidden()
-            .disabled(service.loadingWebExtensions.contains(item.id))
+            .fixedSize()
+            .disabled(!service.canChangeWebExtensionEnabled(item.id))
+            .accessibilityLabel(item.name)
+            .accessibilityIdentifier("extensions.toggle-" + item.id.uuidString)
         }
         .padding(.vertical, 3)
+        .contextMenu {
+            manageExtensionButton(item)
+            Button(role: .destructive) { extensionPendingDeletion = item } label: {
+                Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+            }
+        }
+        .accessibilityAction(named: Text(AppLocalization.string("extension_manage"))) {
+            managedExtensionID = item.id
+        }
+    }
+
+    private func manageExtensionButton(_ item: WebExtensionRecord) -> some View {
+        Button { managedExtensionID = item.id } label: {
+            Label(AppLocalization.string("extension_manage"), systemImage: "slider.horizontal.3")
+        }
+        .accessibilityIdentifier("extensions.manage-" + item.id.uuidString)
     }
 
     private func webExtensionActionLabel(
@@ -329,7 +330,8 @@ struct ExtensionCenterView: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(item.name).font(.body.weight(.medium)).lineLimit(1)
+                Text(item.name).font(.body.weight(.medium)).lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 if let error = service.webExtensionErrors[item.id] {
                     Text(error).font(.caption).foregroundStyle(.red).lineLimit(3)
                 }
@@ -343,6 +345,33 @@ struct ExtensionCenterView: View {
             Spacer(minLength: 8)
         }
         .contentShape(Rectangle())
+    }
+
+    private var videoDownloadExtensionRow: some View {
+        HStack(spacing: 12) {
+            SettingsSubpageLink {
+                WebVideoDownloadExtensionView()
+            } label: {
+                HStack(spacing: 12) {
+                    extensionIcon(systemName: "arrow.down.circle", tint: .orange)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(ToolText.text("web_video_download"))
+                            .font(.body.weight(.medium)).lineLimit(1)
+                        Text(FeatureText.text(showsVideoDownloadControls ? "Enabled" : "Disabled"))
+                            .font(.caption2).foregroundStyle(.secondary)
+                        Text(ToolText.text("web_video_download_description"))
+                            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        Text(ToolText.text("builtin_extension"))
+                            .font(.caption2).foregroundStyle(.tertiary)
+                    }
+                }.padding(.vertical, 3)
+            }
+            .accessibilityIdentifier("extensions.video-download-details")
+            Toggle("", isOn: $showsVideoDownloadControls)
+                .labelsHidden()
+                .accessibilityLabel(ToolText.text("web_video_download"))
+                .accessibilityIdentifier("extensions.video-download-toggle")
+        }
     }
 
     private func userScriptRow(_ script: UserScriptRecord, showBuiltInBadge: Bool = true) -> some View {
@@ -406,17 +435,23 @@ struct ExtensionCenterView: View {
             // this release. The implementation stays compiled for later tests.
             if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
                 Section {
+                    installSourceRow(FeatureText.text("soulo_extensions"), icon: "square.stack.3d.up.fill", tint: .blue,
+                                     url: "https://soulo.dkluge.com/extensions.html")
+                        .accessibilityIdentifier("extensions.soulo-catalog")
+
                     Button { showStoreLinkInstaller = true } label: {
                         Label(
                             LanguageManager.shared.localizedString("web_extension_install_store_link"),
                             systemImage: "link.badge.plus"
                         )
                     }
+                    .accessibilityIdentifier("extensions.install-store-link")
 
-                    Button { importWebExtension = true } label: {
+                    Button { beginFileImport(.webExtension) } label: {
                         Label(LanguageManager.shared.localizedString("extension_choose_file"), systemImage: "folder.badge.plus")
                     }
-                    .disabled(!nativeWebExtensionsAvailable)
+                    .disabled(!nativeWebExtensionsAvailable || isInstalling)
+                    .accessibilityIdentifier("extensions.import-package")
                 } header: {
                     Text(LanguageManager.shared.localizedString("web_extensions"))
                 } footer: {
@@ -444,9 +479,11 @@ struct ExtensionCenterView: View {
                 Button { showNewScript = true } label: {
                     Label(LanguageManager.shared.localizedString("userscript_new"), systemImage: "plus.square")
                 }
-                Button { importUserScript = true } label: {
+                Button { beginFileImport(.userScript) } label: {
                     Label(LanguageManager.shared.localizedString("userscript_choose_file"), systemImage: "doc.badge.plus")
                 }
+                .disabled(isInstalling)
+                .accessibilityIdentifier("extensions.import-script")
                 NavigationLink {
                     UserScriptDocumentationView()
                 } label: {
@@ -548,6 +585,42 @@ struct ExtensionCenterView: View {
         return false
     }
 
+    private func beginFileImport(_ kind: ExtensionImportKind) {
+        guard !isInstalling else { return }
+        importKind = kind
+        showsFileImporter = true
+    }
+
+    private func completeFileImport(_ result: Result<[URL], Error>) {
+        guard case let .success(urls) = result, let url = urls.first else {
+            if case let .failure(error) = result, (error as NSError).code != NSUserCancelledError {
+                errorMessage = error.localizedDescription
+            }
+            return
+        }
+        // Preserve the request kind even when SwiftUI resets its presentation
+        // binding before delivering the provider's selected URL.
+        let kind = importKind
+        isInstalling = true
+        Task {
+            defer { isInstalling = false }
+            do {
+                switch kind {
+                case .webExtension:
+                    nativePreview = try await service.previewWebExtension(from: url)
+                case .userScript:
+                    let script = try await service.importUserScript(from: url)
+                    selectedTab = .installed
+                    successMessage = AppAccessibility.formatted("extension_installed_success_desc", script.name)
+                    HapticsManager.success()
+                }
+            } catch {
+                errorMessage = error.localizedDescription
+                HapticsManager.error()
+            }
+        }
+    }
+
     private var webExtensionContentTypes: [UTType] {
         [.folder, .zip, UTType(filenameExtension: "xpi") ?? .data, UTType(filenameExtension: "crx") ?? .data]
     }
@@ -559,19 +632,17 @@ struct ExtensionCenterView: View {
 
 struct WebExtensionStoreInstallView: View {
     let initialValue: String
-    let autoStart: Bool
 
     @Environment(\.dismiss) private var dismiss
     @State private var linkText: String
     @State private var isInstalling = false
     @State private var installedName: String?
     @State private var errorMessage: String?
-    @State private var didAutoStart = false
-    @State private var nativePreview: WebExtensionInstallPreview?
+    @State private var installationTask: Task<Void, Never>?
+    @State private var cancelRequested = false
 
-    init(initialValue: String = "", autoStart: Bool = false) {
+    init(initialValue: String = "") {
         self.initialValue = initialValue
-        self.autoStart = autoStart
         _linkText = State(initialValue: initialValue)
     }
 
@@ -596,6 +667,7 @@ struct WebExtensionStoreInstallView: View {
                             axis: .vertical
                         )
                         .lineLimit(2...4)
+                        .accessibilityIdentifier("extensions.store-url")
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -627,6 +699,7 @@ struct WebExtensionStoreInstallView: View {
                         .font(.body.weight(.semibold))
                         .frame(maxWidth: .infinity)
                     }
+                    .accessibilityIdentifier("extensions.store-install")
                     .buttonStyle(CompactActionButtonStyle(prominent: true))
                     .disabled(isInstalling || linkText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
@@ -636,20 +709,18 @@ struct WebExtensionStoreInstallView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(LanguageManager.shared.localizedString("cancel")) { dismiss() }
-                        .disabled(isInstalling)
+                    Button(LanguageManager.shared.localizedString("cancel")) {
+                        if isInstalling {
+                            cancelRequested = true
+                            installationTask?.cancel()
+                        } else { dismiss() }
+                    }
+                    .accessibilityIdentifier("extensions.store-cancel")
                 }
             }
         }
-        .sheet(item: $nativePreview) { preview in
-            WebExtensionReviewView(preview: preview) { _ in dismiss() }
-        }
         .interactiveDismissDisabled(isInstalling)
-        .task {
-            guard autoStart, !didAutoStart else { return }
-            didAutoStart = true
-            install()
-        }
+        .onDisappear { installationTask?.cancel() }
         .alert(
             LanguageManager.shared.localizedString("extension_install_success"),
             isPresented: Binding(
@@ -659,7 +730,7 @@ struct WebExtensionStoreInstallView: View {
         ) {
             Button(LanguageManager.shared.localizedString("done")) { dismiss() }
         } message: {
-            Text(AppAccessibility.formatted("extension_installed_success_desc", installedName ?? ""))
+            Text(installedName ?? "")
         }
         .alert(
             LanguageManager.shared.localizedString("extension_install_failed"),
@@ -677,14 +748,22 @@ struct WebExtensionStoreInstallView: View {
     private func install() {
         guard !isInstalling else { return }
         isInstalling = true
-        Task { @MainActor in
+        cancelRequested = false
+        let source = linkText
+        installationTask = Task { @MainActor in
+            defer { isInstalling = false; installationTask = nil }
             do {
-                nativePreview = try await WebExtensionStoreInstallService.shared.preview(from: linkText)
+                let record = try await WebExtensionStoreInstallService.shared.install(from: source)
+                installedName = record.name
+                HapticsManager.success()
             } catch {
-                errorMessage = error.localizedDescription
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                if Task.isCancelled || error is CancellationError {
+                    if cancelRequested { dismiss() }
+                } else {
+                    errorMessage = error.localizedDescription
+                    HapticsManager.error()
+                }
             }
-            isInstalling = false
         }
     }
 }
@@ -914,11 +993,11 @@ struct BrowserPackageInstallView: View {
                     isInstalling = false
                     return
                 }
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                HapticsManager.success()
                 showSuccess = true
             } catch {
                 errorMessage = error.localizedDescription
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                HapticsManager.error()
             }
             isInstalling = false
         }
@@ -1128,7 +1207,7 @@ struct UserScriptEditorView: View {
     private func copySource() {
         UIPasteboard.general.string = source
         sourceCopied = true
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        HapticsManager.success()
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.5))
             sourceCopied = false
@@ -1160,5 +1239,27 @@ struct UserScriptEditorView: View {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+}
+
+struct WebVideoDownloadExtensionView: View {
+    @AppStorage(VideoPlaybackPreferences.showsWebDownloadControlsKey) private var showsVideoDownloadControls = true
+
+    var body: some View {
+        List {
+            Section {
+                Toggle(isOn: $showsVideoDownloadControls) {
+                    SettingsRowLabel(icon: "arrow.down.circle", color: .orange,
+                                     title: ToolText.text("web_video_download"))
+                }.accessibilityIdentifier("extensions.video-download-details-toggle")
+            } header: {
+                Text(ToolText.text("builtin_extension"))
+            } footer: {
+                Text(ToolText.text("web_video_download_description"))
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle(ToolText.text("web_video_download"))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

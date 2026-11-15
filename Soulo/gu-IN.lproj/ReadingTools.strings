@@ -417,7 +417,7 @@
 "media_audio_tracks" = "ઓડિયો ટ્રેક્સ";
 "media_subtitles" = "સબટાઈટલ";
 "media_track_off" = "બંધ";
-"video_settings" = "વિડિયો";
+"video_settings" = "વિડિયો સેટિંગ્સ";
 "video_show_tools" = "વિડિઓ સાધનો બતાવો";
 "video_show_tools_desc" = "પ્લેબેક સ્પીડ, ડાઉનલોડ અને પૂર્ણસ્ક્રીન માટે વેબ વિડિયો પર ટૂલ્સ બતાવો.";
 "video_default_player" = "ડિફૉલ્ટ પ્લેયર";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "ધૂંધળો કાચ";
 "wallpaper_blur_amount" = "ધૂંધળાપાની તીવ્રતા";
 
-"auto_hide_platform_bar_hint" = "શોધનું પરિણામ ખોલતાં પ્લેટફોર્મ બાર છુપાય છે. પરિણામો પર પાછા જાઓ અથવા નવી શોધ કરો તો તે ફરી દેખાશે. આ મેનૂમાં તેને બંધ કરી શકો છો.";
+"auto_hide_platform_bar_hint" = "વેબપૃષ્ઠની સામગ્રી પર ટૅપ કર્યા પછી જ પ્લેટફોર્મ બાર છુપાશે. આપમેળે રીડાયરેક્ટ થવાથી કે સ્ક્રોલ કરવાથી નહીં. ફરી બતાવવા શોધ પરિણામો પર પાછા જાઓ અથવા નવી શોધ કરો.";
+
+"ad_subscription_add" = "ફિલ્ટર સૂચિ ઉમેરો";
+"ad_subscription_name" = "નામ";
+"ad_subscription_url" = "સબ્સ્ક્રિપ્શન URL";
+"ad_subscription_invalid" = "નામ અને માન્ય HTTP અથવા HTTPS સબ્સ્ક્રિપ્શન URL દાખલ કરો.";
+"ad_subscription_duplicate" = "આ સબ્સ્ક્રિપ્શન URL પહેલેથી ઉમેરાયેલ છે.";
+
+"feedback_settings" = "અવાજ અને કંપન";
+"feedback_settings_hint" = "સમગ્ર ઍપમાં કંપન અને ઇન્ટરફેસના અવાજ નિયંત્રિત કરો. વેબપેજ, વિડિઓ અને ઑડિઓ પ્લેબૅકને અસર થતી નથી.";
+
+"home_display_settings" = "હોમનું પ્રદર્શન";
+"browsing_display_settings" = "બ્રાઉઝિંગનું પ્રદર્શન";
+
+"web_video_download" = "વેબ વિડિઓ ડાઉનલોડ";
+"web_video_download_description" = "વેબપેજ, એપિસોડ સૂચિ અને પ્લેયરમાં વિડિઓ ડાઉનલોડ નિયંત્રણો બતાવો. પ્લેબૅક અને હાલના ડાઉનલોડ બદલાતા નથી.";
+"builtin_extension" = "બિલ્ટ-ઇન એક્સ્ટેન્શન";
+
+"wallpaper_overlay_amount" = "ઓવરલેની તીવ્રતા";
+"feedback_contact_required" = "જવાબ મેળવવા ઇમેઇલ અથવા અન્ય સંપર્ક માહિતી આપો.";
+"torrent_incomplete" = "અપૂર્ણ";
+"extend_page_background" = "વેબપેજ પૃષ્ઠભૂમિ વિસ્તારો";
+"extend_page_background_desc" = "ગ્રેડિયન્ટ સહિત પૃષ્ઠના ઉપર અને નીચેના રંગોને બ્રાઉઝરની કિનારીઓ સુધી વિસ્તારો.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "જૂથ સંકોચો";
+"tab_group_expand" = "જૂથ વિસ્તારો";
+"freeze_page_background_on_scroll" = "પ્રારંભિક રંગો રાખો";
+"freeze_page_background_on_scroll_desc" = "સ્ક્રોલ કર્યા પછી પ્રથમ ઓળખાયેલા રંગો રાખો. નવા પૃષ્ઠના રંગો ફરી ઓળખાશે.";
+"page_background_gradient" = "ગ્રેડિયન્ટ વિસ્તરણ";
+"page_background_gradient_desc" = "ઓળખેલા રંગોને ગ્રેડિયન્ટમાં ભેળવો. બંધ હોય ત્યારે દરેક કિનારે એક જ રંગ વપરાય છે.";
+
+
+"gestures_feedback_settings" = "હાવભાવ અને પ્રતિસાદ";

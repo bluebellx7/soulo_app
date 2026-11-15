@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "Una búsqueda, más de 40 plataformas";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Buscar o introducir URL";
 "search" = "Buscar";
 "recent_searches" = "Búsquedas recientes";
@@ -631,3 +631,6 @@ Cuentanos:
 "quick_actions_explanation" = "Mantén pulsado el icono de Soulo en la pantalla de inicio para usar los accesos directos configurados aquí.";
 
 "ad_block_scope_hint" = "Filtra anuncios web, capas promocionales y ventanas emergentes no solicitadas. Si un sitio deja de funcionar, puedes desactivar el filtrado solo para ese sitio.";
+
+"privacy_clear_browsing_on_exit" = "Borrar historial al salir";
+"privacy_clear_browsing_on_exit_desc" = "Borra las páginas visitadas al pasar a segundo plano o reiniciar. Conserva los términos de búsqueda.";

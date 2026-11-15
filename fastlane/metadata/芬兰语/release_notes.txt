@@ -1,6 +1,1 @@
-1.2.13
-
-• Erilliset taustat vaalealle ja tummalle ulkoasulle sekä kuvan peittokerroksen kytkin.
-• Aloitussivun värejä parannettiin; taustan esikatselu seuraa sovelluksen teemaa.
-• Esikatsele ja jaa taustoja sekä tallenna niitä Kuviin.
-• Ylävälilehtien asetukset, uusi välilehti ja alustapalkin valinnainen piilotus siirtymisen jälkeen.
+Parannettu iPad-ikkunoita, puhesyöttöä, paikallisia yhteenvetoja ja käyttöapua. Parannettu median taustavientiä, Pikakomentoja ja laajennusten yhteensopivuutta. Osa ominaisuuksista riippuu laitteesta, järjestelmäversiosta ja kielestä.

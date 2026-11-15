@@ -1,0 +1,75 @@
+{
+  "date": "2026-11-13",
+  "feature": "Built-in Web Video Downloads extension",
+  "version": "1.2.13 (53)",
+  "setting": {
+    "location": "Settings > Scripts & Extensions > Installed",
+    "name": "网页视频下载",
+    "default": true,
+    "key": "video.showsWebDownloadControls",
+    "details": "Native built-in extension details; shares the list switch and participates in settings backup and iCloud settings sync."
+  },
+  "scope": {
+    "hidden_when_disabled": [
+      "Web video toolbar download button",
+      "Episode single, batch, retry and long-press download actions",
+      "System and Soulo player video download actions in preview and fullscreen",
+      "Web Resources video download action"
+    ],
+    "preserved": [
+      "Video playback and episode page navigation",
+      "Audio, image and normal file download controls",
+      "Existing download status, files and jobs"
+    ],
+    "execution_layer": "Presentation preference only. Download services and callbacks do not check this preference. Open pages update their video toolbar without reloading or replacing the video element."
+  },
+  "validation": {
+    "download_engine_audit": "SHA-256 comparison with pre-task baselines passed for all 8 download service files; the web video download callback is unchanged.",
+    "unit_tests": {
+      "result": "/tmp/soulo-video-download-toggle-20261113/unit.xcresult",
+      "status": "4 tests passed",
+      "coverage": [
+        "Default enabled and preference backup round trip",
+        "Live web toolbar download visibility on/off/on, preserving playback, speed, episode tools and the same video node",
+        "Real MP4 downloads with a required shared WebKit cookie",
+        "Downloads complete after the visibility preference is turned off"
+      ]
+    },
+    "queued_download_regression": {
+      "status": "passed on iOS 26.2; 1 test, 0 failures",
+      "result": "/tmp/soulo-video-download-toggle-20261113/queue-ios26-final.xcresult",
+      "scenario": "Three real MP4 jobs exceed the two-worker limit. Assert an active downloading job and a waiting job before disabling controls; verify every job finishes with matching file bytes."
+    },
+    "ios_16_4_ui": {
+      "status": "4 distinct tests passed",
+      "results": [
+        "/tmp/soulo-video-download-toggle-20261113/ui-ios16.xcresult",
+        "/tmp/soulo-video-download-toggle-20261113/ui-ios16-system-final.xcresult"
+      ],
+      "coverage": [
+        "List and details switches share state and persist across app relaunch",
+        "System and Soulo video toolbar, episode, resource and fullscreen download visibility in both states",
+        "Audio download remains available with video controls hidden",
+        "Actual episode long-press download and file size display"
+      ]
+    },
+    "ios_26_2_ui": {
+      "status": "3 tests passed",
+      "result": "/tmp/soulo-video-download-toggle-20261113/ui-ios26.xcresult",
+      "coverage": "Extension setting persistence and both player visibility scenarios in both states, including episode navigation and audio download controls."
+    },
+    "screenshots": "Reviewed extension rows on iOS 16 and iOS 26 and both download visibility states in the iOS 26 fullscreen menu.",
+    "simulator_build_for_testing": "passed; final-test-build.log",
+    "generic_ios_device_build": "passed with CODE_SIGNING_ALLOWED=NO; device-final-build.log",
+    "localization": "All 50 ReadingTools.strings files pass plutil; check_localization.py --strict passed with 488 ReadingTools keys per locale.",
+    "metadata": "export_metadata_json.py --check passed; release version and store metadata unchanged by this task.",
+    "whitespace": "git diff --check passed"
+  },
+  "diagnostics": "The first iOS 16 System player run could not locate Done because the existing compact toolbar moved it into overflow. The test now identifies the presented player using its shared URL control and passes. A final accessibility-label lookup correction was rebuilt after the UI runs; UI assertions use stable identifiers. The additional three-job test did not start on the first iOS 16 launch: the app was idle in its normal run loop, with no XCTest execution. That owned test process was stopped; the same compiled test passed on the already-ready iOS 26 simulator.",
+  "limits": [
+    "Automated UI and network fixture validation used simulators; no physical device run.",
+    "These tests do not establish compatibility with every third-party video website."
+  ],
+  "paid_api_calls": 0,
+  "pushed": false
+}

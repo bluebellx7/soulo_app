@@ -1,0 +1,67 @@
+{
+  "date": "2026-11-13",
+  "feature": "Compact settings hierarchy",
+  "version": "1.2.13 (53)",
+  "layout": {
+    "home_root": [
+      "自定义首页工具栏",
+      "首页界面显示"
+    ],
+    "home_display": [
+      "编辑首页标题",
+      "编辑副标题",
+      "首页显示收藏",
+      "首页显示分组",
+      "首页显示最近搜索",
+      "灵动岛"
+    ],
+    "browsing_display": [
+      "显示顶部搜索框",
+      "保持全屏浏览",
+      "避免工具栏遮挡",
+      "页面缩放",
+      "网页外观"
+    ],
+    "other": "Storage and Clear Browsing Cache moved here; existing feedback, backup, and quick-action entries retained.",
+    "backups": "iCloud Settings Sync and its error/retry state moved into Settings Backups.",
+    "about_root": "One About & Support entry opens the existing version page, now including rating, feedback, and URL Scheme.",
+    "footer": "Soulo 1.2.13 (53)",
+    "normal_root_rows_before": 35,
+    "normal_root_rows_after": 22
+  },
+  "validation": {
+    "stored_preferences": "Compared all 12 AppStorage declarations in SettingsView and SettingsBackupsView before and after the move: keys and defaults match exactly.",
+    "ios_16_4": {
+      "backup_about_footer": {
+        "status": "passed",
+        "test": "HomeToolbarUITests/testCompactSettingsBackupsAboutAndFooter",
+        "result": "/tmp/soulo-settings-20261113/ui-ios16.xcresult"
+      },
+      "display_preferences": {
+        "status": "passed",
+        "test": "HomeToolbarUITests/testCompactSettingsDisplayPagesKeepPreferencesAndNestedNavigation",
+        "result": "/tmp/soulo-settings-20261113/ui-ios16-display-final.xcresult"
+      }
+    },
+    "ios_26_2": {
+      "status": "not_completed",
+      "reason": "Automation did not reach a test case. Direct app installation timed out after 25 seconds; readiness after restarting the existing simulator timed out after 45 seconds; booting a fresh isolated simulator also timed out after 20 seconds.",
+      "cancelled_result": "/tmp/soulo-settings-20261113/ui-ios26.xcresult",
+      "fresh_simulator_id": "180230BA-F1D3-452E-9E11-DB6DFF3CB9FC"
+    },
+    "simulator_build_for_testing": "passed",
+    "generic_ios_device_build": "passed with CODE_SIGNING_ALLOWED=NO",
+    "localization": "check_localization.py --strict passed: ReadingTools has 485 keys across all 50 locales; plutil syntax validation passed.",
+    "metadata": "export_metadata_json.py --check passed; version and release metadata unchanged.",
+    "screenshots": "Reviewed the iOS 16 home display, browsing display, backup/sync, root footer, and about/support screenshots.",
+    "whitespace": "git diff --check passed"
+  },
+  "compatibility": "Nested subpages use a separate hosting sheet on iOS 16 and regular navigation on iOS 17 or later.",
+  "diagnostics": "The initial display-page test used a differently capitalized English navigation title. Replaced that assertion with the stable zoom switch identifier and reran the affected case successfully; the already-passed backup/about case was not repeated on iOS 16.",
+  "paid_api_calls": 0,
+  "pushed": false,
+  "limits": [
+    "No completed iOS 26 UI acceptance run; generic iOS compilation passed.",
+    "No physical-device UI run for this settings layout change."
+  ]
+}

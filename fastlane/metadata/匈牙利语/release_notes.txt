@@ -1,6 +1,1 @@
-1.2.13
-
-• Külön háttér a világos és sötét megjelenéshez, kapcsolható képfedő réteggel.
-• Javított kezdőlapszínek; a háttér előnézete követi az alkalmazás témáját.
-• Hátterek előnézete, megosztása és mentése a Fotókba.
-• Felső lapbeállítások új lappal és a platformsáv választható elrejtésével navigáció után.
+Fejlesztettük az iPad-ablakokat, a hangbevitelt, a helyi összefoglalókat és a kisegítő lehetőségeket. Javult a háttérben történő médiaexportálás, a Parancsok és a bővítmények kompatibilitása. Egyes funkciók az eszköztől, a rendszerverziótól és a nyelvtől függenek.

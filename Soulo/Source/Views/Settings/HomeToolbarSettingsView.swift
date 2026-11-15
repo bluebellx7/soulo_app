@@ -16,7 +16,7 @@ struct HomeToolbarSettingsView: View {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(LanguageManager.shared.localizedString("toolbar_preview")).font(.headline)
-                    HStack(spacing: 8) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: UIDevice.current.userInterfaceIdiom == .pad ? 4 : 5), spacing: 8) {
                         ForEach(0..<HomeToolbarConfigurationService.slotCount, id: \.self) { index in
                             Button { slot = index; HapticsManager.selection() } label: {
                                 HomeToolbarButtonFace(action: draft[index], lightWallpaper: false, placeholder: index + 1, showsTitle: true)

@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Ένα ερώτημα, 40+ πλατφόρμες";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Αναζητήστε ή εισαγάγετε τη διεύθυνση URL";
 "privacy_search_placeholder" = "Ιδιωτική αναζήτηση ή πληκτρολογήστε URL";
 "search" = "Αναζήτηση";
@@ -354,7 +354,7 @@
 "voice_stop" = "Σταμάτα";
 "voice_record" = "Εγγραφή";
 "batch_import" = "Εισαγωγή παρτίδας";
-"batch_import_format" = "Επικολλήστε JSON στην παρακάτω μορφή";
+"batch_import_format" = "Επικολλήστε JSON εδώ";
 "batch_import_group" = "Προσθήκη στην ομάδα (Προαιρετικό)";
 "batch_import_group_placeholder" = "π.χ. Ταινίες";
 "batch_import_film_entry" = "Ανοίξτε τις προεπιλογές πλατφόρμας ταινιών";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Δεν ήταν δυνατή η εγκατάσταση της επέκτασης";
 "extension_permissions_summary" = "%d δικαιώματα · %d κανόνες ιστότοπου";
 "extension_untitled" = "Παράταση χωρίς τίτλο";
-"web_extension_install_footer" = "Εγκαταστήστε συμβατές επεκτάσεις από σύνδεσμο καταστήματος ή εισαγάγετε CRX, XPI, ZIP ή φάκελο επέκτασης. Ελέγξτε δικαιώματα και συμβατότητα· ορισμένες λειτουργίες υπολογιστή δεν είναι διαθέσιμες.";
+"web_extension_install_footer" = "Μετά την εγκατάσταση, μπορείτε να αλλάξετε τα δικαιώματα στη διαχείριση της επέκτασης.";
 "web_extension_install_store_link" = "Εγκατάσταση από το Store Link…";
 "web_extension_browse_sources" = "Περιηγηθείτε στα καταστήματα επέκτασης";
 "web_extension_browse_sources_footer" = "Τα κουμπιά Store Get υποστηρίζουν μόνο τα δικά τους προγράμματα περιήγησης για επιτραπέζιους υπολογιστές. Αντιγράψτε έναν σύνδεσμο σελίδας λεπτομερειών επέκτασης και, στη συνέχεια, χρησιμοποιήστε το Install from Store Link στο Soulo.";
 "web_extension_store_install_title" = "Εγκαταστήστε μια επέκταση καταστήματος";
 "extension_page_banner_title" = "Εγκατάσταση με Soulo";
-"extension_page_banner_desc" = "Ελέγξτε συμβατότητα και δικαιώματα πριν από την εγκατάσταση.";
-"web_extension_store_install_desc" = "Επικολλήστε τον σύνδεσμο της σελίδας μιας επέκτασης Chrome, Edge ή Firefox και ελέγξτε συμβατότητα και δικαιώματα πριν επιβεβαιώσετε την εγκατάσταση.";
+"extension_page_banner_desc" = "Μετά την εγκατάσταση, μπορείτε να αλλάξετε τα δικαιώματα στη διαχείριση της επέκτασης.";
+"web_extension_store_install_desc" = "Μετά την εγκατάσταση, μπορείτε να αλλάξετε τα δικαιώματα στη διαχείριση της επέκτασης.";
 "web_extension_store_link_placeholder" = "Σύνδεσμος σελίδας επέκτασης ή αναγνωριστικό επέκτασης Chrome";
 "web_extension_store_invalid_link" = "Επικολλήστε έναν σύνδεσμο σελίδας λεπτομερειών επέκτασης από το Chrome, το Edge ή τον Firefox, ένα αναγνωριστικό επέκτασης Chrome ή έναν άμεσο σύνδεσμο CRX, XPI ή ZIP.";
 "web_extension_store_https_required" = "Τα πακέτα επεκτάσεων πρέπει να χρησιμοποιούν έναν ασφαλή σύνδεσμο HTTPS.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Πατήστε παρατεταμένα το εικονίδιο Soulo στην αρχική οθόνη για να χρησιμοποιήσετε τις συντομεύσεις που ορίζετε εδώ.";
 
 "ad_block_scope_hint" = "Φιλτράρει διαφημίσεις ιστού, διαφημιστικές επικαλύψεις και ανεπιθύμητα αναδυόμενα παράθυρα. Αν ένας ιστότοπος δεν λειτουργεί, μπορείτε να απενεργοποιήσετε το φιλτράρισμα μόνο γι’ αυτόν.";
+
+"privacy_clear_browsing_on_exit" = "Διαγραφή ιστορικού στην έξοδο";
+"privacy_clear_browsing_on_exit_desc" = "Διαγραφή σελίδων που επισκεφτήκατε κατά τη μετάβαση στο παρασκήνιο ή την επανεκκίνηση. Οι όροι αναζήτησης διατηρούνται.";

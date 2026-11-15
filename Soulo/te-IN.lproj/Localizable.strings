@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "ఒక ప్రశ్న, 40+ ప్లాట్‌ఫారమ్‌లు";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "శోధించండి లేదా URLని నమోదు చేయండి";
 "privacy_search_placeholder" = "ప్రైవేట్ శోధన లేదా URLని నమోదు చేయండి";
 "search" = "శోధించండి";
@@ -354,7 +354,7 @@
 "voice_stop" = "ఆపు";
 "voice_record" = "రికార్డ్ చేయండి";
 "batch_import" = "బ్యాచ్ దిగుమతి";
-"batch_import_format" = "దిగువ ఆకృతిలో JSONని అతికించండి";
+"batch_import_format" = "ఇక్కడ JSON పేస్ట్ చేయండి";
 "batch_import_group" = "సమూహానికి జోడించు (ఐచ్ఛికం)";
 "batch_import_group_placeholder" = "ఉదా సినిమాలు";
 "batch_import_film_entry" = "మూవీ ప్లాట్‌ఫారమ్ ప్రీసెట్‌లను తెరవండి";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "పొడిగింపును ఇన్‌స్టాల్ చేయడం సాధ్యపడలేదు";
 "extension_permissions_summary" = "%d అనుమతులు · %d వెబ్‌సైట్ నియమాలు";
 "extension_untitled" = "పేరులేని పొడిగింపు";
-"web_extension_install_footer" = "అనుకూల స్టోర్ లింక్ నుంచి ఎక్స్‌టెన్షన్ ఇన్‌స్టాల్ చేయండి లేదా CRX, XPI, ZIP లేదా ఎక్స్‌టెన్షన్ ఫోల్డర్ దిగుమతి చేయండి. ముందుగా అనుమతులు, అనుకూలత చూడండి; కొన్ని డెస్క్‌టాప్ ఫీచర్లు అందుబాటులో లేవు.";
+"web_extension_install_footer" = "ఇన్‌స్టాల్ చేసిన తర్వాత ఎక్స్‌టెన్షన్ నిర్వహణ పేజీలో అనుమతులను మార్చవచ్చు.";
 "web_extension_install_store_link" = "స్టోర్ లింక్ నుండి ఇన్‌స్టాల్ చేయండి…";
 "web_extension_browse_sources" = "ఎక్స్‌టెన్షన్ స్టోర్‌లను బ్రౌజ్ చేయండి";
 "web_extension_browse_sources_footer" = "స్టోర్ గెట్ బటన్‌లు వారి స్వంత డెస్క్‌టాప్ బ్రౌజర్‌లకు మాత్రమే మద్దతు ఇస్తాయి. పొడిగింపు వివరాల పేజీ లింక్‌ని కాపీ చేసి, Souloలో స్టోర్ లింక్ నుండి ఇన్‌స్టాల్ చేయి ఉపయోగించండి.";
 "web_extension_store_install_title" = "స్టోర్ ఎక్స్‌టెన్షన్‌ను ఇన్‌స్టాల్ చేయండి";
 "extension_page_banner_title" = "Souloతో ఇన్‌స్టాల్ చేయండి";
-"extension_page_banner_desc" = "ఇన్‌స్టాల్ చేసే ముందు అనుకూలత, అనుమతులు తనిఖీ చేయండి.";
-"web_extension_store_install_desc" = "Chrome, Edge లేదా Firefox ఎక్స్‌టెన్షన్ వివరాల పేజీ లింక్‌ను పేస్ట్ చేసి, ఇన్‌స్టాల్ నిర్ధారించే ముందు అనుకూలత, అనుమతులు తనిఖీ చేయండి.";
+"extension_page_banner_desc" = "ఇన్‌స్టాల్ చేసిన తర్వాత ఎక్స్‌టెన్షన్ నిర్వహణ పేజీలో అనుమతులను మార్చవచ్చు.";
+"web_extension_store_install_desc" = "ఇన్‌స్టాల్ చేసిన తర్వాత ఎక్స్‌టెన్షన్ నిర్వహణ పేజీలో అనుమతులను మార్చవచ్చు.";
 "web_extension_store_link_placeholder" = "పొడిగింపు పేజీ లింక్ లేదా Chrome పొడిగింపు ID";
 "web_extension_store_invalid_link" = "Chrome, Edge, లేదా Firefox, Chrome పొడిగింపు ID లేదా డైరెక్ట్ CRX, XPI లేదా జిప్ లింక్ నుండి పొడిగింపు వివరాల పేజీ లింక్‌ను అతికించండి.";
 "web_extension_store_https_required" = "పొడిగింపు ప్యాకేజీలు తప్పనిసరిగా సురక్షితమైన HTTPS లింక్‌ని ఉపయోగించాలి.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "ఇక్కడ సెట్ చేసిన షార్ట్‌కట్‌లను ఉపయోగించడానికి హోమ్ స్క్రీన్‌లోని Soulo చిహ్నాన్ని నొక్కి పట్టుకోండి.";
 
 "ad_block_scope_hint" = "వెబ్ ప్రకటనలు, ప్రచార ఓవర్‌లేలు మరియు అవాంఛిత పాప్-అప్‌లను ఫిల్టర్ చేస్తుంది. ఏదైనా సైట్ పని చేయకపోతే ఆ సైట్‌కు మాత్రమే ఫిల్టర్ ఆఫ్ చేయవచ్చు.";
+
+"privacy_clear_browsing_on_exit" = "నిష్క్రమించేటప్పుడు బ్రౌజింగ్ చరిత్రను తొలగించు";
+"privacy_clear_browsing_on_exit_desc" = "నేపథ్యంలోకి వెళ్లినప్పుడు లేదా మళ్లీ ప్రారంభించినప్పుడు సందర్శించిన పేజీల చరిత్రను తొలగించు. శోధన పదాలను ఉంచు.";

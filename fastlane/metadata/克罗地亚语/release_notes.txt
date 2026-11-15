@@ -1,6 +1,1 @@
-1.2.13
-
-• Zasebne pozadine za svijetli i tamni izgled uz prekidač za sloj preko slike.
-• Poboljšane boje početne stranice; pregled pozadine prati temu aplikacije.
-• Pregledajte, dijelite i spremajte pozadine u Foto.
-• Postavke gornjih kartica s novom karticom i neobaveznim skrivanjem trake platformi nakon navigacije.
+Poboljšani su prozori na iPadu, glasovni unos, lokalni sažeci i pristupačnost. Poboljšani su izvoz medija u pozadini, Prečaci i kompatibilnost proširenja. Neke značajke ovise o uređaju, verziji sustava i jeziku.

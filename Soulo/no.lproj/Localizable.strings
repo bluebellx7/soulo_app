@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "One Query, 40+ plattformer";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Søk eller skriv inn URL";
 "privacy_search_placeholder" = "Privat søk eller skriv inn URL";
 "search" = "Søk";
@@ -354,7 +354,7 @@
 "voice_stop" = "Stopp";
 "voice_record" = "Ta opp";
 "batch_import" = "Batchimport";
-"batch_import_format" = "Lim inn JSON i formatet nedenfor";
+"batch_import_format" = "Lim inn JSON her";
 "batch_import_group" = "Legg til i gruppe (valgfritt)";
 "batch_import_group_placeholder" = "f.eks. Filmer";
 "batch_import_film_entry" = "Åpne forhåndsinnstillinger for filmplattform";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Utvidelsen kunne ikke installeres";
 "extension_permissions_summary" = "%d tillatelser · %d nettstedsregler";
 "extension_untitled" = "Uten tittel utvidelse";
-"web_extension_install_footer" = "Installer kompatible utvidelser via en butikklenke, eller importer CRX, XPI, ZIP eller en utvidelsesmappe. Sjekk tillatelser og kompatibilitet; enkelte skrivebordsfunksjoner er ikke tilgjengelige.";
+"web_extension_install_footer" = "Etter installasjonen kan du endre tillatelser på utvidelsens administrasjonsside.";
 "web_extension_install_store_link" = "Installer fra Store Link...";
 "web_extension_browse_sources" = "Bla gjennom utvidelsesbutikker";
 "web_extension_browse_sources_footer" = "Store Get-knapper støtter kun deres egne nettlesere. Kopier en utvidelsesdetaljsidekobling, og bruk deretter Installer fra butikkkobling i Soulo.";
 "web_extension_store_install_title" = "Installer en butikkutvidelse";
 "extension_page_banner_title" = "Installer med Soulo";
-"extension_page_banner_desc" = "Sjekk kompatibilitet og tillatelser før installasjon.";
-"web_extension_store_install_desc" = "Lim inn lenken til en Chrome-, Edge- eller Firefox-utvidelses detaljside og sjekk kompatibilitet og tillatelser før du bekrefter installasjonen.";
+"extension_page_banner_desc" = "Etter installasjonen kan du endre tillatelser på utvidelsens administrasjonsside.";
+"web_extension_store_install_desc" = "Etter installasjonen kan du endre tillatelser på utvidelsens administrasjonsside.";
 "web_extension_store_link_placeholder" = "Utvidelsessidelink eller Chrome-utvidelses-ID";
 "web_extension_store_invalid_link" = "Lim inn en utvidelsesdetaljsidekobling fra Chrome, Edge eller Firefox, en Chrome-utvidelses-ID eller en direkte CRX-, XPI- eller ZIP-kobling.";
 "web_extension_store_https_required" = "Utvidelsespakker må bruke en sikker HTTPS-kobling.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Trykk og hold på Soulo-symbolet på Hjem-skjermen for å bruke snarveiene som er satt opp her.";
 
 "ad_block_scope_hint" = "Filtrerer nettannonser, reklameoverlegg og uønskede sprettoppvinduer. Hvis et nettsted ikke fungerer, kan du slå av filtrering bare for det nettstedet.";
+
+"privacy_clear_browsing_on_exit" = "Tøm nettleserloggen ved avslutning";
+"privacy_clear_browsing_on_exit_desc" = "Tøm besøkte sider når appen går i bakgrunnen eller startes på nytt. Behold søkeord.";

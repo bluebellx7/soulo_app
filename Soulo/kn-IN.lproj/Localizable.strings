@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "ಒಂದು ಪ್ರಶ್ನೆ, 40+ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗಳು";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "URL ಅನ್ನು ಹುಡುಕಿ ಅಥವಾ ನಮೂದಿಸಿ";
 "privacy_search_placeholder" = "ಖಾಸಗಿ ಹುಡುಕಾಟ ಅಥವಾ URL ನಮೂದಿಸಿ";
 "search" = "ಹುಡುಕು";
@@ -354,7 +354,7 @@
 "voice_stop" = "ನಿಲ್ಲಿಸು";
 "voice_record" = "ರೆಕಾರ್ಡ್ ಮಾಡಿ";
 "batch_import" = "ಬ್ಯಾಚ್ ಆಮದು";
-"batch_import_format" = "ಕೆಳಗಿನ ಸ್ವರೂಪದಲ್ಲಿ JSON ಅನ್ನು ಅಂಟಿಸಿ";
+"batch_import_format" = "ಇಲ್ಲಿ JSON ಅಂಟಿಸಿ";
 "batch_import_group" = "ಗುಂಪಿಗೆ ಸೇರಿಸಿ (ಐಚ್ಛಿಕ)";
 "batch_import_group_placeholder" = "ಉದಾ. ಚಲನಚಿತ್ರಗಳು";
 "batch_import_film_entry" = "ಚಲನಚಿತ್ರ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್ ಪೂರ್ವನಿಗದಿಗಳನ್ನು ತೆರೆಯಿರಿ";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "ವಿಸ್ತರಣೆಯನ್ನು ಸ್ಥಾಪಿಸಲಾಗಲಿಲ್ಲ";
 "extension_permissions_summary" = "%d ಅನುಮತಿಗಳು · %d ವೆಬ್‌ಸೈಟ್ ನಿಯಮಗಳು";
 "extension_untitled" = "ಶೀರ್ಷಿಕೆರಹಿತ ವಿಸ್ತರಣೆ";
-"web_extension_install_footer" = "ಹೊಂದುವ ಸ್ಟೋರ್ ಲಿಂಕ್ನಿಂದ ವಿಸ್ತರಣೆ ಸ್ಥಾಪಿಸಿ ಅಥವಾ CRX, XPI, ZIP ಅಥವಾ ವಿಸ್ತರಣೆ ಫೋಲ್ಡರ್ ಆಮದು ಮಾಡಿ. ಮೊದಲು ಅನುಮತಿಗಳು ಮತ್ತು ಹೊಂದಾಣಿಕೆ ಪರಿಶೀಲಿಸಿ; ಕೆಲವು ಡೆಸ್ಕ್ಟಾಪ್ ವೈಶಿಷ್ಟ್ಯಗಳು ಲಭ್ಯವಿಲ್ಲ.";
+"web_extension_install_footer" = "ಸ್ಥಾಪನೆಯ ನಂತರ ವಿಸ್ತರಣೆಯ ನಿರ್ವಹಣಾ ಪುಟದಲ್ಲಿ ಅನುಮತಿಗಳನ್ನು ಬದಲಾಯಿಸಬಹುದು.";
 "web_extension_install_store_link" = "ಸ್ಟೋರ್ ಲಿಂಕ್‌ನಿಂದ ಸ್ಥಾಪಿಸಿ...";
 "web_extension_browse_sources" = "ವಿಸ್ತರಣೆ ಅಂಗಡಿಗಳನ್ನು ಬ್ರೌಸ್ ಮಾಡಿ";
 "web_extension_browse_sources_footer" = "ಸ್ಟೋರ್ ಗೆಟ್ ಬಟನ್‌ಗಳು ತಮ್ಮದೇ ಆದ ಡೆಸ್ಕ್‌ಟಾಪ್ ಬ್ರೌಸರ್‌ಗಳನ್ನು ಮಾತ್ರ ಬೆಂಬಲಿಸುತ್ತವೆ. ವಿಸ್ತರಣೆಯ ವಿವರ ಪುಟದ ಲಿಂಕ್ ಅನ್ನು ನಕಲಿಸಿ, ನಂತರ Soulo ನಲ್ಲಿ ಸ್ಟೋರ್ ಲಿಂಕ್‌ನಿಂದ ಸ್ಥಾಪಿಸಿ ಬಳಸಿ.";
 "web_extension_store_install_title" = "ಸ್ಟೋರ್ ವಿಸ್ತರಣೆಯನ್ನು ಸ್ಥಾಪಿಸಿ";
 "extension_page_banner_title" = "Soulo ನೊಂದಿಗೆ ಸ್ಥಾಪಿಸಿ";
-"extension_page_banner_desc" = "ಸ್ಥಾಪನೆಗೂ ಮೊದಲು ಹೊಂದಾಣಿಕೆ ಮತ್ತು ಅನುಮತಿಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.";
-"web_extension_store_install_desc" = "Chrome, Edge ಅಥವಾ Firefox ವಿಸ್ತರಣೆಯ ವಿವರ ಪುಟದ ಲಿಂಕ್ ಅಂಟಿಸಿ, ಸ್ಥಾಪನೆ ದೃಢೀಕರಿಸುವ ಮೊದಲು ಹೊಂದಾಣಿಕೆ ಮತ್ತು ಅನುಮತಿಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.";
+"extension_page_banner_desc" = "ಸ್ಥಾಪನೆಯ ನಂತರ ವಿಸ್ತರಣೆಯ ನಿರ್ವಹಣಾ ಪುಟದಲ್ಲಿ ಅನುಮತಿಗಳನ್ನು ಬದಲಾಯಿಸಬಹುದು.";
+"web_extension_store_install_desc" = "ಸ್ಥಾಪನೆಯ ನಂತರ ವಿಸ್ತರಣೆಯ ನಿರ್ವಹಣಾ ಪುಟದಲ್ಲಿ ಅನುಮತಿಗಳನ್ನು ಬದಲಾಯಿಸಬಹುದು.";
 "web_extension_store_link_placeholder" = "ವಿಸ್ತರಣೆ ಪುಟ ಲಿಂಕ್ ಅಥವಾ Chrome ವಿಸ್ತರಣೆ ID";
 "web_extension_store_invalid_link" = "Chrome, Edge, ಅಥವಾ Firefox, Chrome ವಿಸ್ತರಣೆ ID, ಅಥವಾ ನೇರ CRX, XPI, ಅಥವಾ ZIP ಲಿಂಕ್‌ನಿಂದ ವಿಸ್ತರಣೆ ವಿವರ ಪುಟದ ಲಿಂಕ್ ಅನ್ನು ಅಂಟಿಸಿ.";
 "web_extension_store_https_required" = "ವಿಸ್ತರಣೆ ಪ್ಯಾಕೇಜುಗಳು ಸುರಕ್ಷಿತ HTTPS ಲಿಂಕ್ ಅನ್ನು ಬಳಸಬೇಕು.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "ಇಲ್ಲಿ ಹೊಂದಿಸಿದ ಶಾರ್ಟ್‌ಕಟ್‌ಗಳನ್ನು ಬಳಸಲು ಹೋಮ್ ಸ್ಕ್ರೀನ್‌ನ Soulo ಐಕಾನ್ ಅನ್ನು ಒತ್ತಿ ಹಿಡಿಯಿರಿ.";
 
 "ad_block_scope_hint" = "ವೆಬ್ ಜಾಹೀರಾತುಗಳು, ಪ್ರಚಾರದ ಓವರ್‌ಲೇಗಳು ಮತ್ತು ಅನಗತ್ಯ ಪಾಪ್-ಅಪ್‌ಗಳನ್ನು ಫಿಲ್ಟರ್ ಮಾಡುತ್ತದೆ. ಸೈಟ್ ಕೆಲಸ ಮಾಡದಿದ್ದರೆ ಆ ಸೈಟ್‌ಗೆ ಮಾತ್ರ ಫಿಲ್ಟರ್ ಆಫ್ ಮಾಡಬಹುದು.";
+
+"privacy_clear_browsing_on_exit" = "ನಿರ್ಗಮಿಸುವಾಗ ಬ್ರೌಸಿಂಗ್ ಇತಿಹಾಸ ಅಳಿಸಿ";
+"privacy_clear_browsing_on_exit_desc" = "ಹಿನ್ನೆಲೆಗೆ ಹೋದಾಗ ಅಥವಾ ಮರುಪ್ರಾರಂಭಿಸಿದಾಗ ಭೇಟಿ ನೀಡಿದ ಪುಟಗಳ ಇತಿಹಾಸ ಅಳಿಸಿ. ಹುಡುಕಾಟ ಪದಗಳನ್ನು ಉಳಿಸಿ.";

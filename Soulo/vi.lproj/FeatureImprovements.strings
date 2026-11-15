@@ -81,3 +81,58 @@
 "Website cache" = "Bộ đệm trang web";
 "Website icons" = "Biểu tượng trang web";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "Đồng bộ iCloud lưu bản sao trước khi cài đặt thay đổi. Giữ %lld bản sao mới nhất và bản sao ban đầu.";
+
+"Move tab to new window" = "Chuyển sang cửa sổ mới";
+
+"Save webpage" = "Lưu trang web";
+
+"Webpage" = "Trang web";
+
+"Website data" = "Dữ liệu trang web";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Gồm bài viết đã lưu, chỉ mục sách, ảnh bìa và tiến độ đọc. Tệp sách được tính trong tệp đã tải xuống.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Dung lượng là ước tính. IndexedDB gồm cơ sở dữ liệu và dữ liệu đa phương tiện. Dung lượng chưa xác định hiển thị là —.";
+"Extension temporary cache" = "Bộ nhớ đệm tạm của tiện ích";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Xóa dữ liệu đa phương tiện tạm của tiện ích. Giữ cài đặt, tập lệnh, tiến độ và tệp đã tải. Trước tiên hãy đóng trang tiện ích, trang video và hoàn tất tải xuống.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Dữ liệu tạm vẫn đang được dùng. Hãy đóng trang tiện ích và video, hoàn tất tải xuống rồi thử lại.";
+"Deleting website data can sign you out and remove offline content." = "Xóa dữ liệu có thể đăng xuất bạn và xóa nội dung ngoại tuyến.";
+
+"Extension startup timed out." = "Đã hết thời gian khởi động tiện ích.";
+
+"soulo_extensions" = "Tiện ích Soulo";
+
+"Add to Quick Links" = "Thêm vào liên kết nhanh";
+"Remove from Quick Links" = "Xóa khỏi liên kết nhanh";
+"Mark bookmarks with a heart to show them here." = "Nhấn giữ dấu trang rồi đánh dấu trái tim để hiển thị tại đây.";
+
+"Type %@ to confirm." = "Nhập %@ để xác nhận.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Dấu trang được hợp nhất giữa các thiết bị. Chỉ thao tác xóa rõ ràng mới loại bỏ mục.";
+"This deletion also syncs to your other devices." = "Thao tác xóa này cũng được đồng bộ sang các thiết bị khác.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Sao chép lời nhắc, thêm yêu cầu và gửi cho AI. Sau đó dán JSON được tạo vào đây để nhập.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Ưu tiên tên nhóm trong JSON. Các nhóm trùng tên được hợp nhất mà không xóa nền tảng hiện có.";
+"Imported %1$d platforms into %2$d groups." = "Đã nhập %1$d nền tảng vào %2$d nhóm.";
+"No new platforms or group entries." = "Không có nền tảng hay mục nhóm mới.";
+
+"App size" = "Kích thước ứng dụng";
+"App data" = "Dữ liệu ứng dụng";
+"Wallpaper cache" = "Bộ nhớ đệm hình nền";
+"Other caches" = "Bộ nhớ đệm khác";
+"Temporary files" = "Tệp tạm thời";
+"Download task data" = "Dữ liệu tác vụ tải xuống";
+"Settings and records" = "Cài đặt và bản ghi";
+"Shared app data" = "Dữ liệu ứng dụng dùng chung";
+"Other app data" = "Dữ liệu ứng dụng khác";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Dữ liệu ứng dụng không gồm chương trình đã cài. Dung lượng trên đĩa có thể khác Cài đặt iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Xóa nội dung đã lưu trong danh sách tương ứng. Tệp tạm đang dùng và cơ sở dữ liệu bộ nhớ đệm hệ thống được giải phóng khi an toàn.";
+
+"Current platforms" = "Nền tảng hiện tại";
+"Import mode" = "Chế độ nhập";
+"Append" = "Thêm";
+"Replace all" = "Thay thế tất cả";
+"Replace all platforms?" = "Thay thế mọi nền tảng?";
+"A settings backup is saved before replacement." = "Bản sao lưu cài đặt sẽ được lưu trước khi thay thế.";
+
+"Take over web players" = "Thay trình phát web";
+"Only takes over website fullscreen. Extension players stay independent." = "Chỉ thay thế phát toàn màn hình của trang web. Trình phát tiện ích vẫn độc lập.";
+
+"App size is the installed program and resources, not the App Store download size." = "Dung lượng ứng dụng là chương trình và tài nguyên đã cài, không phải bản tải từ App Store.";
+"App data is the total of the categories below." = "Dữ liệu ứng dụng là tổng các mục bên dưới.";

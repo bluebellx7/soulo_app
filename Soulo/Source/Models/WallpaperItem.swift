@@ -4,6 +4,13 @@ enum WallpaperAppearance: String, CaseIterable, Identifiable {
     case light, dark
     var id: String { rawValue }
     init(_ scheme: ColorScheme) { self = scheme == .dark ? .dark : .light }
+    static func appPreference(_ mode: String?, systemIsDark: Bool) -> Self {
+        switch mode {
+        case "light": .light
+        case "dark": .dark
+        default: systemIsDark ? .dark : .light
+        }
+    }
     @MainActor var localizedName: String { LText("appearance_" + rawValue) }
     func key(_ base: String) -> String { base + "_" + rawValue }
 }
@@ -121,8 +128,28 @@ struct RemoteWallpaper: Codable, Identifiable, Hashable {
 
 /// Compare both foreground choices in linear light, including saturated colors.
 enum WallpaperContrast {
-    static let lightOverlayOpacity = 0.24
-    static let darkOverlayOpacity = 0.30
+    static let defaultImageOverlayAmount = 0.30
+
+    static func imageLightness(_ image: CGImage, overlayAmount: Double) -> (masked: Bool, original: Bool) {
+        let side = 24
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
+        let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8,
+                bytesPerRow: side * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
+            return true
+        }
+        guard drawn else { return (false, false) }
+        var original = 0.0, masked = 0.0
+        let lightness = 1 - overlayAmount
+        for index in stride(from: 0, to: pixels.count, by: 4) {
+            let r = Double(pixels[index]) / 255, g = Double(pixels[index + 1]) / 255, b = Double(pixels[index + 2]) / 255
+            original += luminance(red: r, green: g, blue: b)
+            masked += luminance(red: r * lightness, green: g * lightness, blue: b * lightness)
+        }
+        let count = Double(side * side)
+        return (prefersDarkText(luminance: masked / count), prefersDarkText(luminance: original / count))
+    }
 
     static func luminance(red: Double, green: Double, blue: Double) -> Double {
         func linear(_ value: Double) -> Double {

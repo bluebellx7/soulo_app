@@ -11,6 +11,7 @@ final class WebMediaPlaybackContext {
     var selectedSourceID: String?
     let pageURL: URL?
     private let episodePageURL: URL?
+    private var episodeActionScope: String?
     weak var sourceWebView: WKWebView?
 
     init(resource: WebMediaResource, pageURL: URL?, sourceWebView: WKWebView?, episodeList: WebEpisodeList?) {
@@ -19,14 +20,20 @@ final class WebMediaPlaybackContext {
         self.sourceWebView = sourceWebView
         self.episodeList = episodeList
         episodePageURL = episodeList?.pageURL ?? sourceWebView?.url ?? pageURL
+        episodeActionScope = episodeList?.actionScope
     }
 
     func accepts(_ list: WebEpisodeList) -> Bool {
-        episodePageURL.map { WebEpisodeList.matches($0, list.pageURL) } ?? true
+        if let episodeActionScope {
+            return list.actionScope == episodeActionScope && episodePageURL?.host == list.pageURL.host
+                && episodePageURL?.path == list.pageURL.path
+        }
+        return episodePageURL.map { WebEpisodeList.matches($0, list.pageURL) } ?? true
     }
 
     func updateEpisodeList(_ list: WebEpisodeList?) {
         guard let list, accepts(list) else { return }
         episodeList = list
+        episodeActionScope = list.actionScope
     }
 }

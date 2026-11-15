@@ -3,6 +3,77 @@ import AVKit
 
 final class DownloadPlaybackUITests: XCTestCase {
     @MainActor
+    func testMiniAndVideoMenuStartFloatingWindowForBothPlayers() async throws {
+        try XCTSkipUnless(AVPictureInPictureController.isPictureInPictureSupported(), "Picture in Picture requires a supported device")
+        continueAfterFailure = false
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let name = "PiP-entry-\(UUID()).mp4"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/" + name: Data(contentsOf: video)])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        defer { app.terminate() }
+        func wait(_ message: String, _ condition: () -> Bool) async throws {
+            for _ in 0..<40 {
+                if condition() { return }
+                try await Task.sleep(for: .milliseconds(250))
+            }
+            let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.lifetime = .keepAlways; add(attachment)
+            XCTFail(message + "; " + app.debugDescription)
+            throw URLError(.timedOut)
+        }
+        var downloaded = false
+        for engine in ["system", "soulo"] {
+            for entry in ["mini", "menu"] {
+                if let filter = ProcessInfo.processInfo.environment["SOULO_PIP_ENTRY_FILTER"], filter != engine + "-" + entry { continue }
+                app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-video.defaultPlayer", engine,
+                    "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES", "-is_incognito", "NO", "-wallpaper_source", "gradient"]
+                app.launchEnvironment["SOULO_BROWSER_TRACE"] = "1"
+                app.launch()
+                if !downloaded {
+                    var route = URLComponents(); route.scheme = "soulo"; route.host = "download"
+                    route.queryItems = [URLQueryItem(name: "url", value: root.appendingPathComponent(name).absoluteString)]
+                    app.open(try XCTUnwrap(route.url)); downloaded = true
+                }
+                app.open(URL(string: "soulo://downloads")!)
+                let file = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "downloads.open.", name)).firstMatch
+                XCTAssertTrue(file.waitForExistence(timeout: 15)); file.tap()
+                let prefix = engine == "system" ? "media.native" : "media.mkv"
+                let timeline = app.sliders[prefix + ".timeline"]
+                XCTAssertTrue(timeline.waitForExistence(timeout: 15))
+                try await wait("Seekable video: \(engine)") { timeline.isEnabled }
+                let play = app.buttons[prefix + ".play"]
+                if play.label == "Pause" { play.tap() }
+                timeline.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).tap()
+                let mini = app.descendants(matching: .any)["media.mini-player"].firstMatch
+                if entry == "mini" {
+                    app.navigationBars.buttons.firstMatch.tap()
+                    app.buttons["library.section.files"].tap()
+                    XCTAssertTrue(mini.waitForExistence(timeout: 5))
+                    let button = app.buttons.matching(NSPredicate(format: "label == %@", "Picture in Picture")).firstMatch
+                    try await wait("Mini PiP must be enabled: \(engine)") { button.exists && button.isEnabled }
+                    button.tap()
+                } else {
+                    if engine == "soulo", play.label == "Play" { play.tap() }
+                    let menuOpenedAt = Date()
+                    app.buttons["media.options"].tap()
+                    let button = app.buttons["media.picture-in-picture"]
+                    try await wait("Video menu PiP must be enabled: \(engine)") { button.exists && button.isEnabled }
+                    XCTAssertLessThan(Date().timeIntervalSince(menuOpenedAt), 5, "Playback updates must not continually rebuild the open menu")
+                    button.tap()
+                    app.navigationBars.buttons.firstMatch.tap()
+                    app.buttons["library.section.files"].tap()
+                }
+                try await wait("The system window must replace the mini player: \(engine) \(entry)") {
+                    !mini.exists && !app.otherElements["media.pip.preparing"].exists && !app.alerts.firstMatch.exists
+                }
+                let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                shot.name = "floating-window-\(engine)-\(entry)"; shot.lifetime = .keepAlways; add(shot)
+                app.terminate()
+            }
+        }
+    }
+
+    @MainActor
     func testMP4MiniPlayerReopensAndTimelineAcceptsFingerDraggingInBothPlayers() async throws {
         continueAfterFailure = false
         let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
@@ -497,23 +568,23 @@ final class DownloadPlaybackUITests: XCTestCase {
     }
 
     @MainActor
-    func testSiteNativeFullscreenJoinsSharedDefaultPlayer() async throws {
-        try await verifySiteFullscreenUsesSharedPlayer(document: false)
+    func testSiteNativeFullscreenKeepsWebsitePlayer() async throws {
+        try await verifySiteFullscreenKeepsWebsitePlayer(document: false)
     }
 
     @MainActor
-    func testSiteContainerFullscreenJoinsSharedDefaultPlayer() async throws {
-        try await verifySiteFullscreenUsesSharedPlayer(document: true)
+    func testSiteContainerFullscreenKeepsWebsitePlayer() async throws {
+        try await verifySiteFullscreenKeepsWebsitePlayer(document: true)
     }
 
     @MainActor
-    private func verifySiteFullscreenUsesSharedPlayer(document: Bool) async throws {
+    private func verifySiteFullscreenKeepsWebsitePlayer(document: Bool) async throws {
         continueAfterFailure = false
         let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
         let html = """
         <meta name='viewport' content='width=device-width,initial-scale=1'>
         <style>button{display:block;width:100%;height:44px;margin:10px 0}#actions{padding-top:40px}</style>
-        <div id='container'><video id='video' src='/clip.mp4' controls preload='auto' loop playsinline style='width:100%;height:220px'></video></div>
+        <div id='container'><video id='video' src='/clip.mp4' controls preload='auto' loop playsinline style='width:100%;height:220px'></video><button onclick='document.exitFullscreen?.()'>Exit website fullscreen</button></div>
         <div id='actions'>
         <button id='play-button'>Play video</button>
         <button id='pause-button'>Pause video</button>
@@ -530,15 +601,12 @@ final class DownloadPlaybackUITests: XCTestCase {
           \(document ? "document.getElementById('container').requestFullscreen()" : "(v.webkitEnterFullscreen||v.webkitEnterFullScreen||v.requestFullscreen).call(v)");
         });
         v.addEventListener('loadeddata',()=>document.getElementById('native-button').disabled=false,{once:true});
-        window.addEventListener('soulo-video-fullscreen-request',event=>setTimeout(()=>{
-          document.getElementById('request-status').textContent='Fullscreen hook accepted '+event.defaultPrevented;
-        },0),true);
         </script>
         """
         let server = try DownloadPlaybackHTTPFixture(files: ["/site.html": Data(html.utf8), "/clip.mp4": Data(contentsOf: video)])
         let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
-        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
-        app.launchArguments = ["-app_language", "en-US", "-privacy_https_upgrade_enabled", "NO", "-video.defaultPlayer", "soulo"]
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-privacy_https_upgrade_enabled", "NO", "-video.defaultPlayer", "soulo", "-video.takeOverWebPlayers", "NO"]
         XCUIDevice.shared.orientation = .portrait; app.launch()
         defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
         var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
@@ -551,16 +619,19 @@ final class DownloadPlaybackUITests: XCTestCase {
         app.webViews.buttons["Pause video"].firstMatch.tap()
         let buttonFrame = native.frame
         app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: buttonFrame.midX, dy: buttonFrame.midY)).tap()
-        let close = app.buttons["media.mkv.fullscreen.close"]
-        if !close.waitForExistence(timeout: 3) { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
-        if !close.waitForExistence(timeout: 12) {
-            let failure = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); failure.name = "Site fullscreen entry"; failure.lifetime = .keepAlways; add(failure)
-            XCTFail(app.debugDescription)
+        try await Task.sleep(for: .seconds(2))
+        XCTAssertFalse(app.otherElements["media.mkv.fullscreen.player"].exists)
+        XCTAssertFalse(app.otherElements["media.fullscreen.player"].exists)
+        if document {
+            let exit = app.webViews.buttons["Exit website fullscreen"].firstMatch
+            XCTAssertTrue(exit.waitForExistence(timeout: 5)); exit.tap()
+        } else {
+            let close = app.buttons.matching(NSPredicate(format: "label IN %@", ["Done", "完成", "Close", "关闭"])).firstMatch
+            if !close.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
+            XCTAssertTrue(close.waitForExistence(timeout: 5), app.debugDescription); close.tap()
         }
-        XCTAssertGreaterThan(app.frame.width, app.frame.height)
-        XCTAssertEqual(app.buttons.matching(identifier: "media.file.player").firstMatch.value as? String, "Soulo")
-        close.tap()
-        XCTAssertTrue(app.buttons["media.web.close"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.webViews.buttons["Play video"].firstMatch.waitForExistence(timeout: 5))
+
     }
 
 }

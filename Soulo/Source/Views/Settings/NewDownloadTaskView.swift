@@ -212,7 +212,11 @@ struct TorrentTaskDetailView: View {
                             Label(job.name, systemImage: "point.3.connected.trianglepath.dotted")
                                 .font(.headline).textSelection(.enabled)
                             Text(TorrentTaskLabels.state(job, snapshot: service.snapshots[job.id])).font(.subheadline).foregroundStyle(.secondary)
-                            if let record { TorrentProgressIndicator(progress: record.progress) }
+                            if let record {
+                                TorrentProgressIndicator(progress: record.progress)
+                                Text("\(ByteCountFormatter.string(fromByteCount: record.receivedBytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: record.expectedBytes > 0 ? record.expectedBytes : job.selectedBytes, countStyle: .file))")
+                                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                            }
                             if let s = service.snapshots[id], job.isActive {
                                 HStack {
                                     Text(ByteCountFormatter.string(fromByteCount: s.speed, countStyle: .file) + "/s")
@@ -392,7 +396,7 @@ struct TorrentProgressIndicator: View {
     var body: some View {
         HStack(spacing: 10) {
             ProgressView(value: value).progressViewStyle(.linear)
-            Text(value, format: .percent.precision(.fractionLength(0)))
+            Text(value, format: .percent.precision(.fractionLength(1)))
                 .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 .frame(minWidth: 42, alignment: .trailing)
         }

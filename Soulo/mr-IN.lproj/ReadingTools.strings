@@ -417,7 +417,7 @@
 "media_audio_tracks" = "ऑडिओ ट्रॅक";
 "media_subtitles" = "उपशीर्षके";
 "media_track_off" = "बंद";
-"video_settings" = "व्हिडिओ";
+"video_settings" = "व्हिडिओ सेटिंग्ज";
 "video_show_tools" = "व्हिडिओ साधने दाखवा";
 "video_show_tools_desc" = "प्लेबॅक गती, डाउनलोड आणि फुलस्क्रीनसाठी वेब व्हिडिओंवर साधने दाखवा.";
 "video_default_player" = "डीफॉल्ट प्लेअर";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "धूसर काच";
 "wallpaper_blur_amount" = "धूसरपणाची तीव्रता";
 
-"auto_hide_platform_bar_hint" = "शोधातील निकाल उघडल्यावर प्लॅटफॉर्म बार लपेल. निकालांवर परतल्यावर किंवा नवीन शोध घेतल्यावर तो पुन्हा दिसेल. या मेनूमध्ये हे बंद करता येईल.";
+"auto_hide_platform_bar_hint" = "वेबपृष्ठातील मजकुरावर टॅप केल्यानंतरच प्लॅटफॉर्म बार लपेल. आपोआप पुनर्निर्देशन किंवा स्क्रोल केल्याने तो लपणार नाही. पुन्हा दाखवण्यासाठी शोध निकालांवर परत जा किंवा नवीन शोध सुरू करा.";
+
+"ad_subscription_add" = "फिल्टर यादी जोडा";
+"ad_subscription_name" = "नाव";
+"ad_subscription_url" = "सदस्यता URL";
+"ad_subscription_invalid" = "नाव आणि वैध HTTP किंवा HTTPS सदस्यता URL प्रविष्ट करा.";
+"ad_subscription_duplicate" = "ही सदस्यता URL आधीच जोडली आहे.";
+
+"feedback_settings" = "ध्वनी आणि कंपन";
+"feedback_settings_hint" = "संपूर्ण ॲपमधील कंपन आणि इंटरफेसचे ध्वनी नियंत्रित करा. वेबपेज, व्हिडिओ आणि ऑडिओ प्लेबॅकवर परिणाम होत नाही.";
+
+"home_display_settings" = "होमचे प्रदर्शन";
+"browsing_display_settings" = "ब्राउझिंगचे प्रदर्शन";
+
+"web_video_download" = "वेब व्हिडिओ डाउनलोड";
+"web_video_download_description" = "वेबपेज, भागांच्या याद्या आणि प्लेयरमध्ये व्हिडिओ डाउनलोड नियंत्रणे दाखवा. प्लेबॅक आणि विद्यमान डाउनलोड बदलत नाहीत.";
+"builtin_extension" = "अंगभूत एक्स्टेंशन";
+
+"wallpaper_overlay_amount" = "ओव्हरलेची तीव्रता";
+"feedback_contact_required" = "उत्तर मिळण्यासाठी ईमेल किंवा इतर संपर्क माहिती द्या.";
+"torrent_incomplete" = "अपूर्ण";
+"extend_page_background" = "वेबपृष्ठ पार्श्वभूमी वाढवा";
+"extend_page_background_desc" = "ग्रेडियंटसह पृष्ठाच्या वरील व खालच्या रंगांना ब्राउझरच्या कडांपर्यंत वाढवा.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "गट संकुचित करा";
+"tab_group_expand" = "गट विस्तृत करा";
+"freeze_page_background_on_scroll" = "सुरुवातीचे रंग ठेवा";
+"freeze_page_background_on_scroll_desc" = "स्क्रोल केल्यानंतर प्रथम ओळखलेले रंग ठेवा. नवीन पृष्ठाचे रंग पुन्हा ओळखले जातील.";
+"page_background_gradient" = "ग्रेडियंट विस्तार";
+"page_background_gradient_desc" = "ओळखलेले रंग ग्रेडियंटमध्ये मिसळा. बंद असताना प्रत्येक काठावर एकच रंग वापरला जातो.";
+
+
+"gestures_feedback_settings" = "हावभाव आणि प्रतिसाद";

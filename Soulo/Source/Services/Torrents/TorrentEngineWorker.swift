@@ -76,7 +76,18 @@ final class TorrentEngineWorker: TorrentEngine, @unchecked Sendable {
         if let engine { return engine }
         let value = SLTorrentEngine(certificateFile: Bundle.main.path(forResource: "torrent-ca", ofType: "pem") ?? "", discoveryEnabled: true)
         engine = value
+        refreshPublicTrackers()
         return value
+    }
+    private func refreshPublicTrackers() {
+        Task { [weak self] in
+            let store = PublicTorrentTrackerStore.shared
+            self?.applyTrackers(await store.current())
+            self?.applyTrackers(await store.refreshIfNeeded())
+        }
+    }
+    private func applyTrackers(_ trackers: [String]) {
+        queue.async { [weak self] in self?.engine?.updatePublicTrackers(trackers) }
     }
     private func perform<T>(_ work: @escaping (SLTorrentEngine) throws -> T) async throws -> T {
         try await withCheckedThrowingContinuation { continuation in
@@ -108,6 +119,7 @@ final class TorrentEngineWorker: TorrentEngine, @unchecked Sendable {
             try $0.addIdentifier(id.uuidString, data: data, magnet: magnet, directory: directory.path,
                                  resumeData: resume, priorities: priorities.map(NSNumber.init(value:)), metadataOnly: metadataOnly)
         }
+        refreshPublicTrackers()
     }
     func snapshots() async -> [TorrentSnapshot] {
         (try? await perform { $0.snapshots().compactMap(TorrentSnapshot.init) }) ?? []
@@ -138,5 +150,105 @@ final class TorrentEngineWorker: TorrentEngine, @unchecked Sendable {
     }
     func endStreaming(id: UUID) async {
         _ = try? await perform { $0.endStreaming(id: id.uuidString) }
+    }
+}
+
+/// Small, rate-limited discovery data. Downloads never wait for this request.
+/// Keep a validated last-good cache when a source is unavailable or malformed.
+actor PublicTorrentTrackerStore {
+    static let shared = PublicTorrentTrackerStore()
+    static let fallback = ["udp://tracker.opentrackr.org:1337/announce",
+        "udp://open.stealth.si:80/announce", "udp://tracker.torrent.eu.org:451/announce",
+        "udp://open.demonii.com:1337/announce"]
+    static let sources = ["https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt",
+        "https://ngosang.github.io/trackerslist/trackers_best.txt"].compactMap(URL.init(string:))
+    struct Cache: Codable, Sendable { let updatedAt: Date; let trackers: [String] }
+    typealias Fetch = @Sendable (URL) async throws -> Data
+    private let cacheURL: URL
+    private let fetch: Fetch
+    private var cache: Cache?
+    private var attemptedAt: Date?
+    private var pending: Task<Cache?, Never>?
+
+    init(cacheURL: URL? = nil, fetch: @escaping Fetch = PublicTorrentTrackerStore.download) {
+        self.cacheURL = cacheURL ?? FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("SouloTorrentTrackers.json")
+        self.fetch = fetch
+    }
+
+    static func parse(_ data: Data) -> [String] {
+        guard data.count <= 128 * 1024, let text = String(data: data, encoding: .utf8) else { return [] }
+        var seen = Set<String>(), result: [String] = []
+        for line in text.split(whereSeparator: \.isNewline) {
+            let value = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard value.utf8.count <= 512, let url = URL(string: value),
+                  ["udp", "http", "https"].contains(url.scheme?.lowercased() ?? ""),
+                  let host = url.host?.lowercased(), host.contains("."), host != "localhost",
+                  !host.hasSuffix(".local"), !host.hasPrefix("127."), !host.hasPrefix("10."),
+                  !host.hasPrefix("192.168."), !host.hasPrefix("169.254."),
+                  !(16...31).contains(Int(host.split(separator: ".").dropFirst().first ?? "") ?? -1) || !host.hasPrefix("172."),
+                  url.user == nil, url.password == nil, url.fragment == nil,
+                  !url.path.isEmpty, url.port.map({ (1...65535).contains($0) }) ?? true,
+                  seen.insert(value).inserted else { continue }
+            result.append(value)
+            if result.count == 24 { break }
+        }
+        return result
+    }
+
+    func current() -> [String] {
+        if cache == nil, let data = try? Data(contentsOf: cacheURL), data.count <= 128 * 1024,
+           let saved = try? JSONDecoder().decode(Cache.self, from: data) {
+            let valid = Self.parse(Data(saved.trackers.joined(separator: "\n").utf8))
+            if valid.count >= 2 { cache = Cache(updatedAt: saved.updatedAt, trackers: valid) }
+        }
+        return cache?.trackers ?? Self.fallback
+    }
+
+    func refreshIfNeeded(now: Date = Date()) async -> [String] {
+        let previous = current()
+        if let pending {
+            if let updated = await pending.value { cache = updated }
+            return current()
+        }
+        if let cache, now.timeIntervalSince(cache.updatedAt) >= 0, now.timeIntervalSince(cache.updatedAt) < 86400 { return previous }
+        if let attemptedAt, now.timeIntervalSince(attemptedAt) >= 0, now.timeIntervalSince(attemptedAt) < 3600 { return previous }
+        attemptedAt = now
+        let fetch = self.fetch
+        let work = Task<Cache?, Never> {
+            for source in Self.sources {
+                guard !Task.isCancelled else { return nil }
+                guard let data = try? await fetch(source) else { continue }
+                let trackers = Self.parse(data)
+                if trackers.count >= 2 { return Cache(updatedAt: now, trackers: trackers) }
+            }
+            return nil
+        }
+        pending = work
+        let updated = await work.value
+        if let updated {
+            cache = updated
+            try? FileManager.default.createDirectory(at: cacheURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if let data = try? JSONEncoder().encode(updated) { try? data.write(to: cacheURL, options: .atomic) }
+        }
+        pending = nil
+        return current()
+    }
+
+    private static func download(_ url: URL) async throws -> Data {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 8; configuration.timeoutIntervalForResource = 12
+        configuration.urlCache = nil
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let (stream, response) = try await session.bytes(from: url)
+        guard let response = response as? HTTPURLResponse, response.statusCode == 200,
+              response.expectedContentLength <= 128 * 1024 else { throw URLError(.badServerResponse) }
+        var data = Data()
+        for try await byte in stream {
+            guard data.count < 128 * 1024 else { throw URLError(.dataLengthExceedsMaximum) }
+            data.append(byte)
+        }
+        return data
     }
 }

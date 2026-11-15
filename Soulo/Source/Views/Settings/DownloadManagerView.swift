@@ -144,7 +144,7 @@ struct DownloadManagerContentView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .mediaPlayerNavigation()
+        .mediaPlayerNavigation(enabled: !embeddedInLibrary)
         .compatibleListSectionSpacing(20)
         .compatibleScrollTopMargin(24)
         .toolbar {
@@ -502,6 +502,7 @@ struct DownloadManagerContentView: View {
     private func progressText(_ item: BrowserDownloadItem) -> String {
         let percent = Int((item.progress * 100).rounded())
         guard item.expectedBytes > 0 else {
+            if item.receivedBytes <= 0 { return "\(percent)%" }
             return "\(percent)% · \(ByteCountFormatter.string(fromByteCount: item.receivedBytes, countStyle: .file))"
         }
         return "\(percent)% · \(ByteCountFormatter.string(fromByteCount: item.receivedBytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: item.expectedBytes, countStyle: .file))"
@@ -791,6 +792,7 @@ struct DownloadCompletionToast: View {
                     .accessibilityIdentifier("downloads.completion-toast")
                     Button { self.completed = nil; onOpenDownloads() } label: { Image(systemName: "list.bullet").frame(width: 44, height: 44) }
                         .accessibilityLabel(LanguageManager.shared.localizedString("downloads"))
+                        .accessibilityIdentifier("downloads.completion-list")
                     ShareLink(item: completed.localURL) { Image(systemName: "square.and.arrow.up").frame(width: 44, height: 44) }
                         .accessibilityLabel(ToolText.text("share"))
                 }

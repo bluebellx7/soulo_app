@@ -1,6 +1,1 @@
-1.2.13
-
-• Latar berasingan untuk penampilan cerah dan gelap dengan suis lapisan imej.
-• Warna halaman utama ditambah baik; pratonton latar mengikut tema aplikasi.
-• Pratonton, kongsi dan simpan latar ke Foto.
-• Tetapan tab atas dengan tab baharu dan pilihan menyembunyikan bar platform selepas navigasi.
+Penambahbaikan tetingkap iPad, input suara, ringkasan setempat dan kebolehcapaian. Eksport media di latar belakang, Pintasan dan keserasian sambungan dipertingkatkan. Sesetengah ciri bergantung pada peranti, versi sistem dan bahasa.

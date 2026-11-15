@@ -2,6 +2,57 @@ import XCTest
 
 @MainActor
 final class TabOverviewLayoutUITests: XCTestCase {
+    func testManyTabsCanScrollCollapseAndReopenGroups() async throws {
+        continueAfterFailure = false
+        let files = Dictionary(uniqueKeysWithValues: (0..<36).map { index in
+            ("/many-\(index)", Data("<meta name='viewport' content='width=device-width,initial-scale=1'><title>Many tabs \(index)</title><body style='background:linear-gradient(#263974,#f4d1a3);min-height:1600px'><h1>Many tabs \(index)</h1><p>Saved page preview</p><a target='_blank' href='/many-\(index + 1)'>Open next tab</a></body>".utf8))
+        })
+        let server = try DownloadPlaybackHTTPFixture(files: files)
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-is_incognito", "YES",
+            "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES",
+            "-browser_toolbar_hidden", "NO", "-tab_overview_grouped", "YES", "-keep_fullscreen_browsing", "NO",
+            "-privacy_https_upgrade_enabled", "NO", "-ad_block_enabled", "NO"]
+        app.launch(); defer { app.terminate() }
+        app.open(root.appendingPathComponent("many-0"))
+        for index in 0..<36 {
+            XCTAssertTrue(app.webViews.staticTexts["Many tabs \(index)"].firstMatch.waitForExistence(timeout: 8))
+            if index < 35 { app.webViews.links["Open next tab"].firstMatch.tap() }
+        }
+        app.buttons["browser.tabs"].tap()
+        let done = app.buttons["tabs.done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        let groups = app.scrollViews["tabs.groups"]
+        XCTAssertTrue(groups.waitForExistence(timeout: 5))
+        for _ in 0..<5 { groups.swipeUp(velocity: .fast) }
+        for _ in 0..<5 { groups.swipeDown(velocity: .fast) }
+        XCTAssertTrue(done.isHittable, "Scrolling dozens of previews must leave the app responsive")
+        let header = app.buttons["tabs.group.host:127.0.0.1"]
+        let row = app.descendants(matching: .any)["tabs.group-row.host:127.0.0.1"].firstMatch
+        XCTAssertTrue(header.waitForExistence(timeout: 3)); XCTAssertTrue(row.exists)
+        XCTAssertTrue(app.staticTexts["36"].exists, "All fixture pages must be separate tabs in the same group")
+        header.tap()
+        XCTAssertTrue(row.waitForNonExistence(timeout: 3))
+        capture(app, "many-tabs-group-collapsed")
+        done.tap()
+        XCTAssertTrue(done.waitForNonExistence(timeout: 5))
+        let tabs = app.buttons["browser.tabs"]
+        // iOS 16 can retain a stale AX hit point after the overlay fades out.
+        // Tap the visible control's frame, then verify the actual reopened view.
+        XCTAssertTrue(tabs.exists); XCTAssertTrue(app.frame.intersects(tabs.frame))
+        tabs.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertTrue(header.waitForExistence(timeout: 5)); XCTAssertFalse(row.exists)
+        header.tap(); XCTAssertTrue(row.waitForExistence(timeout: 5))
+        capture(app, "many-tabs-group-expanded")
+        app.buttons["tabs.view-mode"].tap()
+        let position = app.sliders["tabs.position"]
+        XCTAssertTrue(position.waitForExistence(timeout: 5), "The fixture must contain more than 20 separate tabs")
+        for value in [0.9, 0.2, 1.0, 0.0] { position.adjust(toNormalizedSliderPosition: value) }
+        done.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Many tabs 35"].firstMatch.waitForExistence(timeout: 8))
+    }
+
     func testLayoutSwitchUpdatesImmediatelyAndPersistsWhenReopened() async throws {
         continueAfterFailure = false
         let server = try DownloadPlaybackHTTPFixture(files: ["/mode": Data("<title>Tab mode QA</title><h1>Tab mode QA</h1>".utf8)])

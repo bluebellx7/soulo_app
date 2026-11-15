@@ -81,3 +81,58 @@
 "Website cache" = "Cache du site Web";
 "Website icons" = "Icônes de sites Web";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "La synchronisation iCloud sauvegarde les réglages avant leur modification. Les %lld sauvegardes les plus récentes et la copie initiale sont conservées.";
+
+"Move tab to new window" = "Déplacer vers une nouvelle fenêtre";
+
+"Save webpage" = "Enregistrer la page";
+
+"Webpage" = "Page web";
+
+"Website data" = "Données des sites";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Comprend les articles enregistrés, l’index des livres, les couvertures et la progression de lecture. Les livres sont comptés dans les fichiers téléchargés.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Les tailles sont estimées. IndexedDB inclut les bases de données et les médias. Les tailles indisponibles sont indiquées par —.";
+"Extension temporary cache" = "Cache temporaire des extensions";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Supprime les médias temporaires des extensions. Conserve réglages, scripts, progression et fichiers téléchargés. Fermez d’abord les pages d’extension et de vidéo, puis terminez les téléchargements.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Données temporaires en cours d’utilisation. Fermez les pages d’extension et de vidéo et terminez les téléchargements, puis réessayez.";
+"Deleting website data can sign you out and remove offline content." = "La suppression des données peut vous déconnecter et supprimer le contenu hors ligne.";
+
+"Extension startup timed out." = "Le délai de démarrage de l’extension est dépassé.";
+
+"soulo_extensions" = "Extensions Soulo";
+
+"Add to Quick Links" = "Ajouter aux liens rapides";
+"Remove from Quick Links" = "Retirer des liens rapides";
+"Mark bookmarks with a heart to show them here." = "Appuyez longuement sur un favori et marquez-le d’un cœur pour l’afficher ici.";
+
+"Type %@ to confirm." = "Saisissez %@ pour confirmer.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Les favoris sont fusionnés entre appareils. Seules les suppressions explicites retirent des éléments.";
+"This deletion also syncs to your other devices." = "Cette suppression est aussi synchronisée avec vos autres appareils.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Copiez cette consigne, ajoutez vos besoins et envoyez-la à une IA. Collez ensuite son JSON ici pour l’importer.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Les noms de groupe du JSON sont prioritaires. Les groupes correspondants sont fusionnés sans supprimer les plateformes existantes.";
+"Imported %1$d platforms into %2$d groups." = "%1$d plateformes importées dans %2$d groupes.";
+"No new platforms or group entries." = "Aucune nouvelle plateforme ni entrée de groupe.";
+
+"App size" = "Taille de l’app";
+"App data" = "Données de l’app";
+"Wallpaper cache" = "Cache des fonds d’écran";
+"Other caches" = "Autres caches";
+"Temporary files" = "Fichiers temporaires";
+"Download task data" = "Données des téléchargements";
+"Settings and records" = "Réglages et historique";
+"Shared app data" = "Données partagées de l’app";
+"Other app data" = "Autres données de l’app";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Les données excluent le programme installé. La taille sur disque peut différer des Réglages iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Supprimez les contenus enregistrés depuis leur liste. Les fichiers temporaires actifs et les bases de cache système sont libérés lorsque cela est sûr.";
+
+"Current platforms" = "Plateformes actuelles";
+"Import mode" = "Mode d’importation";
+"Append" = "Ajouter";
+"Replace all" = "Tout remplacer";
+"Replace all platforms?" = "Remplacer toutes les plateformes ?";
+"A settings backup is saved before replacement." = "Une sauvegarde des réglages est créée avant le remplacement.";
+
+"Take over web players" = "Remplacer les lecteurs web";
+"Only takes over website fullscreen. Extension players stay independent." = "Remplace uniquement la lecture web en plein écran. Les lecteurs d’extensions restent indépendants.";
+
+"App size is the installed program and resources, not the App Store download size." = "La taille de l’app comprend le programme et les ressources installés, pas le téléchargement de l’App Store.";
+"App data is the total of the categories below." = "Les données de l’app totalisent les catégories ci-dessous.";

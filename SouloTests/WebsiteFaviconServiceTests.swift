@@ -154,11 +154,48 @@ final class WebsiteFaviconServiceTests: XCTestCase {
         let first = await service.image(for: "http://localhost/one")
         let second = await service.image(for: "http://localhost/two")
         XCTAssertNil(first); XCTAssertNil(second)
-        XCTAssertEqual(requests, 2)
+        XCTAssertEqual(requests, 5)
         date = date.addingTimeInterval(301)
         let third = await service.image(for: "http://localhost/three")
         XCTAssertNil(third)
-        XCTAssertEqual(requests, 4)
+        XCTAssertEqual(requests, 10)
+    }
+
+    func testBlankRasterDoesNotHideInlineSiteIconOrLeakPrivateURL() async throws {
+        for blank in [UIColor.clear, UIColor.white] {
+            cache.removeAllCachedResponses()
+            let empty = UIGraphicsImageRenderer(size:CGSize(width:64,height:64)).pngData { context in
+                blank.setFill(); context.fill(CGRect(x:0,y:0,width:64,height:64))
+            }
+            let html = Data("<link rel='icon' href='data:image/png;base64,\(png.base64EncodedString())'>".utf8)
+            var urls = [String]()
+            FaviconTestProtocol.handler = { request in
+                Task { @MainActor in
+                    let url = request.request.url!; urls.append(url.absoluteString)
+                    request.respond(data:url.path == "/favicon.ico" ? empty : html,
+                                    mimeType:url.path == "/favicon.ico" ? "image/png" : "text/html")
+                }
+            }
+            let image = await WebsiteFaviconService(session:session,cache:cache).image(for:"https://example.com/private?q=secret")
+            XCTAssertNotNil(image)
+            XCTAssertEqual(urls,["https://example.com/favicon.ico","https://example.com/"])
+            XCTAssertGreaterThan(pixel(try XCTUnwrap(image),x:32,y:32)[2],128)
+        }
+    }
+
+    func testAllBlankResponsesLeaveFallbackAvailable() async {
+        let empty = UIGraphicsImageRenderer(size:CGSize(width:64,height:64)).pngData { _ in }
+        FaviconTestProtocol.handler = { $0.respond(data:empty) }
+        let image = await WebsiteFaviconService(session:session,cache:cache).image(for:"http://localhost/private")
+        XCTAssertNil(image,"An empty but decodable PNG must not replace the row's visible globe placeholder")
+    }
+
+    func testTransparentMonochromeIconsChooseContrastingBackplates() {
+        let renderer = UIGraphicsImageRenderer(size:CGSize(width:64,height:64))
+        let white = renderer.image { _ in UIColor.white.setFill(); UIBezierPath(ovalIn:CGRect(x:10,y:10,width:44,height:44)).fill() }
+        let black = renderer.image { _ in UIColor.black.setFill(); UIBezierPath(ovalIn:CGRect(x:10,y:10,width:44,height:44)).fill() }
+        if case .dark = WebsiteFaviconService.backplate(for:white) {} else { XCTFail("White glyph needs dark backing even in a light list") }
+        if case .light = WebsiteFaviconService.backplate(for:black) {} else { XCTFail("Black glyph needs light backing even in a dark list") }
     }
 
     func testIconsCachedBeforeSVGSupportAreRefreshedOnce() async throws {
@@ -186,16 +223,16 @@ final class WebsiteFaviconServiceTests: XCTestCase {
         FaviconTestProtocol.handler = { request in
             Task { @MainActor in
                 urls.append(request.request.url!)
-                request.respond(data: data, status: urls.count == 1 ? 404 : 200)
+                request.respond(data: data, status: request.request.url?.host == "icons.duckduckgo.com" ? 200 : 404)
             }
         }
         let service = WebsiteFaviconService(session: session, cache: cache)
         let result = await service.image(for: "https://example.com/private?q=secret")
         XCTAssertNotNil(result)
-        XCTAssertEqual(urls.map(\.absoluteString), ["https://example.com/favicon.ico", "https://example.com/", "https://icons.duckduckgo.com/ip3/example.com.ico"])
+        XCTAssertEqual(urls.map(\.absoluteString), ["https://example.com/favicon.ico", "https://example.com/", "https://example.com/favicon.svg", "https://example.com/favicon.png", "https://example.com/apple-touch-icon.png", "https://icons.duckduckgo.com/ip3/example.com.ico"])
         let cached = await service.image(for: "https://example.com/another")
         XCTAssertNotNil(cached)
-        XCTAssertEqual(urls.count, 3)
+        XCTAssertEqual(urls.count, 6)
     }
 
     func testClearRemovesDecodedAndStoredImagesAndFailures() async {
@@ -214,7 +251,7 @@ final class WebsiteFaviconServiceTests: XCTestCase {
         XCTAssertNil(cache.cachedResponse(for: URLRequest(url: URL(string: "http://localhost/favicon.ico")!)))
         _ = await service.image(for: "http://localhost/two")
         _ = await service.image(for: "http://127.0.0.1/two")
-        XCTAssertEqual(requests, 6)
+        XCTAssertEqual(requests, 12)
     }
 
     func testClearCancelsInFlightRequestAndAllowsFreshLoad() async throws {
@@ -416,7 +453,7 @@ final class WebsiteFaviconServiceTests: XCTestCase {
         }
         let image = await WebsiteFaviconService(session: session, cache: cache).image(for: "https://example.com/private")
         XCTAssertNotNil(image)
-        XCTAssertEqual(urls.count, 4)
+        XCTAssertEqual(urls.count, 7)
         XCTAssertFalse(urls.contains { $0.path == "/provider-brand.png" })
     }
 

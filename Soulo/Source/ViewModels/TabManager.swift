@@ -10,6 +10,8 @@ struct BrowserTab: Identifiable, Equatable {
     let webViewModel: WebViewModel
     var keyword: String?
     var platform: SearchPlatform?
+    /// Search request already current when browser chrome explicitly loaded this tab.
+    var browserControlSearchID: UUID?
     var createdAt: Date
     var isAlive: Bool = true
     var suspendedURL: URL?
@@ -75,6 +77,7 @@ private struct SavedOverviewGroupPreferences: Codable {
     var version = 1
     let names: [String: String]
     let pinnedIDs: [String]
+    var collapsedIDs: [String]? = nil
 }
 
 // MARK: - TabManager
@@ -89,9 +92,11 @@ final class TabManager: ObservableObject {
     }
     @Published var activeTabIndex: Int = 0
     @Published var showTabOverview: Bool = false
+    @Published private(set) var lastTabClosedRevision = 0
     @Published var recentlyClosed: [RecentlyClosedTab] = []
     @Published private(set) var overviewGroupNames: [String: String] = [:]
     @Published private(set) var pinnedOverviewGroupIDs: Set<String> = []
+    @Published private(set) var collapsedOverviewGroupIDs: Set<String> = []
 
     private weak var findWebView: WKWebView?
 
@@ -206,9 +211,17 @@ final class TabManager: ObservableObject {
         persistOverviewGroupPreferences()
     }
 
+    func toggleCollapsedOverviewGroup(_ id: String) {
+        synchronizePrivacyMode()
+        guard TabOverviewDomainGroup.make(from: tabs).contains(where: { $0.id == id }) else { return }
+        if !collapsedOverviewGroupIDs.insert(id).inserted { collapsedOverviewGroupIDs.remove(id) }
+        persistOverviewGroupPreferences()
+    }
+
     private func restoreOverviewGroupPreferences() {
         overviewGroupNames = [:]
         pinnedOverviewGroupIDs = []
+        collapsedOverviewGroupIDs = []
         guard !isPrivateSession, !UserDefaults.standard.bool(forKey: "is_incognito"),
               let data = UserDefaults.standard.data(forKey: overviewGroupPreferencesStorageKey),
               let saved = try? JSONDecoder().decode(SavedOverviewGroupPreferences.self, from: data),
@@ -219,6 +232,7 @@ final class TabManager: ObservableObject {
             if !name.isEmpty { names[entry.key] = name }
         }
         pinnedOverviewGroupIDs = Set(saved.pinnedIDs)
+        collapsedOverviewGroupIDs = Set(saved.collapsedIDs ?? [])
     }
 
     private func persistOverviewGroupPreferences() {
@@ -226,7 +240,7 @@ final class TabManager: ObservableObject {
         // reconciled its tabs. Never let that transition write private choices.
         guard !isPrivateSession, !UserDefaults.standard.bool(forKey: "is_incognito") else { return }
         let saved = SavedOverviewGroupPreferences(names: overviewGroupNames,
-            pinnedIDs: pinnedOverviewGroupIDs.sorted())
+            pinnedIDs: pinnedOverviewGroupIDs.sorted(), collapsedIDs: collapsedOverviewGroupIDs.sorted())
         if let data = try? JSONEncoder().encode(saved) {
             UserDefaults.standard.set(data, forKey: overviewGroupPreferencesStorageKey)
         }
@@ -242,6 +256,35 @@ final class TabManager: ObservableObject {
     }
 
     // MARK: - Tab Creation
+
+    @discardableResult
+    func moveTab(_ id: UUID, to destination: TabManager) -> Bool {
+        guard destination !== self else { return false }
+        synchronizePrivacyMode(); destination.synchronizePrivacyMode()
+        guard let index = tabs.firstIndex(where: { $0.id == id }),
+              !destination.tabs.contains(where: { $0.id == id }) else { return false }
+        let tab = tabs[index]
+        let desktop = desktopModeTabs.contains(id)
+        if findWebView === tab.webViewModel.webView { dismissFindInPage() }
+        // Do not call closeTab: it destroys the runtime, snapshot and history.
+        tabs.remove(at: index)
+        desktopModeTabs.remove(id); recentTabIDs.removeAll { $0 == id }
+        if tabs.isEmpty { createTab() }
+        else { activeTabIndex = min(activeTabIndex - (index < activeTabIndex ? 1 : 0), tabs.count - 1) }
+        if destination.tabs.count == 1, let blank = destination.tabs.first,
+           blank.webViewModel.webView == nil, blank.webViewModel.currentURL == nil,
+           blank.suspendedURL == nil, blank.keyword?.isEmpty != false {
+            destination.tabs.removeAll()
+            destination.desktopModeTabs.remove(blank.id)
+            destination.recentTabIDs.removeAll { $0 == blank.id }
+        }
+        destination.tabs.append(tab)
+        if desktop { destination.desktopModeTabs.insert(id) }
+        destination.activeTabIndex = destination.tabs.count - 1
+        manageTabLifecycles(); destination.manageTabLifecycles()
+        saveToDisk(); destination.saveToDisk()
+        return true
+    }
 
     /// Home begins a separate browsing task unless the active tab is still empty.
     func prepareTabForHomeSearch() -> BrowserTab? {
@@ -259,7 +302,15 @@ final class TabManager: ObservableObject {
 
     @discardableResult
     func createTab(url: URL? = nil, keyword: String? = nil, platform: SearchPlatform? = nil, switchTo: Bool = true, webViewModel: WebViewModel? = nil) -> BrowserTab {
+        let sourceID = activeTab?.id
         var tab = BrowserTab(keyword: keyword, platform: platform, webViewModel: webViewModel)
+        if url?.scheme?.lowercased() == "webkit-extension", let sourceID {
+            tab.webViewModel.returnToSourceTab = { [weak self] in
+                guard let self, self.tabs.contains(where: { $0.id == sourceID }) else { return false }
+                self.switchToTab(id: sourceID)
+                return true
+            }
+        }
         if switchTo {
             activeWebViewModel?.takeSnapshot()
             dismissFindInPage()
@@ -280,6 +331,37 @@ final class TabManager: ObservableObject {
             tab.webViewModel.loadURL(url)
         }
 
+        scheduleSaveToDisk()
+        return tab
+    }
+
+    /// Extension documents use an origin-bound WebKit configuration and may
+    /// own an active download/merge. Keep that document alive when browser
+    /// chrome requests a platform search instead of loading the web in it.
+    func prepareTabForPlatformNavigation(keyword: String, platform: SearchPlatform) -> BrowserTab? {
+        guard let tab = activeTab else { return nil }
+        guard tab.webViewModel.currentURL?.scheme?.lowercased() == "webkit-extension" else { return tab }
+        return createTab(keyword: keyword, platform: platform)
+    }
+
+    /// Extension pages use an origin-bound WebKit configuration. Links chosen
+    /// in browser settings must open in an ordinary tab, leaving any extension
+    /// download or merge document mounted in its original tab.
+    @discardableResult
+    func openURLFromBrowserControls(_ url: URL, searchID: UUID? = nil, inNewTab: Bool = false) -> BrowserTab? {
+        guard ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return nil }
+        let tab: BrowserTab
+        if !inNewTab, let active = activeTab, active.webViewModel.currentURL?.scheme?.lowercased() != "webkit-extension" {
+            tab = active
+        } else {
+            tab = createTab()
+        }
+        if let index = tabs.firstIndex(where: { $0.id == tab.id }) {
+            tabs[index].keyword = nil
+            tabs[index].platform = nil
+            tabs[index].browserControlSearchID = searchID
+        }
+        tab.webViewModel.loadURL(url)
         scheduleSaveToDisk()
         return tab
     }
@@ -325,7 +407,7 @@ final class TabManager: ObservableObject {
         tabs.remove(at: index)
 
         if tabs.isEmpty {
-            createTab()
+            replaceLastClosedTabAndReturnHome()
         } else if wasActive, let nextActiveTabID,
                   let nextIndex = tabs.firstIndex(where: { $0.id == nextActiveTabID }) {
             activeTabIndex = nextIndex
@@ -373,7 +455,7 @@ final class TabManager: ObservableObject {
         recentTabIDs.removeAll { closingIDs.contains($0) }
         tabs.removeAll { closingIDs.contains($0.id) }
         if tabs.isEmpty {
-            createTab()
+            replaceLastClosedTabAndReturnHome()
             return
         }
         activeTabIndex = nextID.flatMap { id in tabs.firstIndex { $0.id == id } }
@@ -430,7 +512,17 @@ final class TabManager: ObservableObject {
         desktopModeTabs.removeAll()
         recentTabIDs.removeAll()
         tabs.removeAll()
+        if addingToRecentlyClosed {
+            replaceLastClosedTabAndReturnHome()
+        } else {
+            createTab()
+        }
+    }
+
+    private func replaceLastClosedTabAndReturnHome() {
         createTab()
+        showTabOverview = false
+        lastTabClosedRevision &+= 1
     }
 
     func closeOtherTabs() {
@@ -524,6 +616,14 @@ final class TabManager: ObservableObject {
 
     // MARK: - Memory Management
 
+    /// Keep at most one recent background replacement player. Its extension
+    /// iframe cannot be reconstructed from the original page's media checkpoint.
+    private var retainedExtensionMediaTabID: UUID? {
+        tabs.enumerated().filter { index, tab in
+            index != activeTabIndex && tab.isAlive && tab.webViewModel.mediaSession.hasLiveExtensionMedia
+        }.max { $0.element.lastAccessedAt < $1.element.lastAccessedAt }?.element.id
+    }
+
     private func manageTabLifecycles(recordAccess: Bool = false) {
         guard tabs.indices.contains(activeTabIndex) else { return }
         if recordAccess { tabs[activeTabIndex].lastAccessedAt = Date() }
@@ -531,7 +631,10 @@ final class TabManager: ObservableObject {
         recentTabIDs.removeAll { $0 == activeID }
         recentTabIDs.insert(activeID, at: 0)
         recentTabIDs = Array(recentTabIDs.prefix(Self.maxAliveTabs))
-        let warmIDs = Set(recentTabIDs)
+        let retainedID = retainedExtensionMediaTabID
+        let needsReservedSlot = retainedID.map { !recentTabIDs.contains($0) } ?? false
+        var warmIDs = Set(recentTabIDs.prefix(Self.maxAliveTabs - (needsReservedSlot ? 1 : 0)))
+        if let retainedID { warmIDs.insert(retainedID) }
         let previewRange = max(0, activeTabIndex - 3)...min(tabs.count - 1, activeTabIndex + 3)
         for i in tabs.indices {
             if !previewRange.contains(i) { tabs[i].webViewModel.releaseSnapshotMemory() }
@@ -546,10 +649,12 @@ final class TabManager: ObservableObject {
     }
 
     func releaseInactiveTabsForMemoryPressure() {
+        let retainedID = retainedExtensionMediaTabID
         recentTabIDs = activeTab.map { [$0.id] } ?? []
+        if let retainedID { recentTabIDs.append(retainedID) }
         for i in tabs.indices where i != activeTabIndex {
             tabs[i].webViewModel.releaseSnapshotMemory()
-            guard tabs[i].isAlive, !tabs[i].webViewModel.isDownloading,
+            guard tabs[i].id != retainedID, tabs[i].isAlive, !tabs[i].webViewModel.isDownloading,
                   tabs[i].webViewModel.activeDownloadCount == 0 else { continue }
             suspendTab(at: i)
         }

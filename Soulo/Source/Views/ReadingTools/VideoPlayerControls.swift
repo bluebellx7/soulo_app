@@ -127,6 +127,19 @@ final class VideoVerticalGestureHandler: NSObject, UIGestureRecognizerDelegate {
     }
 }
 
+/// System glass can be bright even above a dark video. Give video menus an
+/// explicit surface and foreground pair instead of inheriting mismatched colors.
+private struct VideoPopoverSurface: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    func body(content: Content) -> some View {
+        content.foregroundStyle(colorScheme == .dark ? Color.white : Color.black)
+            .compatiblePresentationBackground(colorScheme == .dark ? Color(white: 0.12) : Color.white)
+    }
+}
+extension View {
+    func videoPopoverSurface() -> some View { modifier(VideoPopoverSurface()) }
+}
+
 private struct VideoFullscreenInsetsKey: EnvironmentKey {
     static let defaultValue = EdgeInsets()
 }
@@ -154,6 +167,7 @@ private extension EnvironmentValues {
     final class Screen: UIHostingController<AnyView> {
         private var playerContent = AnyView(EmptyView())
         private var playerInsets = EdgeInsets()
+        private var canvasLandscape: Bool?
         var closed: (() -> Void)?
         var rotate: ((Bool, @escaping (Error) -> Void) -> Void)?
         var openingOrientation: UIInterfaceOrientation = .portrait
@@ -164,15 +178,19 @@ private extension EnvironmentValues {
         func setContent(_ content: AnyView, initialInsets: UIEdgeInsets? = nil) {
             playerContent = content
             if let initialInsets { playerInsets = Self.insets(initialInsets) }
-            rootView = AnyView(content.environment(\.videoFullscreenInsets, playerInsets).environment(\.videoFullscreenRotation, rotate))
+            rebuildCanvas()
+        }
+        func setCanvasLandscape(_ value: Bool?) { canvasLandscape = value; rebuildCanvas() }
+        private func rebuildCanvas() {
+            rootView = AnyView(VideoFullscreenCanvas(content: playerContent, landscape: canvasLandscape, insets: playerInsets)
+                .environment(\.videoFullscreenRotation, rotate).preferredColorScheme(.dark))
         }
         override func viewSafeAreaInsetsDidChange() {
             super.viewSafeAreaInsetsDidChange()
             guard view.window != nil else { return }
             let next = Self.insets(view.safeAreaInsets)
             guard next != playerInsets else { return }
-            playerInsets = next
-            rootView = AnyView(playerContent.environment(\.videoFullscreenInsets, next).environment(\.videoFullscreenRotation, rotate))
+            playerInsets = next; rebuildCanvas()
         }
         private static func insets(_ value: UIEdgeInsets) -> EdgeInsets {
             EdgeInsets(top: value.top, leading: value.left, bottom: value.bottom, trailing: value.right)
@@ -219,6 +237,8 @@ private extension EnvironmentValues {
               !source.isBeingPresented, !source.isBeingDismissed, source.transitionCoordinator == nil else { return nil }
         let current = SharedVideoFullscreenHost(scene: scene, owner: owner)
         let screen = Screen(rootView: content)
+        // UIKit menus and popovers must share the fullscreen canvas appearance.
+        screen.overrideUserInterfaceStyle = .dark
         screen.rotate = { [weak current] landscape, failure in
             guard let current else { failure(CocoaError(.featureUnsupported)); return }
             current.setLandscape(landscape, onError: failure)
@@ -255,13 +275,17 @@ private extension EnvironmentValues {
         }
         rotationTask?.cancel(); rotationID = UUID()
         let request = rotationID, previous = screen.allowedOrientations
+        screen.setCanvasLandscape(nil)
         screen.openingOrientation = landscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait
         screen.allowedOrientations = landscape ? .landscape : .portrait
         screen.setNeedsUpdateOfSupportedInterfaceOrientations()
         let failed: (Error) -> Void = { [weak self, weak screen] error in
             guard let self, let screen, self.rotationID == request, !screen.isBeingDismissed else { return }
             self.rotationTask?.cancel(); screen.allowedOrientations = previous
-            screen.setNeedsUpdateOfSupportedInterfaceOrientations(); onError(error)
+            screen.setNeedsUpdateOfSupportedInterfaceOrientations()
+            // Stage Manager/windowed iPad scenes can refuse scene rotation.
+            // Rotate this same canvas instead of dismissing playback or alerting.
+            screen.setCanvasLandscape(landscape)
         }
         rotationTask = Task { @MainActor [weak self, weak screen] in
             do { try await Task.sleep(for: .milliseconds(50)) } catch { return }
@@ -341,7 +365,33 @@ struct VideoPlaybackControls: View {
 
 /// Both playback engines use this chrome. Decoder state and actions are the
 /// only differences between web, download and file fullscreen playback.
+/// Keeps the decoder mounted when a window cannot change its orientation.
+/// The logical canvas, chrome and touch targets rotate together inside that window.
+private struct VideoFullscreenCanvas: View {
+    let content: AnyView
+    let landscape: Bool?
+    let insets: EdgeInsets
+    var body: some View {
+        GeometryReader { geometry in
+            let wide = geometry.size.width > geometry.size.height
+            let rotated = landscape.map { $0 != wide } ?? false
+            let logicalInsets = rotated ? EdgeInsets(top: insets.trailing, leading: insets.top, bottom: insets.leading, trailing: insets.bottom) : insets
+            content
+                .environment(\.videoFullscreenInsets, logicalInsets)
+                .frame(width: rotated ? geometry.size.height : geometry.size.width,
+                       height: rotated ? geometry.size.width : geometry.size.height)
+                .rotationEffect(.degrees(rotated ? 90 : 0))
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("media.fullscreen.canvas")
+                .accessibilityValue((landscape ?? wide) ? "landscape" : "portrait")
+        }
+        .ignoresSafeArea().background(.black)
+    }
+}
+
 struct VideoFullscreenChrome<More: View>: ViewModifier {
+    @AppStorage(VideoPlaybackPreferences.showsWebDownloadControlsKey) private var showsVideoDownloadControls = true
     @Environment(\.videoFullscreenInsets) private var windowInsets
     @Environment(\.videoFullscreenRotation) private var rotateFullscreen
     @State private var rotationError: String?
@@ -357,6 +407,7 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
     let closeIdentifier: String
     var options: FileVideoOptions?
     var retry: (() -> Void)?
+    var subtitlePlayer: AVPlayer? = nil
     let close: () -> Void
     var exitFullscreen: (() -> Void)? = nil
     let toggle: () -> Void
@@ -372,11 +423,13 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
     @State private var pendingAction: (() -> Void)?
     @State private var playbackWindow = VideoPlaybackWindow()
 
+    private var awaitingEpisode: Bool { options?.playlist?.resolvingID != nil }
+
     func body(content: Content) -> some View {
         GeometryReader { geometry in
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .modifier(VideoTransportOverlay(visibility: visibility, playing: playing, buffering: buffering,
+                .modifier(VideoTransportOverlay(visibility: visibility, playing: playing, buffering: buffering || awaitingEpisode,
                     identifier: identifier + ".play", toggle: toggle, seek: { seek(elapsed + $0) }))
                 .overlay(alignment: .top) {
                     if visibility.visible && !episodesVisible {
@@ -394,7 +447,7 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                             }
                             .accessibilityLabel(ToolText.text("media_options"))
                             .accessibilityIdentifier("media.fullscreen.options")
-                            .popover(isPresented: $morePresented) {
+                            .compatiblePopover(isPresented: $morePresented) {
                                 VStack(alignment: .leading, spacing: 8) {
                                     if let request = options?.requestPictureInPicture {
                                         Button {
@@ -409,7 +462,7 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                                     }
                                     more()
                                     PlaybackSleepTimerMenu()
-                                    if let download = options?.download {
+                                    if let download = options?.download, showsVideoDownloadControls || options?.downloadIsVideo == false {
                                         Button { morePresented = false; download() } label: {
                                             Label(LanguageManager.shared.localizedString("download"), systemImage: "arrow.down.circle")
                                                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
@@ -426,7 +479,7 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                                     .accessibilityIdentifier("media.fullscreen.settings")
                                 }
                                 .padding(16).frame(width: 280).buttonStyle(.plain)
-                                .compatiblePopoverAdaptation()
+                                .compatiblePopoverAdaptation().videoPopoverSurface()
                                 .onDisappear {
                                     if opensSettings { opensSettings = false; DispatchQueue.main.async { settingsVisible = true } }
                                     if let action = pendingAction {
@@ -458,6 +511,7 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                         VStack(spacing: 6) {
                             VideoPlaybackTimeline(elapsed: elapsed, duration: duration, identifier: identifier + ".timeline",
                                 seek: seek, interactionChanged: visibility.interaction)
+                                .offset(y: 8)
                             HStack(spacing: 12) {
                                 FileVideoMenus(rate: rate, playbackState: { (elapsed, playing) }, setRate: setRate,
                                     options: options, showEpisodes: { episodesVisible = true }, showsPlayerMenu: false, menuInteraction: visibility.interaction,
@@ -466,6 +520,7 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                                     AirPlayRoutePicker(prioritizesVideoDevices: true, presentRequested: options?.airPlayPresentation)
                                         .frame(width: 44, height: 44)
                                 }
+                                if let subtitlePlayer { SystemSubtitleMenu(player: subtitlePlayer, interaction: visibility.show) }
                                 let landscape = geometry.size.width > geometry.size.height
                                 VideoPlayerIconButton(symbol: UIDevice.current.userInterfaceIdiom == .pad
                                     ? (landscape ? "ipad" : "ipad.landscape") : (landscape ? "iphone" : "iphone.landscape"),
@@ -476,7 +531,7 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                                         visibility.show()
                                     }
                                     .frame(width: 44, height: 44)
-                                if let exitFullscreen {
+                                if let exitFullscreen, options?.fullscreenOnly != true {
                                     VideoPlayerIconButton(symbol: "arrow.down.right.and.arrow.up.left",
                                         label: LanguageManager.shared.localizedString("exit_fullscreen"),
                                         identifier: closeIdentifier.replacingOccurrences(of: ".close", with: ".exit"),
@@ -493,12 +548,13 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                     }
                 }
         }
-        // Reserve real layout space below the video canvas. An overlay at
-        // the center can be covered by the transport buttons or loading HUD.
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if let error {
+        // Status belongs to the video surface. It must never change the
+        // canvas height or move the timeline and transport controls.
+        .overlay(alignment: .top) {
+            if let error, !awaitingEpisode {
                 VideoPlaybackStatus(message: error, identifier: identifier + ".status", retry: retry)
-                    .padding(.horizontal, 24).padding(.vertical, 12).background(.black)
+                    .padding(12).background(.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 12))
+                    .frame(maxWidth: 600).padding(.horizontal, 24).padding(.top, max(64, windowInsets.top + 52))
             }
         }
         .modifier(VideoOrientationErrorAlert(message: $rotationError))
@@ -528,9 +584,13 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
 #if DEBUG
 private struct VideoVolumeDiagnostics: View {
     @ObservedObject private var session = MediaSession.shared
+    private var frameReady: Bool {
+        if let playback = session.soulo { return (playback.player?.media?.statistics.displayedPictures ?? 0) > 0 }
+        return session.pictureInPicture.surface?.playerLayer.isReadyForDisplay == true
+    }
     var body: some View {
         if ProcessInfo.processInfo.environment["SOULO_VIDEO_VOLUME_TRACE"] == "1" {
-            Text("clock=\(session.soulo.map { Double($0.player?.time.intValue ?? 0) / 1000 } ?? session.player.currentTime().seconds) pauseDelay=\(session.pauseInputLatency ?? -1) events=\(session.volumeObservationEvents) raw=\(AVAudioSession.sharedInstance().outputVolume) state=\(UIApplication.shared.applicationState.rawValue) video=\(session.hasVideo) nativeSurfaces=\(session.playerSurfaces) soulo=\(session.soulo != nil) souloVideo=\(session.soulo?.hasVideo == true) visible=\(session.soulo?.hasVisibleSurface == true)")
+            Text("clock=\(session.soulo.map { Double($0.player?.time.intValue ?? 0) / 1000 } ?? session.player.currentTime().seconds) pauseDelay=\(session.pauseInputLatency ?? -1) events=\(session.volumeObservationEvents) raw=\(AVAudioSession.sharedInstance().outputVolume) state=\(UIApplication.shared.applicationState.rawValue) video=\(session.hasVideo) nativeSurfaces=\(session.playerSurfaces) soulo=\(session.soulo != nil) souloVideo=\(session.soulo?.hasVideo == true) visible=\(session.soulo?.hasVisibleSurface == true) frameReady=\(frameReady) duration=\(session.duration) page=\(session.pageURL?.lastPathComponent ?? "") episode=\(session.webMediaContext?.selectedEpisodeID ?? "")")
                 .font(.system(size: 8)).foregroundStyle(.white.opacity(0.3))
                 .accessibilityIdentifier("media.volume.diagnostics")
                 .allowsHitTesting(false)
@@ -799,7 +859,7 @@ struct VideoPlaybackTimeline: View {
                 Text(clock(scrubTime ?? elapsed))
                     .accessibilityIdentifier(identifier + ".elapsed")
                 Spacer()
-                Text(clock(duration))
+                Text(duration.isFinite && duration > 0 ? clock(duration) : "—:—")
             }
             .font(.caption.monospacedDigit()).opacity(0.8)
             PlaybackTimelineSlider(elapsed: elapsed, duration: duration, identifier: identifier,
@@ -927,7 +987,8 @@ private struct PlaybackTimelineSlider: UIViewRepresentable {
         // UIKit can stop reporting isTracking before its final release action.
         // Keep the preview until that action commits or explicitly cancels it.
         guard !slider.isTracking, !context.coordinator.editing else { return }
-        let value = Float(min(max(0, elapsed.isFinite ? elapsed : 0), Double(slider.maximumValue)))
+        // Unknown duration is unavailable, never a fictitious one-second video.
+        let value = slider.isEnabled ? Float(min(max(0, elapsed.isFinite ? elapsed : 0), Double(slider.maximumValue))) : 0
         if slider.value != value { slider.setValue(value, animated: abs(slider.value - value) < 2) }
     }
     static func dismantleUIView(_ control: PlaybackPositionControl, coordinator: Coordinator) {

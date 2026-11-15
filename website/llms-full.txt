@@ -91,3 +91,5 @@ Online tools: https://www.dkluge.com/zh/bag
 The navigation link opens the DKluge tool collection, which includes image, PDF, video, and format-conversion utilities. It is an external destination, not an additional Soulo-hosted tools page.
 
 The shared navigation has seven icon-labeled destinations. On compact screens an accessible Directory menu exposes the same links; without JavaScript, those links remain visible.
+
+- [Soulo 扩展](https://soulo.dkluge.com/extensions.html)：已验证的 FastStream（Chrome）与猫抓（Edge），官方来源、Soulo 内安装及扩展推荐。

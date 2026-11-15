@@ -81,3 +81,58 @@
 "Website cache" = "Pamięć podręczna witryny";
 "Website icons" = "Ikony stron internetowych";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "Synchronizacja iCloud zapisuje kopię przed zmianą ustawień. Zachowywanych jest %lld ostatnich kopii oraz kopia początkowa.";
+
+"Move tab to new window" = "Przenieś do nowego okna";
+
+"Save webpage" = "Zapisz stronę";
+
+"Webpage" = "Strona internetowa";
+
+"Website data" = "Dane witryn";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Obejmuje zapisane artykuły, indeks książek, okładki i postęp czytania. Pliki książek są liczone jako pobrane pliki.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Rozmiary są szacowane. IndexedDB obejmuje bazy danych i multimedia. Niedostępne rozmiary są oznaczone jako —.";
+"Extension temporary cache" = "Tymczasowa pamięć rozszerzeń";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Usuwa tymczasowe multimedia rozszerzeń. Zachowuje ustawienia, skrypty, postęp i pobrane pliki. Najpierw zamknij strony rozszerzeń i filmów oraz zakończ pobieranie.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Dane tymczasowe są nadal używane. Zamknij strony rozszerzeń i filmów, zakończ pobieranie i spróbuj ponownie.";
+"Deleting website data can sign you out and remove offline content." = "Usunięcie danych może Cię wylogować i usunąć zawartość offline.";
+
+"Extension startup timed out." = "Przekroczono czas uruchamiania rozszerzenia.";
+
+"soulo_extensions" = "Rozszerzenia Soulo";
+
+"Add to Quick Links" = "Dodaj do szybkich łączy";
+"Remove from Quick Links" = "Usuń z szybkich łączy";
+"Mark bookmarks with a heart to show them here." = "Przytrzymaj zakładkę i oznacz ją sercem, aby wyświetlić ją tutaj.";
+
+"Type %@ to confirm." = "Wpisz %@, aby potwierdzić.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Zakładki są scalane między urządzeniami. Usuwa je tylko wyraźne polecenie usunięcia.";
+"This deletion also syncs to your other devices." = "To usunięcie zostanie zsynchronizowane także z innymi urządzeniami.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Skopiuj polecenie, dodaj wymagania i wyślij je do AI. Następnie wklej tutaj jej JSON, aby go zaimportować.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Nazwy grup w JSON mają pierwszeństwo. Pasujące grupy są scalane bez usuwania istniejących platform.";
+"Imported %1$d platforms into %2$d groups." = "Zaimportowano %1$d platform do %2$d grup.";
+"No new platforms or group entries." = "Brak nowych platform lub wpisów grup.";
+
+"App size" = "Rozmiar aplikacji";
+"App data" = "Dane aplikacji";
+"Wallpaper cache" = "Pamięć podręczna tapet";
+"Other caches" = "Inne pamięci podręczne";
+"Temporary files" = "Pliki tymczasowe";
+"Download task data" = "Dane zadań pobierania";
+"Settings and records" = "Ustawienia i zapisy";
+"Shared app data" = "Wspólne dane aplikacji";
+"Other app data" = "Inne dane aplikacji";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Dane aplikacji nie obejmują zainstalowanego programu. Rozmiar na dysku może różnić się od Ustawień iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Usuń zapisaną zawartość z jej listy. Używane pliki tymczasowe i systemowe bazy pamięci podręcznej są zwalniane, gdy jest to bezpieczne.";
+
+"Current platforms" = "Bieżące platformy";
+"Import mode" = "Tryb importu";
+"Append" = "Dodaj";
+"Replace all" = "Zastąp wszystko";
+"Replace all platforms?" = "Zastąpić wszystkie platformy?";
+"A settings backup is saved before replacement." = "Przed zastąpieniem zostanie zapisana kopia ustawień.";
+
+"Take over web players" = "Przejmuj odtwarzacze web";
+"Only takes over website fullscreen. Extension players stay independent." = "Przejmuje tylko pełnoekranowe odtwarzanie witryny. Odtwarzacze rozszerzeń pozostają niezależne.";
+
+"App size is the installed program and resources, not the App Store download size." = "Rozmiar aplikacji obejmuje zainstalowany program i zasoby, nie pobieranie z App Store.";
+"App data is the total of the categories below." = "Dane aplikacji to suma poniższych kategorii.";

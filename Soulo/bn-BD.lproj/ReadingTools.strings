@@ -417,7 +417,7 @@
 "media_audio_tracks" = "অডিও ট্র্যাক";
 "media_subtitles" = "সাবটাইটেল";
 "media_track_off" = "বন্ধ";
-"video_settings" = "ভিডিও";
+"video_settings" = "ভিডিও সেটিংস";
 "video_show_tools" = "ভিডিও টুল দেখান";
 "video_show_tools_desc" = "প্লেব্যাক গতি, ডাউনলোড এবং পূর্ণস্ক্রীনের জন্য ওয়েব ভিডিওগুলিতে সরঞ্জামগুলি দেখান৷";
 "video_default_player" = "ডিফল্ট প্লেয়ার";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "ঝাপসা কাচ";
 "wallpaper_blur_amount" = "ঝাপসার মাত্রা";
 
-"auto_hide_platform_bar_hint" = "সার্চের ফলাফল খুললে প্ল্যাটফর্ম বার লুকিয়ে যাবে। ফলাফলে ফিরে গেলে বা নতুন সার্চ করলে আবার দেখা যাবে। এই মেনু থেকে এটি বন্ধ করতে পারবেন।";
+"auto_hide_platform_bar_hint" = "ওয়েবপৃষ্ঠার বিষয়বস্তুতে ট্যাপ করলেই প্ল্যাটফর্ম বার লুকাবে। স্বয়ংক্রিয় পুনর্নির্দেশ বা স্ক্রল করলে লুকাবে না। আবার দেখাতে অনুসন্ধানের ফলে ফিরুন বা নতুন অনুসন্ধান করুন।";
+
+"ad_subscription_add" = "ফিল্টার তালিকা যোগ করুন";
+"ad_subscription_name" = "নাম";
+"ad_subscription_url" = "সাবস্ক্রিপশন URL";
+"ad_subscription_invalid" = "একটি নাম এবং বৈধ HTTP বা HTTPS সাবস্ক্রিপশন URL লিখুন।";
+"ad_subscription_duplicate" = "এই সাবস্ক্রিপশন URL ইতিমধ্যে যোগ করা হয়েছে।";
+
+"feedback_settings" = "শব্দ ও কম্পন";
+"feedback_settings_hint" = "অ্যাপ জুড়ে কম্পন ও ইন্টারফেসের শব্দ নিয়ন্ত্রণ করুন। ওয়েবপেজ, ভিডিও ও অডিও চালানোতে প্রভাব পড়বে না।";
+
+"home_display_settings" = "হোমের প্রদর্শন";
+"browsing_display_settings" = "ব্রাউজিংয়ের প্রদর্শন";
+
+"web_video_download" = "ওয়েব ভিডিও ডাউনলোড";
+"web_video_download_description" = "ওয়েবপেজ, পর্বের তালিকা ও প্লেয়ারে ভিডিও ডাউনলোডের বোতাম দেখান। প্লেব্যাক ও চলমান ডাউনলোড অপরিবর্তিত থাকে।";
+"builtin_extension" = "অন্তর্নির্মিত এক্সটেনশন";
+
+"wallpaper_overlay_amount" = "ওভারলের তীব্রতা";
+"feedback_contact_required" = "উত্তর পেতে ইমেল বা অন্য যোগাযোগের তথ্য দিন।";
+"torrent_incomplete" = "অসম্পূর্ণ";
+"extend_page_background" = "ওয়েবপেজের পটভূমি প্রসারিত করুন";
+"extend_page_background_desc" = "গ্রেডিয়েন্টসহ পৃষ্ঠার উপরের ও নিচের রং ব্রাউজারের প্রান্তে প্রসারিত করুন।";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "গ্রুপ গুটিয়ে নিন";
+"tab_group_expand" = "গ্রুপ প্রসারিত করুন";
+"freeze_page_background_on_scroll" = "প্রথম রং রাখুন";
+"freeze_page_background_on_scroll_desc" = "স্ক্রল করার পর প্রথম শনাক্ত করা রং রাখুন। নতুন পৃষ্ঠায় আবার রং শনাক্ত করা হবে।";
+"page_background_gradient" = "গ্রেডিয়েন্ট প্রসারণ";
+"page_background_gradient_desc" = "শনাক্ত রং মিশিয়ে গ্রেডিয়েন্ট তৈরি করুন। বন্ধ থাকলে প্রতিটি প্রান্তে একটি নিরেট রং থাকবে।";
+
+
+"gestures_feedback_settings" = "অঙ্গভঙ্গি ও প্রতিক্রিয়া";

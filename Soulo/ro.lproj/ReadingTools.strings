@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Piese audio";
 "media_subtitles" = "Subtitrări";
 "media_track_off" = "Oprit";
-"video_settings" = "Video";
+"video_settings" = "Setări video";
 "video_show_tools" = "Afișați instrumente video";
 "video_show_tools_desc" = "Afișați instrumente pe videoclipurile web pentru viteza de redare, descărcări și ecran complet.";
 "video_default_player" = "Jucător implicit";
@@ -497,4 +497,38 @@
 "wallpaper_image_blur" = "Sticlă mată";
 "wallpaper_blur_amount" = "Intensitatea estompării";
 
-"auto_hide_platform_bar_hint" = "Bara platformelor se ascunde când deschizi un rezultat al căutării. Revino la rezultate sau începe o căutare nouă pentru a o afișa din nou. Poți dezactiva opțiunea din acest meniu.";
+"auto_hide_platform_bar_hint" = "Bara platformelor se ascunde doar după ce atingi conținutul paginii. Redirecționările automate și derularea nu o ascund. Revino la rezultate sau începe o căutare nouă pentru a o afișa din nou.";
+
+"ad_subscription_add" = "Adaugă listă de filtre";
+"ad_subscription_name" = "Nume";
+"ad_subscription_url" = "URL abonament";
+"ad_subscription_invalid" = "Introduceți un nume și un URL de abonament HTTP sau HTTPS valid.";
+"ad_subscription_duplicate" = "Acest URL de abonament a fost deja adăugat.";
+
+"feedback_settings" = "Sunete și vibrații";
+"feedback_settings_hint" = "Controlează vibrațiile și sunetele interfeței în întreaga aplicație. Redarea paginilor web, a videoclipurilor și a conținutului audio nu este afectată.";
+
+"home_display_settings" = "Afișarea paginii de pornire";
+"browsing_display_settings" = "Afișarea navigării";
+
+"web_video_download" = "Descărcări video web";
+"web_video_download_description" = "Afișează comenzile de descărcare video pe pagini web, liste de episoade și în playere. Redarea și descărcările existente rămân neschimbate.";
+"builtin_extension" = "Extensie încorporată";
+
+"wallpaper_overlay_amount" = "Intensitatea suprapunerii";
+"feedback_contact_required" = "Introduceți un e-mail sau alt contact pentru a primi un răspuns.";
+"torrent_incomplete" = "Incomplet";
+"extend_page_background" = "Extinde fundalul paginii";
+"extend_page_background_desc" = "Extinde culorile de sus și de jos ale paginii la marginile browserului, inclusiv degradeurile.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Restrânge grupul";
+"tab_group_expand" = "Extinde grupul";
+"freeze_page_background_on_scroll" = "Păstrează culorile inițiale";
+"freeze_page_background_on_scroll_desc" = "După derulare, păstrează primele culori detectate. Paginile noi sunt analizate din nou.";
+"page_background_gradient" = "Extindere în degrade";
+"page_background_gradient_desc" = "Combină culorile detectate într-un degrade. Dezactivată, fiecare margine are o culoare uniformă.";
+
+
+
+"gestures_feedback_settings" = "Gesturi și feedback";

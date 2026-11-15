@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-02",
+  "updated": "2026-11-15",
   "categories": [
     {
       "id": "streaming",
@@ -1148,6 +1148,19 @@
       ],
       "mark": "影",
       "icon": "images/movie-icons/yingshisou.png"
+    },
+    {
+      "id": "souju-ai",
+      "name": "搜剧 AI",
+      "url": "https://souju.ai/",
+      "category": "search",
+      "description": "AI 影视搜索与内容发现。",
+      "tags": [
+        "影视搜索",
+        "AI"
+      ],
+      "mark": "搜",
+      "icon": "images/movie-icons/souju-ai.png"
     }
   ]
 }

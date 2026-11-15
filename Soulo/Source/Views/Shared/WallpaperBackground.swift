@@ -2,7 +2,11 @@ import SwiftUI
 
 struct WallpaperBackground: View {
     var isAnimating = true
-    @Environment(\.colorScheme) private var colorScheme
+    var appearanceOverride: WallpaperAppearance?
+    @Environment(\.colorScheme) private var renderingColorScheme
+    private var colorScheme: ColorScheme {
+        appearanceOverride.map { $0 == .dark ? .dark : .light } ?? renderingColorScheme
+    }
     @ObservedObject var wallpaperManager = WallpaperManager.shared
 
     var body: some View {
@@ -14,11 +18,15 @@ struct WallpaperBackground: View {
                 // readability scrim is only needed for images and gradients.
                 if wallpaperManager.showsWallpaperOverlay {
                     scrimLayer
+                        .opacity(wallpaperManager.source == .gradient ? 1
+                            : min(1, wallpaperManager.imageOverlayOpacity / WallpaperContrast.defaultImageOverlayAmount))
                 }
             }
         }
         .ignoresSafeArea()
+        .environment(\.colorScheme, colorScheme)
         .accessibilityHidden(true)
+        .allowsHitTesting(false)
         .onAppear { wallpaperManager.setDisplayAppearance(WallpaperAppearance(colorScheme)) }
         .onCompatibleChange(of: colorScheme) { _, scheme in wallpaperManager.setDisplayAppearance(WallpaperAppearance(scheme)) }
     }
@@ -36,11 +44,9 @@ struct WallpaperBackground: View {
         case .photo:
             if let img = wallpaperManager.customImage {
                 photoImage(img, size: size)
-                    .id(wallpaperManager.currentImageID)
-                    .transition(.opacity.animation(.easeInOut(duration: 0.8)))
                 if wallpaperManager.imageOverlayEnabled {
                     Color.black
-                        .opacity(colorScheme == .light ? WallpaperContrast.lightOverlayOpacity : WallpaperContrast.darkOverlayOpacity)
+                        .opacity(wallpaperManager.imageOverlayOpacity)
                 }
             } else {
                 DynamicGradientView.fallback(isPaused: !isAnimating)
@@ -49,11 +55,9 @@ struct WallpaperBackground: View {
         case .bing, .pexels, .pixabay:
             if let img = wallpaperManager.currentImage {
                 photoImage(img, size: size)
-                    .id(wallpaperManager.currentImageID)
-                    .transition(.opacity.animation(.easeInOut(duration: 0.8)))
                 if wallpaperManager.imageOverlayEnabled {
                     Color.black
-                        .opacity(colorScheme == .light ? WallpaperContrast.lightOverlayOpacity : WallpaperContrast.darkOverlayOpacity)
+                        .opacity(wallpaperManager.imageOverlayOpacity)
                 }
             } else {
                 DynamicGradientView.fallback(isPaused: !isAnimating)
@@ -62,28 +66,49 @@ struct WallpaperBackground: View {
     }
 
     private func photoImage(_ img: UIImage, size: CGSize) -> some View {
-        let radius = wallpaperManager.imageBlurRadius
-        return Image(uiImage: img)
+        WallpaperPhotoLayer(image: img, size: size, blurRadius: wallpaperManager.imageBlurRadius)
+    }
+
+    private var scrimLayer: some View {
+        WallpaperReadabilityScrim(source: wallpaperManager.source, appearance: WallpaperAppearance(colorScheme),
+            isLight: wallpaperManager.isCurrentWallpaperLight)
+    }
+
+}
+
+/// Shared by Home and settings thumbnails so the blur crop stays identical.
+struct WallpaperPhotoLayer: View {
+    let image: UIImage
+    let size: CGSize
+    let blurRadius: CGFloat
+    var body: some View {
+        Image(uiImage: image)
             .resizable()
             .scaledToFill()
             .frame(width: size.width, height: size.height)
             .clipped()
             // Extend the image beyond the crop so blur cannot fade its edges.
-            .scaleEffect(radius > 0 ? 1 + radius * 4 / max(1, min(size.width, size.height)) : 1)
-            .blur(radius: radius, opaque: true)
+            .scaleEffect(blurRadius > 0 ? 1 + blurRadius * 4 / max(1, min(size.width, size.height)) : 1)
+            .blur(radius: blurRadius, opaque: true)
             .frame(width: size.width, height: size.height)
             .clipped()
     }
+}
 
-    private var scrimLayer: some View {
+struct WallpaperReadabilityScrim: View {
+    let source: WallpaperSource
+    let appearance: WallpaperAppearance
+    let isLight: Bool
+    var scale: CGFloat = 1
+    var body: some View {
         ZStack {
-            if colorScheme == .light && wallpaperManager.source != .gradient {
+            if appearance == .light && source != .gradient {
                 LinearGradient(colors: [.black.opacity(0.08), .clear, .clear, .black.opacity(0.12)],
                                startPoint: .top, endPoint: .bottom)
-            } else if colorScheme == .light {
+            } else if appearance == .light {
                 LinearGradient(colors: [.white.opacity(0.16), .clear, .clear, .white.opacity(0.22)],
                                startPoint: .top, endPoint: .bottom)
-            } else if wallpaperManager.isCurrentWallpaperLight {
+            } else if isLight {
                 LinearGradient(
                     colors: [
                         .black.opacity(0.06),
@@ -105,7 +130,7 @@ struct WallpaperBackground: View {
                 )
                 RadialGradient(
                     colors: [.clear, .black.opacity(0.2)],
-                    center: .center, startRadius: 150, endRadius: 500
+                    center: .center, startRadius: 150 * scale, endRadius: 500 * scale
                 )
             }
         }

@@ -1,6 +1,1 @@
-1.2.13
-
-• Sfondi separati per l’aspetto chiaro e scuro, con interruttore del velo sull’immagine.
-• Colori della home migliorati; l’anteprima dello sfondo segue il tema dell’app.
-• Visualizza, condividi e salva gli sfondi in Foto.
-• Impostazioni delle schede superiori con nuova scheda e barra delle piattaforme nascondibile dopo la navigazione.
+Migliorati le finestre su iPad, l’input vocale, i riepiloghi locali e l’accessibilità. Migliorati l’esportazione multimediale in background, i Comandi Rapidi e la compatibilità delle estensioni. Alcune funzioni dipendono dal dispositivo, dal sistema e dalla lingua.

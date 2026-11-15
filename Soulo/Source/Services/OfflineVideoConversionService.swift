@@ -12,11 +12,20 @@ enum OfflineVideoConversionError: LocalizedError {
 /// writes a regular MP4 with a seek index, without encoding or replacing HLS.
 @MainActor enum OfflineVideoConversionService {
     static func supports(_ url: URL) -> Bool {
-        url.isFileURL && [OfflineHLSReference.fileExtension, "movpkg"].contains(url.pathExtension.lowercased())
+        url.isFileURL && [OfflineHLSReference.fileExtension, "movpkg", "hls"].contains(url.pathExtension.lowercased())
     }
 
     static func exportMP4(from source: URL, into directory: URL,
+                          preferredFilename: String? = nil,
                           operation: FileOperationProgress = FileOperationProgress()) async throws -> URL {
+        try await MediaExportBackgroundService.shared.perform(progress: operation.progress) {
+            try await exportNativeMP4(from: source, into: directory, preferredFilename: preferredFilename, operation: operation)
+        }
+    }
+
+    private static func exportNativeMP4(from source: URL, into directory: URL,
+                                       preferredFilename: String?,
+                                       operation: FileOperationProgress) async throws -> URL {
         guard supports(source) else { throw ReadingToolError.unsupported }
         try check(operation)
         let manager = FileManager.default
@@ -35,11 +44,12 @@ enum OfflineVideoConversionError: LocalizedError {
             let package = try reference.map(OfflineHLSReference.packageURL(for:)) ?? source
             let origin = try reference.flatMap { try OfflineHLSReference.sourceURL(for: $0) }
             var encryption = try reference.flatMap { try OfflineHLSReference.encryptionMaterial(for: $0) }
-            if encryption == nil {
+            let portable = source.pathExtension.lowercased() == "hls"
+            if encryption == nil, !portable {
                 encryption = try await PortableHLSBundle.encryptionMaterial(packageURL: package, sourceURL: origin)
                 if let reference, let encryption { try OfflineHLSReference.storeEncryption(encryption, for: reference) }
             }
-            let bundle = try await PortableHLSBundle.export(packageURL: package, name: "Input", into: scratch,
+            let bundle = portable ? source : try await PortableHLSBundle.export(packageURL: package, name: "Input", into: scratch,
                 sourceURL: origin, operation: preparation, linkFragments: true, encryption: encryption)
             return try HLSMP4Transmuxer.write(bundle: bundle, output: fragmented, operation: operation, progress: muxing)
         }
@@ -54,7 +64,9 @@ enum OfflineVideoConversionError: LocalizedError {
         try manager.createDirectory(at: directory, withIntermediateDirectories: true)
         let reserved = directory.standardizedFileURL == DownloadManagerService.downloadsDirectory.standardizedFileURL
             ? Set(DownloadManagerService.shared.downloads.filter { [.inProgress, .paused].contains($0.status) }.map(\.fileName)) : []
-        let target = FileSafety.availableURL(name: source.deletingPathExtension().lastPathComponent + ".mp4", directory: directory, excluding: reserved)
+        let name = preferredFilename.map { ($0 as NSString).deletingPathExtension + ".mp4" }
+            ?? source.deletingPathExtension().lastPathComponent + ".mp4"
+        let target = FileSafety.availableURL(name: name, directory: directory, excluding: reserved)
         try manager.moveItem(at: output, to: target)
         finishing.completedUnitCount = 1000
         return target

@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Audiotracks";
 "media_subtitles" = "Ondertitels";
 "media_track_off" = "Uit";
-"video_settings" = "Video";
+"video_settings" = "Video-instellingen";
 "video_show_tools" = "Toon videotools";
 "video_show_tools_desc" = "Toon tools op webvideo's voor afspeelsnelheid, downloads en volledig scherm.";
 "video_default_player" = "Standaard speler";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Matglas";
 "wallpaper_blur_amount" = "Vervagingssterkte";
 
-"auto_hide_platform_bar_hint" = "De platformbalk wordt verborgen als je een zoekresultaat opent. Ga terug naar de resultaten of start een nieuwe zoekopdracht om de balk weer te tonen. Je kunt dit in dit menu uitschakelen.";
+"auto_hide_platform_bar_hint" = "De platformbalk verdwijnt pas als je op de webinhoud tikt. Automatische omleidingen en scrollen verbergen de balk niet. Ga terug naar de zoekresultaten of start een nieuwe zoekopdracht om deze weer te tonen.";
+
+"ad_subscription_add" = "Filterlijst toevoegen";
+"ad_subscription_name" = "Naam";
+"ad_subscription_url" = "Abonnements-URL";
+"ad_subscription_invalid" = "Voer een naam en een geldige HTTP- of HTTPS-abonnements-URL in.";
+"ad_subscription_duplicate" = "Deze abonnements-URL is al toegevoegd.";
+
+"feedback_settings" = "Geluiden en trillingen";
+"feedback_settings_hint" = "Beheer trillingen en interfacegeluiden in de hele app. Het afspelen van webpagina’s, video en audio wordt niet beïnvloed.";
+
+"home_display_settings" = "Startpaginaweergave";
+"browsing_display_settings" = "Browserweergave";
+
+"web_video_download" = "Webvideodownloads";
+"web_video_download_description" = "Toon videodownloadknoppen op webpagina’s, afleveringslijsten en spelers. Afspelen en bestaande downloads blijven ongewijzigd.";
+"builtin_extension" = "Ingebouwde extensie";
+
+"wallpaper_overlay_amount" = "Overlaysterkte";
+"feedback_contact_required" = "Vul een e-mailadres of andere contactgegevens in voor een antwoord.";
+"torrent_incomplete" = "Onvoltooid";
+"extend_page_background" = "Webpagina-achtergrond";
+"extend_page_background_desc" = "Trek de bovenste en onderste paginakleuren door naar de browserranden, inclusief verlopen.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Groep inklappen";
+"tab_group_expand" = "Groep uitklappen";
+"freeze_page_background_on_scroll" = "Eerste kleuren behouden";
+"freeze_page_background_on_scroll_desc" = "Behoud na het scrollen de eerst gedetecteerde kleuren. Nieuwe pagina’s worden opnieuw geanalyseerd.";
+"page_background_gradient" = "Verloop uitbreiden";
+"page_background_gradient_desc" = "Meng gedetecteerde kleuren tot een verloop. Uitgeschakeld krijgt elke rand één egale kleur.";
+
+
+"gestures_feedback_settings" = "Gebaren en feedback";

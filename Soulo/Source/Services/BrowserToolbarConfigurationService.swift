@@ -6,6 +6,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
     case back
     case forward
     case tabs
+    case newTab
     case more
     case share
     case bookmark
@@ -37,6 +38,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .back: "browser_back"
         case .forward: "browser_forward"
         case .tabs: "browser_tabs"
+        case .newTab: "tab_new_tab"
         case .more: "show_more"
         case .share: "share"
         case .bookmark: "bookmarks"
@@ -68,6 +70,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .back: "chevron.left"
         case .forward: "chevron.right"
         case .tabs: "square"
+        case .newTab: "plus.square"
         case .more: "ellipsis"
         case .share: "square.and.arrow.up"
         case .bookmark: "bookmark"
@@ -101,7 +104,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
 
     var requiresPage: Bool {
         switch self {
-        case .none, .home, .tabs, .more, .settings, .extensions, .library, .hideToolbar, .files, .books, .downloads, .wifiTransfer:
+        case .none, .home, .tabs, .newTab, .more, .settings, .extensions, .library, .hideToolbar, .files, .books, .downloads, .wifiTransfer:
             false
         default:
             true

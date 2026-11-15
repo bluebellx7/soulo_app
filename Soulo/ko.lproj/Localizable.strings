@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "한 번 입력으로 40개 이상 플랫폼";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "검색어 또는 URL 입력";
 "privacy_search_placeholder" = "비공개 검색 또는 URL 입력";
 "search" = "검색";
@@ -354,7 +354,7 @@
 "voice_stop" = "중지";
 "voice_record" = "녹음";
 "batch_import" = "일괄 가져오기";
-"batch_import_format" = "아래 형식으로 JSON을 붙여넣으세요";
+"batch_import_format" = "여기에 JSON 붙여넣기";
 "batch_import_group" = "그룹에 추가(선택 사항)";
 "batch_import_group_placeholder" = "예: 영화";
 "batch_import_film_entry" = "영화 플랫폼 사전 설정 열기";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "확장 프로그램을 설치할 수 없습니다";
 "extension_permissions_summary" = "%d 권한 · %d 웹사이트 규칙";
 "extension_untitled" = "제목 없는 확장 프로그램";
-"web_extension_install_footer" = "호환되는 스토어 링크로 설치하거나 CRX, XPI, ZIP 및 확장 프로그램 폴더를 가져올 수 있습니다. 설치 전 권한과 호환성을 확인하세요. 일부 데스크탑 기능은 사용할 수 없습니다.";
+"web_extension_install_footer" = "설치 후 확장 프로그램 관리 화면에서 권한을 변경할 수 있습니다.";
 "web_extension_install_store_link" = "스토어 링크에서 설치…";
 "web_extension_browse_sources" = "확장 스토어 찾아보기";
 "web_extension_browse_sources_footer" = "Store Get 버튼은 자체 데스크탑 브라우저만 지원합니다. 확장 프로그램 세부정보 페이지 링크를 복사한 후 Soulo의 스토어 링크에서 설치를 사용하세요.";
 "web_extension_store_install_title" = "스토어 확장 설치";
 "extension_page_banner_title" = "Soulo으로 설치";
-"extension_page_banner_desc" = "호환성과 권한을 확인한 뒤 설치하세요.";
-"web_extension_store_install_desc" = "Chrome, Edge 또는 Firefox 확장 프로그램의 상세 페이지 링크를 붙여넣고 호환성과 권한을 확인한 뒤 설치하세요.";
+"extension_page_banner_desc" = "설치 후 확장 프로그램 관리 화면에서 권한을 변경할 수 있습니다.";
+"web_extension_store_install_desc" = "설치 후 확장 프로그램 관리 화면에서 권한을 변경할 수 있습니다.";
 "web_extension_store_link_placeholder" = "확장 프로그램 페이지 링크 또는 Chrome 확장 프로그램 ID";
 "web_extension_store_invalid_link" = "Chrome, Edge 또는 Firefox의 확장 프로그램 세부 정보 페이지 링크, Chrome 확장 프로그램 ID 또는 직접 CRX, XPI 또는 ZIP 링크를 붙여넣습니다.";
 "web_extension_store_https_required" = "확장 패키지는 보안 HTTPS 링크를 사용해야 합니다.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "홈 화면에서 Soulo 아이콘을 길게 누르면 여기서 설정한 단축 메뉴를 사용할 수 있습니다.";
 
 "ad_block_scope_hint" = "웹 광고, 홍보 오버레이 및 원치 않는 팝업을 필터링합니다. 사이트가 제대로 작동하지 않으면 해당 사이트만 필터링을 끌 수 있습니다.";
+
+"privacy_clear_browsing_on_exit" = "종료 시 방문 기록 삭제";
+"privacy_clear_browsing_on_exit_desc" = "백그라운드로 전환하거나 다시 실행할 때 방문한 페이지 기록을 삭제합니다. 검색어는 유지합니다.";

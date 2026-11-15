@@ -276,7 +276,7 @@ final class SeparatedMediaDownloadService: NSObject, @preconcurrency URLSessionD
               item.status == .inProgress else { return }
         let assertion = UIApplication.shared.beginBackgroundTask(withName: "Finish media download") { [weak self] in
             Task { @MainActor in
-                self?.deferMergeUntilForeground(id: id)
+                if !MediaExportBackgroundService.shared.isRunning { self?.deferMergeUntilForeground(id: id) }
             }
         }
         if assertion != .invalid { backgroundAssertions[id] = assertion }
@@ -312,6 +312,8 @@ final class SeparatedMediaDownloadService: NSObject, @preconcurrency URLSessionD
                 manager.markFinished(id: id)
                 cleanup(id: id)
                 continuations.removeValue(forKey: id)?.resume(returning: item.localURL)
+            } catch MediaExportBackgroundError.interrupted {
+                deferMergeUntilForeground(id: id)
             } catch {
                 if !Task.isCancelled { fail(id: id, error: error) }
             }

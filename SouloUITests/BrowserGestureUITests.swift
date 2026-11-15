@@ -169,17 +169,20 @@ final class BrowserGestureUITests: XCTestCase {
         reveal(mode, in: app); mode.tap(); app.buttons["On Tap"].firstMatch.tap()
         capture(app, "gesture-execution-choice")
         mode.tap(); app.buttons["On Release"].firstMatch.tap()
-        let haptics = app.switches["settings.gestures.haptics"]
+        let feedbackSettings = app.buttons["settings.gestures.feedback"]
+        reveal(feedbackSettings, in: app); feedbackSettings.tap()
+        let haptics = app.switches["settings.feedback.haptics"]
         reveal(haptics, in: app)
         if haptics.value as? String == "1" { haptics.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
         XCTAssertEqual(haptics.value as? String, "0")
-        let sound = app.switches["settings.gestures.sound"]
+        let sound = app.switches["settings.feedback.sound"]
         if sound.value as? String != "1" { sound.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
         XCTAssertEqual(sound.value as? String, "1")
-        app.buttons["settings.gestures.feedback.preview"].tap()
+        app.buttons["settings.feedback.preview"].tap()
         capture(app, "gesture-feedback-options")
         sound.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
         haptics.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         reveal(toggle, in: app, upward: false)
         if toggle.value as? String == "1" { toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
     }
@@ -188,8 +191,8 @@ final class BrowserGestureUITests: XCTestCase {
         let standard = launch(chinese: true)
         openGestureSettings(standard, chinese: true)
         capture(standard, "gesture-settings-chinese-dark")
-        let feedback = standard.buttons["settings.gestures.feedback.preview"]
-        reveal(feedback, in: standard)
+        let feedback = standard.buttons["settings.gestures.feedback"]
+        reveal(feedback, in: standard); feedback.tap()
         capture(standard, "gesture-settings-chinese-feedback")
         standard.terminate()
         let app = launch(chinese: true, largeText: true); defer { app.terminate() }

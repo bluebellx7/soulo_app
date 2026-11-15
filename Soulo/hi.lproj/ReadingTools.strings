@@ -417,7 +417,7 @@
 "media_audio_tracks" = "ऑडियो ट्रैक";
 "media_subtitles" = "उपशीर्षक";
 "media_track_off" = "बंद";
-"video_settings" = "वीडियो";
+"video_settings" = "वीडियो सेटिंग्स";
 "video_show_tools" = "वीडियो उपकरण दिखाएँ";
 "video_show_tools_desc" = "प्लेबैक गति, डाउनलोड और फ़ुलस्क्रीन के लिए वेब वीडियो पर टूल दिखाएं।";
 "video_default_player" = "डिफ़ॉल्ट प्लेयर";
@@ -497,4 +497,38 @@
 "wallpaper_image_blur" = "धुंधला काँच";
 "wallpaper_blur_amount" = "धुंधलेपन की तीव्रता";
 
-"auto_hide_platform_bar_hint" = "खोज का परिणाम खोलने पर प्लेटफ़ॉर्म बार छिप जाएगा। परिणामों पर लौटने या नई खोज करने पर यह फिर दिखेगा। इस मेनू में इसे बंद कर सकते हैं।";
+"auto_hide_platform_bar_hint" = "वेबपेज की सामग्री पर टैप करने के बाद ही प्लेटफ़ॉर्म बार छिपेगा। अपने आप रीडायरेक्ट होने या स्क्रॉल करने से नहीं। दोबारा दिखाने के लिए खोज परिणामों पर लौटें या नई खोज करें।";
+
+"ad_subscription_add" = "फ़िल्टर सूची जोड़ें";
+"ad_subscription_name" = "नाम";
+"ad_subscription_url" = "सदस्यता URL";
+"ad_subscription_invalid" = "नाम और मान्य HTTP या HTTPS सदस्यता URL दर्ज करें।";
+"ad_subscription_duplicate" = "यह सदस्यता URL पहले ही जोड़ा जा चुका है।";
+
+"feedback_settings" = "ध्वनि और कंपन";
+"feedback_settings_hint" = "पूरे ऐप में कंपन और इंटरफ़ेस की ध्वनियाँ नियंत्रित करें। वेबपेज, वीडियो और ऑडियो प्लेबैक पर असर नहीं पड़ता।";
+
+"home_display_settings" = "होम का प्रदर्शन";
+"browsing_display_settings" = "ब्राउज़िंग का प्रदर्शन";
+
+"web_video_download" = "वेब वीडियो डाउनलोड";
+"web_video_download_description" = "वेबपेज, एपिसोड सूचियों और प्लेयर में वीडियो डाउनलोड नियंत्रण दिखाएँ। प्लेबैक और मौजूदा डाउनलोड नहीं बदलते।";
+"builtin_extension" = "अंतर्निहित एक्सटेंशन";
+
+"wallpaper_overlay_amount" = "ओवरले की तीव्रता";
+"feedback_contact_required" = "उत्तर पाने के लिए ईमेल या अन्य संपर्क जानकारी दर्ज करें।";
+"torrent_incomplete" = "अधूरा";
+"extend_page_background" = "वेबपेज पृष्ठभूमि बढ़ाएँ";
+"extend_page_background_desc" = "ग्रेडिएंट सहित पेज के ऊपर और नीचे के रंगों को ब्राउज़र के किनारों तक बढ़ाएँ।";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "समूह समेटें";
+"tab_group_expand" = "समूह फैलाएँ";
+"freeze_page_background_on_scroll" = "शुरुआती रंग रखें";
+"freeze_page_background_on_scroll_desc" = "स्क्रॉल करने के बाद पहली बार पहचाने गए रंग रखें। नए पेज के रंग फिर पहचाने जाएँगे।";
+"page_background_gradient" = "ग्रेडिएंट विस्तार";
+"page_background_gradient_desc" = "पहचाने गए रंगों को ग्रेडिएंट में मिलाएँ। बंद होने पर हर किनारे पर एक ठोस रंग होगा।";
+
+
+
+"gestures_feedback_settings" = "जेस्चर और प्रतिक्रिया";

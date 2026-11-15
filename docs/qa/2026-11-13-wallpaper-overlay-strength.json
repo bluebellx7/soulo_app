@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-13",
+  "feature": "Adjustable image wallpaper overlay strength",
+  "behavior": {
+    "control": "Show Overlay Strength below Image Overlay when enabled, for remote images and photo wallpapers.",
+    "range": "0–100% black overlay; default 30% in both appearances",
+    "zero": "No image tint or edge scrim",
+    "persistence": "Retain strength when disabled, across relaunch and in settings backup/iCloud sync.",
+    "contrast": "Recalculate the image text contrast using the selected opacity. Strength changes do not reload wallpaper images.",
+    "independence": "Blur retains its separate switch and strength; solid colors and the existing gradient treatment are unchanged."
+  },
+  "validation": {
+    "unit": {
+      "status": "4 passed, 0 failures on iOS 26.2",
+      "result": "/tmp/soulo-wallpaper-overlay-20261113/unit.xcresult",
+      "coverage": [
+        "Strength default, saved setting, backup round trip, reload and invalid-value bounds",
+        "Foreground contrast follows adjustable image tint and returns to the original contrast at zero",
+        "Solid color and gradient behavior",
+        "Blur remains independent and image-only",
+        "Existing saturated-color and image-brightness contrast behavior"
+      ]
+    },
+    "ui": {
+      "status": "1 passed, 0 failures on iOS 16.4",
+      "test": "HomeToolbarUITests/testWallpaperImageOverlayPersistsAndIsOnlyOfferedForImages",
+      "result": "/tmp/soulo-wallpaper-overlay-20261113/ui-ios16.xcresult",
+      "coverage": "Drag strength, hide/show the slider with its switch, retain the chosen strength after re-enabling and app relaunch, adjust blur independently, and hide both controls for solid/gradient sources.",
+      "visual_review": "Reviewed the screenshot containing both independent percentage sliders."
+    },
+    "simulator_build_for_testing": "passed",
+    "generic_ios_device_build": "passed with CODE_SIGNING_ALLOWED=NO",
+    "localization": "489 ReadingTools keys × 50 locales; strict validation and plutil passed.",
+    "metadata": "export_metadata_json.py --check passed; version and store metadata unchanged.",
+    "whitespace": "git diff --check passed"
+  },
+  "artifacts": "/tmp/soulo-wallpaper-overlay-20261113",
+  "limits": ["Validation used simulators; no physical-device run."],
+  "paid_api_calls": 0,
+  "pushed": false
+}

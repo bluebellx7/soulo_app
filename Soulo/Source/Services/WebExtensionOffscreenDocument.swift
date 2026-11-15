@@ -48,6 +48,19 @@ final class WebExtensionOffscreenDocument: NSObject, WKNavigationDelegate {
         guard let configuration = context.webViewConfiguration else {
             completion(nil, Self.failure("The extension context is unavailable.")); return
         }
+        // Some WebKit extension origins omit navigator.serviceWorker. The
+        // publisher uses only its message receiver in this offscreen document.
+        // Supply that local port without claiming worker registration support.
+        let expectedURL = String(decoding: (try? JSONEncoder().encode(url.absoluteString)) ?? Data("\"\"".utf8), as: UTF8.self)
+        configuration.userContentController.addUserScript(WKUserScript(source: #"""
+        (()=>{
+          if(location.href!==\#(expectedURL))return;
+          Object.defineProperty(globalThis,'__souloOffscreenWorkerReceiver',{value:true});
+          if(typeof navigator.serviceWorker==='undefined'){
+            Object.defineProperty(navigator,'serviceWorker',{value:{onmessage:null},configurable:true});
+          }
+        })();
+        """#, injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .page))
         self.completion = completion
         let view = WKWebView(frame: CGRect(x: 0, y: 0, width: 800, height: 600), configuration: configuration)
         view.navigationDelegate = self

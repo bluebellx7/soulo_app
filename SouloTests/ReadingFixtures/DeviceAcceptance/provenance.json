@@ -1,0 +1,9 @@
+{
+  "generator": "macOS offline say, Samantha and Tingting",
+  "fixtures": {
+    "speech.wav": "Testing voice input in the browser. Save a bookmark and open a new window.",
+    "speech-zh.wav": "这是浏览器语音输入测试。保存一个书签，然后打开一个新窗口。"
+  },
+  "format": "16 kHz mono signed 16-bit PCM WAV",
+  "purpose": "On-device SpeechAnalyzer integration acceptance; no microphone or external transcription service"
+}

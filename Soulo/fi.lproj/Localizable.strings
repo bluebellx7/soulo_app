@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "Yksi kysely, yli 40 alustaa";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "Hae tai kirjoita URL-osoite";
 "privacy_search_placeholder" = "Yksityinen haku tai kirjoita URL-osoite";
 "search" = "Etsi";
@@ -354,7 +354,7 @@
 "voice_stop" = "Pysähdy";
 "voice_record" = "Record";
 "batch_import" = "Erän tuonti";
-"batch_import_format" = "Liitä JSON alla olevaan muotoon";
+"batch_import_format" = "Liitä JSON tähän";
 "batch_import_group" = "Lisää ryhmään (valinnainen)";
 "batch_import_group_placeholder" = "esim. Elokuvat";
 "batch_import_film_entry" = "Avaa elokuvaalustan esiasetukset";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "Laajennusta ei voitu asentaa";
 "extension_permissions_summary" = "%d käyttöoikeudet · %d verkkosivustosäännöt";
 "extension_untitled" = "Nimetön laajennus";
-"web_extension_install_footer" = "Asenna yhteensopivia laajennuksia kauppalinkistä tai tuo CRX, XPI, ZIP tai laajennuskansio. Tarkista oikeudet ja yhteensopivuus; kaikki työpöytätoiminnot eivät ole saatavilla.";
+"web_extension_install_footer" = "Asennuksen jälkeen voit muuttaa oikeuksia laajennuksen hallintasivulla.";
 "web_extension_install_store_link" = "Asenna kauppalinkistä…";
 "web_extension_browse_sources" = "Selaa laajennuskauppoja";
 "web_extension_browse_sources_footer" = "Store Get -painikkeet tukevat vain omia työpöytäselaimiaan. Kopioi laajennuksen tietosivun linkki ja käytä sitten Asenna kaupasta -linkkiä kohdassa Soulo.";
 "web_extension_store_install_title" = "Asenna myymälälaajennus";
 "extension_page_banner_title" = "Asenna Soulo";
-"extension_page_banner_desc" = "Tarkista yhteensopivuus ja oikeudet ennen asennusta.";
-"web_extension_store_install_desc" = "Liitä Chrome-, Edge- tai Firefox-laajennuksen tietosivun linkki ja tarkista yhteensopivuus ja oikeudet ennen asennuksen vahvistamista.";
+"extension_page_banner_desc" = "Asennuksen jälkeen voit muuttaa oikeuksia laajennuksen hallintasivulla.";
+"web_extension_store_install_desc" = "Asennuksen jälkeen voit muuttaa oikeuksia laajennuksen hallintasivulla.";
 "web_extension_store_link_placeholder" = "Laajennussivun linkki tai Chrome-laajennuksen tunnus";
 "web_extension_store_invalid_link" = "Liitä laajennuksen tietosivun linkki Chromesta, Edgestä tai Firefoxista, Chrome-laajennuksen tunnus tai suora CRX-, XPI- tai ZIP-linkki.";
 "web_extension_store_https_required" = "Laajennuspakettien on käytettävä suojattua HTTPS-linkkiä.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "Käytä tässä määritettyjä pikatoimintoja pitämällä aloitusnäytön Soulo-kuvaketta painettuna.";
 
 "ad_block_scope_hint" = "Suodattaa verkkomainoksia, mainospeitteitä ja ei-toivottuja ponnahdusikkunoita. Jos sivusto ei toimi, voit poistaa suodatuksen käytöstä vain siinä.";
+
+"privacy_clear_browsing_on_exit" = "Tyhjennä historia poistuttaessa";
+"privacy_clear_browsing_on_exit_desc" = "Tyhjennä vieraillut sivut sovelluksen siirtyessä taustalle tai käynnistyessä uudelleen. Säilytä hakusanat.";

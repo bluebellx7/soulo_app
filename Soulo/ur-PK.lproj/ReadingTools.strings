@@ -417,7 +417,7 @@
 "media_audio_tracks" = "آڈیو ٹریکس";
 "media_subtitles" = "سب ٹائٹلز";
 "media_track_off" = "آف";
-"video_settings" = "ویڈیو";
+"video_settings" = "ویڈیو کی ترتیبات";
 "video_show_tools" = "ویڈیو ٹولز دکھائیں۔";
 "video_show_tools_desc" = "پلے بیک کی رفتار، ڈاؤن لوڈ اور پوری اسکرین کے لیے ویب ویڈیوز پر ٹولز دکھائیں۔";
 "video_default_player" = "پہلے سے طے شدہ کھلاڑی";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "دھندلا شیشہ";
 "wallpaper_blur_amount" = "دھندلاپن کی شدت";
 
-"auto_hide_platform_bar_hint" = "تلاش کا نتیجہ کھولنے پر پلیٹ فارم بار چھپ جائے گی۔ نتائج پر واپس جانے یا نئی تلاش شروع کرنے پر یہ دوبارہ دکھے گی۔ اس مینو سے اسے بند کر سکتے ہیں۔";
+"auto_hide_platform_bar_hint" = "ویب صفحے کے مواد پر ٹیپ کرنے کے بعد ہی پلیٹ فارم بار چھپے گی۔ خودکار ری ڈائریکٹ یا اسکرول کرنے سے نہیں۔ دوبارہ دکھانے کے لیے تلاش کے نتائج پر واپس جائیں یا نئی تلاش شروع کریں۔";
+
+"ad_subscription_add" = "فلٹر فہرست شامل کریں";
+"ad_subscription_name" = "نام";
+"ad_subscription_url" = "سبسکرپشن URL";
+"ad_subscription_invalid" = "نام اور درست HTTP یا HTTPS سبسکرپشن URL درج کریں۔";
+"ad_subscription_duplicate" = "یہ سبسکرپشن URL پہلے ہی شامل کیا جا چکا ہے۔";
+
+"feedback_settings" = "آواز اور ارتعاش";
+"feedback_settings_hint" = "پوری ایپ میں ارتعاش اور انٹرفیس کی آوازیں کنٹرول کریں۔ ویب صفحات، ویڈیو اور آڈیو کے پلے بیک پر اثر نہیں پڑتا۔";
+
+"home_display_settings" = "ہوم کی نمائش";
+"browsing_display_settings" = "براؤزنگ کی نمائش";
+
+"web_video_download" = "ویب ویڈیو ڈاؤن لوڈ";
+"web_video_download_description" = "ویب صفحات، قسطوں کی فہرستوں اور پلیئرز میں ویڈیو ڈاؤن لوڈ کنٹرول دکھائیں۔ پلے بیک اور موجودہ ڈاؤن لوڈ تبدیل نہیں ہوتے۔";
+"builtin_extension" = "بلٹ ان ایکسٹینشن";
+
+"wallpaper_overlay_amount" = "اوورلے کی شدت";
+"feedback_contact_required" = "جواب حاصل کرنے کے لیے ای میل یا دیگر رابطے کی معلومات درج کریں۔";
+"torrent_incomplete" = "نامکمل";
+"extend_page_background" = "ویب صفحے کا پس منظر بڑھائیں";
+"extend_page_background_desc" = "صفحے کے اوپر اور نیچے کے رنگ، بشمول گریڈینٹ، براؤزر کے کناروں تک پھیلائیں۔";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "گروپ سمیٹیں";
+"tab_group_expand" = "گروپ پھیلائیں";
+"freeze_page_background_on_scroll" = "ابتدائی رنگ برقرار رکھیں";
+"freeze_page_background_on_scroll_desc" = "اسکرول کے بعد پہلے شناخت کیے گئے رنگ برقرار رکھیں۔ نئے صفحے کے رنگ دوبارہ شناخت کیے جائیں گے۔";
+"page_background_gradient" = "گریڈینٹ توسیع";
+"page_background_gradient_desc" = "شناخت شدہ رنگوں کو گریڈینٹ میں ملائیں۔ بند ہونے پر ہر کنارے پر ایک یکساں رنگ استعمال ہوگا۔";
+
+
+"gestures_feedback_settings" = "اشارے اور ردعمل";

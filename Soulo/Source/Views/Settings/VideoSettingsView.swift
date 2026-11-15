@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct VideoSettingsView: View {
+    @AppStorage(VideoPlaybackPreferences.takesOverWebPlayersKey) private var takesOverWebPlayers = false
     @AppStorage(VideoPlaybackPreferences.showsToolsKey) private var showsTools = true
     @AppStorage(VideoPlaybackPreferences.defaultPlayerKey) private var defaultPlayer = "soulo"
     @AppStorage(VideoPlaybackPreferences.holdSpeedKey) private var holdSpeed = 2.0
@@ -12,6 +13,12 @@ struct VideoSettingsView: View {
                 IllustratedFeatureIntro(scene: .playback,
                     message: ToolText.text("video_default_player_desc"),
                     accessibilityID: "video-settings.explanation")
+            }
+            Section {
+                Toggle(FeatureText.text("Take over web players"), isOn: $takesOverWebPlayers)
+                    .accessibilityIdentifier("video-settings.takeover")
+            } footer: {
+                Text(FeatureText.text("Only takes over website fullscreen. Extension players stay independent."))
             }
             Section {
                 Toggle(ToolText.text("video_show_tools"), isOn: $showsTools)

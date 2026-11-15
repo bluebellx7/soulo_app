@@ -81,3 +81,58 @@
 "Website cache" = "వెబ్‌సైట్ కాష్";
 "Website icons" = "వెబ్‌సైట్ చిహ్నాలు";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "సెట్టింగ్‌లు మారే ముందు iCloud సమకాలీకరణ బ్యాకప్‌ను సేవ్ చేస్తుంది. ప్రారంభ ప్రతితో పాటు తాజా %lld బ్యాకప్‌లు ఉంచబడతాయి.";
+
+"Move tab to new window" = "కొత్త విండోకు తరలించు";
+
+"Save webpage" = "వెబ్ పేజీని సేవ్ చేయి";
+
+"Webpage" = "వెబ్ పేజీ";
+
+"Website data" = "వెబ్‌సైట్ డేటా";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "సేవ్ చేసిన కథనాలు, పుస్తకాల సూచిక, కవర్లు, పఠన పురోగతి ఉంటాయి. పుస్తక ఫైళ్లు డౌన్‌లోడ్ చేసిన ఫైళ్లలో లెక్కించబడతాయి.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "పరిమాణాలు అంచనాలు. IndexedDBలో డేటాబేస్‌లు, మీడియా ఫైళ్లు ఉంటాయి. అందుబాటులో లేని పరిమాణం —గా చూపబడుతుంది.";
+"Extension temporary cache" = "పొడిగింపు తాత్కాలిక కాష్";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "పొడిగింపుల తాత్కాలిక మీడియాను తొలగిస్తుంది. సెట్టింగ్‌లు, స్క్రిప్ట్‌లు, పురోగతి, డౌన్‌లోడ్ ఫైళ్లను ఉంచుతుంది. ముందుగా పొడిగింపు, వీడియో పేజీలను మూసి డౌన్‌లోడ్‌లను పూర్తి చేయండి.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "తాత్కాలిక డేటా ఇంకా వాడుకలో ఉంది. పొడిగింపు, వీడియో పేజీలను మూసి డౌన్‌లోడ్‌లు పూర్తి చేసిన తర్వాత మళ్లీ ప్రయత్నించండి.";
+"Deleting website data can sign you out and remove offline content." = "వెబ్‌సైట్ డేటా తొలగిస్తే సైన్ అవుట్ కావచ్చు, ఆఫ్‌లైన్ కంటెంట్ పోవచ్చు.";
+
+"Extension startup timed out." = "ఎక్స్‌టెన్షన్ ప్రారంభ సమయం ముగిసింది.";
+
+"soulo_extensions" = "Soulo పొడిగింపులు";
+
+"Add to Quick Links" = "త్వరిత లింక్‌లకు జోడించు";
+"Remove from Quick Links" = "త్వరిత లింక్‌ల నుండి తీసివేయి";
+"Mark bookmarks with a heart to show them here." = "ఇక్కడ చూపడానికి బుక్‌మార్క్‌ను నొక్కి పట్టుకుని హృదయంతో గుర్తించండి.";
+
+"Type %@ to confirm." = "నిర్ధారించడానికి %@ టైప్ చేయండి.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "పరికరాల మధ్య బుక్‌మార్క్‌లు విలీనం అవుతాయి. స్పష్టంగా తొలగించినప్పుడే అంశాలు తీసివేయబడతాయి.";
+"This deletion also syncs to your other devices." = "ఈ తొలగింపు మీ ఇతర పరికరాలకు కూడా సమకాలీకరించబడుతుంది.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "ఈ ప్రాంప్ట్‌ను కాపీ చేసి అవసరాలు జోడించి AIకి పంపండి. తరువాత దాని JSONను ఇక్కడ పేస్ట్ చేసి దిగుమతి చేయండి.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "JSONలోని గ్రూప్ పేర్లకు ప్రాధాన్యం. సరిపోలే గ్రూపులు ఉన్న ప్లాట్‌ఫార్మ్‌లను తొలగించకుండా విలీనమవుతాయి.";
+"Imported %1$d platforms into %2$d groups." = "%1$d ప్లాట్‌ఫార్మ్‌లు %2$d గ్రూపుల్లో దిగుమతి అయ్యాయి.";
+"No new platforms or group entries." = "కొత్త ప్లాట్‌ఫార్మ్‌లు లేదా గ్రూప్ ఎంట్రీలు లేవు.";
+
+"App size" = "యాప్ పరిమాణం";
+"App data" = "యాప్ డేటా";
+"Wallpaper cache" = "వాల్‌పేపర్ కాష్";
+"Other caches" = "ఇతర కాష్‌లు";
+"Temporary files" = "తాత్కాలిక ఫైళ్లు";
+"Download task data" = "డౌన్‌లోడ్ పని డేటా";
+"Settings and records" = "సెట్టింగ్‌లు మరియు రికార్డులు";
+"Shared app data" = "షేర్ చేసిన యాప్ డేటా";
+"Other app data" = "ఇతర యాప్ డేటా";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "యాప్ డేటాలో ఇన్‌స్టాల్ చేసిన ప్రోగ్రామ్ ఉండదు. డిస్క్ పరిమాణాలు iOS సెట్టింగ్‌లతో భిన్నంగా ఉండవచ్చు.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "సేవ్ చేసిన కంటెంట్‌ను దాని జాబితా నుండి తొలగించండి. వాడుకలో ఉన్న తాత్కాలిక ఫైళ్లు, సిస్టమ్ కాష్ డేటాబేస్‌లు సురక్షితమైనప్పుడు విడుదల అవుతాయి.";
+
+"Current platforms" = "ప్రస్తుత ప్లాట్‌ఫారమ్‌లు";
+"Import mode" = "దిగుమతి విధానం";
+"Append" = "జోడించు";
+"Replace all" = "అన్నింటినీ మార్చు";
+"Replace all platforms?" = "అన్ని ప్లాట్‌ఫారమ్‌లను మార్చాలా?";
+"A settings backup is saved before replacement." = "మార్చే ముందు సెట్టింగ్‌ల బ్యాకప్ సేవ్ అవుతుంది.";
+
+"Take over web players" = "వెబ్ ప్లేయర్‌లను నియంత్రించు";
+"Only takes over website fullscreen. Extension players stay independent." = "వెబ్‌సైట్ పూర్తి స్క్రీన్ ప్లేయర్‌ను మాత్రమే మారుస్తుంది. ఎక్స్‌టెన్షన్ ప్లేయర్‌లు స్వతంత్రంగా ఉంటాయి.";
+
+"App size is the installed program and resources, not the App Store download size." = "యాప్ పరిమాణం అంటే ఇన్‌స్టాల్ చేసిన ప్రోగ్రామ్, వనరులు; App Store డౌన్‌లోడ్ పరిమాణం కాదు.";
+"App data is the total of the categories below." = "యాప్ డేటా అంటే దిగువ వర్గాల మొత్తం.";

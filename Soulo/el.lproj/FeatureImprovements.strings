@@ -81,3 +81,58 @@
 "Website cache" = "Προσωρινή μνήμη ιστότοπου";
 "Website icons" = "εικονίδια ιστότοπου";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "Ο συγχρονισμός iCloud αποθηκεύει αντίγραφο πριν αλλάξουν οι ρυθμίσεις. Διατηρούνται τα %lld πιο πρόσφατα αντίγραφα και το αρχικό.";
+
+"Move tab to new window" = "Μετακίνηση σε νέο παράθυρο";
+
+"Save webpage" = "Αποθήκευση σελίδας";
+
+"Webpage" = "Ιστοσελίδα";
+
+"Website data" = "Δεδομένα ιστοτόπων";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Περιλαμβάνει αποθηκευμένα άρθρα, ευρετήριο βιβλίων, εξώφυλλα και πρόοδο ανάγνωσης. Τα βιβλία υπολογίζονται στα ληφθέντα αρχεία.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Τα μεγέθη είναι εκτιμήσεις. Το IndexedDB περιλαμβάνει βάσεις δεδομένων και πολυμέσα. Τα άγνωστα μεγέθη εμφανίζονται ως —.";
+"Extension temporary cache" = "Προσωρινή cache επεκτάσεων";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Αφαιρεί προσωρινά πολυμέσα επεκτάσεων. Διατηρεί ρυθμίσεις, σενάρια, πρόοδο και ληφθέντα αρχεία. Κλείστε πρώτα σελίδες επεκτάσεων και βίντεο και ολοκληρώστε τις λήψεις.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Τα προσωρινά δεδομένα χρησιμοποιούνται ακόμη. Κλείστε σελίδες επεκτάσεων και βίντεο, ολοκληρώστε τις λήψεις και δοκιμάστε ξανά.";
+"Deleting website data can sign you out and remove offline content." = "Η διαγραφή μπορεί να σας αποσυνδέσει και να αφαιρέσει περιεχόμενο εκτός σύνδεσης.";
+
+"Extension startup timed out." = "Έληξε το χρονικό όριο εκκίνησης της επέκτασης.";
+
+"soulo_extensions" = "Επεκτάσεις Soulo";
+
+"Add to Quick Links" = "Προσθήκη στους γρήγορους συνδέσμους";
+"Remove from Quick Links" = "Αφαίρεση από τους γρήγορους συνδέσμους";
+"Mark bookmarks with a heart to show them here." = "Πατήστε παρατεταμένα έναν σελιδοδείκτη και σημειώστε τον με καρδιά για να εμφανιστεί εδώ.";
+
+"Type %@ to confirm." = "Πληκτρολογήστε %@ για επιβεβαίωση.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Οι σελιδοδείκτες συγχωνεύονται μεταξύ συσκευών. Αφαιρούνται μόνο με ρητή διαγραφή.";
+"This deletion also syncs to your other devices." = "Η διαγραφή συγχρονίζεται και με τις άλλες συσκευές σας.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Αντιγράψτε την προτροπή, προσθέστε τις απαιτήσεις σας και στείλτε τη σε AI. Έπειτα επικολλήστε εδώ το JSON για εισαγωγή.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "Τα ονόματα ομάδων στο JSON έχουν προτεραιότητα. Οι αντίστοιχες ομάδες συγχωνεύονται χωρίς αφαίρεση υπαρχουσών πλατφορμών.";
+"Imported %1$d platforms into %2$d groups." = "Εισήχθησαν %1$d πλατφόρμες σε %2$d ομάδες.";
+"No new platforms or group entries." = "Δεν υπάρχουν νέες πλατφόρμες ή εγγραφές ομάδων.";
+
+"App size" = "Μέγεθος εφαρμογής";
+"App data" = "Δεδομένα εφαρμογής";
+"Wallpaper cache" = "Κρυφή μνήμη ταπετσαριών";
+"Other caches" = "Άλλες κρυφές μνήμες";
+"Temporary files" = "Προσωρινά αρχεία";
+"Download task data" = "Δεδομένα λήψεων";
+"Settings and records" = "Ρυθμίσεις και εγγραφές";
+"Shared app data" = "Κοινόχρηστα δεδομένα";
+"Other app data" = "Άλλα δεδομένα εφαρμογής";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Τα δεδομένα δεν περιλαμβάνουν το εγκατεστημένο πρόγραμμα. Τα μεγέθη δίσκου μπορεί να διαφέρουν από τις Ρυθμίσεις iOS.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Διαγράψτε αποθηκευμένο περιεχόμενο από τη λίστα του. Ενεργά προσωρινά αρχεία και βάσεις κρυφής μνήμης συστήματος ελευθερώνονται όταν είναι ασφαλές.";
+
+"Current platforms" = "Τρέχουσες πλατφόρμες";
+"Import mode" = "Τρόπος εισαγωγής";
+"Append" = "Προσθήκη";
+"Replace all" = "Αντικατάσταση όλων";
+"Replace all platforms?" = "Αντικατάσταση όλων των πλατφορμών;";
+"A settings backup is saved before replacement." = "Πριν την αντικατάσταση αποθηκεύεται αντίγραφο των ρυθμίσεων.";
+
+"Take over web players" = "Ανάληψη αναπαραγωγής ιστού";
+"Only takes over website fullscreen. Extension players stay independent." = "Αναλαμβάνει μόνο την πλήρη οθόνη ιστοτόπων. Οι επεκτάσεις παραμένουν ανεξάρτητες.";
+
+"App size is the installed program and resources, not the App Store download size." = "Το μέγεθος εφαρμογής αφορά το εγκατεστημένο πρόγραμμα και τους πόρους, όχι τη λήψη από το App Store.";
+"App data is the total of the categories below." = "Τα δεδομένα εφαρμογής είναι το σύνολο των παρακάτω κατηγοριών.";

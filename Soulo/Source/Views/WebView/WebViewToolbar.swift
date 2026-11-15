@@ -143,6 +143,7 @@ enum BrowserAddressDisplay {
 }
 
 struct WebViewToolbar: View {
+    @Environment(\.openWindow) private var openWindow
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @ObservedObject var viewModel: WebViewModel
     @Binding var isBookmarked: Bool
@@ -178,6 +179,7 @@ struct WebViewToolbar: View {
     var onWiFiTransfer: (() -> Void)?
     var onShowExtensions: (() -> Void)?
     var onGoHome: (() -> Void)?
+    var onNewTab: (() -> Void)?
     var onEditAddress: (() -> Void)?
     var onAddressTranslation: (() -> Void)?
     var onHideToolbar: (() -> Void)?
@@ -193,6 +195,7 @@ struct WebViewToolbar: View {
     @State private var pageAvailability = WebPageToolsAvailability()
     @State private var webMediaRate = 1.0
     var onTranslatePage: (() -> Void)?
+    var onSummarizePage: (() -> Void)?
     var onMoreMenuPresentationChange: ((Bool) -> Void)?
     var showsOnlyMore: Bool = false
     var onRestoreToolbar: (() -> Void)?
@@ -261,7 +264,7 @@ struct WebViewToolbar: View {
                 )
             )
             .accessibilityIdentifier("browser.siteInformation")
-            .popover(
+            .compatiblePopover(
                 isPresented: $showSiteInformation,
                 attachmentAnchor: .rect(.bounds),
                 arrowEdge: .bottom
@@ -531,7 +534,7 @@ struct WebViewToolbar: View {
                 .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
             }
         }
-        .popover(
+        .compatiblePopover(
             isPresented: $showMoreMenu,
             attachmentAnchor: .rect(.bounds),
             arrowEdge: .bottom
@@ -545,6 +548,7 @@ struct WebViewToolbar: View {
                 .compatiblePresentationBackground(.ultraThinMaterial)
                 .compatiblePresentationCornerRadius(26)
         }
+        .accessibilityIdentifier("browser.more")
         .id(menuAnchorGeneration)
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             menuKeyboardVisible = true
@@ -760,6 +764,11 @@ struct WebViewToolbar: View {
             Button { performMoreMenuAction { onCapturePage?() } } label: {
                 menuLabel("web_capture", systemImage: "camera.viewfinder")
             }.disabled(onCapturePage == nil)
+            Button { performMoreMenuAction { onSummarizePage?() } } label: {
+                menuLabel("summarize", systemImage: "text.alignleft")
+            }
+            .disabled(onSummarizePage == nil || !["http", "https"].contains(viewModel.currentURL?.scheme?.lowercased() ?? ""))
+            .accessibilityIdentifier("browser.page-summary")
             Divider()
             Group {
                 Button { performMoreMenuAction { onShowExtensions?() } } label: {
@@ -884,6 +893,15 @@ struct WebViewToolbar: View {
                         .accessibilityLabel(item.action.label)
                         .accessibilityValue(item.action.badgeText)
                         .help(item.action.label)
+                        .contextMenu {
+                            ForEach(extensionService.webExtensionCommands(for: item.record.id)) { command in
+                                Button(command.title) {
+                                    performMoreMenuAction {
+                                        extensionService.performWebExtensionCommand(command.id, id: item.record.id)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 .padding(.leading, 4)
@@ -913,6 +931,15 @@ struct WebViewToolbar: View {
 
     private var openPageMenu: some View {
         Menu {
+            if UIDevice.current.userInterfaceIdiom == .pad, let tabManager, let id = tabManager.activeTab?.id {
+                Button(FeatureText.text("Move tab to new window")) {
+                    performMoreMenuAction {
+                        if let configuration = BrowserWindowTransferService.shared.prepare(from: tabManager, tabID: id) {
+                            openWindow(value: configuration)
+                        }
+                    }
+                }
+            }
             Button {
                 performMoreMenuAction {
                     onOpenDefaultBrowser?()
@@ -1036,7 +1063,7 @@ struct WebViewToolbar: View {
                 ) {
                     guard let url = viewModel.currentURL else { return }
                     UIPasteboard.general.url = url
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    HapticsManager.success()
                     NotificationCenter.default.post(name: .linkCopied, object: nil)
                 }
                 moreMenuShortcut(
@@ -1356,7 +1383,7 @@ struct WebViewToolbar: View {
         case .tabs:
             if let tabManager {
                 TabCountBadge(count: tabManager.tabCount, glassTint: toolbarGlassTint) {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    HapticsManager.light()
                     tabManager.refreshSnapshotsForSwitcher()
                     withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
                         tabManager.showTabOverview = true
@@ -1404,6 +1431,7 @@ struct WebViewToolbar: View {
         return switch action {
         case .none: true
         case .home: onGoHome != nil
+        case .newTab: onNewTab != nil
         case .back: viewModel.canGoBack
         case .forward: viewModel.canGoForward
         case .share: onShare != nil
@@ -1432,6 +1460,8 @@ struct WebViewToolbar: View {
             break
         case .home:
             onGoHome?()
+        case .newTab:
+            onNewTab?()
         case .back:
             viewModel.goBack()
         case .forward:
@@ -1445,7 +1475,7 @@ struct WebViewToolbar: View {
         case .copyLink:
             guard let url = viewModel.currentURL else { return }
             UIPasteboard.general.url = url
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            HapticsManager.success()
             NotificationCenter.default.post(name: .linkCopied, object: nil)
         case .fullscreen:
             onToggleFullscreen?()
@@ -1494,7 +1524,7 @@ struct WebViewToolbar: View {
     ) -> some View {
         Button {
             guard enabled else { return }
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            HapticsManager.light()
             action()
         } label: {
             Image(systemName: icon)

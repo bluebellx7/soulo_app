@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "One Query, 40+ Platforms";
+"app_subtitle" = "Search anytime, anywhere.";
 
 /* Search */
 "search_placeholder" = "Search or enter URL";
@@ -715,14 +715,14 @@
 "extension_install_failed" = "Extension Could Not Be Installed";
 "extension_permissions_summary" = "%d permissions · %d website rules";
 "extension_untitled" = "Untitled Extension";
-"web_extension_install_footer" = "Install compatible extensions from a store link or import CRX, XPI, ZIP or an extension folder. Review permissions and compatibility before installing; some desktop features are unavailable.";
+"web_extension_install_footer" = "After installation, you can change permissions in extension management.";
 "web_extension_install_store_link" = "Install from Store Link…";
 "web_extension_browse_sources" = "Browse Extension Stores";
 "web_extension_browse_sources_footer" = "Store Get buttons only support their own desktop browsers. Copy an extension detail page link, then use Install from Store Link in Soulo.";
 "web_extension_store_install_title" = "Install a Store Extension";
 "extension_page_banner_title" = "Install with Soulo";
-"extension_page_banner_desc" = "Check compatibility and permissions before installing.";
-"web_extension_store_install_desc" = "Paste a Chrome, Edge or Firefox extension detail page link to check compatibility and permissions before confirming installation.";
+"extension_page_banner_desc" = "After installation, you can change permissions in extension management.";
+"web_extension_store_install_desc" = "After installation, you can change permissions in extension management.";
 "web_extension_store_link_placeholder" = "Extension page link or Chrome extension ID";
 "web_extension_store_invalid_link" = "Paste an extension detail page link from Chrome, Edge, or Firefox, a Chrome extension ID, or a direct CRX, XPI, or ZIP link.";
 "web_extension_store_https_required" = "Extension packages must use a secure HTTPS link.";
@@ -985,3 +985,6 @@
 "quick_actions_explanation" = "Touch and hold the Soulo icon on your Home Screen to use the shortcuts configured here.";
 
 "ad_block_scope_hint" = "Filters web ads, promotional overlays and unsolicited pop-ups. If a site stops working, you can turn off filtering for that site.";
+
+"privacy_clear_browsing_on_exit" = "Clear Browsing History on Exit";
+"privacy_clear_browsing_on_exit_desc" = "Clear visited pages when entering the background or relaunching. Keep search terms.";

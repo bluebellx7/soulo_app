@@ -81,3 +81,58 @@
 "Website cache" = "Web sitesi önbelleği";
 "Website icons" = "Web sitesi simgeleri";
 "iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy." = "iCloud eşzamanlaması, ayarlar değişmeden önce yedek kaydeder. Son %lld yedek ve ilk kopya saklanır.";
+
+"Move tab to new window" = "Yeni pencereye taşı";
+
+"Save webpage" = "Web sayfasını kaydet";
+
+"Webpage" = "Web sayfası";
+
+"Website data" = "Web sitesi verileri";
+"Reading data includes saved article text, the book index, covers and reading progress. Book files are counted under downloaded files." = "Kaydedilen yazıları, kitap dizinini, kapakları ve okuma ilerlemesini içerir. Kitap dosyaları indirilen dosyalara dahildir.";
+"Website data size is estimated. IndexedDB includes database files and media blobs. Unavailable sizes appear as —." = "Boyutlar tahminidir. IndexedDB veritabanlarını ve medyayı içerir. Kullanılamayan boyutlar — olarak gösterilir.";
+"Extension temporary cache" = "Geçici eklenti önbelleği";
+"Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first." = "Eklentilerin geçici medyasını siler. Ayarları, betikleri, ilerlemeyi ve indirilen dosyaları korur. Önce eklenti ve video sayfalarını kapatıp indirmeleri tamamlayın.";
+"Temporary extension data is still in use. Close extension and video pages and finish downloads, then try again." = "Geçici veriler hâlâ kullanımda. Eklenti ve video sayfalarını kapatın, indirmeleri tamamlayıp tekrar deneyin.";
+"Deleting website data can sign you out and remove offline content." = "Verileri silmek oturumunuzu kapatabilir ve çevrimdışı içeriği kaldırabilir.";
+
+"Extension startup timed out." = "Uzantı başlatılırken zaman aşımı oluştu.";
+
+"soulo_extensions" = "Soulo Uzantıları";
+
+"Add to Quick Links" = "Hızlı bağlantılara ekle";
+"Remove from Quick Links" = "Hızlı bağlantılardan kaldır";
+"Mark bookmarks with a heart to show them here." = "Burada göstermek için bir yer imine basılı tutup kalp ile işaretleyin.";
+
+"Type %@ to confirm." = "Onaylamak için %@ yazın.";
+"Bookmarks merge across devices. Only explicit deletions remove items." = "Yer imleri cihazlar arasında birleştirilir. Yalnızca açık silme işlemleri öğeleri kaldırır.";
+"This deletion also syncs to your other devices." = "Bu silme işlemi diğer cihazlarınıza da eşitlenir.";
+"Copy this prompt, add your requirements, send it to an AI, then paste its JSON here to import." = "Bu istemi kopyalayın, gereksinimlerinizi ekleyip bir yapay zekâya gönderin. Ardından JSON çıktısını buraya yapıştırıp içe aktarın.";
+"Group names in JSON take priority. Matching groups merge without removing existing platforms." = "JSON’daki grup adları önceliklidir. Eşleşen gruplar mevcut platformlar kaldırılmadan birleştirilir.";
+"Imported %1$d platforms into %2$d groups." = "%1$d platform %2$d gruba aktarıldı.";
+"No new platforms or group entries." = "Yeni platform veya grup girdisi yok.";
+
+"App size" = "Uygulama boyutu";
+"App data" = "Uygulama verileri";
+"Wallpaper cache" = "Duvar kâğıdı önbelleği";
+"Other caches" = "Diğer önbellekler";
+"Temporary files" = "Geçici dosyalar";
+"Download task data" = "İndirme görevi verileri";
+"Settings and records" = "Ayarlar ve kayıtlar";
+"Shared app data" = "Paylaşılan uygulama verileri";
+"Other app data" = "Diğer uygulama verileri";
+"App data excludes the installed program. Disk sizes may differ from iOS Settings." = "Uygulama verileri yüklü programı içermez. Disk boyutları iOS Ayarları’ndan farklı olabilir.";
+"Manage saved content in its own list. Active temporary files and system cache databases are released when safe." = "Kaydedilen içeriği kendi listesinden silin. Kullanılan geçici dosyalar ve sistem önbellek veritabanları güvenli olduğunda serbest bırakılır.";
+
+"Current platforms" = "Mevcut platformlar";
+"Import mode" = "İçe aktarma modu";
+"Append" = "Ekle";
+"Replace all" = "Tümünü değiştir";
+"Replace all platforms?" = "Tüm platformlar değiştirilsin mi?";
+"A settings backup is saved before replacement." = "Değiştirmeden önce ayarların yedeği kaydedilir.";
+
+"Take over web players" = "Web oynatıcılarını devral";
+"Only takes over website fullscreen. Extension players stay independent." = "Yalnızca sitenin tam ekran oynatımını devralır. Uzantı oynatıcıları bağımsız kalır.";
+
+"App size is the installed program and resources, not the App Store download size." = "Uygulama boyutu, App Store indirmesi değil, yüklü program ve kaynaklardır.";
+"App data is the total of the categories below." = "Uygulama verileri aşağıdaki kategorilerin toplamıdır.";

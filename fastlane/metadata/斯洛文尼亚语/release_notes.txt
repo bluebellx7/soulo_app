@@ -1,6 +1,1 @@
-1.2.13
-
-• Ločeni ozadji za svetli in temni videz ter stikalo za plast čez sliko.
-• Izboljšane barve domače strani; predogled ozadja sledi temi aplikacije.
-• Predoglejte, delite in shranite ozadja v Fotografije.
-• Nastavitve zgornjih zavihkov z novim zavihkom in izbirnim skrivanjem vrstice platform po navigaciji.
+Izboljšana okna na iPadu, glasovni vnos, lokalni povzetki in dostopnost. Izboljšan izvoz predstavnosti v ozadju, Bližnjice in združljivost razširitev. Nekatere funkcije so odvisne od naprave, različice sistema in jezika.

@@ -157,6 +157,14 @@ final class WebAppearanceService: ObservableObject {
     }
 
     private var effectiveAppInterfaceStyle: UIUserInterfaceStyle {
+        // Browser chrome contrast must not change the page's requested appearance.
+        if defaults.bool(forKey: AppConstants.StorageKeys.extendPageBackground) {
+            switch defaults.string(forKey: "appearance") {
+            case "light": return .light
+            case "dark": return .dark
+            default: return UIScreen.main.traitCollection.userInterfaceStyle
+            }
+        }
         let windows = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap(\.windows)

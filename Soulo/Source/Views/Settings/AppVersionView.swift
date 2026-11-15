@@ -3,6 +3,7 @@ import SwiftUI
 struct AppVersionView: View {
     let version: String
     private let iconColor = Color(uiColor: .secondaryLabel)
+    @State private var showFeedback = false
     var body: some View {
         List {
             Section {
@@ -15,33 +16,39 @@ struct AppVersionView: View {
                     .listRowSeparator(.hidden)
             }
             Section {
-                NavigationLink {
+                SettingsSubpageLink {
                     SouloWebsiteView()
                 } label: {
                     SettingsNavigationLabel(icon: "globe", color: iconColor, title: ToolText.text("soulo_website"))
                 }
                 .accessibilityIdentifier("version.website")
-                Link(destination: URL(string: "https://t.me/soulobrowser")!) {
-                    HStack(spacing: 12) {
-                        SettingsNavigationLabel(icon: "paperplane.fill", color: iconColor, title: ToolText.text("feedback_telegram"))
-                        Image(systemName: "arrow.up.right").font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
-                    }
-                }.accessibilityIdentifier("version.telegram")
             }.tint(.primary)
             Section {
-                NavigationLink(destination: PrivacyPolicyView()) {
+                SettingsSubpageLink { AppReviewSupportView() } label: {
+                    SettingsNavigationLabel(icon: "star.bubble.fill", color: iconColor, title: LanguageManager.shared.localizedString("settings_rate"))
+                }.accessibilityIdentifier("settings.rate")
+                Button { showFeedback = true } label: {
+                    SettingsActionLabel(icon: "envelope.fill", color: iconColor, title: LanguageManager.shared.localizedString("settings_feedback"))
+                }.buttonStyle(.plain).accessibilityIdentifier("settings.feedback")
+                SettingsSubpageLink { URLSchemeGuideView() } label: {
+                    SettingsNavigationLabel(icon: "link", color: iconColor, title: "URL Scheme")
+                }.accessibilityIdentifier("settings.url-schemes")
+            }.tint(.primary)
+            Section {
+                SettingsSubpageLink { PrivacyPolicyView() } label: {
                     SettingsNavigationLabel(icon: "hand.raised.fill", color: iconColor, title: LanguageManager.shared.localizedString("settings_privacy_policy"))
                 }.accessibilityIdentifier("version.privacy")
-                NavigationLink(destination: ReadingToolsLicensesView()) {
+                SettingsSubpageLink { ReadingToolsLicensesView() } label: {
                     SettingsNavigationLabel(icon: "text.book.closed", color: iconColor, title: ToolText.text("licenses"))
                 }.accessibilityIdentifier("version.licenses")
-                NavigationLink(destination: TermsOfServiceView()) {
+                SettingsSubpageLink { TermsOfServiceView() } label: {
                     SettingsNavigationLabel(icon: "doc.text.fill", color: iconColor, title: LanguageManager.shared.localizedString("settings_terms"))
                 }.accessibilityIdentifier("version.terms")
             }.tint(.primary)
         }
-        .navigationTitle(LanguageManager.shared.localizedString("settings_version"))
+        .navigationTitle(LanguageManager.shared.localizedString("settings_section_about_support"))
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showFeedback) { FeedbackView() }
     }
 }
 

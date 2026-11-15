@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-13",
+  "version": "1.2.14",
+  "fixes": [
+    {
+      "issue": "Wide wallpaper source previews intercepted taps intended for adjacent source tiles.",
+      "reproduction": "On iOS 16.4, seeded 1600×240 image previews, selected Pixabay and tapped the center of Pexels. Selection stayed on Pixabay before the fix.",
+      "fix": "Source/appearance samples no longer receive touches. Source button labels define a rectangular hit area."
+    },
+    {
+      "issue": "Manual source selection in favorites-only mode immediately refreshed from a favorite and changed the source back.",
+      "reproduction": "A Pixabay favorite caused manual Pexels/Bing selection to revert to Pixabay.",
+      "fix": "Load the manually selected source's gallery while preserving favorites-only mode and the current Home image. Automatic/manual wallpaper refresh behavior is retained."
+    },
+    {
+      "issue": "Tab group disclosure arrows were too dark.",
+      "fix": "Use the adaptive secondary foreground style; reviewed the grouped overview screenshot."
+    }
+  ],
+  "validation": {
+    "unit": "27 FavoriteWallpaperImageStoreTests passed, 0 failures on iOS 26.2.",
+    "unit_result": "/tmp/soulo-wallpaper-source-switch-fixed-unit.xcresult",
+    "ui": "3 tests passed, 0 failures on iOS 16.4: all three remote sources via preview-center and label taps, local source/gradient selection, overview layout switching and persistence.",
+    "ui_result": "/tmp/soulo-wallpaper-source-switch-fixed-ui.xcresult",
+    "before_fix_results": [
+      "/tmp/soulo-wallpaper-source-switch-baseline-unit.xcresult",
+      "/tmp/soulo-wallpaper-source-switch-baseline-ui.xcresult"
+    ],
+    "test_build": "passed",
+    "unsigned_device_build": "passed",
+    "fixture_cleanup": "All three seeded simulator preview files restored from their backup manifest.",
+    "whitespace": "git diff --check passed"
+  },
+  "limits": ["No physical-device run."],
+  "paid_api_calls": 0,
+  "pushed": false
+}

@@ -1,6 +1,1 @@
-1.2.13
-
-• Fundaluri separate pentru aspectul luminos și întunecat și un comutator pentru stratul imaginii.
-• Culori îmbunătățite pe pagina principală; previzualizarea fundalului urmează tema aplicației.
-• Previzualizează, partajează și salvează fundaluri în Poze.
-• Setări pentru filele de sus cu filă nouă și ascunderea opțională a barei platformelor după navigare.
+Am îmbunătățit ferestrele de pe iPad, introducerea vocală, rezumatele locale și accesibilitatea. Am îmbunătățit exportul media în fundal, Scurtăturile și compatibilitatea extensiilor. Unele funcții depind de dispozitiv, versiunea sistemului și limbă.

@@ -11,7 +11,7 @@ final class SpeechRecognitionServiceTests: XCTestCase {
     @MainActor
     func testDismissalCancelsPendingSpeechAuthorization() async throws {
         var reply: ((SFSpeechRecognizerAuthorizationStatus) -> Void)?
-        let service = RecordingProbe(authorize: { reply = $0 })
+        let service = RecordingProbe(preferOnDeviceRecognition: false, authorize: { reply = $0 })
         service.startRecording()
         XCTAssertNotNil(reply)
         service.stopRecording()
@@ -23,7 +23,7 @@ final class SpeechRecognitionServiceTests: XCTestCase {
     @MainActor
     func testRapidStartRequestsOnlyOneAuthorization() async throws {
         var replies: [(SFSpeechRecognizerAuthorizationStatus) -> Void] = []
-        let service = RecordingProbe(authorize: { replies.append($0) })
+        let service = RecordingProbe(preferOnDeviceRecognition: false, authorize: { replies.append($0) })
         service.startRecording()
         service.startRecording()
         XCTAssertEqual(replies.count, 1)
@@ -35,7 +35,7 @@ final class SpeechRecognitionServiceTests: XCTestCase {
     @MainActor
     func testCanceledAuthorizationCannotAffectNextRecording() async throws {
         var replies: [(SFSpeechRecognizerAuthorizationStatus) -> Void] = []
-        let service = RecordingProbe(authorize: { replies.append($0) })
+        let service = RecordingProbe(preferOnDeviceRecognition: false, authorize: { replies.append($0) })
         service.startRecording()
         service.stopRecording()
         service.startRecording()
@@ -52,7 +52,7 @@ final class SpeechRecognitionServiceTests: XCTestCase {
     @MainActor
     func testDeniedAuthorizationAllowsAnotherAttempt() async throws {
         var replies: [(SFSpeechRecognizerAuthorizationStatus) -> Void] = []
-        let service = RecordingProbe(authorize: { replies.append($0) })
+        let service = RecordingProbe(preferOnDeviceRecognition: false, authorize: { replies.append($0) })
         service.startRecording()
         replies[0](.denied)
         try await Task.sleep(for: .milliseconds(30))

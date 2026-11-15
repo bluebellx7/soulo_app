@@ -132,12 +132,8 @@ extension View {
         else { padding(.top, value) }
     }
 
-    @ViewBuilder
     func compatibleSuccessFeedback<Value: Equatable>(trigger: Value) -> some View {
-        if #available(iOS 17.0, *) { sensoryFeedback(.success, trigger: trigger) }
-        else {
-            onCompatibleChange(of: trigger) { UINotificationFeedbackGenerator().notificationOccurred(.success) }
-        }
+        onCompatibleChange(of: trigger) { HapticsManager.success() }
     }
 
     @ViewBuilder
@@ -287,6 +283,99 @@ private struct LegacyEmptyLabelStyle: LabelStyle {
         VStack(spacing: 12) {
             configuration.icon.font(.system(size: 42)).foregroundStyle(.secondary)
             configuration.title.font(.headline)
+        }
+    }
+}
+
+extension View {
+    /// Before 16.4 SwiftUI adapts every compact popover to a full-height sheet.
+    /// Use UIKit's non-adapting popover so the same menu stays content-sized.
+    @ViewBuilder
+    func compatiblePopover<Panel: View>(isPresented: Binding<Bool>,
+        attachmentAnchor: PopoverAttachmentAnchor = .rect(.bounds), arrowEdge: Edge = .top,
+        @ViewBuilder content: @escaping () -> Panel) -> some View {
+        if #available(iOS 16.4, *) {
+            popover(isPresented: isPresented, attachmentAnchor: attachmentAnchor, arrowEdge: arrowEdge, content: content)
+        } else {
+            background(LegacyContentPopover(isPresented: isPresented, arrowEdge: arrowEdge, panel: content()))
+        }
+    }
+}
+
+private struct LegacyContentPopover<Panel: View>: UIViewRepresentable {
+    @Binding var isPresented: Bool
+    let arrowEdge: Edge
+    let panel: Panel
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Anchor: UIView {
+        var ready: ((UIView) -> Void)?
+        override func didMoveToWindow() { super.didMoveToWindow(); if window != nil { ready?(self) } }
+    }
+    func makeUIView(context: Context) -> UIView {
+        let view = Anchor()
+        view.ready = { [weak coordinator = context.coordinator] in coordinator?.update(anchor: $0) }
+        return view
+    }
+    func updateUIView(_ view: UIView, context: Context) {
+        let coordinator = context.coordinator
+        coordinator.isPresented = $isPresented
+        coordinator.panel = AnyView(panel.environment(\.self, context.environment))
+        coordinator.edge = arrowEdge
+        DispatchQueue.main.async { [weak view, weak coordinator] in
+            if let view { coordinator?.update(anchor: view) }
+        }
+    }
+    static func dismantleUIView(_ view: UIView, coordinator: Coordinator) { coordinator.close() }
+
+    final class Coordinator: NSObject, UIPopoverPresentationControllerDelegate {
+        var isPresented: Binding<Bool>?
+        var panel = AnyView(EmptyView())
+        var edge: Edge = .top
+        var host: UIHostingController<AnyView>?
+        func update(anchor: UIView) {
+            guard isPresented?.wrappedValue == true else { close(); return }
+            guard let window = anchor.window else { return }
+            let controller: UIHostingController<AnyView>
+            if let host { controller = host; host.rootView = panel }
+            else {
+                controller = UIHostingController(rootView: panel)
+                controller.modalPresentationStyle = .popover
+                controller.view.backgroundColor = .systemBackground
+                controller.view.accessibilityIdentifier = "soulo.legacy-popover"
+                controller.sizingOptions = .preferredContentSize
+                guard let popover = controller.popoverPresentationController else { return }
+                popover.sourceView = anchor; popover.sourceRect = anchor.bounds
+                switch edge {
+                case .top: popover.permittedArrowDirections = .up
+                case .bottom: popover.permittedArrowDirections = .down
+                case .leading: popover.permittedArrowDirections = .left
+                case .trailing: popover.permittedArrowDirections = .right
+                }
+                popover.delegate = self
+                var presenter = window.rootViewController
+                while let next = presenter?.presentedViewController, !next.isBeingDismissed { presenter = next }
+                guard let presenter, !presenter.isBeingDismissed else { return }
+                host = controller
+                controller.preferredContentSize = fittingSize(controller, window: window)
+                presenter.present(controller, animated: true)
+            }
+            let size = fittingSize(controller, window: window)
+            if controller.preferredContentSize != size { controller.preferredContentSize = size }
+        }
+        private func fittingSize(_ controller: UIHostingController<AnyView>, window: UIWindow) -> CGSize {
+            let maximum = CGSize(width: min(400, max(240, window.bounds.width - 32)),
+                                 height: max(160, window.bounds.height - window.safeAreaInsets.top - window.safeAreaInsets.bottom - 60))
+            let size = controller.sizeThatFits(in: maximum)
+            return CGSize(width: min(maximum.width, max(120, size.width)), height: min(maximum.height, max(44, size.height)))
+        }
+        func close() { let previous = host; host = nil; previous?.dismiss(animated: true) }
+        func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle { .none }
+        func adaptivePresentationStyle(for controller: UIPresentationController, traitCollection: UITraitCollection) -> UIModalPresentationStyle { .none }
+        func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+            host = nil; isPresented?.wrappedValue = false
+        }
+        func popoverPresentationControllerDidDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) {
+            host = nil; isPresented?.wrappedValue = false
         }
     }
 }

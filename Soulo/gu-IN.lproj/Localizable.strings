@@ -1,7 +1,7 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "એક ક્વેરી, 40+ પ્લેટફોર્મ";
+"app_subtitle" = "Search anytime, anywhere.";
 "search_placeholder" = "URL શોધો અથવા દાખલ કરો";
 "privacy_search_placeholder" = "ખાનગી શોધ અથવા URL દાખલ કરો";
 "search" = "શોધો";
@@ -354,7 +354,7 @@
 "voice_stop" = "રોકો";
 "voice_record" = "રેકોર્ડ";
 "batch_import" = "બેચ આયાત";
-"batch_import_format" = "JSON ને નીચેના ફોર્મેટમાં પેસ્ટ કરો";
+"batch_import_format" = "અહીં JSON પેસ્ટ કરો";
 "batch_import_group" = "જૂથમાં ઉમેરો (વૈકલ્પિક)";
 "batch_import_group_placeholder" = "દા.ત. મૂવીઝ";
 "batch_import_film_entry" = "મૂવી પ્લેટફોર્મ પ્રીસેટ્સ ખોલો";
@@ -622,14 +622,14 @@
 "extension_install_failed" = "એક્સ્ટેંશન ઇન્સ્ટોલ કરી શકાયું નથી";
 "extension_permissions_summary" = "%d પરવાનગીઓ · %d વેબસાઇટ નિયમો";
 "extension_untitled" = "શીર્ષક વિનાનું એક્સ્ટેંશન";
-"web_extension_install_footer" = "સુસંગત સ્ટોર લિંકથી એક્સ્ટેન્શન ઇન્સ્ટોલ કરો અથવા CRX, XPI, ZIP કે એક્સ્ટેન્શન ફોલ્ડર આયાત કરો. પહેલાં પરવાનગીઓ અને સુસંગતતા તપાસો; કેટલીક ડેસ્કટોપ સુવિધાઓ ઉપલબ્ધ નથી.";
+"web_extension_install_footer" = "ઇન્સ્ટોલ કર્યા પછી એક્સ્ટેંશનના સંચાલન પૃષ્ઠમાં પરવાનગીઓ બદલી શકો છો.";
 "web_extension_install_store_link" = "સ્ટોર લિંક પરથી ઇન્સ્ટોલ કરો...";
 "web_extension_browse_sources" = "એક્સ્ટેંશન સ્ટોર્સ બ્રાઉઝ કરો";
 "web_extension_browse_sources_footer" = "સ્ટોર ગેટ બટનો ફક્ત તેમના પોતાના ડેસ્કટોપ બ્રાઉઝર્સને સપોર્ટ કરે છે. એક્સ્ટેંશન વિગતો પૃષ્ઠ લિંકને કૉપિ કરો, પછી Soulo માં સ્ટોર લિંકમાંથી ઇન્સ્ટોલનો ઉપયોગ કરો.";
 "web_extension_store_install_title" = "સ્ટોર એક્સ્ટેંશન ઇન્સ્ટોલ કરો";
 "extension_page_banner_title" = "Soulo વડે ઇન્સ્ટોલ કરો";
-"extension_page_banner_desc" = "ઇન્સ્ટોલ કરતાં પહેલાં સુસંગતતા અને પરવાનગીઓ તપાસો.";
-"web_extension_store_install_desc" = "Chrome, Edge અથવા Firefox એક્સ્ટેન્શનના વિગત પૃષ્ઠની લિંક પેસ્ટ કરો અને ઇન્સ્ટોલની પુષ્ટિ પહેલાં સુસંગતતા અને પરવાનગીઓ તપાસો.";
+"extension_page_banner_desc" = "ઇન્સ્ટોલ કર્યા પછી એક્સ્ટેંશનના સંચાલન પૃષ્ઠમાં પરવાનગીઓ બદલી શકો છો.";
+"web_extension_store_install_desc" = "ઇન્સ્ટોલ કર્યા પછી એક્સ્ટેંશનના સંચાલન પૃષ્ઠમાં પરવાનગીઓ બદલી શકો છો.";
 "web_extension_store_link_placeholder" = "એક્સ્ટેંશન પૃષ્ઠ લિંક અથવા Chrome એક્સ્ટેંશન ID";
 "web_extension_store_invalid_link" = "ક્રોમ, એજ અથવા ફાયરફોક્સ, ક્રોમ એક્સ્ટેંશન ID અથવા સીધી CRX, XPI અથવા ZIP લિંકમાંથી એક્સ્ટેંશન વિગતો પૃષ્ઠ લિંક પેસ્ટ કરો.";
 "web_extension_store_https_required" = "એક્સ્ટેંશન પેકેજોએ સુરક્ષિત HTTPS લિંકનો ઉપયોગ કરવો આવશ્યક છે.";
@@ -896,3 +896,6 @@
 "quick_actions_explanation" = "અહીં ગોઠવેલા શૉર્ટકટ વાપરવા માટે હોમ સ્ક્રીન પર Soulo આઇકનને દબાવી રાખો.";
 
 "ad_block_scope_hint" = "વેબ જાહેરાતો, પ્રચારના ઓવરલે અને અનિચ્છનીય પૉપ-અપ ફિલ્ટર કરે છે. કોઈ સાઇટ કામ ન કરે તો માત્ર તે સાઇટ માટે ફિલ્ટર બંધ કરી શકો છો.";
+
+"privacy_clear_browsing_on_exit" = "બહાર નીકળતાં બ્રાઉઝિંગ ઇતિહાસ સાફ કરો";
+"privacy_clear_browsing_on_exit_desc" = "બૅકગ્રાઉન્ડમાં જતાં અથવા ફરી શરૂ કરતાં મુલાકાત લીધેલાં પૃષ્ઠોનો ઇતિહાસ સાફ કરો. શોધ શબ્દો રાખો.";

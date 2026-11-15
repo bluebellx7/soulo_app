@@ -116,6 +116,90 @@ final class AppFunctionalAuditTests: XCTestCase {
         }
     }
 
+    func testGroupedPlatformImportMergesNamedGroupsAndReusesPlatforms() throws {
+        try withIsolatedPlatforms { store in
+            let original = fixturePlatform(template: "https://example.com/?q=%@")
+            let existingGroup = CustomGroup(name: "Search", platformIDs: [original.id])
+            store.platforms = [original]; store.customGroups = [existingGroup]
+            let input = #"{"groups":[{"name":" Search ","platforms":[{"name":"Existing","url":"https://example.com/?q=%@"},{"name":"Other","url":"https://other.example/search/%@","homeURL":"https://other.example/home"}]},{"name":"Shared","platforms":[{"name":"Also here","url":"https://other.example/search/%@"}]}]}"#
+            let document = try PlatformImportDocument.parse(input)
+            let result = store.applyImport(document, groupName: "Unused picker name", intoGroupID: UUID())
+            XCTAssertEqual(result.addedPlatforms, 1)
+            XCTAssertEqual(result.matchedPlatforms, 2)
+            XCTAssertEqual(result.changedGroups, 2)
+            XCTAssertTrue(result.hasChanges)
+            XCTAssertEqual(store.platforms.count, 2)
+            XCTAssertEqual(store.platforms[0], original, "Imports preserve existing names, IDs, visibility and ordering")
+            let other = try XCTUnwrap(store.platforms.last)
+            XCTAssertEqual(other.homeURL, "https://other.example/home")
+            XCTAssertEqual(store.customGroups.map(\.name), ["Search", "Shared"])
+            XCTAssertEqual(store.customGroups[0].id, existingGroup.id)
+            XCTAssertEqual(store.customGroups[0].platformIDs, [original.id, other.id])
+            XCTAssertEqual(store.customGroups[1].platformIDs, [other.id])
+            let repeatResult = store.applyImport(document, groupName: nil)
+            XCTAssertFalse(repeatResult.hasChanges)
+            XCTAssertEqual(store.customGroups[0].platformIDs, [original.id, other.id])
+            let savedPlatforms = try JSONDecoder().decode([SearchPlatform].self, from: XCTUnwrap(UserDefaults.standard.data(forKey: "platform_config")))
+            let savedGroups = try JSONDecoder().decode([CustomGroup].self, from: XCTUnwrap(UserDefaults.standard.data(forKey: "custom_groups")))
+            XCTAssertEqual(savedPlatforms, store.platforms); XCTAssertEqual(savedGroups, store.customGroups)
+        }
+    }
+
+    func testNamedGroupCanImportOnlyPreviouslyKnownPlatforms() throws {
+        try withIsolatedPlatforms { store in
+            let original = fixturePlatform(template: "https://example.com/?q=%@")
+            store.platforms = [original]
+            let document = try PlatformImportDocument.parse(#"{"name":"My group","platforms":[{"name":"Example","url":"https://example.com/?q=%@"}]}"#)
+            let result = store.applyImport(document, groupName: nil)
+            XCTAssertEqual(result.addedPlatforms, 0)
+            XCTAssertEqual(result.matchedPlatforms, 1)
+            XCTAssertEqual(result.changedGroups, 1)
+            XCTAssertTrue(result.hasChanges, "Adding an existing platform to a new group is a successful import")
+            XCTAssertEqual(store.customGroups.first?.platformIDs, [original.id])
+        }
+    }
+
+    func testGroupedArrayAndPromptExampleAreAcceptedByTheSameParser() throws {
+        let document = try PlatformImportDocument.parse(PlatformImportPrompt.exampleJSON)
+        XCTAssertEqual(document.groups.count, 2)
+        XCTAssertEqual(document.groups.flatMap(\.platforms).count, 2)
+        let groupedArray = try PlatformImportDocument.parse(#"[{"name":"One","platforms":[{"name":"A","url":"https://a.example/?q=%@"}]},{"name":"Two","platforms":[{"name":"B","url":"https://b.example/?q=%@"}]}]"#)
+        XCTAssertEqual(groupedArray.groups.map(\.name), ["One", "Two"])
+        for language in ["en-US", "zh-Hans", "zh-Hant"] {
+            let prompt = PlatformImportPrompt.text(language: language)
+            XCTAssertTrue(prompt.contains(PlatformImportPrompt.exampleJSON))
+            XCTAssertTrue(prompt.contains("2000"))
+            XCTAssertTrue(prompt.contains("homeURL"))
+        }
+    }
+
+    func testMalformedGroupedImportDoesNotPartiallyModifyExistingData() throws {
+        try withIsolatedPlatforms { store in
+            let original = fixturePlatform(template: "https://existing.example/?q=%@")
+            let folder = CustomGroup(name: "Keep", platformIDs: [original.id])
+            store.platforms = [original]; store.customGroups = [folder]
+            let malformed = #"{"groups":[{"name":"Valid first","platforms":[{"name":"A","url":"https://a.example/?q=%@"}]},{"name":" ","platforms":[]}]}"#
+            XCTAssertThrowsError(try PlatformImportDocument.parse(malformed))
+            XCTAssertEqual(store.importPlatformsFromJSON(malformed, groupName: nil), 0)
+            XCTAssertEqual(store.platforms, [original]); XCTAssertEqual(store.customGroups, [folder])
+            let unsafe = #"{"groups":[{"name":"Unsafe","platforms":[{"name":"Credentials","url":"https://user:password@example.com/?q=%@"},{"name":"Two slots","url":"https://example.com/%@?q=%@"},{"name":"Bad home","url":"https://example.com/?q=%@","homeURL":"javascript:alert(1)"}]}]}"#
+            XCTAssertEqual(store.importPlatformsFromJSON(unsafe, groupName: nil), 0)
+            XCTAssertEqual(store.platforms, [original]); XCTAssertEqual(store.customGroups, [folder])
+        }
+    }
+
+    func testPlatformImportLimitsAreEnforcedBeforeApplyingAnyGroups() throws {
+        let item = ["name": "A", "url": "https://example.com/?q=%@"]
+        func json(_ value: Any) throws -> String {
+            String(decoding: try JSONSerialization.data(withJSONObject: value), as: UTF8.self)
+        }
+        let manyGroups = try json(["groups": Array(repeating: ["name": "Group", "platforms": [item]] as [String: Any], count: 101)])
+        XCTAssertThrowsError(try PlatformImportDocument.parse(manyGroups))
+        let manyPlatforms = try json(Array(repeating: item, count: 2_001))
+        XCTAssertThrowsError(try PlatformImportDocument.parse(manyPlatforms))
+        XCTAssertThrowsError(try PlatformImportDocument.parse(String(repeating: " ", count: 4 * 1_024 * 1_024 + 1)))
+    }
+
     func testRestoredUsageCountsCannotOverflowWhenSearching() throws {
         try withIsolatedPlatforms { store in
             var platform = fixturePlatform(template: "https://example.com/?q=%@")
@@ -182,6 +266,48 @@ final class AppFunctionalAuditTests: XCTestCase {
         XCTAssertEqual(try context.count(for: BookmarkFolderRecord.request()), 0)
         XCTAssertEqual(try context.count(for: SearchHistoryRecord.request()), 1)
         XCTAssertEqual(index.removedDomains, ["soulo.bookmarks"])
+    }
+
+    func testExitHistoryCleanupDefaultsOffAndPreservesQueriesNewVisitsAndUnsavedBookmarks() async throws {
+        for persistent in [false,true] {
+            let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try FileManager.default.createDirectory(at:root,withIntermediateDirectories:true)
+            defer{try? FileManager.default.removeItem(at:root)}
+            let container=try LibraryStore(inMemory:!persistent,url:root.appendingPathComponent("history.sqlite"))
+            let context=container.mainContext,cutoff=Date()
+            for index in 0..<777 {
+                context.insert(SearchHistoryRecord(keyword:"Visited \(index)",timestamp:cutoff.addingTimeInterval(-1),visitedURLString:"https://example.test/\(index)"))
+            }
+            context.insert(SearchHistoryRecord(keyword:"Kept search"))
+            context.insert(SearchHistoryRecord(keyword:"New session",timestamp:cutoff.addingTimeInterval(1),visitedURLString:"https://new.test/"))
+            try context.save()
+            let pending=BookmarkRecord(title:"Unsaved bookmark",urlString:"https://bookmark.test/")
+            context.insert(pending)
+            let suite="history-exit-"+UUID().uuidString,defaults=try XCTUnwrap(UserDefaults(suiteName:suite))
+            defer{defaults.removePersistentDomain(forName:suite)}
+            let policy=BrowsingHistoryExitPolicy(container:container.container,defaults:defaults)
+            let index=AuditSearchableIndex(name:suite)
+            let disabledCount=try await policy.clearIfEnabled(referenceDate:cutoff,index:index)
+            XCTAssertEqual(disabledCount,0)
+            XCTAssertEqual(try context.count(for:SearchHistoryRecord.request()),779)
+            XCTAssertTrue(index.removedIdentifiers.isEmpty)
+            defaults.set(true,forKey:BrowsingHistoryExitPolicy.preferenceKey)
+            let deleted=try await policy.clearIfEnabled(referenceDate:cutoff,index:index)
+            XCTAssertEqual(deleted,777,"Must span several private-queue batches in both SQLite and memory stores")
+            let verify=container.makeContext()
+            XCTAssertEqual(Set(try verify.fetch(SearchHistoryRecord.request()).map(\.keyword)),["Kept search","New session"])
+            XCTAssertTrue(pending.isInserted);XCTAssertEqual(pending.title,"Unsaved bookmark")
+            XCTAssertEqual(index.removedIdentifiers.count,777)
+            XCTAssertTrue(index.removedDomains.isEmpty,"Search terms' Spotlight entries remain")
+            let again=try await policy.clearIfEnabled(referenceDate:cutoff,index:index)
+            XCTAssertEqual(again,0)
+        }
+        XCTAssertFalse(BrowsingHistoryExitPolicy.shouldClear(enabled:false,state:.background))
+        XCTAssertFalse(BrowsingHistoryExitPolicy.shouldClear(enabled:true,state:.active))
+        XCTAssertFalse(BrowsingHistoryExitPolicy.shouldClear(enabled:true,state:.inactive),"One iPad scene losing focus must not clear another active window's history")
+        XCTAssertTrue(BrowsingHistoryExitPolicy.shouldClear(enabled:true,state:.background))
+        XCTAssertTrue(CloudSyncService.syncedKeys.contains(BrowsingHistoryExitPolicy.preferenceKey))
+        _ = try CloudSettingsSyncEngine.flattened([BrowsingHistoryExitPolicy.preferenceKey:false])
     }
 
     func testHistoryRemovesCredentialsAndPreservesCaseAndEscapedBusinessQuery() throws {

@@ -1,6 +1,1 @@
-1.2.13
-
-• Aparte achtergronden voor licht en donker, met een schakelaar voor de afbeeldingslaag.
-• Verbeterde startpaginakleuren; de achtergrondvoorvertoning volgt het appthema.
-• Bekijk, deel en bewaar achtergronden in Foto’s.
-• Instellingen voor de bovenste tabbladen met nieuw tabblad en optioneel verbergen van de platformbalk na navigatie.
+Verbeterde iPad-vensters, spraakinvoer, lokale samenvattingen en toegankelijkheid. Verbeterde media-export op de achtergrond, Opdrachten en compatibiliteit met extensies. Sommige functies zijn afhankelijk van het apparaat, het systeem en de taal.

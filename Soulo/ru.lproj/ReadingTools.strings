@@ -417,7 +417,7 @@
 "media_audio_tracks" = "Аудио треки";
 "media_subtitles" = "Субтитры";
 "media_track_off" = "Выкл.";
-"video_settings" = "Видео";
+"video_settings" = "Настройки видео";
 "video_show_tools" = "Показать инструменты для видео";
 "video_show_tools_desc" = "Покажите инструменты в веб-видео для скорости воспроизведения, загрузки и полноэкранного режима.";
 "video_default_player" = "Игрок по умолчанию";
@@ -497,4 +497,37 @@
 "wallpaper_image_blur" = "Матовое стекло";
 "wallpaper_blur_amount" = "Сила размытия";
 
-"auto_hide_platform_bar_hint" = "Панель платформ скрывается при открытии результата поиска. Вернитесь к результатам или начните новый поиск, чтобы показать её снова. Отключить это можно в этом меню.";
+"auto_hide_platform_bar_hint" = "Панель платформ скрывается только после нажатия на содержимое страницы. Автоматические перенаправления и прокрутка её не скрывают. Вернитесь к результатам или начните новый поиск, чтобы показать её снова.";
+
+"ad_subscription_add" = "Добавить список фильтров";
+"ad_subscription_name" = "Название";
+"ad_subscription_url" = "Ссылка подписки";
+"ad_subscription_invalid" = "Введите название и действительную ссылку подписки HTTP или HTTPS.";
+"ad_subscription_duplicate" = "Эта ссылка подписки уже добавлена.";
+
+"feedback_settings" = "Звуки и вибрация";
+"feedback_settings_hint" = "Управляйте вибрацией и звуками интерфейса во всём приложении. Это не влияет на воспроизведение веб-страниц, видео и аудио.";
+
+"home_display_settings" = "Вид главной страницы";
+"browsing_display_settings" = "Вид браузера";
+
+"web_video_download" = "Загрузка веб-видео";
+"web_video_download_description" = "Показывает кнопки загрузки видео на веб-страницах, в списках серий и проигрывателях. Воспроизведение и существующие загрузки не меняются.";
+"builtin_extension" = "Встроенное расширение";
+
+"wallpaper_overlay_amount" = "Интенсивность затемнения";
+"feedback_contact_required" = "Укажите email или другой контакт, чтобы мы могли ответить.";
+"torrent_incomplete" = "Не завершено";
+"extend_page_background" = "Продление фона страницы";
+"extend_page_background_desc" = "Продлевает верхние и нижние цвета страницы до краёв браузера, включая градиенты.";
+
+/* Tab groups and background sampling */
+"tab_group_collapse" = "Свернуть группу";
+"tab_group_expand" = "Развернуть группу";
+"freeze_page_background_on_scroll" = "Сохранять исходные цвета";
+"freeze_page_background_on_scroll_desc" = "После прокрутки сохранять первые определённые цвета. На новой странице цвета определяются заново.";
+"page_background_gradient" = "Расширение градиентом";
+"page_background_gradient_desc" = "Смешивать найденные цвета в градиент. При выключении каждый край имеет один сплошной цвет.";
+
+
+"gestures_feedback_settings" = "Жесты и отклик";

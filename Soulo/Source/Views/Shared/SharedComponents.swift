@@ -146,7 +146,7 @@ struct PinwheelButton: View {
             withAnimation(.interpolatingSpring(stiffness: 30, damping: 4)) {
                 rotation += 720
             }
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            HapticsManager.light()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 action()
             }

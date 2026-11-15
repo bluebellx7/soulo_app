@@ -1,0 +1,162 @@
+{
+  "version": "1.2.15",
+  "status": "in_progress_remaining_sdk_and_eligible_device_validation",
+  "baseline": "/tmp/soulo-1.2.15-20261113",
+  "constraints": [
+    "Preserve all existing workspace changes",
+    "Maintain iOS 16 fallback paths",
+    "Use only public APIs and capability checks",
+    "No claim of iOS 27 support before compiling and testing with its SDK",
+    "No commit or push requested"
+  ],
+  "items": [
+    {
+      "id": 1,
+      "name": "iOS 27 WebKit 兼容层",
+      "status": "implemented_sdk_validation_pending",
+      "acceptance": [
+        "Verify official API declarations and availability",
+        "Integrate URL-scoped cookies and applicable navigation preferences without widening permissions",
+        "Compile and exercise native extension/media regressions on iOS 27"
+      ],
+      "environment": "macOS 26.3.1 / Xcode 26.2; Xcode 27 requires macOS 26.6+. Availability/compiler gated paths are not compiled by Xcode 26.2.",
+      "implementation_and_validation": "Public iOS 27 URL-scoped cookies, alternate navigation requests, and retained native media content worlds added behind Swift 6.4/iOS 27 guards. These paths are excluded from Xcode 26.2 builds. Third-party extension worlds and permissions are unchanged.",
+      "name_en": "iOS 27 WebKit request, cookie and content-world APIs"
+    },
+    {
+      "id": 2,
+      "name": "iOS 26 后台媒体合并与导出",
+      "status": "implemented_physical_background_and_export_regressions_passed",
+      "acceptance": [
+        "Native merge/export jobs report real progress",
+        "Handle expiration/cancellation and safe cleanup",
+        "Test success, cancellation and foreground/background handoff"
+      ],
+      "implementation_and_validation": "Physical iPad accepted and completed native continued-processing work after entering background with progress0.985. Separate real HLS/finalization/cancellation and four native media regressions passed. System expiration timing remains controlled by iOS; this is not unlimited-background certification.",
+      "name_en": "iOS 26 continued background merge and export"
+    },
+    {
+      "id": 3,
+      "name": "iPad 多窗口与菜单操作",
+      "status": "implemented_physical_window_workflow_passed",
+      "acceptance": [
+        "Move a tab into a new window without losing navigation state",
+        "Add focused-window menu actions for tabs, downloads and extensions",
+        "Validate compact/large window layouts and isolation"
+      ],
+      "implementation_and_validation": "Two real iPad multi-window UI tests passed; the same WKWebView, live DOM sentinel and navigation history moved without another page GET. Focused-window menus and touch entries retained.",
+      "name_en": "iPad window and menu experience"
+    },
+    {
+      "id": 4,
+      "name": "SpeechAnalyzer 设备端语音输入",
+      "status": "implemented_physical_microphone_and_transcription_passed",
+      "acceptance": [
+        "Supported locale/assets/device use on-device SpeechAnalyzer",
+        "Fallback to existing recognizer on unsupported configurations",
+        "Stop/cancel discards stale callbacks and releases microphone"
+      ],
+      "implementation_and_validation": "Real iPad microphone buffers and cancellation passed; installed Chinese model transcribed the fixture. Normal non-XCTest app launch confirmed analyzer start/stop. Legacy authorization/locale/cancellation nine cases passed; installed English model fixture previously passed on physical phone.",
+      "name_en": "SpeechAnalyzer voice input"
+    },
+    {
+      "id": 5,
+      "name": "Liquid Glass 与辅助功能适配",
+      "status": "implemented_physical_accessibility_validation_passed",
+      "acceptance": [
+        "Tab bar/toolbars/popups remain readable in light/dark modes",
+        "Respect reduced transparency, contrast and motion",
+        "Preserve older-system materials and hit regions"
+      ],
+      "implementation_and_validation": "Light/dark native materials visually reviewed. Actual iPad system Reduce Transparency, Increase Contrast and Reduce Motion switches were toggled; app reflected all three and original settings restored.",
+      "name_en": "Liquid Glass accessibility and consistency"
+    },
+    {
+      "id": 6,
+      "name": "Foundation Models 本地网页摘要",
+      "status": "implemented_unavailable_fallback_passed_eligible_model_pending",
+      "acceptance": [
+        "Available model generates summary/keywords from page text",
+        "Unavailable/unsupported/cancelled states retain safe existing fallback",
+        "Do not send page content to an external provider"
+      ],
+      "implementation_and_validation": "Actual Foundation Models reports deviceNotEligible on both connected devices. Fallback, bounded-input and cancellation tests passed without sending page content externally. Actual generation was skipped, not claimed passed. Device settings were not changed to force eligibility.",
+      "name_en": "On-device Foundation Models summaries"
+    },
+    {
+      "id": 7,
+      "name": "Siri 网页实体与收藏操作",
+      "status": "implemented_physical_intent_perform_and_entity_tests_passed",
+      "acceptance": [
+        "Expose current webpage/bookmarks through App Entities and actions",
+        "Bookmark/open/share routes work without operating on another window",
+        "Private pages/history are not indexed or donated"
+      ],
+      "implementation_and_validation": "Actual SaveWebPageIntent.perform and WebPageLinkIntent.perform passed on device, together with entity lookup/privacy/idempotency checks. Full spoken Siri interaction and cross-process production app-group opening are outside isolated-QA validation; QA has no access to production group data.",
+      "name_en": "Siri webpage and bookmark entities"
+    },
+    {
+      "id": 8,
+      "name": "iOS 27 生成字幕与字幕样式",
+      "status": "implemented_sdk_validation_pending",
+      "acceptance": [
+        "Expose supported generated subtitle options in AVPlayer controls",
+        "Check supported device/language/media availability",
+        "Keep VLC/MKV and older-system controls functional",
+        "Compile and exercise iOS 27 path"
+      ],
+      "environment": "macOS 26.3.1 / Xcode 26.2; Xcode 27 requires macOS 26.6+. Availability/compiler gated paths are not compiled by Xcode 26.2.",
+      "implementation_and_validation": "AVPlayer fullscreen controls have a public system subtitle/style menu on iOS 27, behind the Swift 6.4 guard. The system determines generated subtitle languages and availability; existing AVPlayer selections and VLC controls remain. This new menu is not compiled or run with Xcode 26.2.",
+      "name_en": "iOS 27 generated subtitles and styles"
+    },
+    {
+      "id": 9,
+      "name": "通用扩展兼容性完善",
+      "status": "implemented_actual_package_physical_regressions_passed",
+      "acceptance": [
+        "Audit remaining public API/lifecycle gaps using real packages",
+        "Implement general fixes without publisher-specific UI rewrites",
+        "Run Cat Catch/TYTY/download/popup isolation regressions"
+      ],
+      "implementation_and_validation": "Actual Cat Catch Microsoft Store CRX Chinese popup, capture/downloads, playable online merge/cache capture and TYTY0.6.6 messaging/proxy/download switches passed on physical iOS27.2.1. Native extension→platform/store preserves download DOM, with normal-tab navigation. ZIP aliased-container canonicalization fixed with traversal checks retained. File/folder/script picker open/cancel repeated on iPad. Latest list layout and browser request-state refinement undergoing final regression. No claim that every Chrome API or arbitrary extension is supported.",
+      "name_en": "Continue generic third-party extension compatibility"
+    },
+    {
+      "id": 10,
+      "name": "1.2.15 版本与 50 个语言的商店元数据",
+      "status": "completed",
+      "acceptance": [
+        "Review all six metadata fields in all 50 language sources",
+        "Update truthful localized release notes",
+        "Regenerate Xcode project from project.yml",
+        "Export metadata JSON and run --check and strict localization checks",
+        "Run relevant simulator and unsigned device builds and record limitations"
+      ],
+      "implementation_and_validation": "All targets use 1.2.15 (55). All six metadata fields in all 50 source directories reviewed; localized release notes updated. Three runtime strings translated across 50 locales. JSON regenerated with the exporter, project regenerated from project.yml, strict localization and metadata checks passed.",
+      "name_en": "1.2.15 and all 50 App Store locales"
+    }
+  ],
+  "updated_at": "2026-11-14 Asia/Shanghai",
+  "validation_report": "2026-11-14-device-acceptance.json",
+  "follow_up_review": "2026-11-14-import-adblock-home-review.json",
+  "current_device_constraint": "User needs iPhone; all further tests restricted to iPad and simulators. Earlier iOS27.2.1 physical evidence retained.",
+  "additional_followups": [
+    {
+      "item": "iOS16 ad-filter subpages",
+      "status": "30 populated opens/returns passed via Settings and site information; additional automatic-refresh-overlap test under diagnosis; no user crash log available"
+    },
+    {
+      "item": "Native icon",
+      "status": "Default center and exterior pure white; hollow vector brush strands and split pointed tails; six native appearances reviewed; final Release build follows current regression"
+    },
+    {
+      "item": "FastStream",
+      "status": "Not started; follows earlier unfinished work. User-installed CRX compatibility requested, no built-in redistribution or VLC removal."
+    }
+  ],
+  "latest_acceptance": {
+    "report": "2026-11-14-consolidated-requirements.json",
+    "release": "SDK27 Release166 passed",
+    "scope": "101 requirements reconciled; actual hardware availability limits remain explicitly listed, not falsified as passes."
+  }
+}
