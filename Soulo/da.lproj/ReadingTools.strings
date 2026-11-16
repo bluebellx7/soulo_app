@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Bevægelser og feedback";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platforme";
+"toolbar_more_panel" = "Panelet Mere";
+"show_platform_bar" = "Vis platformslinje";
+"toolbar_restore" = "Gendan standard";
+"platform_bar_hidden_hint" = "Tilføj “%1$@” i “%2$@” for at skifte platform og gruppe, når platformslinjen er skjult.";
+"platform_bar_disabled_hint" = "Platformslinjen er skjult. Tryk for at åbne “%@”, før automatisk skjulning slås til.";
+
+"storage_files_group" = "Downloads og filer";
+"storage_cache_group" = "Cache og midlertidige filer";
+"storage_saved_group" = "Gemt indhold";
+
+"storage_clear_offline_media_warning" = "Sletter alle offlinevideoer her og deres filposter. Uafsluttede fil-/videodownloads, afspilning og eksport stoppes.";
+"storage_clear_active_temp_warning" = "Annullerer uafsluttede fil-/videodownloads, stopper afspilning og eksport og rydder frigivne midlertidige filer. Fuldførte downloads bevares.";
+"storage_files_still_in_use" = "Nogle filer er stadig i brug. Frigivne filer er ryddet. Prøv igen om lidt.";
+
+"storage_system_caches" = "Systemcache";
+"storage_offline_media" = "Offlinevideoer";
+"storage_system_data_retained" = "Systemfiler kan fortsat være i brug eller blive oprettet igen. Synkroniserede indstillinger bevares.";
+
+"storage_clear_offline_remnants_warning" = "Sletter offlinevideoer uden filpost. Gemte downloads bevares. Uafsluttede downloads, afspilning og eksport stoppes.";
+
+"settings_ads_and_privacy" = "Annoncer og privatliv";
+
+"storage_cleanup_cache_desc" = "Rydder frigivelig cache og midlertidige filer; filer i brug bevares.";
+"storage_cleanup_downloads_desc" = "Sletter gemte downloadede filer og deres poster.";
+"storage_cleanup_wallpapers_desc" = "Fjerner baggrunde fra favoritter og sletter deres filer.";
+"storage_cleanup_reading_desc" = "Rydder offlineartikler, bogbiblioteket og læsefremskridt.";
+
+"storage_cleanup_offline_desc" = "Sletter rester af offlinevideoer uden downloadposter.";

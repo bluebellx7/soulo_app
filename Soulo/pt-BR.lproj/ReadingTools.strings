@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gestos e resposta";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Plataformas";
+"toolbar_more_panel" = "Painel Mais";
+"show_platform_bar" = "Mostrar barra de plataformas";
+"toolbar_restore" = "Restaurar padrões";
+"platform_bar_hidden_hint" = "Adicione “%1$@” em “%2$@” para alternar plataformas e grupos quando a barra estiver oculta.";
+"platform_bar_disabled_hint" = "A barra de plataformas está oculta. Toque para abrir “%@” antes de ativar a ocultação automática.";
+
+"storage_files_group" = "Downloads e arquivos";
+"storage_cache_group" = "Cache e arquivos temporários";
+"storage_saved_group" = "Conteúdo salvo";
+
+"storage_clear_offline_media_warning" = "Exclui todos os vídeos offline deste local e suas entradas de arquivo. Downloads de arquivos/vídeos incompletos, reprodução e exportações serão interrompidos.";
+"storage_clear_active_temp_warning" = "Cancela downloads de arquivos/vídeos incompletos, interrompe a reprodução e as exportações e apaga arquivos temporários liberados. Downloads concluídos são mantidos.";
+"storage_files_still_in_use" = "Alguns arquivos ainda estão em uso. Os arquivos liberados foram apagados. Tente novamente em instantes.";
+
+"storage_system_caches" = "Cache do sistema";
+"storage_offline_media" = "Vídeos offline";
+"storage_system_data_retained" = "Os ficheiros do sistema podem continuar em uso ou ser recriados. As definições sincronizadas são mantidas.";
+
+"storage_clear_offline_remnants_warning" = "Elimina vídeos offline não listados. As transferências guardadas são mantidas. As transferências incompletas, a reprodução e as exportações param.";
+
+"settings_ads_and_privacy" = "Anúncios e privacidade";
+
+"storage_cleanup_cache_desc" = "Limpa cache e ficheiros temporários libertáveis; mantém os ficheiros em uso.";
+"storage_cleanup_downloads_desc" = "Elimina os ficheiros transferidos guardados e os respetivos registos.";
+"storage_cleanup_wallpapers_desc" = "Remove os fundos dos favoritos e elimina os seus ficheiros.";
+"storage_cleanup_reading_desc" = "Limpa artigos offline, a biblioteca e o progresso de leitura.";
+
+"storage_cleanup_offline_desc" = "Elimina restos de vídeos offline sem registos de transferência.";

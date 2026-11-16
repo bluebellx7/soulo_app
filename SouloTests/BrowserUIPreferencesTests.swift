@@ -4,6 +4,21 @@ import SwiftUI
 
 @MainActor
 final class BrowserUIPreferencesTests: XCTestCase {
+    func testToolbarMetadataHasBoundedDepthForColdRestoration() {
+        // The TestFlight crash resolves this type on a deeply nested SwiftUI
+        // update stack. Bound its metadata complexity before mounting any UI.
+        let toolbar = WebViewToolbar(viewModel: WebViewModel(), isBookmarked: .constant(false))
+        let typeName = String(reflecting: type(of: toolbar.body))
+        var depth = 0, maximum = 0
+        for character in typeName {
+            if character == "<" { depth += 1; maximum = max(maximum, depth) }
+            else if character == ">" { depth -= 1 }
+        }
+        print("TOOLBAR_METADATA bytes=\(typeName.utf8.count) genericDepth=\(maximum)")
+        XCTAssertLessThan(typeName.utf8.count, 65_536)
+        XCTAssertLessThan(maximum, 64)
+    }
+
     func testNewDefaultsDoNotWritePreferences() throws {
         let suite = "Soulo.InitialPreferences.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

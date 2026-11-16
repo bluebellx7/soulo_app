@@ -776,6 +776,19 @@ struct MediaControls: View {
     }
 }
 
+/// File/download entry points use the same fullscreen host and controls as
+/// webpage playback, without exposing a compact player between orientations.
+struct FullscreenMediaPlaybackContent: View {
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage(VideoPlaybackPreferences.defaultPlayerKey) private var defaultPlayer = "soulo"
+    @ObservedObject private var session = MediaSession.shared
+    var body: some View {
+        MediaPlaybackContent(restoredSoulo: session.soulo, initialFullscreen: true, fullscreenOnly: true,
+            initialSystemPlayer: defaultPlayer == "system", onFullscreenClose: { dismiss() })
+            .toolbar(.hidden, for: .navigationBar)
+    }
+}
+
 struct MediaPlayerPage: View {
     @ObservedObject var session = MediaSession.shared
     @Environment(\.dismiss) private var dismiss
@@ -792,11 +805,12 @@ struct MediaPlayerPage: View {
             } else if let url = session.url, url.isFileURL {
                 FileMediaPlaybackView(url: url, initialSystemPlayer: session.soulo == nil)
             } else if let playback = session.soulo, let source = playback.sourceURL {
-                MatroskaPlayerView(url: source, title: session.title, options: restoredOptions)
-            } else { MediaPlaybackContent(initialSystemPlayer: true, onFullscreenClose: { dismiss() }) }
+                MatroskaPlayerView(url: source, title: session.title, options: restoredOptions, startsFullscreen: true)
+            } else { FullscreenMediaPlaybackContent() }
         }
         .navigationTitle(session.title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
     }
     private var restoredOptions: FileVideoOptions {
         var result = FileVideoOptions(usesSystem: false, systemAvailable: session.souloSystemAvailable) { system, _, _ in
@@ -804,6 +818,7 @@ struct MediaPlayerPage: View {
         }
         result.shareURL = session.url
         result.closePlayback = { dismiss() }
+        result.fullscreenOnly = true
         if session.hasVideo, session.pictureInPicture.supported {
             result.requestPictureInPicture = { _, _ in session.restoreSystemFromSoulo(pictureInPicture: true) }
         }
@@ -1142,7 +1157,7 @@ private struct NativePlayerDestination: ViewModifier {
     @ViewBuilder func body(content: Content) -> some View {
         if #available(iOS 17.0, *) {
             content.navigationDestination(isPresented: $isPresented) {
-                MediaPlayerPage().toolbar(.visible, for: .navigationBar)
+                MediaPlayerPage().toolbar(.hidden, for: .navigationBar)
             }
         } else { content }
     }
@@ -1152,7 +1167,7 @@ private struct LegacyPlayerPage: View {
     @ObservedObject private var language = LanguageManager.shared
     @ObservedObject private var theme = ThemeManager.shared
     var body: some View {
-        MediaPlayerPage().toolbar(.visible, for: .navigationBar)
+        MediaPlayerPage().toolbar(.hidden, for: .navigationBar)
             .environmentObject(language).environmentObject(theme)
             .environment(\.locale, language.locale)
             .environment(\.layoutDirection, language.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
@@ -1473,7 +1488,7 @@ struct MediaPlaybackContent: View {
                     .navigationTitle(transfer.title)
             } else {
                 VStack(spacing: 0) {
-                    if !showingFullScreen {
+                    if !showingFullScreen && !fullscreenOnly {
                         playbackPreview
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .accessibilityIdentifier("media.preview")
@@ -1482,7 +1497,11 @@ struct MediaPlaybackContent: View {
                                 seek: { session.seek(session.elapsed + $0) }))
                         playbackControls
                     }
-                    else { Color.black }
+                    else {
+                        Color.black.overlay {
+                            if fullscreenOnly && !showingFullScreen { ProgressView().tint(.white) }
+                        }
+                    }
                 }
             }
         }

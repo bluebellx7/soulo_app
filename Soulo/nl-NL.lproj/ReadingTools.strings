@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gebaren en feedback";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platforms";
+"toolbar_more_panel" = "Meer-paneel";
+"show_platform_bar" = "Platformbalk tonen";
+"toolbar_restore" = "Standaard herstellen";
+"platform_bar_hidden_hint" = "Voeg ‘%1$@’ toe bij ‘%2$@’ om van platform en groep te wisselen als de platformbalk verborgen is.";
+"platform_bar_disabled_hint" = "De platformbalk is verborgen. Tik om ‘%@’ te openen voordat je automatisch verbergen inschakelt.";
+
+"storage_files_group" = "Downloads en bestanden";
+"storage_cache_group" = "Cache en tijdelijke bestanden";
+"storage_saved_group" = "Opgeslagen inhoud";
+
+"storage_clear_offline_media_warning" = "Verwijdert alle offlinevideo’s hier en hun bestandsvermeldingen. Onvoltooide bestands-/videodownloads, afspelen en exporteren worden gestopt.";
+"storage_clear_active_temp_warning" = "Annuleert onvoltooide bestands-/videodownloads, stopt afspelen en exporteren en wist vrijgegeven tijdelijke bestanden. Voltooide downloads blijven bewaard.";
+"storage_files_still_in_use" = "Sommige bestanden zijn nog in gebruik. Vrijgegeven bestanden zijn gewist. Probeer het zo opnieuw.";
+
+"storage_system_caches" = "Systeemcache";
+"storage_offline_media" = "Offlinevideo’s";
+"storage_system_data_retained" = "Systeembestanden kunnen in gebruik blijven of opnieuw worden aangemaakt. Gesynchroniseerde instellingen blijven behouden.";
+
+"storage_clear_offline_remnants_warning" = "Verwijdert niet-vermelde offlinevideo’s. Opgeslagen downloads blijven behouden. Onvoltooide downloads, afspelen en exporteren stoppen.";
+
+"settings_ads_and_privacy" = "Advertenties en privacy";
+
+"storage_cleanup_cache_desc" = "Wist vrijmaakbare cache en tijdelijke bestanden; bestanden in gebruik blijven.";
+"storage_cleanup_downloads_desc" = "Verwijdert opgeslagen gedownloade bestanden en hun vermeldingen.";
+"storage_cleanup_wallpapers_desc" = "Verwijdert achtergronden uit favorieten en wist hun bestanden.";
+"storage_cleanup_reading_desc" = "Wist offlineartikelen, de boekbibliotheek en leesvoortgang.";
+
+"storage_cleanup_offline_desc" = "Verwijdert offlinevideoresten zonder downloadvermeldingen.";

@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gesztusok és visszajelzés";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platformok";
+"toolbar_more_panel" = "Továbbiak panel";
+"show_platform_bar" = "Platformsáv megjelenítése";
+"toolbar_restore" = "Alapértékek visszaállítása";
+"platform_bar_hidden_hint" = "Adja hozzá a „%1$@” gombot itt: „%2$@”, hogy rejtett sáv mellett is válthasson platformot és csoportot.";
+"platform_bar_disabled_hint" = "A platformsáv rejtett. Az automatikus elrejtés bekapcsolása előtt koppintson a „%@” megnyitásához.";
+
+"storage_files_group" = "Letöltések és fájlok";
+"storage_cache_group" = "Gyorsítótár és ideiglenes fájlok";
+"storage_saved_group" = "Mentett tartalom";
+
+"storage_clear_offline_media_warning" = "Törli az itt tárolt összes offline videót és fájlbejegyzésüket. A befejezetlen fájl-/videóletöltések, a lejátszás és az exportálások leállnak.";
+"storage_clear_active_temp_warning" = "Megszakítja a befejezetlen fájl-/videóletöltéseket, leállítja a lejátszást és az exportálásokat, majd törli a felszabadult ideiglenes fájlokat. A kész letöltések megmaradnak.";
+"storage_files_still_in_use" = "Néhány fájl még használatban van. A felszabadult fájlokat töröltük. Próbálja újra hamarosan.";
+
+"storage_system_caches" = "Rendszergyorsítótár";
+"storage_offline_media" = "Offline videók";
+"storage_system_data_retained" = "A rendszerfájlok használatban maradhatnak vagy újra létrejöhetnek. A szinkronizált beállítások megmaradnak.";
+
+"storage_clear_offline_remnants_warning" = "Törli a listán nem szereplő offline videókat. A mentett letöltések megmaradnak. A befejezetlen letöltések, lejátszás és exportálás leállnak.";
+
+"settings_ads_and_privacy" = "Hirdetések és adatvédelem";
+
+"storage_cleanup_cache_desc" = "Törli a felszabadítható gyorsítótárat és ideiglenes fájlokat; a használtakat megtartja.";
+"storage_cleanup_downloads_desc" = "Törli a mentett letöltött fájlokat és bejegyzéseiket.";
+"storage_cleanup_wallpapers_desc" = "Eltávolítja a háttérképeket a kedvencekből és törli a fájljaikat.";
+"storage_cleanup_reading_desc" = "Törli az offline cikkeket, a könyvtárat és az olvasási előrehaladást.";
+
+"storage_cleanup_offline_desc" = "Törli a letöltési bejegyzés nélküli offline videómaradványokat.";

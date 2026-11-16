@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gestos y respuesta";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Plataformas";
+"toolbar_more_panel" = "Panel Más";
+"show_platform_bar" = "Mostrar barra de plataformas";
+"toolbar_restore" = "Restaurar valores";
+"platform_bar_hidden_hint" = "Añade «%1$@» en «%2$@» para cambiar de plataforma y grupo cuando la barra esté oculta.";
+"platform_bar_disabled_hint" = "La barra de plataformas está oculta. Toca para abrir «%@» antes de activar la ocultación automática.";
+
+"storage_files_group" = "Descargas y archivos";
+"storage_cache_group" = "Caché y archivos temporales";
+"storage_saved_group" = "Contenido guardado";
+
+"storage_clear_offline_media_warning" = "Elimina todos los vídeos sin conexión de esta ubicación y sus entradas de archivo. Se detendrán las descargas de archivos/vídeos incompletas, la reproducción y las exportaciones.";
+"storage_clear_active_temp_warning" = "Cancela las descargas de archivos/vídeos incompletas, detiene la reproducción y las exportaciones y borra los archivos temporales liberados. Las descargas completadas se conservan.";
+"storage_files_still_in_use" = "Algunos archivos siguen en uso. Los archivos liberados se han borrado. Vuelve a intentarlo en breve.";
+
+"storage_system_caches" = "Caché del sistema";
+"storage_offline_media" = "Vídeos sin conexión";
+"storage_system_data_retained" = "Los archivos del sistema pueden seguir en uso o volver a crearse. Se conservan los ajustes sincronizados.";
+
+"storage_clear_offline_remnants_warning" = "Elimina vídeos sin conexión que no figuran en la lista. Conserva las descargas guardadas. Se detienen las descargas pendientes, la reproducción y las exportaciones.";
+
+"settings_ads_and_privacy" = "Anuncios y privacidad";
+
+"storage_cleanup_cache_desc" = "Limpia caché y archivos temporales liberables; conserva los archivos en uso.";
+"storage_cleanup_downloads_desc" = "Elimina los archivos descargados guardados y sus registros.";
+"storage_cleanup_wallpapers_desc" = "Quita los fondos de favoritos y elimina sus archivos.";
+"storage_cleanup_reading_desc" = "Limpia artículos sin conexión, la biblioteca y el progreso de lectura.";
+
+"storage_cleanup_offline_desc" = "Elimina restos de vídeos sin conexión sin registros de descarga.";

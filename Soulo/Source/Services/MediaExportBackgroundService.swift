@@ -27,6 +27,11 @@ final class MediaExportBackgroundService {
     private var batchUnits: Int64 = 0
     private var completedUnits: Int64 = 0
     var isRunning: Bool { systemTask != nil }
+    var hasJobsForStorageCleanup: Bool { !jobs.isEmpty }
+    func cancelForStorageCleanup() {
+        interrupted.formUnion(jobs.keys)
+        Array(jobs.values).forEach { $0.cancel() }
+    }
     #if SOULO_ACCEPTANCE
     private(set) var acceptanceRegistration: Bool?
     private(set) var acceptanceSubmissionError: String?

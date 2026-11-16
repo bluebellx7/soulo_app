@@ -264,7 +264,7 @@ struct LibraryFilesView: View {
             TextDocumentPreview(url: file.url).navigationTitle(file.url.lastPathComponent)
         }
         .compatibleNavigationDestination(item: $book) { BookReaderView(book: $0) }
-        .compatibleNavigationDestination(item: $preview) { file in
+        .compatiblePreviewDestination(item: $preview, isMedia: { [.video, .audio].contains($0.info.kind) }) { file in
             LocalDocumentContent(url: file.url)
         }
         .compatibleNavigationDestination(item: $openedDirectory) { folder in
@@ -280,6 +280,7 @@ struct LibraryFilesView: View {
                     Text("ZIP").tag("zip")
                     Text("7z").tag("7z")
                 }.pickerStyle(.segmented)
+                .segmentedValueSwipe(selection: $format, values: ["zip", "7z"])
                 NavigationLink {
                     FileDestinationView(selection: $compressionDirectory)
                 } label: {

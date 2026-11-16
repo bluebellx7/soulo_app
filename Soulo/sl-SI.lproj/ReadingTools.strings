@@ -532,3 +532,34 @@
 
 
 "gestures_feedback_settings" = "Poteze in odziv";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platforme";
+"toolbar_more_panel" = "Plošča Več";
+"show_platform_bar" = "Prikaži vrstico platform";
+"toolbar_restore" = "Obnovi privzeto";
+"platform_bar_hidden_hint" = "Dodajte »%1$@« v »%2$@« za preklapljanje platform in skupin, ko je vrstica skrita.";
+"platform_bar_disabled_hint" = "Vrstica platform je skrita. Tapnite za odpiranje »%@« pred vklopom samodejnega skrivanja.";
+
+"storage_files_group" = "Prenosi in datoteke";
+"storage_cache_group" = "Predpomnilnik in začasne datoteke";
+"storage_saved_group" = "Shranjena vsebina";
+
+"storage_clear_offline_media_warning" = "Izbriše vse videoposnetke brez povezave na tem mestu in njihove datotečne vnose. Nedokončani prenosi datotek/videov, predvajanje in izvozi se ustavijo.";
+"storage_clear_active_temp_warning" = "Prekliče nedokončane prenose datotek/videov, ustavi predvajanje in izvoze ter izbriše sproščene začasne datoteke. Dokončani prenosi ostanejo.";
+"storage_files_still_in_use" = "Nekatere datoteke so še v uporabi. Sproščene datoteke so izbrisane. Poskusite znova čez trenutek.";
+
+"storage_system_caches" = "Sistemski predpomnilnik";
+"storage_offline_media" = "Videoposnetki brez povezave";
+"storage_system_data_retained" = "Sistemske datoteke lahko ostanejo v uporabi ali se znova ustvarijo. Sinhronizirane nastavitve se ohranijo.";
+
+"storage_clear_offline_remnants_warning" = "Izbriše videoposnetke brez povezave, ki niso na seznamu. Shranjeni prenosi ostanejo. Nedokončani prenosi, predvajanje in izvozi se ustavijo.";
+
+"settings_ads_and_privacy" = "Oglasi in zasebnost";
+
+"storage_cleanup_cache_desc" = "Počisti sprostljiv predpomnilnik in začasne datoteke; uporabljene ohrani.";
+"storage_cleanup_downloads_desc" = "Izbriše shranjene prenesene datoteke in njihove zapise.";
+"storage_cleanup_wallpapers_desc" = "Odstrani ozadja iz priljubljenih in izbriše njihove datoteke.";
+"storage_cleanup_reading_desc" = "Počisti članke brez povezave, knjižnico in napredek branja.";
+
+"storage_cleanup_offline_desc" = "Izbriše ostanke videoposnetkov brez povezave brez zapisov o prenosu.";

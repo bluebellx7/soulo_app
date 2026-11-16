@@ -171,12 +171,7 @@ struct DownloadManagerContentView: View {
         .sheet(item: $shareItem) { item in
             DownloadShareSheet(items: [item.localURL])
         }
-        .compatibleNavigationDestination(item: $previewItem) { item in DownloadContentPreview(item: item) }
-        .compatibleNavigationDestination(item: $playingDownload) { item in
-            MediaPlaybackContent()
-                .navigationTitle(item.fileName)
-                .navigationBarTitleDisplayMode(.inline)
-        }
+        .modifier(DownloadMediaNavigation(preview: $previewItem, playing: $playingDownload, kinds: fileKinds))
         .fileImporter(isPresented: $showDownloadsFolder, allowedContentTypes: [.data]) { result in
             Task {
                 do {
@@ -569,6 +564,26 @@ private struct DownloadShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
+private struct DownloadMediaNavigation: ViewModifier {
+    @Binding var preview: BrowserDownloadItem?
+    @Binding var playing: BrowserDownloadItem?
+    let kinds: [UUID: FilePresentation.Kind]
+
+    func body(content: Content) -> some View {
+        content.compatiblePreviewDestination(item: $preview, isMedia: { [kinds] (item: BrowserDownloadItem) in
+            let kind = kinds[item.id] ?? FilePresentation.kind(forFileExtension: item.localURL.pathExtension)
+            return kind == .video || kind == .audio
+        }) { item in
+            DownloadContentPreview(item: item)
+        }
+        .compatiblePreviewDestination(item: $playing, isMedia: { _ in true }) { item in
+            FullscreenMediaPlaybackContent()
+                .navigationTitle(item.fileName)
+                .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
 struct DownloadContentPreview: View {
     let item: BrowserDownloadItem
     var body: some View { LocalDocumentContent(url: item.localURL) }
@@ -619,8 +634,7 @@ struct LocalDocumentContent: View {
             } else if fileKind == .video || fileKind == .audio {
                 FileMediaPlaybackView(url: url)
             } else if isPlayableMedia {
-                MediaPlaybackContent()
-                    .task { MediaSession.shared.open(url: url, title: url.lastPathComponent) }
+                FileMediaPlaybackView(url: url)
             } else {
                 DownloadQuickLookPreview(url: url).mediaPlayerNavigation()
             }

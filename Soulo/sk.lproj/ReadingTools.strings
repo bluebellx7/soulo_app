@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gestá a odozva";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platformy";
+"toolbar_more_panel" = "Panel Viac";
+"show_platform_bar" = "Zobraziť panel platforiem";
+"toolbar_restore" = "Obnoviť predvolené";
+"platform_bar_hidden_hint" = "Pridajte „%1$@“ v „%2$@“ na prepínanie platforiem a skupín, keď je panel skrytý.";
+"platform_bar_disabled_hint" = "Panel platforiem je skrytý. Klepnutím otvorte „%@“ pred zapnutím automatického skrývania.";
+
+"storage_files_group" = "Sťahovanie a súbory";
+"storage_cache_group" = "Vyrovnávacia pamäť a dočasné súbory";
+"storage_saved_group" = "Uložený obsah";
+
+"storage_clear_offline_media_warning" = "Vymaže všetky offline videá na tomto mieste a ich záznamy súborov. Nedokončené sťahovanie súborov/videí, prehrávanie a exporty sa zastavia.";
+"storage_clear_active_temp_warning" = "Zruší nedokončené sťahovanie súborov/videí, zastaví prehrávanie a exporty a vymaže uvoľnené dočasné súbory. Dokončené sťahovania zostanú zachované.";
+"storage_files_still_in_use" = "Niektoré súbory sa stále používajú. Uvoľnené súbory boli vymazané. Skúste to o chvíľu znova.";
+
+"storage_system_caches" = "Systémová vyrovnávacia pamäť";
+"storage_offline_media" = "Offline videá";
+"storage_system_data_retained" = "Systémové súbory môžu zostať používané alebo sa znova vytvoriť. Synchronizované nastavenia zostanú zachované.";
+
+"storage_clear_offline_remnants_warning" = "Odstráni neuvedené offline videá. Uložené stiahnuté súbory zostanú. Nedokončené sťahovania, prehrávanie a exporty sa zastavia.";
+
+"settings_ads_and_privacy" = "Reklamy a súkromie";
+
+"storage_cleanup_cache_desc" = "Vymaže uvoľniteľnú vyrovnávaciu pamäť a dočasné súbory; používané ponechá.";
+"storage_cleanup_downloads_desc" = "Odstráni uložené stiahnuté súbory a ich záznamy.";
+"storage_cleanup_wallpapers_desc" = "Odoberie tapety z obľúbených a odstráni ich súbory.";
+"storage_cleanup_reading_desc" = "Vymaže offline články, knižnicu a priebeh čítania.";
+
+"storage_cleanup_offline_desc" = "Odstráni zvyšky offline videí bez záznamov o stiahnutí.";

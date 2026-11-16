@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gesti e feedback";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Piattaforme";
+"toolbar_more_panel" = "Pannello Altro";
+"show_platform_bar" = "Mostra barra piattaforme";
+"toolbar_restore" = "Ripristina predefiniti";
+"platform_bar_hidden_hint" = "Aggiungi “%1$@” in “%2$@” per cambiare piattaforma e gruppo quando la barra è nascosta.";
+"platform_bar_disabled_hint" = "La barra delle piattaforme è nascosta. Tocca per aprire “%@” prima di attivare la scomparsa automatica.";
+
+"storage_files_group" = "Download e file";
+"storage_cache_group" = "Cache e file temporanei";
+"storage_saved_group" = "Contenuti salvati";
+
+"storage_clear_offline_media_warning" = "Elimina tutti i video offline qui e le relative voci dei file. Download di file/video incompleti, riproduzione ed esportazioni verranno interrotti.";
+"storage_clear_active_temp_warning" = "Annulla i download di file/video incompleti, interrompe riproduzione ed esportazioni, quindi elimina i file temporanei liberati. I download completati vengono conservati.";
+"storage_files_still_in_use" = "Alcuni file sono ancora in uso. I file liberati sono stati eliminati. Riprova tra poco.";
+
+"storage_system_caches" = "Cache di sistema";
+"storage_offline_media" = "Video offline";
+"storage_system_data_retained" = "I file di sistema possono restare in uso o essere ricreati. Le impostazioni sincronizzate vengono conservate.";
+
+"storage_clear_offline_remnants_warning" = "Elimina i video offline non elencati. I download salvati vengono mantenuti. Download incompleti, riproduzione ed esportazioni si arrestano.";
+
+"settings_ads_and_privacy" = "Annunci e privacy";
+
+"storage_cleanup_cache_desc" = "Svuota cache e file temporanei liberabili; conserva i file in uso.";
+"storage_cleanup_downloads_desc" = "Elimina i file scaricati salvati e i relativi record.";
+"storage_cleanup_wallpapers_desc" = "Rimuove gli sfondi dai preferiti ed elimina i loro file.";
+"storage_cleanup_reading_desc" = "Cancella articoli offline, libreria e progressi di lettura.";
+
+"storage_cleanup_offline_desc" = "Elimina residui di video offline senza record di download.";

@@ -598,3 +598,34 @@
 
 
 "gestures_feedback_settings" = "手势与反馈";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "平台";
+"toolbar_more_panel" = "更多面板";
+"show_platform_bar" = "显示平台栏";
+"toolbar_restore" = "恢复默认";
+"platform_bar_hidden_hint" = "“%1$@”按钮可在“%2$@”中添加，平台栏隐藏后仍可快速切换平台和分组。";
+"platform_bar_disabled_hint" = "平台栏已隐藏。点此打开“%@”，再设置自动隐藏。";
+
+"storage_files_group" = "下载与文件";
+"storage_cache_group" = "缓存与临时文件";
+"storage_saved_group" = "已保存内容";
+
+"storage_clear_offline_media_warning" = "将删除此位置的全部离线视频及关联文件条目，并停止未完成的文件或视频下载、播放和导出。";
+"storage_clear_active_temp_warning" = "将取消未完成的文件或视频下载，并停止播放和导出，再清理已释放的临时文件。已完成的下载会保留。";
+"storage_files_still_in_use" = "部分文件仍在使用，已清理可释放的内容，请稍后重试。";
+
+"storage_system_caches" = "系统缓存";
+"storage_offline_media" = "离线视频";
+"storage_system_data_retained" = "系统正在使用的文件可能保留或自动重建；同步设置会保留。";
+
+"storage_clear_offline_remnants_warning" = "删除没有文件记录的离线视频，保留已保存的下载。未完成的下载、播放和导出将停止。";
+
+"settings_ads_and_privacy" = "广告与隐私";
+
+"storage_cleanup_cache_desc" = "清理可释放的缓存与临时文件，保留正在使用的内容。";
+"storage_cleanup_downloads_desc" = "删除已保存的下载文件和对应记录。";
+"storage_cleanup_wallpapers_desc" = "取消收藏并删除收藏壁纸文件。";
+"storage_cleanup_reading_desc" = "清理离线文章、书库和阅读进度。";
+
+"storage_cleanup_offline_desc" = "删除没有下载记录的离线视频残留。";

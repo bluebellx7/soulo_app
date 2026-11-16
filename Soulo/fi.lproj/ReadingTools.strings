@@ -532,3 +532,34 @@
 
 
 "gestures_feedback_settings" = "Eleet ja palaute";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Alustat";
+"toolbar_more_panel" = "Lisää-paneeli";
+"show_platform_bar" = "Näytä alustapalkki";
+"toolbar_restore" = "Palauta oletukset";
+"platform_bar_hidden_hint" = "Lisää ”%1$@” kohtaan ”%2$@”, jotta voit vaihtaa alustoja ja ryhmiä palkin ollessa piilotettuna.";
+"platform_bar_disabled_hint" = "Alustapalkki on piilotettu. Avaa ”%@” napauttamalla ennen automaattisen piilotuksen käyttöönottoa.";
+
+"storage_files_group" = "Lataukset ja tiedostot";
+"storage_cache_group" = "Välimuisti ja väliaikaistiedostot";
+"storage_saved_group" = "Tallennettu sisältö";
+
+"storage_clear_offline_media_warning" = "Poistaa kaikki tämän sijainnin offline-videot ja niiden tiedostomerkinnät. Keskeneräiset tiedosto-/videolataukset, toisto ja viennit pysäytetään.";
+"storage_clear_active_temp_warning" = "Peruu keskeneräiset tiedosto-/videolataukset, pysäyttää toiston ja viennit ja poistaa vapautuneet väliaikaistiedostot. Valmiit lataukset säilytetään.";
+"storage_files_still_in_use" = "Joitakin tiedostoja käytetään yhä. Vapautuneet tiedostot on poistettu. Yritä pian uudelleen.";
+
+"storage_system_caches" = "Järjestelmän välimuisti";
+"storage_offline_media" = "Offline-videot";
+"storage_system_data_retained" = "Järjestelmätiedostot voivat jäädä käyttöön tai ne voidaan luoda uudelleen. Synkronoidut asetukset säilytetään.";
+
+"storage_clear_offline_remnants_warning" = "Poistaa offline-videot, joilla ei ole tiedostomerkintää. Tallennetut lataukset säilyvät. Keskeneräiset lataukset, toisto ja viennit pysäytetään.";
+
+"settings_ads_and_privacy" = "Mainokset ja tietosuoja";
+
+"storage_cleanup_cache_desc" = "Tyhjentää vapautettavan välimuistin ja tilapäistiedostot; käytössä olevat säilyvät.";
+"storage_cleanup_downloads_desc" = "Poistaa tallennetut ladatut tiedostot ja niiden merkinnät.";
+"storage_cleanup_wallpapers_desc" = "Poistaa taustakuvat suosikeista ja niiden tiedostot.";
+"storage_cleanup_reading_desc" = "Tyhjentää offline-artikkelit, kirjaston ja lukemisen edistymisen.";
+
+"storage_cleanup_offline_desc" = "Poistaa offline-videoiden jäänteet, joilla ei ole latausmerkintöjä.";

@@ -1,0 +1,47 @@
+{
+  "status": "code_complete_manual_acceptance_pending",
+  "version": "1.2.15 (56)",
+  "scope": [
+    "Other app data trash and bulk cleanup",
+    "Distinct cleanup labels for website data, wallpaper favorites and bookmarks",
+    "Atomic offline media package cleanup with referenced saved downloads preserved",
+    "Extra system-cache cleanup, with live catalogs retained and reported",
+    "Lazy native back-forward interaction state persistence",
+    "Privacy data-management consolidated into Storage",
+    "Ads and Privacy combined with segmented control and native horizontal paging",
+    "Generic extension installation lifecycle de-duplication",
+    "Extension list removes redundant state text and uses smaller titles",
+    "Wallpaper source preview width 80 to 70 points",
+    "Page background extension defaults enabled, saved false respected"
+  ],
+  "physical_inspection": {
+    "os": "27.2.1",
+    "app": "1.2.15 (56)",
+    "mode": "read_only",
+    "managed_media_packages": 3,
+    "managed_media_logical_bytes": 969928689,
+    "media_fragments": 1214,
+    "soulohls_references_in_documents": 0,
+    "synced_preferences": "iCloud change-token file; classified with settings; never raw-deleted",
+    "local_private_evidence": "/tmp/soulo-storage-device-20261116"
+  },
+  "validation": {
+    "latest_build": "passed: Debug arm64 simulator build-for-testing, minimum iOS16; latest-code-build-final.log",
+    "localization": "strict passed, 517 ReadingTools keys x 50 locales",
+    "metadata": "generated JSON --check passed, 50 locales",
+    "storage_unit": "24 tests passed on iOS 16.0 and 26.2 before subsequent UI changes",
+    "storage_ui": "26.2 scoped bulk cleanup passed; iOS16 deletion occurred and saved package survived, final navigation assertion missed an offscreen row; driver corrected, not rerun at user request",
+    "fixture_outcome": "1 MiB unlisted HLS package and 32 KiB cache removed, referenced 512 KiB saved package and .soulohls preserved",
+    "new_feature_regression": "not run after latest changes, per user instruction to deliver code for manual testing"
+  },
+  "limits": [
+    "System-owned active database files can remain or be recreated; cleanup does not falsely claim zero usage.",
+    "Navigation history discarded by older versions cannot be reconstructed.",
+    "Real-device media was inspected only; no user files were deleted.",
+    "No commit, push, deployment, or version increment."
+  ],
+  "references": [
+    "https://developer.apple.com/documentation/webkit/wkwebview/interactionstate",
+    "https://developer.apple.com/documentation/avfoundation/using-avfoundation-to-play-and-persist-http-live-streams"
+  ]
+}

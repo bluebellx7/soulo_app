@@ -1,0 +1,68 @@
+{
+  "status": "implemented_targeted_checks_passed",
+  "target": "https://www.4kcz.com/v_play/bXZfMTEwMzAtbm1fMQ==.html",
+  "implementation": "Generic v_play/v-play/vplay opaque-route episode groups, current-episode anchoring, same-origin/path-family checks, numeric-peer named specials and cached group validation; no site-specific host/class/token decoding.",
+  "real_page": {
+    "retrieval": "Direct existing Chrome through Playwright Core, media/image/font requests aborted; initial curl was blocked by site protection.",
+    "title": "凡人修仙传 第1集 _ 厂长资源",
+    "before_sources": 0,
+    "after_episodes": 202,
+    "named_specials": [
+      "虚天战纪-A-下",
+      "虚天战纪-A-上"
+    ],
+    "reply_link_excluded": true,
+    "duplicate_urls": false,
+    "verification": "Production detector executed against the saved rendered real DOM with page scripts removed and network blocked."
+  },
+  "checks": {
+    "browser_cases": 14,
+    "scope": [
+      "Captured real DOM",
+      "Independent hosts",
+      "v_play/v-play/vplay families",
+      "Leaf current marker",
+      "Named specials beside numeric peers",
+      "Unanchored/whole-container-active/duplicate-index rejection",
+      "Recommendations/pagination/cross-origin/mixed-family rejection",
+      "Existing MacCMS filtering"
+    ],
+    "javascript_syntax": "passed",
+    "swift_test_source_parse": "passed",
+    "diff_check": "passed",
+    "app_regression": "not run, per user code-first request"
+  },
+  "evidence": {
+    "captured_html": "/tmp/soulo-4kcz-rendered.html",
+    "before_result": "/tmp/soulo-4kcz-before.json",
+    "runner": "/tmp/soulo-4kcz-episode-qa.cjs",
+    "results": "/tmp/soulo-4kcz-episode-qa.json"
+  },
+  "website_followup": {
+    "sites": 72,
+    "categories": 11,
+    "removed_in_this_batch": [
+      "gagays.com",
+      "yyets.click",
+      "piaohua.com",
+      "dianying4k.com",
+      "dyjie.net",
+      "天府泰剧",
+      "animes.garden",
+      "i8k.tv",
+      "soupian.one",
+      "yysub.net",
+      "zyplayer.fun",
+      "mtzy.me"
+    ],
+    "replacement": {
+      "from": "https://y80s.tv/",
+      "to": "https://www.80sgod.com/",
+      "retained_site_id": "y80s"
+    },
+    "removed_category": "影视工具",
+    "static_checks": "passed",
+    "deployed": false
+  },
+  "distribution": "No commit, push, website upload, or version change."
+}

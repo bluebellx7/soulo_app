@@ -598,3 +598,34 @@
 
 
 "gestures_feedback_settings" = "手勢與回饋";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "平台";
+"toolbar_more_panel" = "更多面板";
+"show_platform_bar" = "顯示平台列";
+"toolbar_restore" = "回復預設";
+"platform_bar_hidden_hint" = "「%1$@」按鈕可在「%2$@」中加入，平台列隱藏後仍可快速切換平台與群組。";
+"platform_bar_disabled_hint" = "平台列已隱藏。點此開啟「%@」，再設定自動隱藏。";
+
+"storage_files_group" = "下載與檔案";
+"storage_cache_group" = "快取與暫存檔";
+"storage_saved_group" = "已儲存內容";
+
+"storage_clear_offline_media_warning" = "將刪除此位置的所有離線影片及關聯檔案項目，並停止未完成的檔案或影片下載、播放和匯出。";
+"storage_clear_active_temp_warning" = "將取消未完成的檔案或影片下載，並停止播放和匯出，再清理已釋放的暫存檔案。已完成的下載會保留。";
+"storage_files_still_in_use" = "部分檔案仍在使用，已清理可釋放的內容，請稍後重試。";
+
+"storage_system_caches" = "系統快取";
+"storage_offline_media" = "離線影片";
+"storage_system_data_retained" = "系統使用中的檔案可能保留或自動重建；同步設定會保留。";
+
+"storage_clear_offline_remnants_warning" = "刪除沒有檔案記錄的離線影片，保留已儲存的下載。未完成的下載、播放和匯出將停止。";
+
+"settings_ads_and_privacy" = "廣告與隱私";
+
+"storage_cleanup_cache_desc" = "清理可釋放的快取與暫存檔案，保留使用中的內容。";
+"storage_cleanup_downloads_desc" = "刪除已儲存的下載檔案和對應記錄。";
+"storage_cleanup_wallpapers_desc" = "取消收藏並刪除收藏桌布檔案。";
+"storage_cleanup_reading_desc" = "清理離線文章、書庫和閱讀進度。";
+
+"storage_cleanup_offline_desc" = "刪除沒有下載記錄的離線影片殘留。";

@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gesten & Feedback";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Plattformen";
+"toolbar_more_panel" = "Mehr-Menü";
+"show_platform_bar" = "Plattformleiste anzeigen";
+"toolbar_restore" = "Standard wiederherstellen";
+"platform_bar_hidden_hint" = "Füge „%1$@“ unter „%2$@“ hinzu, um bei ausgeblendeter Leiste Plattformen und Gruppen zu wechseln.";
+"platform_bar_disabled_hint" = "Die Plattformleiste ist ausgeblendet. Tippe, um „%@“ zu öffnen, bevor du das automatische Ausblenden aktivierst.";
+
+"storage_files_group" = "Downloads und Dateien";
+"storage_cache_group" = "Cache und temporäre Dateien";
+"storage_saved_group" = "Gespeicherte Inhalte";
+
+"storage_clear_offline_media_warning" = "Löscht alle Offlinevideos hier und ihre Dateieinträge. Unfertige Datei-/Videodownloads, Wiedergabe und Exporte werden gestoppt.";
+"storage_clear_active_temp_warning" = "Bricht unfertige Datei-/Videodownloads ab, stoppt Wiedergabe und Exporte und löscht freigegebene temporäre Dateien. Fertige Downloads bleiben erhalten.";
+"storage_files_still_in_use" = "Einige Dateien werden noch verwendet. Freigegebene Dateien wurden gelöscht. Bitte gleich erneut versuchen.";
+
+"storage_system_caches" = "Systemcache";
+"storage_offline_media" = "Offlinevideos";
+"storage_system_data_retained" = "Systemdateien können weiter verwendet oder neu erstellt werden. Synchronisierte Einstellungen bleiben erhalten.";
+
+"storage_clear_offline_remnants_warning" = "Löscht nicht aufgeführte Offlinevideos. Gespeicherte Downloads bleiben erhalten. Unfertige Downloads, Wiedergabe und Exporte werden gestoppt.";
+
+"settings_ads_and_privacy" = "Werbung & Datenschutz";
+
+"storage_cleanup_cache_desc" = "Löscht freigebbaren Cache und temporäre Dateien; verwendete Dateien bleiben.";
+"storage_cleanup_downloads_desc" = "Löscht gespeicherte Downloads und ihre Einträge.";
+"storage_cleanup_wallpapers_desc" = "Entfernt Hintergründe aus Favoriten und löscht ihre Dateien.";
+"storage_cleanup_reading_desc" = "Löscht Offlineartikel, die Buchbibliothek und den Lesefortschritt.";
+
+"storage_cleanup_offline_desc" = "Löscht Reste von Offlinevideos ohne Download-Einträge.";

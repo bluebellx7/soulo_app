@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "מחוות ומשוב";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "פלטפורמות";
+"toolbar_more_panel" = "חלונית עוד";
+"show_platform_bar" = "הצגת סרגל הפלטפורמות";
+"toolbar_restore" = "שחזור ברירות מחדל";
+"platform_bar_hidden_hint" = "הוסיפו את „%1$@” תחת „%2$@” כדי להחליף פלטפורמות וקבוצות כשהסרגל מוסתר.";
+"platform_bar_disabled_hint" = "סרגל הפלטפורמות מוסתר. הקישו לפתיחת „%@” לפני הפעלת הסתרה אוטומטית.";
+
+"storage_files_group" = "הורדות וקבצים";
+"storage_cache_group" = "מטמון וקבצים זמניים";
+"storage_saved_group" = "תוכן שמור";
+
+"storage_clear_offline_media_warning" = "מחיקת כל סרטוני האופליין כאן ורשומות הקבצים שלהם. הורדות קבצים/וידאו שלא הושלמו, הפעלה וייצוא יופסקו.";
+"storage_clear_active_temp_warning" = "ביטול הורדות קבצים/וידאו שלא הושלמו, עצירת הפעלה וייצוא ומחיקת קבצים זמניים ששוחררו. הורדות שהושלמו יישמרו.";
+"storage_files_still_in_use" = "חלק מהקבצים עדיין בשימוש. הקבצים ששוחררו נמחקו. נסו שוב בעוד רגע.";
+
+"storage_system_caches" = "מטמון המערכת";
+"storage_offline_media" = "סרטונים במצב לא מקוון";
+"storage_system_data_retained" = "קובצי מערכת עשויים להישאר בשימוש או להיווצר מחדש. ההגדרות המסונכרנות נשמרות.";
+
+"storage_clear_offline_remnants_warning" = "מוחק סרטונים לא מקוונים שאינם ברשימה. ההורדות השמורות נשמרות. הורדות שלא הושלמו, ניגון וייצוא ייעצרו.";
+
+"settings_ads_and_privacy" = "פרסומות ופרטיות";
+
+"storage_cleanup_cache_desc" = "מנקה מטמון וקבצים זמניים שניתן לשחרר; שומר קבצים בשימוש.";
+"storage_cleanup_downloads_desc" = "מוחק קבצים שהורדו ונשמרו ואת הרשומות שלהם.";
+"storage_cleanup_wallpapers_desc" = "מסיר רקעים מהמועדפים ומוחק את הקבצים שלהם.";
+"storage_cleanup_reading_desc" = "מנקה מאמרים לא מקוונים, את ספריית הספרים ואת התקדמות הקריאה.";
+
+"storage_cleanup_offline_desc" = "מוחק שאריות סרטונים לא מקוונים ללא רישומי הורדה.";

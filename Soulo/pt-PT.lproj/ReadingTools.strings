@@ -532,3 +532,34 @@
 
 
 "gestures_feedback_settings" = "Gestos e resposta";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Plataformas";
+"toolbar_more_panel" = "Painel Mais";
+"show_platform_bar" = "Mostrar barra de plataformas";
+"toolbar_restore" = "Repor predefinições";
+"platform_bar_hidden_hint" = "Adicione «%1$@» em «%2$@» para mudar de plataforma e grupo quando a barra estiver oculta.";
+"platform_bar_disabled_hint" = "A barra de plataformas está oculta. Toque para abrir «%@» antes de ativar a ocultação automática.";
+
+"storage_files_group" = "Transferências e ficheiros";
+"storage_cache_group" = "Cache e ficheiros temporários";
+"storage_saved_group" = "Conteúdo guardado";
+
+"storage_clear_offline_media_warning" = "Apaga todos os vídeos offline deste local e as respetivas entradas de ficheiro. As transferências de ficheiros/vídeos incompletas, a reprodução e as exportações serão interrompidas.";
+"storage_clear_active_temp_warning" = "Cancela as transferências de ficheiros/vídeos incompletas, interrompe a reprodução e as exportações e apaga os ficheiros temporários libertados. As transferências concluídas são mantidas.";
+"storage_files_still_in_use" = "Alguns ficheiros ainda estão em utilização. Os ficheiros libertados foram apagados. Tente novamente em breve.";
+
+"storage_system_caches" = "Cache do sistema";
+"storage_offline_media" = "Vídeos offline";
+"storage_system_data_retained" = "Os ficheiros do sistema podem continuar em uso ou ser recriados. As definições sincronizadas são mantidas.";
+
+"storage_clear_offline_remnants_warning" = "Elimina vídeos offline não listados. As transferências guardadas são mantidas. As transferências incompletas, a reprodução e as exportações param.";
+
+"settings_ads_and_privacy" = "Anúncios e privacidade";
+
+"storage_cleanup_cache_desc" = "Limpa cache e ficheiros temporários libertáveis; mantém os ficheiros em uso.";
+"storage_cleanup_downloads_desc" = "Elimina os ficheiros transferidos guardados e os respetivos registos.";
+"storage_cleanup_wallpapers_desc" = "Remove os fundos dos favoritos e elimina os seus ficheiros.";
+"storage_cleanup_reading_desc" = "Limpa artigos offline, a biblioteca e o progresso de leitura.";
+
+"storage_cleanup_offline_desc" = "Elimina restos de vídeos offline sem registos de transferência.";

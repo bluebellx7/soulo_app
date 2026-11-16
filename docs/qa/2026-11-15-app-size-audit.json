@@ -1,0 +1,152 @@
+{
+  "status": "completed_with_simulator_validation",
+  "build": "1.2.15 (56)",
+  "request": "Reduce the app size while retaining all functionality",
+  "measurement": {
+    "scope": "Sum of regular files in the same unsigned arm64 Release .app built with Xcode 26.2. Not the final App Store download or installed size.",
+    "before_bytes": 90529353,
+    "after_bytes": 84303849,
+    "changed_files": [
+      {
+        "file": "Assets.car",
+        "before": 12908952,
+        "after": 6683448,
+        "delta": -6225504
+      }
+    ],
+    "added_files": [],
+    "removed_files": [],
+    "saved_bytes": 6225504,
+    "saved_percent": 6.876779512607364,
+    "baseline_manifest": "/tmp/soulo-app-size-20261115/baseline-app.json",
+    "optimized_manifest": "/tmp/soulo-app-size-20261115/optimized-app.json",
+    "business_binary_comparison": "Every bundled file except Assets.car is SHA-256 identical; no files added or removed. This includes the app executable, MobileVLCKit, both extensions, localization tables, scripts and tracker data.",
+    "other_renditions": "Non-illustration renditions retain their catalog identities and digests except generated legacy Icon Image digest values. Icon source files, layered icon stacks and vector renditions are unchanged; no App icon source was modified."
+  },
+  "implementation": {
+    "changed_resources": 9,
+    "source_dimensions": [
+      1536,
+      1024
+    ],
+    "packaged_dimensions": [
+      840,
+      560
+    ],
+    "display_limit_points": 280,
+    "maximum_display_scale": 3,
+    "encoding": "PNG, sRGB, original alpha channel; Asset Catalog default lossless deepmap2",
+    "unchanged_artwork": [
+      "App icon and logo",
+      "Platform icons",
+      "IllustrationPlayback",
+      "IllustrationPageQR"
+    ],
+    "originals": "Unmodified image data remains in Git before this change and /tmp/soulo-app-size-20261115/lossless.xcassets/",
+    "runtime_behavior": "No new loaders, libraries, network access or startup work; ToolIllustration layout and feature logic are unchanged.",
+    "provenance": [
+      {
+        "path": "Soulo/Assets.xcassets/IllustrationAbout.imageset/illustration.png",
+        "original_sha256": "1e2a86b79b617fca470be0c81a9feb91b2953c9716334b19738850797a05644e",
+        "packaged_sha256": "976057e3ebc29fda5ab70c57e66fb7a26cfbfe23e61bda90e25335823826199e",
+        "before_bytes": 1872921,
+        "after_bytes": 386520
+      },
+      {
+        "path": "Soulo/Assets.xcassets/IllustrationBooks.imageset/illustration.png",
+        "original_sha256": "cb6230e4903a74308b9c5c7cf32f1e9b4b739cefbb5bb6c942cd0a517e979e45",
+        "packaged_sha256": "017d18b37b55082542ee3b753241e204de6643c7758ecf0daddec97c77129a45",
+        "before_bytes": 2009375,
+        "after_bytes": 432575
+      },
+      {
+        "path": "Soulo/Assets.xcassets/IllustrationQuickActions.imageset/illustration.png",
+        "original_sha256": "ce623d6eca15007d70590167b7a8fafc1b31a7d94b49d9480ee9ee8ae45bbe66",
+        "packaged_sha256": "d132ce9d0f7ce2c56e1c2195496a53942e61f4608ea639e291f4004ad8283c46",
+        "before_bytes": 2622271,
+        "after_bytes": 665027
+      },
+      {
+        "path": "Soulo/Assets.xcassets/IllustrationReview.imageset/illustration.png",
+        "original_sha256": "317bcc73dd9e9dfc18c909304cba56ac8fc4c2c0a190b67e3d2e3b6cd8623342",
+        "packaged_sha256": "8d543ad75c46efd900ffc6a241ebf4816d1f90942a3649610b8be76015f41390",
+        "before_bytes": 1961767,
+        "after_bytes": 418406
+      },
+      {
+        "path": "Soulo/Assets.xcassets/IllustrationDownloads.imageset/illustration.png",
+        "original_sha256": "f2c7cd944f53aece5db2cec35f12c919a88f816330cce354519fbb4b05c9775c",
+        "packaged_sha256": "2c98cd2faa5502812b21a4f4e83c4ac8c4bd671e766cd2706aea6b52ff12514d",
+        "before_bytes": 2130422,
+        "after_bytes": 474172
+      },
+      {
+        "path": "Soulo/Assets.xcassets/IllustrationTransfer.imageset/illustration.png",
+        "original_sha256": "b6fcd7264fac06a91c2c2a883c8d807d29a14d04f030cd254f8d602e6ef8ddd6",
+        "packaged_sha256": "01a065210c801d14da5013f94a4720e09415cf418f6faf9ff808412e6e88e383",
+        "before_bytes": 2019749,
+        "after_bytes": 407942
+      },
+      {
+        "path": "Soulo/Assets.xcassets/IllustrationHistory.imageset/illustration.png",
+        "original_sha256": "7f4b6f03ac1bef63ef9695eaf0d8fbe593ac927dfd6be28f0a3ec62f4997557c",
+        "packaged_sha256": "ed0168c3736c03417999f3292333d024f6dc2a5fbe76a7479b2b2f3974095ec9",
+        "before_bytes": 2042708,
+        "after_bytes": 417766
+      },
+      {
+        "path": "Soulo/Assets.xcassets/IllustrationFiles.imageset/illustration.png",
+        "original_sha256": "5e48e1d36ff94e077f1f49728f793bf3226cae487772f898607837e3962f0627",
+        "packaged_sha256": "b1cff202f39ed1afd0d85d116a96d6c27ad20fbeb60f16d83a9ed408ba3ec8a5",
+        "before_bytes": 1856417,
+        "after_bytes": 390714
+      },
+      {
+        "path": "Soulo/Assets.xcassets/IllustrationBookmarks.imageset/illustration.png",
+        "original_sha256": "0844ab701e4a54374df47d4a0d2811134fd78818411b949befaa9cd9b2e05f52",
+        "packaged_sha256": "295d339961c09d98e58cbda34f82343e666338b915e6efd1aa2211000ba84a92",
+        "before_bytes": 2052934,
+        "after_bytes": 418714
+      }
+    ]
+  },
+  "quality": {
+    "method": "Compare source and packaged catalog output at the actual 3x display width, composited on black and white sRGB backgrounds. Also visually inspect About and Quick Actions output.",
+    "minimum_psnr_db": 55.264553782852886,
+    "maximum_mean_absolute_channel_error_0_to_255": 0.1934750566893424,
+    "maximum_percent_channel_values_differing_over_10": 0,
+    "image_count": 11,
+    "evidence": "/tmp/soulo-app-size-20261115/display-sized-quality.json",
+    "other_candidates": "Native HEVC/GPU lossy variants were rejected after transparency-edge differences. Normalizing invisible RGB values produced identical compiled catalog data and no size reduction."
+  },
+  "verification": [
+    {
+      "scope": "Full device Release build",
+      "result": "passed",
+      "evidence": "/tmp/soulo-app-size-20261115/release-build.log"
+    },
+    {
+      "scope": "All 11 illustration assets load through UIKit and render at 3x; iOS 26.2 Simulator",
+      "result": "passed",
+      "evidence": "/tmp/soulo-app-size-20261115/artwork-ios26-2.xcresult"
+    },
+    {
+      "scope": "All 11 assets and minimum deployment compatibility; iOS 16.0 Simulator",
+      "result": "passed",
+      "evidence": "/tmp/soulo-app-size-20261115/artwork-ios16-native.xcresult"
+    },
+    {
+      "scope": "50-language strict localization check, generated App Store metadata check and whitespace check",
+      "result": "passed"
+    }
+  ],
+  "references": [
+    "https://developer.apple.com/documentation/xcode/reducing-your-app-s-size",
+    "https://developer.apple.com/library/archive/documentation/Xcode/Reference/xcode_ref-Asset_Catalog_Format/ImageSetType.html"
+  ],
+  "distribution": "No push, website deployment or TestFlight upload was performed for this size optimization.",
+  "verification_notes": [
+    "Initial preparation attempts with an incomplete XCTest injector environment were not counted as passing tests. Completed iOS 26.2 and iOS 16.0 runs both report TEST EXECUTE SUCCEEDED.",
+    "The iOS 16 run uses the same illustration files and ToolIllustration implementation in an isolated minimum-OS QA source copy; no physical device was operated."
+  ]
+}

@@ -516,7 +516,7 @@ struct AdBlockPreparedWebView: View {
 }
 
 struct WebViewRepresentable: UIViewRepresentable {
-    @AppStorage(AppConstants.StorageKeys.extendPageBackground) private var extendPageBackground = false
+    @AppStorage(AppConstants.StorageKeys.extendPageBackground) private var extendPageBackground = BrowserInitialPreferences.extendPageBackground
     @AppStorage(AppConstants.StorageKeys.freezePageBackgroundOnScroll) private var freezePageBackgroundOnScroll = false
     @AppStorage(BrowserSwipePreferences.enabledKey) private var twoFingerSwipeEnabled = BrowserSwipePreferences.enabledByDefault
     @AppStorage(BrowserSwipePreferences.noHistoryKey) private var noHistorySwipeAction = BrowserSwipeAction.closeTab.rawValue
@@ -1281,7 +1281,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private let pageEdgeSampler = WebPageEdgeSampler()
         private var lastPageEdgesEnabled: Bool?
         func synchronizePageEdges(on web: WKWebView, force: Bool = false, freezeOnScroll: Bool? = nil) {
-            let settingEnabled = UserDefaults.standard.bool(forKey: AppConstants.StorageKeys.extendPageBackground)
+            let settingEnabled = BrowserInitialPreferences.extendsPageBackground()
             if !settingEnabled, viewModel.pageEdgePalette != nil { viewModel.pageEdgePalette = nil }
             let enabled = settingEnabled && !WebPageEdgeSampler.shouldFreeze(viewModel, enabled: freezeOnScroll)
             if force || lastPageEdgesEnabled != enabled {
@@ -1737,7 +1737,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                       let url = message.frameInfo.requestURL else { return }
                 viewModel.recordDocumentInteraction(in: parent)
                 if body["event"] as? String == "click" {
-                    viewModel.recordPlatformPageTap(autoHideEnabled: UserDefaults.standard.bool(forKey: "auto_hide_platform_bar"))
+                    viewModel.recordPlatformPageTap(autoHideEnabled: PlatformBarPreferences.autoHides())
                 }
                 viewModel.mediaSession.allowUserNavigation()
                 viewModel.cancelBackwardTraversal()

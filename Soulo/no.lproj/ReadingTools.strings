@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Bevegelser og tilbakemelding";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Plattformer";
+"toolbar_more_panel" = "Mer-panelet";
+"show_platform_bar" = "Vis plattformlinje";
+"toolbar_restore" = "Gjenopprett standard";
+"platform_bar_hidden_hint" = "Legg til «%1$@» i «%2$@» for å bytte plattform og gruppe når plattformlinjen er skjult.";
+"platform_bar_disabled_hint" = "Plattformlinjen er skjult. Trykk for å åpne «%@» før automatisk skjuling slås på.";
+
+"storage_files_group" = "Nedlastinger og filer";
+"storage_cache_group" = "Buffer og midlertidige filer";
+"storage_saved_group" = "Lagret innhold";
+
+"storage_clear_offline_media_warning" = "Sletter alle frakoblede videoer her og filoppføringene deres. Ufullførte fil-/videonedlastinger, avspilling og eksport stoppes.";
+"storage_clear_active_temp_warning" = "Avbryter ufullførte fil-/videonedlastinger, stopper avspilling og eksport og sletter frigjorte midlertidige filer. Fullførte nedlastinger beholdes.";
+"storage_files_still_in_use" = "Noen filer er fortsatt i bruk. Frigjorte filer er slettet. Prøv igjen om litt.";
+
+"storage_system_caches" = "Systembuffer";
+"storage_offline_media" = "Frakoblede videoer";
+"storage_system_data_retained" = "Systemfiler kan fortsatt være i bruk eller opprettes på nytt. Synkroniserte innstillinger beholdes.";
+
+"storage_clear_offline_remnants_warning" = "Sletter frakoblede videoer uten filoppføring. Lagrede nedlastinger beholdes. Uferdige nedlastinger, avspilling og eksport stoppes.";
+
+"settings_ads_and_privacy" = "Annonser og personvern";
+
+"storage_cleanup_cache_desc" = "Tømmer frigjørbar buffer og midlertidige filer; filer i bruk beholdes.";
+"storage_cleanup_downloads_desc" = "Sletter lagrede nedlastede filer og oppføringene deres.";
+"storage_cleanup_wallpapers_desc" = "Fjerner bakgrunner fra favoritter og sletter filene deres.";
+"storage_cleanup_reading_desc" = "Tømmer frakoblede artikler, bokbiblioteket og lesefremdrift.";
+
+"storage_cleanup_offline_desc" = "Sletter rester av frakoblede videoer uten nedlastingsoppføringer.";

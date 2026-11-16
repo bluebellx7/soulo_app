@@ -65,6 +65,7 @@ private struct SavedTab: Codable {
     let pageTitle: String?
     let createdAt: Date?
     let lastAccessedAt: Date?
+    var interactionState: Data? = nil
 }
 
 private struct SavedState: Codable {
@@ -809,7 +810,8 @@ final class TabManager: ObservableObject {
                 platformName: tab.platform?.name,
                 pageTitle: tab.webViewModel.pageTitle,
                 createdAt: tab.createdAt,
-                lastAccessedAt: tab.lastAccessedAt
+                lastAccessedAt: tab.lastAccessedAt,
+                interactionState: tab.webViewModel.browserInteractionState(forPersistence: true)
             )
         }
         let restoredActiveIndex: Int
@@ -880,7 +882,8 @@ final class TabManager: ObservableObject {
             tab.webViewModel.setDesktopModeEnabled(prefersDesktopMode)
             tab.webViewModel.updateTitle(saved.pageTitle)
             if let url = restoredURL {
-                tab.webViewModel.loadCachedURL(url)
+                let interactionState = UserDefaults.standard.bool(forKey: BrowsingHistoryExitPolicy.preferenceKey) ? nil : saved.interactionState
+                tab.webViewModel.loadCachedURL(url, interactionState: interactionState)
             }
             tab.isAlive = false
             tab.suspendedURL = restoredURL

@@ -532,3 +532,34 @@
 
 
 "gestures_feedback_settings" = "Gestos i resposta";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Plataformes";
+"toolbar_more_panel" = "Tauler Més";
+"show_platform_bar" = "Mostra la barra de plataformes";
+"toolbar_restore" = "Restaura els valors";
+"platform_bar_hidden_hint" = "Afegeix «%1$@» a «%2$@» per canviar de plataforma i de grup quan la barra estigui oculta.";
+"platform_bar_disabled_hint" = "La barra de plataformes està oculta. Toca per obrir «%@» abans d’activar l’ocultació automàtica.";
+
+"storage_files_group" = "Baixades i fitxers";
+"storage_cache_group" = "Memòria cau i temporals";
+"storage_saved_group" = "Contingut desat";
+
+"storage_clear_offline_media_warning" = "Suprimeix tots els vídeos fora de línia d’aquí i les seves entrades de fitxer. S’aturaran les baixades de fitxers/vídeos inacabades, la reproducció i les exportacions.";
+"storage_clear_active_temp_warning" = "Cancel·la les baixades de fitxers/vídeos inacabades, atura la reproducció i les exportacions i esborra els fitxers temporals alliberats. Es conserven les baixades completades.";
+"storage_files_still_in_use" = "Alguns fitxers encara estan en ús. S’han esborrat els fitxers alliberats. Torna-ho a provar d’aquí a un moment.";
+
+"storage_system_caches" = "Memòria cau del sistema";
+"storage_offline_media" = "Vídeos sense connexió";
+"storage_system_data_retained" = "Els fitxers del sistema poden continuar en ús o tornar-se a crear. Es conserven els ajustos sincronitzats.";
+
+"storage_clear_offline_remnants_warning" = "Suprimeix els vídeos sense connexió no llistats. Conserva les baixades desades. S'aturen les baixades pendents, la reproducció i les exportacions.";
+
+"settings_ads_and_privacy" = "Anuncis i privadesa";
+
+"storage_cleanup_cache_desc" = "Neteja la memòria cau i els fitxers temporals alliberables; conserva els que s'utilitzen.";
+"storage_cleanup_downloads_desc" = "Suprimeix els fitxers baixats desats i els seus registres.";
+"storage_cleanup_wallpapers_desc" = "Treu els fons dels preferits i en suprimeix els fitxers.";
+"storage_cleanup_reading_desc" = "Neteja els articles sense connexió, la biblioteca i el progrés de lectura.";
+
+"storage_cleanup_offline_desc" = "Suprimeix les restes de vídeos sense connexió sense registre de baixada.";

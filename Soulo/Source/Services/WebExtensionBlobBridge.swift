@@ -8,6 +8,22 @@ import WebKit
 @MainActor
 @available(iOS 18.4, *)
 final class WebExtensionBlobBridge {
+    private final class WeakBridge {
+        weak var value: WebExtensionBlobBridge?
+        init(_ value: WebExtensionBlobBridge) { self.value = value }
+    }
+    private static var liveBridges: [WeakBridge] = []
+    init() {
+        Self.liveBridges.removeAll { $0.value == nil }
+        Self.liveBridges.append(WeakBridge(self))
+    }
+    /// Blob reads reopen their file between chunks, so descriptor inspection
+    /// alone cannot identify an active extension lease.
+    static var retainedTemporaryURLs: [URL] {
+        liveBridges.compactMap(\.value).flatMap { bridge in
+            bridge.entries.values.map(\.url) + bridge.workers.values.compactMap { $0.1.retainedTemporaryFileURL }
+        }
+    }
     private struct Entry {
         let owner: String
         let url: URL

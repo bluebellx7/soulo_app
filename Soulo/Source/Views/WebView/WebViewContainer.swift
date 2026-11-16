@@ -212,6 +212,7 @@ struct WebViewContainer: View {
     var onPageLoaded: (() -> Void)? = nil
     var topSafeAreaInset: CGFloat = 0
     var bottomSafeAreaInset: CGFloat = 0
+    var platformPicker: BrowserPlatformPickerContext? = nil
     @Environment(\.managedObjectContext) private var modelContext
     @EnvironmentObject private var searchVM: SearchViewModel
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
@@ -833,7 +834,7 @@ struct WebViewContainer: View {
             }
         }) {
             NavigationStack {
-                AdBlockManagementView(currentHost: webViewModel.currentURL?.host, showsDoneButton: true,
+                ProtectionSettingsView(currentHost: webViewModel.currentURL?.host, showsDoneButton: true,
                     currentURL: webViewModel.currentURL,
                     onMarkAdvertisement: webViewModel.canMarkAdvertisement ? {
                         markAdAfterDismiss = true
@@ -846,7 +847,7 @@ struct WebViewContainer: View {
         .sheet(isPresented: $showPrivacySettings) {
             if let tabManager {
                 NavigationStack {
-                    PrivacySettingsView()
+                    ProtectionSettingsView(initialPage: .privacy)
                         .toolbar {
                             ToolbarItem(placement: .confirmationAction) {
                                 Button(LanguageManager.shared.localizedString("done")) { showPrivacySettings = false }
@@ -1288,6 +1289,7 @@ struct WebViewContainer: View {
         WebViewToolbar(
             viewModel: webViewModel,
             isBookmarked: $isBookmarked,
+            platformPicker: platformPicker,
             tabManager: tabManager,
             onShare: {
                 shareCurrentPage()

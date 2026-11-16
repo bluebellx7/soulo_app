@@ -532,3 +532,34 @@
 
 
 "gestures_feedback_settings" = "Geste i odziv";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platforme";
+"toolbar_more_panel" = "Ploča Više";
+"show_platform_bar" = "Prikaži traku platformi";
+"toolbar_restore" = "Vrati zadano";
+"platform_bar_hidden_hint" = "Dodajte „%1$@” u „%2$@” za promjenu platformi i grupa kada je traka skrivena.";
+"platform_bar_disabled_hint" = "Traka platformi je skrivena. Dodirnite za otvaranje „%@” prije uključivanja automatskog skrivanja.";
+
+"storage_files_group" = "Preuzimanja i datoteke";
+"storage_cache_group" = "Predmemorija i privremene datoteke";
+"storage_saved_group" = "Spremljeni sadržaj";
+
+"storage_clear_offline_media_warning" = "Briše sve izvanmrežne videozapise ovdje i njihove zapise datoteka. Nedovršena preuzimanja datoteka/videozapisa, reprodukcija i izvozi zaustavit će se.";
+"storage_clear_active_temp_warning" = "Otkazuje nedovršena preuzimanja datoteka/videozapisa, zaustavlja reprodukciju i izvoze te briše oslobođene privremene datoteke. Dovršena preuzimanja ostaju.";
+"storage_files_still_in_use" = "Neke se datoteke još koriste. Oslobođene datoteke su izbrisane. Pokušajte ponovno uskoro.";
+
+"storage_system_caches" = "Predmemorija sustava";
+"storage_offline_media" = "Izvanmrežni videozapisi";
+"storage_system_data_retained" = "Datoteke sustava mogu ostati u upotrebi ili se ponovno stvoriti. Sinkronizirane postavke ostaju sačuvane.";
+
+"storage_clear_offline_remnants_warning" = "Briše izvanmrežne videozapise bez zapisa datoteke. Spremljena preuzimanja ostaju. Nedovršena preuzimanja, reprodukcija i izvozi se zaustavljaju.";
+
+"settings_ads_and_privacy" = "Oglasi i privatnost";
+
+"storage_cleanup_cache_desc" = "Čisti oslobodivu predmemoriju i privremene datoteke; zadržava one u upotrebi.";
+"storage_cleanup_downloads_desc" = "Briše spremljene preuzete datoteke i njihove zapise.";
+"storage_cleanup_wallpapers_desc" = "Uklanja pozadine iz favorita i briše njihove datoteke.";
+"storage_cleanup_reading_desc" = "Čisti izvanmrežne članke, knjižnicu i napredak čitanja.";
+
+"storage_cleanup_offline_desc" = "Briše ostatke izvanmrežnih videozapisa bez zapisa preuzimanja.";

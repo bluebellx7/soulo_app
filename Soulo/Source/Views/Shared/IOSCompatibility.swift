@@ -1,6 +1,48 @@
 import SwiftUI
 import WebKit
 
+private struct SegmentedValueSwipeModifier<Selection: Equatable>: ViewModifier {
+    @Binding var selection: Selection
+    let values: [Selection]
+    @Environment(\.layoutDirection) private var layoutDirection
+    @GestureState private var swipeToken: UUID?
+    @State private var originToken: UUID?
+    @State private var originSelection: Selection?
+
+    func body(content: Content) -> some View {
+        content.simultaneousGesture(
+            DragGesture(minimumDistance: 24, coordinateSpace: .local)
+                .updating($swipeToken) { _, token, _ in
+                    if token == nil { token = UUID() }
+                }
+                .onChanged { _ in
+                    guard let swipeToken, originToken != swipeToken else { return }
+                    originToken = swipeToken
+                    originSelection = selection
+                }
+                .onEnded { drag in
+                    defer { originToken = nil; originSelection = nil }
+                    let horizontal = drag.translation.width
+                    guard abs(horizontal) >= 24,
+                          abs(horizontal) > abs(drag.translation.height) * 1.5,
+                          let index = values.firstIndex(of: originSelection ?? selection) else { return }
+                    let physicalStep = horizontal < 0 ? 1 : -1
+                    let next = index + (layoutDirection == .rightToLeft ? -physicalStep : physicalStep)
+                    guard values.indices.contains(next) else { return }
+                    selection = values[next]
+                }
+        )
+    }
+}
+
+extension View {
+    /// Attach only to the segmented picker. The surrounding form keeps its
+    /// scrolling, text selection and other horizontal interactions.
+    func segmentedValueSwipe<Selection: Equatable>(selection: Binding<Selection>, values: [Selection]) -> some View {
+        modifier(SegmentedValueSwipeModifier(selection: selection, values: values))
+    }
+}
+
 extension WKWebView {
     func evaluateCompatibleJavaScript(_ source: String) async throws -> Any? {
         try await evaluateJavaScript(source)
@@ -80,6 +122,49 @@ extension View {
                 if let value = item.wrappedValue { destination(value) }
             }
         }
+    }
+
+    /// iOS 16 cannot reliably push an optional media destination while that
+    /// destination immediately presents the fullscreen player. Present media
+    /// independently of the navigation stack; keep document previews as pushes.
+    @ViewBuilder
+    func compatiblePreviewDestination<Item: Identifiable, Destination: View>(
+        item: Binding<Item?>, isMedia: @escaping (Item) -> Bool,
+        @ViewBuilder destination: @escaping (Item) -> Destination
+    ) -> some View {
+        if #available(iOS 17.0, *) {
+            compatibleNavigationDestination(item: item, destination: destination)
+        } else {
+            legacyPreviewDestination(item: item, isMedia: isMedia, destination: destination)
+        }
+    }
+
+    @ViewBuilder
+    func compatiblePreviewDestination<Item: Identifiable & Hashable, Destination: View>(
+        item: Binding<Item?>, isMedia: @escaping (Item) -> Bool,
+        @ViewBuilder destination: @escaping (Item) -> Destination
+    ) -> some View {
+        if #available(iOS 17.0, *) {
+            navigationDestination(item: item, destination: destination)
+        } else {
+            legacyPreviewDestination(item: item, isMedia: isMedia, destination: destination)
+        }
+    }
+
+    private func legacyPreviewDestination<Item: Identifiable, Destination: View>(
+        item: Binding<Item?>, isMedia: @escaping (Item) -> Bool,
+        @ViewBuilder destination: @escaping (Item) -> Destination
+    ) -> some View {
+        let document = Binding<Item?>(
+            get: { item.wrappedValue.flatMap { isMedia($0) ? nil : $0 } },
+            set: { item.wrappedValue = $0 })
+        let media = Binding<Item?>(
+            get: { item.wrappedValue.flatMap { isMedia($0) ? $0 : nil } },
+            set: { item.wrappedValue = $0 })
+        return compatibleNavigationDestination(item: document, destination: destination)
+            .fullScreenCover(item: media) { value in
+                NavigationStack { destination(value) }
+            }
     }
 
     @ViewBuilder
@@ -290,14 +375,21 @@ private struct LegacyEmptyLabelStyle: LabelStyle {
 extension View {
     /// Before 16.4 SwiftUI adapts every compact popover to a full-height sheet.
     /// Use UIKit's non-adapting popover so the same menu stays content-sized.
-    @ViewBuilder
     func compatiblePopover<Panel: View>(isPresented: Binding<Bool>,
         attachmentAnchor: PopoverAttachmentAnchor = .rect(.bounds), arrowEdge: Edge = .top,
-        @ViewBuilder content: @escaping () -> Panel) -> some View {
+        @ViewBuilder content: @escaping () -> Panel) -> AnyView {
+        // Keep both OS branches and the potentially large panel type out of
+        // the caller's metadata. On device, resolving a deeply nested toolbar
+        // type can exhaust the main stack before the popover is even opened.
         if #available(iOS 16.4, *) {
-            popover(isPresented: isPresented, attachmentAnchor: attachmentAnchor, arrowEdge: arrowEdge, content: content)
+            return AnyView(popover(isPresented: isPresented, attachmentAnchor: attachmentAnchor, arrowEdge: arrowEdge) {
+                AnyView(content())
+            })
         } else {
-            background(LegacyContentPopover(isPresented: isPresented, arrowEdge: arrowEdge, panel: content()))
+            // Keep the anchor mounted, but build the legacy panel only when
+            // shown. Its stable AnyView type preserves updates and dismissal.
+            return AnyView(background(LegacyContentPopover(isPresented: isPresented, arrowEdge: arrowEdge,
+                panel: isPresented.wrappedValue ? AnyView(content()) : AnyView(EmptyView()))))
         }
     }
 }

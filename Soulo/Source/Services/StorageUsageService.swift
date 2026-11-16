@@ -1,8 +1,10 @@
 import Foundation
 import WebKit
+import Darwin
+import CoreData
 
 enum StorageUsageCategory: String, CaseIterable, Identifiable, Sendable {
-    case webData, tabSnapshots, favicons, wallpaperCache, otherCaches, temporaryFiles, ruleCache
+    case webData, websiteStorage, tabSnapshots, favicons, wallpaperCache, otherCaches, temporaryFiles, ruleCache
     case wallpapers, downloads, downloadTasks, readingData, backups, filterRules, extensions, personalData, sharedData, otherData
     var id: Self { self }
     var canClear: Bool { [.webData, .tabSnapshots, .favicons, .wallpaperCache, .otherCaches, .temporaryFiles, .ruleCache, .downloadTasks].contains(self) }
@@ -39,40 +41,60 @@ struct StorageUsageLocations: Sendable {
     }
 }
 
+struct StorageCleanupReport: Sendable {
+    var retainedCategories: Set<StorageUsageCategory> = []
+    var failures: [String] = []
+    mutating func merge(_ other: Self) {
+        retainedCategories.formUnion(other.retainedCategories); failures += other.failures
+    }
+    @MainActor var notice: String? {
+        guard !retainedCategories.isEmpty || !failures.isEmpty else { return nil }
+        return ([FeatureText.text("Manage saved content in its own list. Active temporary files and system cache databases are released when safe.")]
+            + retainedCategories.map(\.title).sorted() + failures).joined(separator: "\n\n")
+    }
+}
+
 /// Inventory covers app-container and shared files separately from the installed
 /// bundle. Destructive saved-data actions stay in their existing owner pages;
 /// regenerable cache categories have an explicit, confirmed cleanup action.
 enum StorageUsageService {
     private static let sessionStartedAt = Date()
     static func prepareSession() { _ = sessionStartedAt }
-    @MainActor static func inventory() async -> StorageUsageInventory {
-        let locations = StorageUsageLocations.current
-        let task = Task.detached(priority: .utility) { measureInventory(locations: locations) }
-        return await withTaskCancellationHandler(operation: { await task.value }, onCancel: { task.cancel() })
+    @MainActor private static let inventoryCache = StorageInventoryCache { appBytes in
+        measureInventory(locations: .current, knownAppBytes: appBytes)
+    }
+    @MainActor static var cachedInventory: StorageUsageInventory? { inventoryCache.value }
+    @MainActor static func invalidateInventory() { inventoryCache.invalidate() }
+    @MainActor static func inventory(forceRefresh: Bool = false) async -> StorageUsageInventory {
+        await inventoryCache.inventory(forceRefresh: forceRefresh)
     }
 
     @MainActor static func scan() async -> [StorageUsageRecord] { await inventory().records }
 
-    @MainActor
-    static func clear(_ category: StorageUsageCategory, tabManager: TabManager? = nil) async throws {
+    @discardableResult @MainActor
+    static func clear(_ category: StorageUsageCategory, tabManager: TabManager? = nil) async throws -> StorageCleanupReport {
         guard category.canClear else { throw CocoaError(.fileWriteNoPermission) }
+        invalidateInventory()
+        defer { invalidateInventory() }
+        var report = StorageCleanupReport()
         switch category {
         case .webData:
             URLCache.shared.removeAllCachedResponses()
-            await WebsiteStorageService.clearBrowserCaches()
+            report = await WebsiteStorageService.clearBrowserCaches()
         case .tabSnapshots:
             tabManager?.tabs.forEach { $0.webViewModel.clearSnapshotCache() }
             await WebViewModel.deleteAllPersistedSnapshotsAndWait()
         case .favicons:
             WebsiteFaviconService.shared.clear()
         case .ruleCache:
-            try await clearCompiledRuleCache(in: WKContentRuleListStore.default())
+            do { try await clearCompiledRuleCache(in: WKContentRuleListStore.default()) }
+            catch { report.retainedCategories.insert(.ruleCache); report.failures.append(error.localizedDescription) }
             let locations = StorageUsageLocations.current
-            try await Task.detached(priority: .utility) { try clearAdditionalCache(.ruleCache, locations: locations, olderThan: .distantFuture) }.value
+            report.merge(try await Task.detached(priority: .utility) { try clearAdditionalCache(.ruleCache, locations: locations, olderThan: .distantFuture) }.value)
         case .downloadTasks:
             let retained = Set(DownloadManagerService.shared.downloads.map(\.id)).union(TorrentDownloadService.shared.jobs.map(\.id))
             let locations = StorageUsageLocations.current, cutoff = sessionStartedAt
-            try await Task.detached(priority: .utility) { try clearUnusedDownloadData(locations: locations, retainedIDs: retained, olderThan: cutoff) }.value
+            report.merge(try await Task.detached(priority: .utility) { try clearUnusedDownloadData(locations: locations, retainedIDs: retained, olderThan: cutoff) }.value)
         case .wallpaperCache, .otherCaches, .temporaryFiles:
             if category == .temporaryFiles,
                DownloadManagerService.shared.downloads.contains(where: { [.inProgress, .paused].contains($0.status) }) {
@@ -81,24 +103,35 @@ enum StorageUsageService {
             if category == .wallpaperCache { WallpaperManager.shared.prepareForImageCacheCleanup() }
             if category == .otherCaches { URLCache.shared.removeAllCachedResponses() }
             let locations = StorageUsageLocations.current, cutoff = sessionStartedAt
-            try await Task.detached(priority: .utility) { try clearAdditionalCache(category, locations: locations, olderThan: cutoff) }.value
-        case .wallpapers, .downloads, .readingData, .backups, .filterRules,
+            report.merge(try await Task.detached(priority: .utility) { try clearAdditionalCache(category, locations: locations, olderThan: cutoff) }.value)
+        case .websiteStorage, .wallpapers, .downloads, .readingData, .backups, .filterRules,
              .extensions, .personalData, .sharedData, .otherData:
             throw CocoaError(.fileWriteNoPermission)
         }
+        return report
+    }
+
+    @MainActor static func clearWebsiteData() async -> StorageCleanupReport {
+        invalidateInventory()
+        defer { invalidateInventory() }
+        URLCache.shared.removeAllCachedResponses()
+        HTTPCookieStorage.shared.removeCookies(since: .distantPast)
+        return await WebsiteStorageService.clearAll()
     }
 
     @MainActor static func clearCompiledRuleCache(in store: WKContentRuleListStore) async throws {
         let identifiers: [String] = await withCheckedContinuation { continuation in
             store.getAvailableContentRuleListIdentifiers { continuation.resume(returning: $0 ?? []) }
         }
+        var failures: [String] = []
         for identifier in identifiers where identifier.hasPrefix("SouloAdBlock") {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            do { try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 store.removeContentRuleList(forIdentifier: identifier) { error in
                     if let error { continuation.resume(throwing: error) } else { continuation.resume() }
                 }
-            }
+            } } catch { failures.append(error.localizedDescription) }
         }
+        if !failures.isEmpty { throw NSError(domain: "Soulo.StorageCleanup", code: 1, userInfo: [NSLocalizedDescriptionKey: failures.joined(separator: "\n")]) }
     }
 
     /// Pure disk portion, also used with isolated temporary locations in tests.
@@ -213,10 +246,11 @@ extension StorageUsageService {
     /// One background filesystem walk counts every regular file in the app's
     /// Documents, Library, temporary and shared containers, excluding links.
     /// Allocated size, not preallocated logical download length, is reported.
-    static func measureInventory(locations: StorageUsageLocations) -> StorageUsageInventory {
+    static func measureInventory(locations: StorageUsageLocations, knownAppBytes: Int64? = nil) -> StorageUsageInventory {
         let manager = FileManager.default
         let keys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey,
             .fileAllocatedSizeKey, .totalFileAllocatedSizeKey, .fileSizeKey]
+        let classifier = StoragePathClassifier(locations: locations)
         var visited = Set<String>(), totals: [StorageUsageCategory: Int64] = [:]
         var entries: [String: StorageDiskEntry] = [:]
         let roots = [locations.documents, locations.library, locations.temporary,
@@ -224,14 +258,15 @@ extension StorageUsageService {
         func walk(_ url: URL, forced: StorageUsageCategory? = nil) {
             guard !Task.isCancelled,
                   let info = try? url.resourceValues(forKeys: keys), info.isSymbolicLink != true,
-                  visited.insert(url.standardizedFileURL.path).inserted else { return }
+                  visited.insert(classifier.normalizedPath(url.path)).inserted else { return }
             if info.isDirectory == true {
                 for child in (try? manager.contentsOfDirectory(at: url, includingPropertiesForKeys: Array(keys))) ?? [] { walk(child, forced: forced) }
             } else if info.isRegularFile == true {
-                let category = forced ?? Self.category(for: url, locations: locations)
+                let path = classifier.normalizedPath(url.path)
+                let category = forced ?? classifier.category(path)
                 let bytes = Int64(max(0, info.totalFileAllocatedSize ?? info.fileAllocatedSize ?? info.fileSize ?? 0))
                 totals[category] = adding(totals[category] ?? 0, bytes)
-                let (bucket, label) = Self.bucket(for: url, locations: locations)
+                let (bucket, label) = classifier.bucket(path)
                 let key = category.rawValue + ":" + bucket.path
                 if var old = entries[key] { old.bytes = adding(old.bytes, bytes); entries[key] = old }
                 else { entries[key] = .init(url: bucket, displayPath: label, category: category, bytes: bytes) }
@@ -245,97 +280,36 @@ extension StorageUsageService {
         }
         for root in roots { walk(root) }
         var bundleVisited = Set<String>()
-        let appBytes = locations.appBundle.map { allocatedBytes(at: $0, includeHLSReferences: false, visited: &bundleVisited) } ?? 0
+        let appBytes = knownAppBytes ?? locations.appBundle.map { allocatedBytes(at: $0, includeHLSReferences: false, visited: &bundleVisited) } ?? 0
         return .init(records: StorageUsageCategory.allCases.map { .init(category: $0, bytes: totals[$0] ?? 0, isEstimated: false) },
             entries: entries.values.sorted { $0.bytes == $1.bytes ? $0.displayPath < $1.displayPath : $0.bytes > $1.bytes }, appBytes: appBytes)
     }
 
-    private static func relative(_ url: URL, in root: URL?) -> [String]? {
-        guard let root else { return nil }
-        let prefix = root.standardizedFileURL.path + "/", path = url.standardizedFileURL.path
-        guard path.hasPrefix(prefix) else { return nil }
-        return path.dropFirst(prefix.count).split(separator: "/").map(String.init)
-    }
-
-    private static func category(for url: URL, locations: StorageUsageLocations) -> StorageUsageCategory {
-        if relative(url, in: locations.downloads) != nil { return .downloads }
-        if let parts = relative(url, in: locations.applicationSupport), let first = parts.first {
-            switch first {
-            case "SouloTabSnapshots": return .tabSnapshots
-            case "WallpaperFavorites": return .wallpapers
-            case "BookLibrary.json", "BookCovers", "ReadingList.json": return .readingData
-            case "AdBlock": return .filterRules
-            case "SouloExtensions": return .extensions
-            case "TorrentTasks", "ED2KTasks", "DownloadResumeData", "SeparatedMediaDownloads": return .downloadTasks
-            case "Soulo": return parts.dropFirst().first == "SettingsBackups" ? .backups : .personalData
-            default:
-                if first.hasPrefix("SouloLibrary.sqlite") { return .personalData }
-            }
-        }
-        if let parts = relative(url, in: locations.caches), let first = parts.first {
-            switch first {
-            case "SouloTabSnapshots": return .tabSnapshots
-            case "wallpaper_hd": return .wallpapers // legacy favorite originals
-            case "CurrentWallpaper", "WallpaperSourcePreviews": return .wallpaperCache
-            case "SouloFavicons": return .favicons
-            case "SouloAdBlockStartup": return .ruleCache
-            case "BackgroundDownloadStaging": return .downloadTasks
-            default:
-                if parts.contains("SouloFavicons") { return .favicons }
-                if parts.contains("ContentRuleLists") { return .ruleCache }
-                if parts.contains(where: { $0.localizedCaseInsensitiveContains("webkit") }) { return .webData }
-                return .otherCaches
-            }
-        }
-        if let parts = relative(url, in: locations.documents), let first = parts.first,
-           first.hasPrefix("custom_wallpaper") { return .wallpapers }
-        if let parts = relative(url, in: locations.temporary), let first = parts.first {
-            if first == "SouloAuthenticatedHLS" || first.hasPrefix("SouloHLS") || first.hasPrefix("SouloStreaming") { return .downloadTasks }
-            if first.hasPrefix("extension-script-host-") { return .extensions }
-            return .temporaryFiles
-        }
-        if let parts = relative(url, in: locations.library), let first = parts.first {
-            if first == "WebKit", parts.contains("ContentRuleLists") { return .ruleCache }
-            if ["WebKit", "Cookies", "HTTPStorages"].contains(first) { return .webData }
-            if first == "Preferences" { return .personalData }
-        }
-        if relative(url, in: locations.sharedContainer) != nil { return .sharedData }
-        return .otherData
-    }
-
-    private static func bucket(for url: URL, locations: StorageUsageLocations) -> (URL, String) {
-        let roots: [(URL?, String)] = [(locations.downloads, "Downloads"), (locations.applicationSupport, "Application Support"),
-            (locations.caches, "Caches"), (locations.documents, "Documents"), (locations.temporary, "Temporary"),
-            (locations.library, "Library"), (locations.sharedContainer, "Shared")]
-        for (root, title) in roots {
-            if let parts = relative(url, in: root), let first = parts.first, let root {
-                let selected = first == "Soulo" && parts.count > 1 ? Array(parts.prefix(2)) : [first]
-                return (selected.reduce(root) { $0.appendingPathComponent($1) }, ([title] + selected).joined(separator: "/"))
-            }
-        }
-        return (url, url.lastPathComponent)
-    }
-
     /// Clear only regenerable roots. User content and resumable downloads must
     /// go through their owning services rather than raw filesystem deletion.
+    @discardableResult
     static func clearAdditionalCache(_ category: StorageUsageCategory, locations: StorageUsageLocations,
-                                     olderThan cutoff: Date) throws {
+                                     olderThan cutoff: Date) throws -> StorageCleanupReport {
         let manager = FileManager.default
         let base: URL
         switch category {
         case .wallpaperCache, .otherCaches, .ruleCache: base = locations.caches
         case .temporaryFiles:
-            guard let temporary = locations.temporary else { return }; base = temporary
+            guard let temporary = locations.temporary else { return .init() }; base = temporary
         default: throw CocoaError(.fileWriteNoPermission)
         }
+        guard manager.fileExists(atPath: base.path) else { return .init() }
         guard (try? base.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == false else { throw ReadingToolError.unsafePath }
         let children = try manager.contentsOfDirectory(at: base, includingPropertiesForKeys: [.isSymbolicLinkKey, .contentModificationDateKey])
+        var report = StorageCleanupReport()
+        let classifier = StoragePathClassifier(locations: locations)
         for child in children {
+            do {
             let info = try child.resourceValues(forKeys: [.isSymbolicLinkKey, .contentModificationDateKey])
             guard info.isSymbolicLink != true else { continue }
             // Classify a child path, including an empty directory, using the
             // same rule as inventory. Never traverse a user-supplied symlink.
-            guard self.category(for: child.appendingPathComponent(".probe"), locations: locations) == category else { continue }
+            guard classifier.category(child.appendingPathComponent(".probe").path) == category else { continue }
             if category == .otherCaches {
                 let name = child.lastPathComponent
                 // Their live database files belong to URLCache / WebKit APIs.
@@ -343,19 +317,28 @@ extension StorageUsageService {
             }
             if category == .temporaryFiles {
                 guard let modified = info.contentModificationDate, modified < cutoff,
-                      !containsFileModified(since: cutoff, at: child) else { continue }
+                      !containsFileModified(since: cutoff, at: child) else { report.retainedCategories.insert(category); continue }
             }
             guard child.standardizedFileURL.resolvingSymlinksInPath().deletingLastPathComponent()
                     == base.standardizedFileURL.resolvingSymlinksInPath() else { throw ReadingToolError.unsafePath }
             try manager.removeItem(at: child)
+            } catch {
+                if manager.fileExists(atPath: child.path) {
+                    report.retainedCategories.insert(category)
+                    report.failures.append(child.lastPathComponent + " · " + error.localizedDescription)
+                }
+            }
         }
+        return report
     }
 
     /// Reclaim only abandoned intermediates whose UUID is absent from both
     /// download histories. Paused tasks, torrent metadata, current-session
     /// files and final user downloads remain owned by their existing services.
-    static func clearUnusedDownloadData(locations: StorageUsageLocations, retainedIDs: Set<UUID>, olderThan cutoff: Date) throws {
+    @discardableResult
+    static func clearUnusedDownloadData(locations: StorageUsageLocations, retainedIDs: Set<UUID>, olderThan cutoff: Date) throws -> StorageCleanupReport {
         let manager=FileManager.default
+        var report = StorageCleanupReport()
         var roots = [locations.applicationSupport.appendingPathComponent("DownloadResumeData"),
             locations.applicationSupport.appendingPathComponent("SeparatedMediaDownloads"),
             locations.applicationSupport.appendingPathComponent("TorrentTasks"),
@@ -365,19 +348,28 @@ extension StorageUsageService {
         for root in roots {
             guard let info=try? root.resourceValues(forKeys:[.isDirectoryKey,.isSymbolicLinkKey]),
                   info.isDirectory == true, info.isSymbolicLink != true else {continue}
+            do {
             for child in try manager.contentsOfDirectory(at:root,includingPropertiesForKeys:[.isSymbolicLinkKey,.contentModificationDateKey]) {
+                do {
                 let info=try child.resourceValues(forKeys:[.isSymbolicLinkKey,.contentModificationDateKey])
                 guard info.isSymbolicLink != true, let id=UUID(uuidString:String(child.lastPathComponent.prefix(36))),
                       !retainedIDs.contains(id), let modified=info.contentModificationDate,modified < cutoff,
                       !containsFileModified(since:cutoff,at:child),
                       child.standardizedFileURL.resolvingSymlinksInPath().deletingLastPathComponent()
-                        == root.standardizedFileURL.resolvingSymlinksInPath() else {continue}
+                        == root.standardizedFileURL.resolvingSymlinksInPath() else { report.retainedCategories.insert(.downloadTasks); continue }
                 try manager.removeItem(at:child)
+                } catch {
+                    if manager.fileExists(atPath: child.path) {
+                        report.retainedCategories.insert(.downloadTasks); report.failures.append(error.localizedDescription)
+                    }
+                }
             }
+            } catch { report.retainedCategories.insert(.downloadTasks); report.failures.append(error.localizedDescription) }
         }
+        return report
     }
 
-    private static func containsFileModified(since date: Date, at root: URL) -> Bool {
+    fileprivate static func containsFileModified(since date: Date, at root: URL) -> Bool {
         let keys: Set<URLResourceKey> = [.isSymbolicLinkKey, .contentModificationDateKey]
         guard let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: Array(keys)) else { return false }
         for case let file as URL in files {
@@ -421,9 +413,11 @@ enum WebsiteStorageService {
     static let cacheTypes: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache,
         WKWebsiteDataTypeOfflineWebApplicationCache, WKWebsiteDataTypeFetchCache, WKWebsiteDataTypeServiceWorkerRegistrations]
 
-    @MainActor static func entries() async -> [WebsiteStorageEntry] {
+    @MainActor static func entries(onList: (([WebsiteStorageEntry]) -> Void)? = nil) async -> [WebsiteStorageEntry] {
         let records = await records()
         var types = records.reduce(into: [String: Set<String>]()) { $0[$1.displayName, default: []].formUnion($1.dataTypes) }
+        onList?(types.map { .init(domain: $0.key, dataTypes: $0.value, bytes: nil) }
+            .sorted { $0.domain.localizedStandardCompare($1.domain) == .orderedAscending })
         let root = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0].appendingPathComponent("WebKit")
         let domains = Set(types.keys)
         let measured = await Task.detached(priority: .utility) { measure(root: root, domains: domains) }.value
@@ -446,6 +440,8 @@ enum WebsiteStorageService {
     }
 
     @MainActor static func clear(_ entry: WebsiteStorageEntry, types: Set<String>) async throws {
+        StorageUsageService.invalidateInventory()
+        defer { StorageUsageService.invalidateInventory() }
         if types == cacheTypes, let id = UUID(uuidString: entry.domain), #available(iOS 18.4, *) {
             try await NativeWebExtensionRuntime.shared.clearTemporaryCaches(identifiers: [id])
             return
@@ -457,7 +453,7 @@ enum WebsiteStorageService {
         }
     }
 
-    @MainActor static func clearBrowserCaches() async {
+    @discardableResult @MainActor static func clearBrowserCaches() async -> StorageCleanupReport {
         // Do not bypass the active-media guard by deleting extension caches as
         // part of the global website-store removal first.
         let matching = await records().filter { UUID(uuidString: $0.displayName) == nil }
@@ -466,7 +462,44 @@ enum WebsiteStorageService {
                 WKWebsiteDataStore.default().removeData(ofTypes: cacheTypes, for: matching) { continuation.resume() }
             }
         }
-        if #available(iOS 18.4, *) { try? await NativeWebExtensionRuntime.shared.clearTemporaryCaches() }
+        var report = StorageCleanupReport()
+        if #available(iOS 18.4, *) {
+            do { try await NativeWebExtensionRuntime.shared.clearTemporaryCaches() }
+            catch {
+                report.retainedCategories.insert(.webData)
+                if !(error is WebExtensionTemporaryCacheError) { report.failures.append(error.localizedDescription) }
+            }
+        }
+        return report
+    }
+
+    /// One confirmed action clears every website's databases, cache and login
+    /// storage. Active extension media remains protected, without preventing
+    /// removal of other sites. The full-store API also covers unlisted origins.
+    @MainActor static func clearAll() async -> StorageCleanupReport {
+        var report = StorageCleanupReport()
+        var extensionsInUse = false
+        if #available(iOS 18.4, *) {
+            do { try await NativeWebExtensionRuntime.shared.clearTemporaryCaches() }
+            catch {
+                extensionsInUse = true; report.retainedCategories.insert(.websiteStorage)
+                if !(error is WebExtensionTemporaryCacheError) { report.failures.append(error.localizedDescription) }
+            }
+        }
+        let store = WKWebsiteDataStore.default(), types = WKWebsiteDataStore.allWebsiteDataTypes()
+        if extensionsInUse {
+            let sites = await records().filter { UUID(uuidString: $0.displayName) == nil }
+            if !sites.isEmpty {
+                await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+                    store.removeData(ofTypes: types, for: sites) { c.resume() }
+                }
+            }
+        } else {
+            await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+                store.removeData(ofTypes: types, modifiedSince: .distantPast) { c.resume() }
+            }
+        }
+        return report
     }
 
     static func measure(root: URL, domains: Set<String>) -> [String: WebsiteStorageBytes] {
@@ -547,5 +580,640 @@ enum WebsiteStorageService {
         }
         guard origin() != nil, let client = origin(), position == bytes.count else { return nil }
         return client
+    }
+}
+
+/// Keep one scan in flight and reuse the immutable installed-bundle size.
+/// Invalidating during cleanup prevents a pre-deletion scan from winning later.
+@MainActor final class StorageInventoryCache {
+    private let scan: @Sendable (Int64?) -> StorageUsageInventory
+    private var inFlight: (UUID, Task<StorageUsageInventory, Never>)?
+    private var measuredAt = Date.distantPast
+    private var appBytes: Int64?
+    private(set) var value: StorageUsageInventory?
+
+    init(scan: @escaping @Sendable (Int64?) -> StorageUsageInventory) { self.scan = scan }
+
+    func invalidate() {
+        inFlight?.1.cancel(); inFlight = nil
+        value = nil; measuredAt = .distantPast
+    }
+
+    func inventory(forceRefresh: Bool = false) async -> StorageUsageInventory {
+        if !forceRefresh, let value, Date().timeIntervalSince(measuredAt) < 15 { return value }
+        let work: (UUID, Task<StorageUsageInventory, Never>)
+        if let inFlight { work = inFlight }
+        else {
+            let scan = scan, appBytes = appBytes
+            work = (UUID(), Task.detached(priority: .utility) { scan(appBytes) })
+            inFlight = work
+        }
+        let result = await work.1.value
+        if inFlight?.0 == work.0 {
+            inFlight = nil
+            if !work.1.isCancelled {
+                value = result; appBytes = result.appBytes; measuredAt = Date()
+            }
+        } else if work.1.isCancelled, !Task.isCancelled {
+            return await inventory(forceRefresh: false)
+        }
+        return result
+    }
+}
+
+/// Paths are prepared once per inventory. No per-file filesystem resolution or
+/// repeated root URL construction is needed to classify thousands of entries.
+struct StoragePathClassifier {
+    private let downloads: String, support: String, caches: String
+    private let documents: String?, library: String?, temporary: String?, shared: String?
+    private let buckets: [(String, String)]
+    private let aliases: [(String, String)]
+
+    init(locations: StorageUsageLocations) {
+        func path(_ url: URL) -> String { Self.foldPrivatePrefix(url.standardizedFileURL.resolvingSymlinksInPath().path) + "/" }
+        let roots = [locations.downloads, locations.applicationSupport, locations.caches,
+            locations.documents, locations.library, locations.temporary, locations.sharedContainer].compactMap { $0 }
+        var mappings: [String: String] = [:]
+        for root in roots {
+            let canonical = path(root)
+            for variant in [root.path, root.standardizedFileURL.path, root.resolvingSymlinksInPath().path] {
+                mappings[Self.foldPrivatePrefix(variant) + "/"] = canonical
+            }
+        }
+        aliases = mappings.map { ($0.key, $0.value) }.sorted { $0.0.count > $1.0.count }
+        downloads = path(locations.downloads); support = path(locations.applicationSupport); caches = path(locations.caches)
+        documents = locations.documents.map(path); library = locations.library.map(path)
+        temporary = locations.temporary.map(path); shared = locations.sharedContainer.map(path)
+        buckets = [(Optional(locations.downloads), "Downloads"), (locations.applicationSupport, "Application Support"),
+                   (locations.caches, "Caches"), (locations.documents, "Documents"), (locations.temporary, "Temporary"),
+                   (locations.library, "Library"), (locations.sharedContainer, "Shared")]
+            .compactMap { url, name in url.map { (path($0), name) } }
+    }
+
+    private func parts(_ path: String, under root: String?) -> [Substring]? {
+        guard let root, path.hasPrefix(root) else { return nil }
+        return path.dropFirst(root.count).split(separator: "/")
+    }
+
+    private static func foldPrivatePrefix(_ path: String) -> String {
+        // Directory enumeration on physical devices returns /private/var even
+        // when Foundation's sandbox roots and resolvingSymlinks return /var.
+        if path.hasPrefix("/private/var/") || path.hasPrefix("/private/tmp/") { return String(path.dropFirst(8)) }
+        return path
+    }
+
+    func normalizedPath(_ rawPath: String) -> String {
+        let path = Self.foldPrivatePrefix(rawPath)
+        for (alias, canonical) in aliases {
+            if path.hasPrefix(alias) { return canonical + path.dropFirst(alias.count) }
+            if path == alias.dropLast() { return String(canonical.dropLast()) }
+        }
+        return path
+    }
+
+    func category(_ rawPath: String) -> StorageUsageCategory {
+        let path = normalizedPath(rawPath)
+        if path.hasPrefix(downloads) { return .downloads }
+        if let parts = parts(path, under: support), let first = parts.first {
+            switch first {
+            case "SouloTabSnapshots": return .tabSnapshots
+            case "WallpaperFavorites": return .wallpapers
+            case "BookLibrary.json", "BookCovers", "ReadingList.json": return .readingData
+            case "AdBlock": return .filterRules
+            case "SouloExtensions": return .extensions
+            case "TorrentTasks", "ED2KTasks", "DownloadResumeData", "SeparatedMediaDownloads": return .downloadTasks
+            case "Soulo": return parts.dropFirst().first == "SettingsBackups" ? .backups : .personalData
+            default: if first.hasPrefix("SouloLibrary.sqlite") || first == ".SouloLibrary_SUPPORT" { return .personalData }
+            }
+        }
+        if let parts = parts(path, under: caches), let first = parts.first {
+            switch first {
+            case "SouloTabSnapshots": return .tabSnapshots
+            case "wallpaper_hd": return .wallpapers
+            case "CurrentWallpaper", "WallpaperSourcePreviews": return .wallpaperCache
+            case "SouloAdBlockStartup": return .ruleCache
+            case "BackgroundDownloadStaging": return .downloadTasks
+            default: break
+            }
+            if parts.contains("SouloFavicons") {
+                // URLCache keeps its live SQLite catalog after response removal.
+                return parts.contains("fsCachedData") ? .favicons : .otherData
+            }
+            if parts.contains("ContentRuleLists") { return .ruleCache }
+            if parts.contains(where: { ["IndexedDB", "LocalStorage", "FileSystem", "BackgroundFetch"].contains($0) }) { return .websiteStorage }
+            if parts.contains(where: { $0.localizedCaseInsensitiveContains("webkit") }) || parts.contains("fsCachedData") {
+                return .webData
+            }
+            // These live system databases cannot be removed with raw unlink.
+            if first.hasPrefix(".") || first.hasPrefix("com.") || first.hasPrefix("org.") || first.hasPrefix("nsurlsession") { return .otherData }
+            return .otherCaches
+        }
+        if let parts = parts(path, under: documents), parts.first?.hasPrefix("custom_wallpaper") == true { return .wallpapers }
+        if let parts = parts(path, under: temporary), let first = parts.first {
+            if first == "SouloAuthenticatedHLS" || first.hasPrefix("SouloHLS") || first.hasPrefix("SouloStreaming") { return .downloadTasks }
+            if first.hasPrefix("extension-script-host-") { return .extensions }
+            return .temporaryFiles
+        }
+        if let parts = parts(path, under: library), let first = parts.first {
+            if first == "WebKit" {
+                if parts.contains("ContentRuleLists") { return .ruleCache }
+                if parts.contains(where: { ["CacheStorage", "NetworkCache", "ServiceWorkers", "ApplicationCache"].contains($0) }) { return .webData }
+                return .websiteStorage
+            }
+            if first == "HTTPStorages" || first == "Cookies" { return .websiteStorage }
+            if first == "Preferences" || first == "SyncedPreferences" { return .personalData }
+        }
+        if let shared, path.hasPrefix(shared) { return .sharedData }
+        return .otherData
+    }
+
+    func bucket(_ rawPath: String) -> (URL, String) {
+        let path = normalizedPath(rawPath)
+        for (root, title) in buckets where path.hasPrefix(root) {
+            let parts = path.dropFirst(root.count).split(separator: "/", maxSplits: 2)
+            guard let first = parts.first else { continue }
+            let selected = first == "Soulo" && parts.count > 1 ? parts.prefix(2) : parts.prefix(1)
+            let suffix = selected.joined(separator: "/")
+            return (URL(fileURLWithPath: root + suffix), title + "/" + suffix)
+        }
+        let url = URL(fileURLWithPath: path)
+        return (url, url.lastPathComponent)
+    }
+}
+
+/// Explicit destructive media cleanup. Ordinary cache cleanup never stops work.
+enum StorageMediaCleanup {
+    @MainActor private static var running = false
+
+    private static func canonicalPath(_ url: URL) -> String {
+        let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+        return path.hasPrefix("/private/var/") || path.hasPrefix("/private/tmp/") ? String(path.dropFirst(8)) : path
+    }
+
+    static func isManagedContainer(_ url: URL, locations: StorageUsageLocations) -> Bool {
+        guard let library = locations.library,
+              url.lastPathComponent.hasPrefix("com.apple.UserManagedAssets."),
+              let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]),
+              values.isDirectory == true, values.isSymbolicLink != true else { return false }
+        return canonicalPath(url.deletingLastPathComponent()) == canonicalPath(library)
+    }
+
+    @MainActor static func clear(container: URL? = nil, preservingReferencedMedia: Bool = false) async throws -> StorageCleanupReport {
+        guard !running else { throw WebExtensionTemporaryCacheError.inUse }
+        let places = StorageUsageLocations.current
+        if let container, !isManagedContainer(container, locations: places) { throw ReadingToolError.unsafePath }
+        running = true
+        let cleanupStarted = Date()
+        StorageUsageService.invalidateInventory()
+        defer { running = false; StorageUsageService.invalidateInventory() }
+
+        // This path is reached only after a warning that unfinished transfers,
+        // playback and exports will stop. Preserve completed ordinary files.
+        MediaSession.shared.stop()
+        MediaExportBackgroundService.shared.cancelForStorageCleanup()
+        let manager = DownloadManagerService.shared
+        let unfinished = manager.downloads.filter {
+            [.inProgress, .paused].contains($0.status) && ![.torrent, .ed2k].contains($0.transport)
+        }
+        unfinished.forEach { manager.delete($0) }
+        await StreamingMediaDownloadService.shared.cancelTasksForStorageCleanup()
+        await SeparatedMediaDownloadService.shared.cancelTasksForStorageCleanup()
+        await BackgroundDownloadService.shared.cancelTasksForStorageCleanup()
+        var quiet = false
+        for _ in 0..<30 {
+            let background = await BackgroundDownloadService.shared.pendingTasksForStorageCleanup()
+            let streaming = await StreamingMediaDownloadService.shared.pendingTasksForStorageCleanup()
+            let separated = await SeparatedMediaDownloadService.shared.pendingTasksForStorageCleanup()
+            if !background && !streaming && !separated && !MediaExportBackgroundService.shared.hasJobsForStorageCleanup {
+                quiet = true; break
+            }
+            try await Task.sleep(for: .milliseconds(200))
+        }
+        let category: StorageUsageCategory = container == nil ? .temporaryFiles : .otherData
+        // A system downloader can hold assets in another process. Never unlink
+        // its managed directory while cancellation/finalization is outstanding.
+        if container != nil && !quiet {
+            return .init(retainedCategories: [category], failures: [ToolText.text("storage_files_still_in_use")])
+        }
+        let cutoff = quiet ? (container == nil ? Date() : .distantFuture) : cleanupStarted
+        let preserveTransfers = !quiet
+        var retainedLeases = Set<String>()
+        if #available(iOS 18.4, *) {
+            retainedLeases = Set(WebExtensionBlobBridge.retainedTemporaryURLs.map(canonicalPath))
+        }
+        let protectedLeases = retainedLeases
+        let result = try await Task.detached(priority: .utility) {
+            let root = container ?? places.temporary
+            guard let root else { return (StorageCleanupReport(), [URL]()) }
+            let preserved = preservingReferencedMedia ? Set(references(in: places.documents, under: root).map { canonicalPath($0.1) }) : []
+            return try removeFilesAndReferences(at: root, category: category, locations: places,
+                protectedPaths: openFilePaths().union(protectedLeases), olderThan: cutoff, removeRoot: container != nil,
+                preserveTransfers: preserveTransfers, preservedPackages: preserved)
+        }.value
+        for reference in result.1 { manager.didDeleteLocalFile(at: reference) }
+        if !result.1.isEmpty { manager.removeMissingFiles() }
+        var report = result.0
+        if !quiet { report.retainedCategories.insert(category) }
+        if !report.retainedCategories.isEmpty { report.failures.append(ToolText.text("storage_files_still_in_use")) }
+        return report
+    }
+
+    static func removeFilesAndReferences(at root: URL, category: StorageUsageCategory, locations: StorageUsageLocations,
+                                        protectedPaths: Set<String>, olderThan cutoff: Date,
+                                        removeRoot: Bool, preserveTransfers: Bool = false,
+                                        preservedPackages: Set<String> = []) throws -> (StorageCleanupReport, [URL]) {
+        let ownedReferences = removeRoot ? references(in: locations.documents, under: root) : []
+        var report = try removeReleasedFiles(at: root, category: category, locations: locations,
+            protectedPaths: protectedPaths, olderThan: cutoff, removeRoot: removeRoot,
+            preserveTransfers: preserveTransfers, preservedPackages: preservedPackages)
+        var removed: [URL] = []
+        for (reference, package) in ownedReferences where !FileManager.default.fileExists(atPath: package.path) {
+            do {
+                try LibraryFileActions.delete([reference], in: reference.deletingLastPathComponent())
+                removed.append(reference)
+            } catch { report.failures.append(reference.lastPathComponent + " · " + error.localizedDescription) }
+        }
+        return (report, removed)
+    }
+
+    /// File descriptors are inspected only in our own process, using public
+    /// Darwin APIs. An open decoder, exporter or importer keeps its file.
+    static func openFilePaths() -> Set<String> {
+        var result = Set<String>()
+        for fd in 0..<getdtablesize() {
+            var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
+            if fcntl(fd, F_GETPATH, &buffer) == 0 {
+                let url = URL(fileURLWithPath: String(cString: buffer))
+                result.insert(canonicalPath(url))
+            }
+        }
+        return result
+    }
+
+    static func references(in documents: URL?, under container: URL) -> [(URL, URL)] {
+        guard let documents,
+              let scan = FileManager.default.enumerator(at: documents, includingPropertiesForKeys: [.isSymbolicLinkKey, .fileSizeKey]) else { return [] }
+        let prefix = canonicalPath(container) + "/"
+        var result: [(URL, URL)] = []
+        for case let file as URL in scan {
+            guard let values = try? file.resourceValues(forKeys: [.isSymbolicLinkKey, .fileSizeKey]), values.isSymbolicLink != true else {
+                scan.skipDescendants(); continue
+            }
+            guard file.pathExtension.lowercased() == OfflineHLSReference.fileExtension,
+                  (values.fileSize ?? Int.max) <= 1024 * 1024,
+                  let package = try? OfflineHLSReference.packageURL(for: file),
+                  canonicalPath(package).hasPrefix(prefix) else { continue }
+            result.append((file, package))
+        }
+        return result
+    }
+
+    /// Continue per file, protecting open files, links, and new writes. Only a
+    /// validated managed-assets container or the supplied temporary root enters.
+    static func removeReleasedFiles(at root: URL, category: StorageUsageCategory, locations: StorageUsageLocations,
+                                    protectedPaths: Set<String>, olderThan cutoff: Date,
+                                    removeRoot: Bool, preserveTransfers: Bool = false,
+                                    preservedPackages: Set<String> = []) throws -> StorageCleanupReport {
+        let manager = FileManager.default
+        let isManaged = isManagedContainer(root, locations: locations)
+        let isTemporary = locations.temporary.map {
+            canonicalPath(root) == canonicalPath($0)
+        } == true
+        guard (removeRoot && isManaged) || (!removeRoot && isTemporary),
+              (try? root.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == false else { throw ReadingToolError.unsafePath }
+        var report = StorageCleanupReport()
+        let classifier = StoragePathClassifier(locations: locations)
+        let rootPath = canonicalPath(root)
+        func retain(_ url: URL, error: Error? = nil) {
+            report.retainedCategories.insert(category)
+            if let error, report.failures.count < 20 { report.failures.append(url.lastPathComponent + " · " + error.localizedDescription) }
+        }
+        func walk(_ file: URL, isRoot: Bool = false) {
+            do {
+                let values = try file.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .contentModificationDateKey])
+                guard values.isSymbolicLink != true else { retain(file); return }
+                let path = canonicalPath(file)
+                guard path == rootPath || path.hasPrefix(rootPath + "/") else { retain(file, error: ReadingToolError.unsafePath); return }
+                if preservedPackages.contains(path) { return }
+                guard !protectedPaths.contains(path) else { retain(file); return }
+                if preserveTransfers && !isRoot,
+                   classifier.category(file.appendingPathComponent(".probe").path) == .downloadTasks
+                    || (preserveTransfers && file.lastPathComponent.hasPrefix("CFNetworkDownload")) {
+                    retain(file); return
+                }
+                if !removeRoot && !isRoot {
+                    // Extension script hosts are persistent extension state,
+                    // even when their compatibility host lives under tmp.
+                    let owner = classifier.category(file.appendingPathComponent(".probe").path)
+                    guard [.temporaryFiles, .downloadTasks].contains(owner) else { return }
+                    let name = file.lastPathComponent.lowercased()
+                    if name.contains("webkit") || name.hasPrefix("com.apple.")
+                        || ["sqlite", "sqlite3", "db"].contains(file.pathExtension.lowercased())
+                        || name.hasSuffix("-wal") || name.hasSuffix("-shm") {
+                        // WebKit/system processes own these handles; their
+                        // caches must be released through the website APIs.
+                        retain(file); return
+                    }
+                }
+                if values.isDirectory == true {
+                    // Offline HLS bundles are private AVFoundation packages.
+                    // Keep or delete the whole asset; removing individual
+                    // fragments could corrupt a package that is still playing.
+                    if file.pathExtension.lowercased() == "movpkg" {
+                        guard !protectedPaths.contains(where: { $0.hasPrefix(path + "/") }),
+                              !StorageUsageService.containsFileModified(since: cutoff, at: file) else {
+                            retain(file); return
+                        }
+                        try manager.removeItem(at: file)
+                        return
+                    }
+                    for child in try manager.contentsOfDirectory(at: file, includingPropertiesForKeys: nil) { walk(child) }
+                    if (!isRoot || removeRoot), try manager.contentsOfDirectory(atPath: file.path).isEmpty {
+                        try manager.removeItem(at: file)
+                    }
+                } else if values.isRegularFile == true {
+                    guard let modified = values.contentModificationDate, modified < cutoff else { retain(file); return }
+                    try manager.removeItem(at: file)
+                } else { retain(file) }
+            } catch {
+                if manager.fileExists(atPath: file.path) { retain(file, error: error) }
+            }
+        }
+        walk(root, isRoot: true)
+        return report
+    }
+}
+
+/// Extra system caches use a narrow allowlist. Cloud tokens and preference
+/// journals are settings, and live URLCache databases remain owned by the API.
+enum StorageOtherCleanup {
+    static func canClearCache(_ url: URL, locations: StorageUsageLocations) -> Bool {
+        guard (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == false else { return false }
+        let classifier = StoragePathClassifier(locations: locations)
+        let parent = classifier.normalizedPath(url.deletingLastPathComponent().path)
+        if parent == classifier.normalizedPath(locations.caches.path) {
+            return classifier.category(url.appendingPathComponent(".probe").path) == .otherData
+        }
+        return locations.library.map { parent == classifier.normalizedPath($0.path) } == true
+            && ["SplashBoard", "Saved Application State", "LanguageModeling"].contains(url.lastPathComponent)
+    }
+
+    @MainActor static func clearCaches(entry: URL? = nil) async throws -> StorageCleanupReport {
+        let places = StorageUsageLocations.current
+        if let entry, !canClearCache(entry, locations: places) { throw ReadingToolError.unsafePath }
+        StorageUsageService.invalidateInventory()
+        defer { StorageUsageService.invalidateInventory() }
+        URLCache.shared.removeAllCachedResponses()
+        WebsiteFaviconService.shared.clear()
+        let cutoff = Date()
+        var report = try await Task.detached(priority: .utility) {
+            let roots: [URL]
+            if let entry { roots = [entry] }
+            else {
+                roots = [Optional(places.caches), places.library].compactMap { $0 }.flatMap {
+                    (try? FileManager.default.contentsOfDirectory(at: $0, includingPropertiesForKeys: [.isSymbolicLinkKey])) ?? []
+                }.filter { canClearCache($0, locations: places) }
+            }
+            var result = StorageCleanupReport()
+            let protected = StorageMediaCleanup.openFilePaths()
+            for root in roots {
+                result.merge(try removeCacheFiles(at: root, locations: places, protectedPaths: protected, olderThan: cutoff))
+            }
+            return result
+        }.value
+        if !report.retainedCategories.isEmpty { report.failures.append(ToolText.text("storage_system_data_retained")) }
+        return report
+    }
+
+    @MainActor static func clearOfflineMedia() async throws -> StorageCleanupReport {
+        let places = StorageUsageLocations.current
+        guard let library = places.library else { return .init() }
+        let roots = try FileManager.default.contentsOfDirectory(at: library, includingPropertiesForKeys: [.isSymbolicLinkKey])
+            .filter { StorageMediaCleanup.isManagedContainer($0, locations: places) }
+        var report = StorageCleanupReport()
+        for root in roots {
+            do { report.merge(try await StorageMediaCleanup.clear(container: root, preservingReferencedMedia: true)) }
+            catch { report.retainedCategories.insert(.otherData); report.failures.append(error.localizedDescription) }
+        }
+        return report
+    }
+
+    static func removeCacheFiles(at root: URL, locations: StorageUsageLocations, protectedPaths: Set<String>,
+                                 olderThan cutoff: Date) throws -> StorageCleanupReport {
+        guard canClearCache(root, locations: locations) else { throw ReadingToolError.unsafePath }
+        let manager = FileManager.default, classifier = StoragePathClassifier(locations: locations)
+        let rootPath = classifier.normalizedPath(root.path)
+        var report = StorageCleanupReport()
+        func retain(_ file: URL, error: Error? = nil) {
+            report.retainedCategories.insert(.otherData)
+            if let error, report.failures.count < 20 { report.failures.append(file.lastPathComponent + " · " + error.localizedDescription) }
+        }
+        func walk(_ file: URL) {
+            do {
+                let values = try file.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .isRegularFileKey, .contentModificationDateKey])
+                let path = classifier.normalizedPath(file.path)
+                guard values.isSymbolicLink != true, path == rootPath || path.hasPrefix(rootPath + "/") else { retain(file); return }
+                guard !protectedPaths.contains(path) else { retain(file); return }
+                guard classifier.category(file.appendingPathComponent(".probe").path) == .otherData else { return }
+                if values.isDirectory == true {
+                    for child in try manager.contentsOfDirectory(at: file, includingPropertiesForKeys: nil) { walk(child) }
+                    if try manager.contentsOfDirectory(atPath: file.path).isEmpty { try manager.removeItem(at: file) }
+                } else if values.isRegularFile == true {
+                    let name = file.lastPathComponent.lowercased()
+                    // A SQLite/LMDB catalog can be open in a system process.
+                    guard !["sqlite", "sqlite3", "db", "mdb"].contains(file.pathExtension.lowercased()),
+                          !name.hasSuffix("-wal"), !name.hasSuffix("-shm"), !name.hasSuffix("-journal"),
+                          let modified = values.contentModificationDate, modified < cutoff else { retain(file); return }
+                    try manager.removeItem(at: file)
+                } else { retain(file) }
+            } catch { if manager.fileExists(atPath: file.path) { retain(file, error: error) } }
+        }
+        walk(root)
+        return report
+    }
+}
+
+struct StorageCleanupEstimate: Sendable {
+    let bytes: Int64?
+    let isEstimated: Bool
+}
+
+/// A cleanup scope can differ from an inventory category: favorite wallpapers
+/// exclude the selected custom background, and orphan HLS assets exclude saved
+/// Downloads. Shared database records use logical content estimates, not a
+/// repeated charge for the complete SQLite store.
+enum StorageCleanupEstimateService {
+    @MainActor static func estimates(records: [StorageUsageRecord], context: NSManagedObjectContext? = nil) async -> [StorageCleanupChoice: StorageCleanupEstimate] {
+        let locations = StorageUsageLocations.current
+        let favoriteIDs = WallpaperManager.shared.favorites.map(\.id)
+        async let fileEstimates = Task.detached(priority: .utility) {
+            let scan = StorageCleanupEstimateScanner(locations: locations)
+            return scan.estimates(favoriteIDs: favoriteIDs)
+        }.value
+        var result: [StorageCleanupChoice: StorageCleanupEstimate] = [:]
+        for record in records where record.canClear {
+            result[.cache(record.category)] = .init(bytes: record.isEstimated ? nil : record.bytes, isEstimated: record.isEstimated)
+        }
+        let websites = records.filter { [.webData, .websiteStorage].contains($0.category) }
+        let websitesKnown = websites.count == 2 && !websites.contains(where: \.isEstimated)
+        result[.websiteData] = .init(bytes: websitesKnown ? websites.reduce(0) { StorageUsageService.adding($0, $1.bytes) } : nil,
+                                    isEstimated: !websitesKnown)
+        result[.history] = .init(bytes: nil, isEstimated: true)
+        result[.bookmarks] = .init(bytes: nil, isEstimated: true)
+        if let coordinator = context?.persistentStoreCoordinator {
+            let worker = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+            worker.persistentStoreCoordinator = coordinator
+            worker.undoManager = nil
+            let logical = await worker.perform {
+                var values: [StorageCleanupChoice: StorageCleanupEstimate] = [:]
+                let scopes: [(StorageCleanupChoice, [String])] = [
+                    (.history, [SearchHistoryRecord.entityName]),
+                    (.bookmarks, [BookmarkRecord.entityName, BookmarkFolderRecord.entityName])
+                ]
+                for (choice, entities) in scopes {
+                    do {
+                        var total: Int64 = 0
+                        for entityName in entities {
+                            let request = NSFetchRequest<NSManagedObject>(entityName: entityName)
+                            request.fetchBatchSize = 128
+                            request.includesPendingChanges = false
+                            for row in try worker.fetch(request) {
+                                total = try autoreleasepool {
+                                    var fields: [String: Any] = [:]
+                                    for key in row.entity.attributesByName.keys {
+                                        guard let value = row.value(forKey: key) else { continue }
+                                        if let id = value as? UUID { fields[key] = id.uuidString }
+                                        else { fields[key] = value }
+                                    }
+                                    let payload = try PropertyListSerialization.data(fromPropertyList: fields, format: .binary, options: 0)
+                                    let size = StorageUsageService.adding(total, Int64(payload.count))
+                                    worker.refresh(row, mergeChanges: false)
+                                    return size
+                                }
+                            }
+                        }
+                        values[choice] = .init(bytes: total, isEstimated: true)
+                    } catch { values[choice] = .init(bytes: nil, isEstimated: true) }
+                }
+                return values
+            }
+            result.merge(logical) { _, new in new }
+        }
+        result.merge(await fileEstimates) { _, new in new }
+        return result
+    }
+}
+
+private final class StorageCleanupEstimateScanner {
+    private let locations: StorageUsageLocations
+    private let manager = FileManager.default
+    private let classifier: StoragePathClassifier
+    private let keys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey,
+        .fileAllocatedSizeKey, .totalFileAllocatedSizeKey, .fileSizeKey, .contentModificationDateKey]
+
+    init(locations: StorageUsageLocations) {
+        self.locations = locations
+        classifier = StoragePathClassifier(locations: locations)
+    }
+
+    func estimates(favoriteIDs: [String]) -> [StorageCleanupChoice: StorageCleanupEstimate] {
+        var result: [StorageCleanupChoice: StorageCleanupEstimate] = [:]
+        var complete = true
+        let downloads = children(locations.downloads, skipHidden: true, complete: &complete)
+        result[.downloadedFiles] = estimate(downloads, followingReferences: true, complete: complete)
+
+        let originals = FavoriteWallpaperImageStore(applicationSupport: locations.applicationSupport, caches: locations.caches)
+        let favoriteFiles = favoriteIDs.flatMap { originals.imageURLs(for: $0) }
+        result[.wallpapers] = estimate(favoriteFiles)
+        result[.reading] = estimate(["BookLibrary.json", "BookCovers", "ReadingList.json"].map {
+            locations.applicationSupport.appendingPathComponent($0)
+        })
+
+        complete = true
+        let backupsDirectory = locations.applicationSupport.appendingPathComponent("Soulo/SettingsBackups")
+        let backups = children(backupsDirectory, complete: &complete).compactMap { file -> URL? in
+            guard file.pathExtension == "json",
+                  (try? file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])).map({ $0.isRegularFile == true && $0.isSymbolicLink != true }) == true else { return nil }
+            guard let data = try? Data(contentsOf: file), let backup = try? JSONDecoder().decode(CloudSettingsBackup.self, from: data), backup.version == 1 else { return nil }
+            // deleteAll() resolves each decoded backup by its identifier.
+            return backupsDirectory.appendingPathComponent(backup.id.uuidString + ".json")
+        }
+        result[.backups] = estimate(backups, complete: complete)
+
+        complete = true
+        let libraryChildren = locations.library.map { children($0, complete: &complete) } ?? []
+        let managed = libraryChildren.filter { StorageMediaCleanup.isManagedContainer($0, locations: locations) }
+        var packages: [URL] = []
+        for container in managed {
+            let savedPaths = Set(StorageMediaCleanup.references(in: locations.documents, under: container).map { classifier.normalizedPath($0.1.path) })
+            func findPackages(_ directory: URL) {
+                for file in children(directory, complete: &complete) {
+                    guard let values = try? file.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]), values.isSymbolicLink != true else { continue }
+                    guard values.isDirectory == true else { continue }
+                    if file.pathExtension.lowercased() == "movpkg" {
+                        if !savedPaths.contains(classifier.normalizedPath(file.path)) { packages.append(file) }
+                    } else { findPackages(file) }
+                }
+            }
+            findPackages(container)
+        }
+        result[.offlineMedia] = estimate(packages, complete: complete)
+
+        complete = true
+        let caches = children(locations.caches, complete: &complete)
+        let systemRoots = (caches + libraryChildren).filter { StorageOtherCleanup.canClearCache($0, locations: locations) }
+        let protected = StorageMediaCleanup.openFilePaths()
+        let cutoff = Date()
+        var visited = Set<String>()
+        let systemBytes = systemRoots.reduce(Int64(0)) { total, root in
+            StorageUsageService.adding(total, size(root, visited: &visited, complete: &complete) { file, info in
+                let path = self.classifier.normalizedPath(file.path)
+                guard self.classifier.category(file.appendingPathComponent(".probe").path) == .otherData,
+                      !protected.contains(path) else { return false }
+                if info.isDirectory == true { return true }
+                let name = file.lastPathComponent.lowercased()
+                return !["sqlite", "sqlite3", "db", "mdb"].contains(file.pathExtension.lowercased())
+                    && !name.hasSuffix("-wal") && !name.hasSuffix("-shm") && !name.hasSuffix("-journal")
+                    && (info.contentModificationDate ?? .distantFuture) < cutoff
+            })
+        }
+        result[.systemCaches] = .init(bytes: complete ? systemBytes : nil, isEstimated: true)
+        return result
+    }
+
+    private func children(_ directory: URL, skipHidden: Bool = false, complete: inout Bool) -> [URL] {
+        guard manager.fileExists(atPath: directory.path) else { return [] }
+        do {
+            guard try directory.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else { return [] }
+            return try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: Array(keys), options: skipHidden ? [.skipsHiddenFiles] : [])
+        } catch { complete = false; return [] }
+    }
+
+    private func estimate(_ roots: [URL], followingReferences: Bool = false, complete known: Bool = true) -> StorageCleanupEstimate {
+        var complete = known, visited = Set<String>()
+        let bytes = roots.reduce(Int64(0)) { StorageUsageService.adding($0, size($1, visited: &visited, complete: &complete, followingReferences: followingReferences)) }
+        return .init(bytes: complete ? bytes : nil, isEstimated: true)
+    }
+
+    private func size(_ file: URL, visited: inout Set<String>, complete: inout Bool, followingReferences: Bool = false,
+                      include: ((URL, URLResourceValues) -> Bool)? = nil) -> Int64 {
+        guard !Task.isCancelled, manager.fileExists(atPath: file.path) else { return 0 }
+        do {
+            let info = try file.resourceValues(forKeys: keys)
+            guard info.isSymbolicLink != true, visited.insert(classifier.normalizedPath(file.path)).inserted,
+                  include?(file, info) != false else { return 0 }
+            if info.isDirectory == true {
+                return children(file, complete: &complete).reduce(0) {
+                    StorageUsageService.adding($0, size($1, visited: &visited, complete: &complete, followingReferences: followingReferences, include: include))
+                }
+            }
+            guard info.isRegularFile == true else { return 0 }
+            var bytes = Int64(max(0, info.totalFileAllocatedSize ?? info.fileAllocatedSize ?? info.fileSize ?? 0))
+            if followingReferences, file.pathExtension.lowercased() == OfflineHLSReference.fileExtension,
+               (info.fileSize ?? Int.max) <= 1024 * 1024, let package = try? OfflineHLSReference.packageURL(for: file) {
+                bytes = StorageUsageService.adding(bytes, size(package, visited: &visited, complete: &complete))
+            }
+            return bytes
+        } catch { complete = false; return 0 }
     }
 }

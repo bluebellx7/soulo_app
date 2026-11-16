@@ -5,6 +5,197 @@ import Network
 /// exercise the shipping app's minimum OS (iOS 16.0).
 @MainActor
 final class SettingsNavigationUITests: XCTestCase {
+    private func platformArgumentData(_ value: Any) throws -> String {
+        "<" + (try JSONSerialization.data(withJSONObject: value)).map { String(format: "%02x", $0) }.joined() + ">"
+    }
+
+    func testPlatformPanelSwitchesGroupsAndPlatformsWithHiddenBar() async throws {
+        continueAfterFailure = false
+        let fixture = try AdSettingsPageFixture(), root = try await fixture.start()
+        defer { fixture.stop() }
+        func platform(_ name: String, _ path: String, visible: Bool = true) -> [String: Any] {
+            ["id": UUID().uuidString, "name": name, "iconName": "icon_google",
+             "searchURLTemplate": root.appendingPathComponent(path).absoluteString + "?q=%@",
+             "homeURL": root.appendingPathComponent(path + "-home").absoluteString,
+             "region": "international", "isBuiltIn": false, "isVisible": visible,
+             "sortOrder": 0, "usageCount": 0, "isCustom": true]
+        }
+        let a = platform("Panel Alpha", "alpha"), b = platform("Panel Beta", "beta"), hidden = platform("Panel Hidden", "hidden", visible: false)
+        let groups: [[String: Any]] = [
+            ["id": UUID().uuidString, "name": "Panel A", "platformIDs": [a["id"]!, hidden["id"]!]],
+            ["id": UUID().uuidString, "name": "Panel B", "platformIDs": [b["id"]!]],
+            ["id": UUID().uuidString, "name": "Panel Empty", "platformIDs": []]]
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "solid", "-icloud_sync_enabled", "NO",
+            "-privacy_https_upgrade_enabled", "NO", "-ad_block_enabled", "NO", "-browser_toolbar_hidden", "NO",
+            "-keep_fullscreen_browsing", "NO", "-show_platform_bar", "NO", "-auto_hide_platform_bar", "YES",
+            "-platform_config", try platformArgumentData([a,b,hidden]), "-platform_config_version", "47",
+            "-custom_groups", try platformArgumentData(groups), "-last_selected_group_id", groups[0]["id"] as! String,
+            "-browser_toolbar_actions", "(platforms,back,tabs,more)",
+            "-browser_more_menu_actions", "(platforms,newTab,siteInformation,forward,fullscreen,desktopMode,darkMode,tabs,share,copyLink,bookmark,library)",
+            "-browser_toolbar_leading_action", "platforms"]
+        app.launch(); defer { app.terminate() }
+        let query = app.textFields["search.query"].firstMatch
+        XCTAssertTrue(query.waitForExistence(timeout: 10)); query.tap(); query.typeText("panelterm\n")
+        XCTAssertTrue(app.webViews.staticTexts["Ad settings page fixture"].firstMatch.waitForExistence(timeout: 20))
+        XCTAssertFalse(app.buttons["search.group-picker"].exists)
+        XCTAssertTrue(app.buttons["browser.addressLeading.platforms"].exists)
+        XCTAssertFalse(app.buttons["browser.siteInformation"].exists)
+        let open = app.buttons["browser.action.platforms"].firstMatch
+        XCTAssertTrue(open.waitForExistence(timeout: 5)); open.tap()
+        XCTAssertTrue(app.buttons["browser.platform." + (hidden["id"] as! String)].waitForExistence(timeout: 5))
+        app.buttons["browser.platformGroupPicker"].tap()
+        app.buttons["browser.platformGroup.group:" + (groups[1]["id"] as! String)].tap()
+        XCTAssertFalse(fixture.requestSummary.contains("GET /beta?q=panelterm "), "Browsing groups must not navigate")
+        app.buttons["browser.platform." + (b["id"] as! String)].tap()
+        let loaded = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in fixture.requestSummary.contains("GET /beta?q=panelterm ") }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [loaded], timeout: 10), .completed, fixture.requestSummary)
+        XCTAssertTrue(app.buttons["browser.platforms.close"].waitForNonExistence(timeout: 5))
+        app.buttons["browser.more"].firstMatch.tap()
+        app.descendants(matching: .any).matching(identifier: "browser.moreMenu.platforms").firstMatch.tap()
+        XCTAssertTrue(app.buttons["browser.platform." + (b["id"] as! String)].waitForExistence(timeout: 5))
+        app.buttons["browser.platformGroupPicker"].tap()
+        app.buttons["browser.platformGroup.group:" + (groups[2]["id"] as! String)].tap()
+        XCTAssertTrue(app.staticTexts["No platforms yet"].waitForExistence(timeout: 5))
+        app.descendants(matching: .any).matching(identifier: "browser.platforms.close").firstMatch.tap()
+        app.buttons["browser.more"].firstMatch.tap()
+        app.descendants(matching: .any).matching(identifier: "browser.moreMenu.newTab").firstMatch.tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "new-tab.search.field").firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(open.waitForExistence(timeout: 5)); open.tap()
+        app.buttons["browser.platformGroupPicker"].tap()
+        app.buttons["browser.platformGroup.group:" + (groups[1]["id"] as! String)].tap()
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "platform-grid-hidden-bar"; shot.lifetime = .keepAlways; add(shot)
+        app.buttons["browser.platform." + (b["id"] as! String)].tap()
+        let home = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in fixture.requestSummary.contains("GET /beta-home ") }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [home], timeout: 10), .completed, fixture.requestSummary)
+        open.tap()
+        app.buttons["browser.platformGroupPicker"].tap()
+        app.buttons["browser.platformGroup.group:" + (groups[0]["id"] as! String)].tap()
+        app.buttons["browser.platform." + (a["id"] as! String)].tap()
+        let direct = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in fixture.requestSummary.contains("GET /alpha-home ") }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [direct], timeout: 10), .completed, fixture.requestSummary)
+        app.buttons["browser.more"].firstMatch.tap()
+        app.descendants(matching: .any).matching(identifier: "browser.moreMenu.siteInformation").firstMatch.tap()
+        XCTAssertTrue(app.buttons["site.user-agent"].waitForExistence(timeout: 5), app.debugDescription)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.15)).tap()
+        app.buttons["browser.addressLeading.platforms"].tap()
+        let manage = app.buttons["browser.platforms.settings"]
+        XCTAssertTrue(manage.waitForExistence(timeout: 5)); manage.tap()
+        XCTAssertTrue(app.navigationBars["Platform Management"].waitForExistence(timeout: 5))
+    }
+
+    func testMorePanelEditorKeepsLastSlotSafeAcrossSectionSwitches() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true)
+        app.launch(); defer { app.terminate() }
+        let entry = app.buttons["home.toolbar.0"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 10)); entry.tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Customize Browser Toolbar")
+        app.buttons["Customize Browser Toolbar"].firstMatch.tap()
+        let section = app.segmentedControls["browser-toolbar.section"]
+        XCTAssertTrue(section.waitForExistence(timeout: 5)); section.buttons["More Panel"].tap()
+        let last = app.buttons["browser-toolbar.more-slot.11"]
+        XCTAssertTrue(last.waitForExistence(timeout: 5)); last.tap()
+        let option = app.buttons["browser-toolbar.action.platforms"]
+        for _ in 0..<4 where !option.isHittable { app.swipeUp() }
+        XCTAssertTrue(option.isHittable); option.tap()
+        for _ in 0..<5 where !section.isHittable { app.swipeDown() }
+        section.buttons["Browser Toolbar"].tap()
+        XCTAssertTrue(app.buttons["browser-toolbar.slot.4"].waitForExistence(timeout: 5))
+        let leading = app.buttons["browser-toolbar.slot.5"]
+        XCTAssertTrue(leading.exists); leading.tap()
+        let leadingOption = app.buttons["browser-toolbar.action.platforms"]
+        for _ in 0..<4 where !leadingOption.isHittable { app.swipeUp() }
+        leadingOption.tap()
+        for _ in 0..<5 where !section.isHittable { app.swipeDown() }
+        XCTAssertEqual(app.buttons["browser-toolbar.leading-preview"].label, "Platforms")
+        section.buttons["More Panel"].tap()
+        XCTAssertTrue(last.label.contains("Platforms"), last.label)
+        app.buttons["browser-toolbar.save"].tap()
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 5))
+        app.alerts.buttons["Done"].tap()
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "custom-more-panel"; shot.lifetime = .keepAlways; add(shot)
+    }
+
+    func testHiddenPlatformBarHidesAutomaticControlsAndCanBeEnabledInManagement() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-icloud_sync_enabled", "NO", "-wallpaper_source", "solid",
+            "-home_toolbar_actions", "(platforms)", "-auto_hide_platform_bar", "YES"]
+        app.launch(); defer { app.terminate() }
+        let entry = app.buttons["home.toolbar.0"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 10)); entry.tap()
+        let automatic = app.switches["platform.auto-hide-platforms"]
+        let visible = app.switches["platform.show-platform-bar"]
+        func flipVisibility() {
+            let native = visible.descendants(matching: .switch).firstMatch
+            if native.exists { native.tap() }
+            else { visible.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
+        }
+        XCTAssertTrue(visible.waitForExistence(timeout: 10)); XCTAssertTrue(visible.label.contains("Show Platform Bar"))
+        if visible.value as? String == "0" { flipVisibility() }
+        XCTAssertTrue(automatic.waitForExistence(timeout: 5))
+        flipVisibility()
+        XCTAssertTrue(app.buttons["browsing-guide.done"].waitForExistence(timeout: 5)); app.buttons["browsing-guide.done"].tap()
+        XCTAssertTrue(automatic.waitForNonExistence(timeout: 5))
+        flipVisibility()
+        XCTAssertTrue(automatic.waitForExistence(timeout: 5))
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "platform-visibility-controls"; shot.lifetime = .keepAlways; add(shot)
+    }
+
+    func testHidingPlatformBarShowsIllustratedToolbarShortcutGuide() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true)
+        // Remove the prior launch override; UI changes should persist normally.
+        app.launch(); defer { app.terminate() }
+        let entry = app.buttons["home.toolbar.0"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 10)); entry.tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Show Platform Bar")
+        let display = app.buttons["Browsing Display"].firstMatch
+        XCTAssertTrue(display.waitForExistence(timeout: 5)); display.tap()
+        let visible = app.switches["settings.browsingDisplay.platformBar"]
+        XCTAssertTrue(visible.waitForExistence(timeout: 5))
+        if visible.value as? String == "0" { visible.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
+        visible.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        let customize = app.buttons["browsing-guide.customize-toolbar"]
+        XCTAssertTrue(customize.waitForExistence(timeout: 5), app.debugDescription)
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "hidden-platform-bar-guide"; shot.lifetime = .keepAlways; add(shot)
+        customize.tap()
+        XCTAssertTrue(app.segmentedControls["browser-toolbar.section"].waitForExistence(timeout: 5))
+    }
+
+    func testRestoredNewTabBuildsRegularAndFloatingMoreMenus() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-icloud_sync_enabled", "NO", "-icloud_bookmarks_sync_enabled", "NO",
+            "-review.requestedOnce", "YES", "-ad_block_enabled", "NO", "-keep_fullscreen_browsing", "NO",
+            "-home_toolbar_actions", "(newTab)", "-browser_toolbar_hidden", "NO"]
+        app.launch(); defer { app.terminate() }
+        let create = app.buttons["home.toolbar.0"]
+        XCTAssertTrue(create.waitForExistence(timeout: 10)); create.tap()
+        func openMore(_ name: String) {
+            let menu = app.buttons["browser.more"].firstMatch
+            // Startup can return to Home while retaining the saved tab models.
+            // Enter a new tab without clearing any of that restored state.
+            if !menu.exists, create.exists { create.tap() }
+            XCTAssertTrue(menu.waitForExistence(timeout: 10), app.debugDescription); menu.tap()
+            XCTAssertTrue(app.buttons["browser.moreMenu.pageTools"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+            let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = name; shot.lifetime = .keepAlways; add(shot)
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.15)).tap()
+        }
+        openMore("new-tab-regular-more-menu")
+        app.terminate(); app.launch()
+        openMore("restored-new-tab-regular-more-menu")
+        app.terminate()
+        app.launchArguments[app.launchArguments.count - 1] = "YES"
+        app.launch()
+        openMore("restored-new-tab-floating-more-menu")
+    }
+
     func testSettingsBackupRestoreReturnsToInteractiveList() throws {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
@@ -27,6 +218,132 @@ final class SettingsNavigationUITests: XCTestCase {
         print("BACKUP RESTORE UI elapsed \(Date().timeIntervalSince(start))s")
         save.tap()
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "configuration-backup-restored-interactive"; shot.lifetime = .keepAlways; add(shot)
+    }
+
+    private func scrollStorageRow(_ row: XCUIElement, in app: XCUIApplication) {
+        _ = app.navigationBars.firstMatch.waitForExistence(timeout: 5)
+        let list = app.collectionViews.firstMatch.exists ? app.collectionViews.firstMatch : app.tables.firstMatch
+        let bar = app.navigationBars.firstMatch
+        for _ in 0..<12 {
+            if row.exists, row.isHittable, row.frame.midY > bar.frame.maxY + 12, row.frame.midY < list.frame.maxY - 24 { return }
+            let delta: CGFloat = row.exists && row.frame.midY <= bar.frame.maxY + 12 ? 180 : -180
+            let start = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
+            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: delta)), withVelocity: .slow, thenHoldForDuration: 0.1)
+        }
+    }
+
+    func testStorageRefreshesAfterDeletingADownloadAndReturning() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_STORAGE_CACHE_FIXTURE"] == "YES" else {
+            throw XCTSkip("Requires the isolated QA container download fixture")
+        }
+        continueAfterFailure = false
+        let name = "storage-refresh-fixture.bin"
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true)
+        app.launchArguments += ["-files.gridView", "NO"]
+        app.launch(); defer { app.terminate() }
+        guard app.buttons["home.toolbar.0"].waitForExistence(timeout: 10) else { XCTFail(app.debugDescription); return }
+        app.buttons["home.toolbar.0"].tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Storage")
+        guard app.buttons["Storage"].firstMatch.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
+        app.buttons["Storage"].firstMatch.tap()
+        openStorageSubgroup("files", in: app)
+        let row = app.buttons["storage.manage.downloads"]
+        scrollStorageRow(row, in: app)
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        let measured = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in (Int64(row.value as? String ?? "") ?? 0) >= 2 * 1024 * 1024 }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [measured], timeout: 8), .completed)
+        let before = try XCTUnwrap(Int64(row.value as? String ?? "")); row.tap()
+        let file = app.descendants(matching: .any).matching(identifier: "files.item." + name).firstMatch
+        let fileSearch = app.textFields["library.search"].firstMatch
+        guard fileSearch.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
+        fileSearch.tap(); fileSearch.typeText(name)
+        guard file.waitForExistence(timeout: 8) else { XCTFail(app.debugDescription); return }
+        let fileRow = app.cells.containing(.staticText, identifier: name).firstMatch
+        guard fileRow.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
+        fileRow.swipeLeft()
+        app.buttons["Delete"].firstMatch.tap()
+        let confirm = app.buttons["Delete"].firstMatch
+        if confirm.waitForExistence(timeout: 3) { confirm.tap() }
+        XCTAssertTrue(file.waitForNonExistence(timeout: 5))
+        app.navigationBars["Files"].buttons.firstMatch.tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let value = Int64(row.value as? String ?? "") else { return false }
+            return value <= before - 2 * 1024 * 1024
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 8), .completed, app.debugDescription)
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "storage-refreshed-after-file-deletion"; shot.lifetime = .keepAlways; add(shot)
+    }
+
+    func testStorageCacheConfirmationIsAnchoredAndCleanupChangesUsage() throws {
+        guard ProcessInfo.processInfo.environment["SOULO_STORAGE_CACHE_FIXTURE"] == "YES" else {
+            throw XCTSkip("Requires the isolated QA container cache fixture; never operates on user data")
+        }
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true)
+        app.launchArguments += ["-files.gridView", "NO"]
+        app.launch(); defer { app.terminate() }
+        XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 10)); app.buttons["home.toolbar.0"].tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Storage")
+        guard app.buttons["Storage"].firstMatch.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
+        app.buttons["Storage"].firstMatch.tap()
+        openStorageSubgroup("cache", in: app)
+        let row = app.buttons["storage.manage.otherCaches"]
+        let trash = app.buttons["storage.clearButton.otherCaches"]
+        for _ in 0..<5 where !trash.isHittable { app.swipeUp() }
+        let measured = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in trash.isEnabled && (Int64(row.value as? String ?? "") ?? 0) >= 1024 * 1024 }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [measured], timeout: 8), .completed)
+        let before = try XCTUnwrap(Int64(row.value as? String ?? ""))
+        trash.tap()
+        let remove = app.buttons["storage.confirm.delete"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertLessThan(abs(remove.frame.midY - trash.frame.midY), 220, "Confirmation must remain next to the row, not in the middle of the whole list")
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "storage-delete-confirmation-at-source"; shot.lifetime = .keepAlways; add(shot)
+        remove.tap()
+        let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let value = Int64(row.value as? String ?? "") else { return false }
+            return value <= before - 1024 * 1024
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 8), .completed, app.debugDescription)
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+    }
+
+    func testStorageDetailClearConfirmationKeepsItsWidthAtTheLeftEdge() throws {
+        guard ProcessInfo.processInfo.environment["SOULO_STORAGE_CACHE_FIXTURE"] == "YES" else {
+            throw XCTSkip("Requires the isolated QA wallpaper-cache fixture")
+        }
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true)
+        app.launchArguments += ["-files.gridView", "NO"]
+        app.launch(); defer { app.terminate() }
+        XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 10)); app.buttons["home.toolbar.0"].tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Storage")
+        guard app.buttons["Storage"].firstMatch.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
+        app.buttons["Storage"].firstMatch.tap()
+        openStorageSubgroup("cache", in: app)
+        let entry = app.buttons["storage.manage.wallpaperCache"]
+        scrollStorageRow(entry, in: app)
+        guard entry.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }; entry.tap()
+        let clear = app.buttons["storage.clear.wallpaperCache"]
+        XCTAssertTrue(clear.waitForExistence(timeout: 5))
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: clear)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed); clear.tap()
+        let remove = app.buttons["storage.confirm.delete"]
+        guard remove.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
+        XCTAssertTrue(remove.isHittable)
+        XCTAssertGreaterThan(remove.frame.width, 60)
+        XCTAssertGreaterThanOrEqual(remove.frame.minX, 8)
+        XCTAssertLessThanOrEqual(remove.frame.maxX, app.frame.maxX - 8)
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "storage-left-clear-confirmation"; shot.lifetime = .keepAlways; add(shot)
+        remove.tap()
+        let emptied = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == false"), object: clear)
+        XCTAssertEqual(XCTWaiter.wait(for: [emptied], timeout: 8), .completed, app.debugDescription)
     }
 
     func testStorageBulkCleanupDefaultsExcludeSavedContent() {
@@ -62,7 +379,7 @@ final class SettingsNavigationUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
         configure(app, enabled: false)
-        app.launchArguments += ["-privacy_https_upgrade_enabled", "NO", "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO"]
+        app.launchArguments += ["-privacy_https_upgrade_enabled", "NO", "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-browser_toolbar_leading_action", "siteInformation"]
         app.launch(); defer { app.terminate() }
         let query = app.textFields["search.query"]
         XCTAssertTrue(query.waitForExistence(timeout: 10)); query.tap(); query.typeText(url.absoluteString + "\n")
@@ -116,20 +433,21 @@ final class SettingsNavigationUITests: XCTestCase {
         app.launchArguments += ["-icloud_bookmarks_sync_enabled", "NO"]
         app.launchEnvironment["SOULO_ACCEPTANCE_PROBE"] = "1"; app.launchEnvironment["SOULO_ACCEPTANCE_BOOKMARKS"] = "1"
         app.launch(); defer { app.terminate() }
-        let settings = app.buttons["home.toolbar.0"]
-        XCTAssertTrue(settings.waitForExistence(timeout: 10)); settings.tap()
+        XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 10)); app.buttons["home.toolbar.0"].tap()
         let search = app.searchFields.firstMatch
-        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Privacy")
-        app.buttons.matching(NSPredicate(format: "label IN %@", ["Privacy", "Privacy Settings"])).firstMatch.tap()
-        let clear = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Clear All Bookmarks")).firstMatch
-        for _ in 0..<8 where !clear.isHittable { app.swipeUp() }
-        XCTAssertTrue(clear.waitForExistence(timeout: 5)); clear.tap()
-        let field = app.textFields["privacy.clear-bookmarks.confirmation"], execute = app.buttons["privacy.clear-bookmarks.execute"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Storage")
+        app.buttons["Storage"].firstMatch.tap()
+        app.buttons["storage.cleanup"].tap()
+        let bookmarks = app.buttons["storage.cleanup.choice.bookmarks"]
+        scrollStorageRow(bookmarks, in: app)
+        XCTAssertTrue(bookmarks.waitForExistence(timeout: 5)); bookmarks.tap()
+        let field = app.textFields["storage.cleanup.confirmation"], execute = app.buttons["storage.cleanup.execute"]
+        scrollStorageRow(field, in: app)
         XCTAssertTrue(field.waitForExistence(timeout: 5)); XCTAssertFalse(execute.isEnabled)
         field.tap(); field.typeText("CLEA"); XCTAssertFalse(execute.isEnabled)
         field.typeText("R"); XCTAssertTrue(execute.isEnabled)
         app.navigationBars.buttons["Cancel"].firstMatch.tap()
-        XCTAssertFalse(field.exists); XCTAssertTrue(clear.exists)
+        XCTAssertFalse(field.exists); XCTAssertTrue(app.buttons["storage.cleanup"].exists)
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "bookmark-clear-confirmation-canceled"; shot.lifetime = .keepAlways; add(shot)
     }
 
@@ -255,9 +573,9 @@ final class SettingsNavigationUITests: XCTestCase {
         XCTAssertTrue(waitFor("history-visits=1;history-queries=1"))
         app.buttons["home.toolbar.0"].tap()
         let search = app.searchFields.firstMatch
-        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Privacy")
-        let privacy = app.buttons.matching(NSPredicate(format: "label IN %@", ["Privacy", "Privacy Settings"])).firstMatch
-        XCTAssertTrue(privacy.waitForExistence(timeout: 5)); privacy.tap()
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Storage")
+        let storage = app.buttons["Storage"].firstMatch
+        XCTAssertTrue(storage.waitForExistence(timeout: 5)); storage.tap()
         let toggle = app.switches["privacy.clear-browsing-on-exit"]
         for _ in 0..<5 where !toggle.isHittable { app.swipeUp() }
         XCTAssertTrue(toggle.waitForExistence(timeout: 5)); XCTAssertEqual(toggle.value as? String, "0")
@@ -307,7 +625,7 @@ final class SettingsNavigationUITests: XCTestCase {
         let search = app.searchFields.firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("存储空间")
         app.buttons["存储空间"].firstMatch.tap()
-        let websiteData = app.buttons["storage.manage.webData"]
+        let websiteData = app.buttons["storage.group.websites"]
         XCTAssertTrue(websiteData.waitForExistence(timeout: 8))
         XCTAssertTrue(websiteData.label.contains("网站数据"), websiteData.label)
         XCTAssertFalse(app.staticTexts["Website data"].exists)
@@ -328,6 +646,7 @@ final class SettingsNavigationUITests: XCTestCase {
         XCTAssertTrue(storage.waitForExistence(timeout:8)); XCTAssertTrue(storage.isHittable)
         storage.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         XCTAssertTrue(app.navigationBars["Storage"].waitForExistence(timeout:8),app.debugDescription)
+        openStorageSubgroup("saved", in: app)
         let filtering=app.buttons["storage.manage.filterRules"]
         for _ in 0..<4 where !filtering.isHittable {app.swipeUp()}
         XCTAssertTrue(filtering.waitForExistence(timeout:8)); XCTAssertTrue(filtering.isHittable)
@@ -335,71 +654,257 @@ final class SettingsNavigationUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Ad Blocking"].waitForExistence(timeout:5))
         checkRuleRoutes(app,populated:true)
     }
+    private func openStorageSubgroup(_ id: String, in app: XCUIApplication) {
+        let entry = app.buttons["storage.group." + id]
+        guard entry.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
+        entry.tap()
+    }
+    private func storageSubgroup(_ category: String) -> (String, String) {
+        if ["webData", "websiteStorage"].contains(category) { return ("websites", "Website data") }
+        if category == "otherData" { return ("other", "Other app data") }
+        if ["downloads", "downloadTasks"].contains(category) { return ("files", "Downloads & files") }
+        if ["wallpaperCache", "otherCaches", "temporaryFiles", "ruleCache", "tabSnapshots", "favicons"].contains(category) { return ("cache", "Caches & temporary files") }
+        return ("saved", "Saved content")
+    }
+    private func storageCategoryEntry(_ id: String, in app: XCUIApplication) -> XCUIElement {
+        let group = storageSubgroup(id).0
+        if group == "websites" || group == "other" { return app.buttons["storage.group." + group] }
+        openStorageSubgroup(group, in: app)
+        let entry = app.buttons["storage.manage." + id]
+        scrollStorageRow(entry, in: app)
+        return entry
+    }
+    private func closeStorageCategory(_ id: String, title: String, in app: XCUIApplication) {
+        app.navigationBars[title].buttons.firstMatch.tap()
+        let (group, groupTitle) = storageSubgroup(id)
+        if group != "websites" && group != "other" {
+            XCTAssertTrue(app.navigationBars[groupTitle].waitForExistence(timeout: 5))
+            app.navigationBars[groupTitle].buttons.firstMatch.tap()
+        }
+        XCTAssertTrue(app.navigationBars["Storage"].waitForExistence(timeout: 5))
+    }
+
     func testAdditionalStorageCategoriesAreVisibleAndManageable() {
-        continueAfterFailure=false
-        let app=XCUIApplication(bundleIdentifier:SouloUITestApplication.bundleIdentifier)
-        configure(app,enabled:false,fromSettings:true);app.launch();defer{app.terminate()}
-        let settings=app.buttons["home.toolbar.0"];XCTAssertTrue(settings.waitForExistence(timeout:10));settings.tap()
-        let search=app.searchFields.firstMatch;XCTAssertTrue(search.waitForExistence(timeout:5));search.tap();search.typeText("Storage")
-        app.buttons["Storage"].firstMatch.tap();XCTAssertTrue(app.navigationBars["Storage"].waitForExistence(timeout:8))
-        XCTAssertTrue(app.staticTexts["App size"].exists);XCTAssertTrue(app.staticTexts["App data"].exists)
-        let routes=[("wallpaperCache","Wallpaper cache"),("otherCaches","Other caches"),("temporaryFiles","Temporary files"),("ruleCache","Cached Rules"),
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true); app.launch(); defer { app.terminate() }
+        XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 10)); app.buttons["home.toolbar.0"].tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Storage")
+        XCTAssertTrue(app.buttons["Storage"].firstMatch.waitForExistence(timeout: 5)); app.buttons["Storage"].firstMatch.tap()
+        for (id,title) in [("wallpaperCache","Wallpaper cache"),("otherCaches","Other caches"),("temporaryFiles","Temporary files"),("ruleCache","Cached Rules"),
             ("downloadTasks","Download task data"),("extensions","Scripts & Extensions"),("personalData","Settings and records"),
-            ("sharedData","Shared app data"),("otherData","Other app data")]
-        for (id,title) in routes {
-            let entry=app.buttons["storage.manage."+id]
-            let list = app.collectionViews.firstMatch.exists ? app.collectionViews.firstMatch : app.tables.firstMatch
-            let nav = app.navigationBars["Storage"]
-            func visible() -> Bool {
-                entry.exists && entry.isHittable && entry.frame.midY > nav.frame.maxY + 12 && entry.frame.midY < list.frame.maxY - 24
-            }
-            for _ in 0..<12 {
-                if visible() { break }
-                let start=list.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.55))
-                let delta:CGFloat = entry.exists && entry.frame.midY <= nav.frame.maxY + 12 ? 180 : -180
-                start.press(forDuration:0.05,thenDragTo:start.withOffset(CGVector(dx:0,dy:delta)),withVelocity:.slow,thenHoldForDuration:0.1)
-            }
-            XCTAssertTrue(entry.waitForExistence(timeout:5));XCTAssertTrue(visible(),app.debugDescription)
-            entry.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
-            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout:8),app.debugDescription)
-            if ["wallpaperCache","otherCaches","temporaryFiles","ruleCache","downloadTasks"].contains(id) {
-                XCTAssertTrue(app.buttons["storage.clear."+id].exists)
-            }
-            app.navigationBars[title].buttons.firstMatch.tap();XCTAssertTrue(app.navigationBars["Storage"].waitForExistence(timeout:5))
+            ("sharedData","Shared app data"),("otherData","Other app data")] {
+            let entry = storageCategoryEntry(id, in: app)
+            XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 8), app.debugDescription)
+            if ["wallpaperCache","otherCaches","temporaryFiles","ruleCache","downloadTasks"].contains(id) { XCTAssertTrue(app.buttons["storage.clear." + id].exists) }
+            closeStorageCategory(id, title: title, in: app)
         }
     }
 
     func testStorageManagementRoutesAndReadingExplanation() {
         continueAfterFailure = false
-        let app=XCUIApplication(bundleIdentifier:SouloUITestApplication.bundleIdentifier)
-        configure(app,enabled:false,fromSettings:true)
-        app.launch();defer{app.terminate()}
-        let settings=app.buttons["home.toolbar.0"]
-        XCTAssertTrue(settings.waitForExistence(timeout:10));settings.tap()
-        let search=app.searchFields.firstMatch
-        XCTAssertTrue(search.waitForExistence(timeout:5));search.tap();search.typeText("Storage")
-        app.buttons["Storage"].firstMatch.tap()
-        XCTAssertTrue(app.navigationBars["Storage"].waitForExistence(timeout:8))
-        let routes=[("webData","Website data"),("downloads","Files"),("wallpapers","My Favorites"),("readingData","Reading data"),("filterRules","Ad Blocking"),("backups","Settings Backups")]
-        for (id,title) in routes {
-            let entry=app.buttons["storage.manage."+id]
-            for _ in 0..<4 where !entry.isHittable {app.swipeUp()}
-            for _ in 0..<4 where !entry.isHittable {app.swipeDown()}
-            XCTAssertTrue(entry.waitForExistence(timeout:5));entry.tap()
-            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout:8),app.debugDescription)
-            if id == "readingData" {
-                XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label BEGINSWITH %@","Reading data includes saved article text")).firstMatch.exists)
-                XCTAssertTrue(app.buttons["Reading list"].exists)
-            }
-            if id == "webData" {
-                if #available(iOS 18.4, *) { XCTAssertTrue(app.buttons["storage.extension-cache"].exists) }
-                else { XCTAssertFalse(app.buttons["storage.extension-cache"].exists) }
-            }
-            let shot=XCTAttachment(screenshot:app.screenshot());shot.name="storage-management-"+id;shot.lifetime = .keepAlways;add(shot)
-            app.navigationBars[title].buttons.firstMatch.tap()
-            XCTAssertTrue(app.navigationBars["Storage"].waitForExistence(timeout:5))
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true); app.launch(); defer { app.terminate() }
+        XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 10)); app.buttons["home.toolbar.0"].tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Storage")
+        XCTAssertTrue(app.buttons["Storage"].firstMatch.waitForExistence(timeout: 5)); app.buttons["Storage"].firstMatch.tap()
+        for (id,title) in [("websiteStorage","Website data"),("downloads","Files"),("wallpapers","My Favorites"),("readingData","Reading data"),("filterRules","Ad Blocking"),("backups","Settings Backups")] {
+            let entry = storageCategoryEntry(id, in: app)
+            XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 8), app.debugDescription)
+            if id == "readingData" { XCTAssertTrue(app.buttons["Reading list"].exists) }
+            closeStorageCategory(id, title: title, in: app)
         }
     }
+
+    func testStorageFiveGroupsAndBulkWebsiteDataClear() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true); app.launch(); defer { app.terminate() }
+        XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 10)); app.buttons["home.toolbar.0"].tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Storage")
+        XCTAssertTrue(app.buttons["Storage"].firstMatch.waitForExistence(timeout: 5)); app.buttons["Storage"].firstMatch.tap()
+        for group in ["websites", "files", "cache", "saved", "other"] { XCTAssertTrue(app.buttons["storage.group." + group].waitForExistence(timeout: 5), app.debugDescription) }
+        let overview = XCTAttachment(screenshot: app.screenshot()); overview.name = "storage-five-groups"; overview.lifetime = .keepAlways; add(overview)
+        openStorageSubgroup("websites", in: app)
+        XCTAssertFalse(app.staticTexts["IndexedDB"].exists)
+        let clear = app.buttons["storage.websites.clear-all"]
+        XCTAssertTrue(clear.waitForExistence(timeout: 5))
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: clear)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed); clear.tap()
+        let confirm = app.buttons["storage.confirm.delete"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5)); XCTAssertTrue(confirm.isHittable)
+        let warning = XCTAttachment(screenshot: app.screenshot()); warning.name = "storage-all-websites-confirmation"; warning.lifetime = .keepAlways; add(warning)
+        confirm.tap()
+        let finished = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in clear.isEnabled || app.alerts.firstMatch.exists }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [finished], timeout: 15), .completed)
+        if app.alerts.firstMatch.exists { app.alerts.buttons["Done"].firstMatch.tap() }
+        XCTAssertTrue(app.navigationBars["Website data"].exists)
+    }
+
+    func testManagedOfflineMediaCanBeDeletedFromOtherStorage() throws {
+        guard ProcessInfo.processInfo.environment["SOULO_STORAGE_CACHE_FIXTURE"] == "YES" else { throw XCTSkip("Requires isolated storage fixture") }
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true); app.launch(); defer { app.terminate() }
+        XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 10)); app.buttons["home.toolbar.0"].tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Storage")
+        XCTAssertTrue(app.buttons["Storage"].firstMatch.waitForExistence(timeout: 5)); app.buttons["Storage"].firstMatch.tap()
+        openStorageSubgroup("other", in: app)
+        let clear = app.buttons["storage.clear.managed.com.apple.UserManagedAssets.StorageCleanupFixture"]
+        scrollStorageRow(clear, in: app)
+        XCTAssertTrue(clear.waitForExistence(timeout: 8)); clear.tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "offline videos")).firstMatch.waitForExistence(timeout: 5))
+        let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "managed-offline-clear-warning"; screenshot.lifetime = .keepAlways; add(screenshot)
+        app.buttons["storage.confirm.delete"].tap()
+        XCTAssertTrue(clear.waitForNonExistence(timeout: 20), app.debugDescription)
+    }
+
+    func testOtherStorageBulkCleanupIncludesOfflineVideosWithTapConfirmation() throws {
+        guard ProcessInfo.processInfo.environment["SOULO_STORAGE_CACHE_FIXTURE"] == "YES" else { throw XCTSkip("Requires isolated storage fixture") }
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true); app.launch(); defer { app.terminate() }
+        XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 10)); app.buttons["home.toolbar.0"].tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Storage")
+        XCTAssertTrue(app.buttons["Storage"].firstMatch.waitForExistence(timeout: 5)); app.buttons["Storage"].firstMatch.tap()
+        let remove = app.buttons["storage.group.clear.other"]
+        scrollStorageRow(remove, in: app)
+        XCTAssertTrue(remove.waitForExistence(timeout: 8)); remove.tap()
+        let caches = app.buttons["storage.cleanup.choice.systemCaches"], media = app.buttons["storage.cleanup.choice.offlineMedia"]
+        XCTAssertTrue(caches.waitForExistence(timeout: 5)); XCTAssertEqual(caches.value as? String, "1")
+        XCTAssertTrue(media.exists); XCTAssertEqual(media.value as? String, "0")
+        XCTAssertFalse(app.buttons["storage.cleanup.choice.bookmarks"].exists)
+        media.tap()
+        let execute = app.buttons["storage.cleanup.execute"]
+        let field = app.textFields["storage.cleanup.confirmation"]
+        XCTAssertFalse(field.exists, "Offline remnants only need a tap confirmation")
+        XCTAssertTrue(execute.isEnabled)
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "other-storage-bulk-confirmation"; shot.lifetime = .keepAlways; add(shot)
+        execute.tap()
+        let confirmation = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            app.buttons.matching(NSPredicate(format: "label == %@ AND identifier != %@", "Clear", "storage.cleanup.execute"))
+                .allElementsBoundByIndex.contains { $0.isHittable }
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [confirmation], timeout: 5), .completed)
+        XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Cached Rules、")).firstMatch.exists,
+                       "A scoped cleanup must not select hidden categories")
+        try XCTUnwrap(app.buttons.matching(NSPredicate(format: "label == %@ AND identifier != %@", "Clear", "storage.cleanup.execute"))
+            .allElementsBoundByIndex.first { $0.isHittable }).tap()
+        let complete = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            app.alerts.firstMatch.exists || (!media.exists && remove.exists)
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [complete], timeout: 25), .completed)
+        if app.alerts.firstMatch.exists { app.alerts.buttons["Done"].firstMatch.tap() }
+        XCTAssertTrue(remove.waitForExistence(timeout: 10))
+        scrollStorageRow(app.buttons["storage.group.other"], in: app)
+        openStorageSubgroup("other", in: app)
+        XCTAssertTrue(app.navigationBars["Other app data"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["storage.clear.managed.com.apple.UserManagedAssets.StorageCleanupFixture"].exists)
+    }
+
+    func testTemporaryStorageOffersConfirmedStopAndClear() throws {
+        guard ProcessInfo.processInfo.environment["SOULO_STORAGE_CACHE_FIXTURE"] == "YES" else { throw XCTSkip("Requires isolated storage fixture") }
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true); app.launch(); defer { app.terminate() }
+        XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 10)); app.buttons["home.toolbar.0"].tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Storage")
+        XCTAssertTrue(app.buttons["Storage"].firstMatch.waitForExistence(timeout: 5)); app.buttons["Storage"].firstMatch.tap()
+        let entry = storageCategoryEntry("temporaryFiles", in: app)
+        XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+        let clear = app.buttons["storage.clear.released-temporary"]
+        XCTAssertTrue(clear.waitForExistence(timeout: 8))
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: clear)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed); clear.tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Completed downloads are kept")).firstMatch.waitForExistence(timeout: 5))
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "stop-and-clear-temporary-warning"; shot.lifetime = .keepAlways; add(shot)
+        app.buttons["storage.confirm.delete"].tap()
+        let finished = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in clear.isEnabled || app.alerts.firstMatch.exists }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [finished], timeout: 20), .completed)
+        if app.alerts.firstMatch.exists { app.alerts.buttons.firstMatch.tap() }
+        XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "StorageReleasedCleanupFixture.bin")).firstMatch.exists)
+    }
+
+    func testLocalMediaOpensDirectFullscreenSystem() throws { try localMediaFullscreen(engine: "system") }
+    func testLocalMediaOpensDirectFullscreenSoulo() throws { try localMediaFullscreen(engine: "soulo") }
+    private func localMediaFullscreen(engine: String) throws {
+        guard ProcessInfo.processInfo.environment["SOULO_STORAGE_CACHE_FIXTURE"] == "YES" else { throw XCTSkip("Requires isolated local media fixtures") }
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        configure(app, enabled: false, fromSettings: true)
+        app.launchArguments += ["-home_toolbar_actions", "(files)", "-files.gridView", "NO", "-video.defaultPlayer", engine]
+        XCUIDevice.shared.orientation = .portrait
+        defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
+        for name in ["qa-fullscreen-video.mp4", "qa-fullscreen-audio.wav"] {
+            // Each fixture starts with fresh search state; iOS 16 exposes
+            // inactive library pages' identically labelled clear buttons too.
+            app.launch()
+            XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 10)); app.buttons["home.toolbar.0"].tap()
+            let search = app.collectionViews["files.list"].textFields["library.search"].firstMatch
+            guard search.waitForExistence(timeout: 8) else { XCTFail(app.debugDescription); return }
+            search.tap(); search.typeText(name)
+            let item = app.descendants(matching: .any).matching(identifier: "files.item." + name).firstMatch
+            guard item.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }; item.tap()
+            let prefix = engine == "system" ? "media.native" : "media.mkv"
+            let close = app.buttons[engine == "system" ? "media.fullscreen.close" : "media.mkv.fullscreen.close"]
+            guard close.waitForExistence(timeout: 20) else { XCTFail(app.debugDescription); return }
+            XCTAssertFalse(app.otherElements["media.preview"].exists)
+            let play = app.buttons[prefix + ".play"]
+            // Pause before one-second accessibility waits allow auto-hide to
+            // remove controls; this is a transport check, not a visibility test.
+            func pauseAtVisiblePosition() {
+                guard play.exists, play.label == "Pause" else { return }
+                // Element.tap() waits for idleness and resolves the element
+                // again, potentially after timed controls have disappeared.
+                // Freeze the observed location before synthesizing the touch.
+                let frame = play.frame
+                guard !frame.isEmpty else { return }
+                app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+            }
+            pauseAtVisiblePosition()
+            let timeline = app.sliders[prefix + ".timeline"]
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                if !close.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
+                return timeline.exists && timeline.isEnabled
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 12), .completed, app.debugDescription)
+            if !close.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
+            pauseAtVisiblePosition()
+            let portraitShot = XCTAttachment(screenshot: app.screenshot())
+            portraitShot.name = "local-fullscreen-initial-" + engine + "-" + name
+            portraitShot.lifetime = .keepAlways; add(portraitShot)
+            let rotate = app.buttons["media.fullscreen.rotate"]
+            if rotate.exists {
+                let canvas = app.descendants(matching: .any).matching(identifier: "media.fullscreen.canvas").firstMatch
+                XCTAssertTrue(canvas.waitForExistence(timeout: 5))
+                let original = canvas.value as? String ?? "portrait"
+                let expected = original == "landscape" ? "portrait" : "landscape"
+                rotate.tap()
+                let requestedAt = Date()
+                let rotated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    canvas.value as? String == expected && Date().timeIntervalSince(requestedAt) >= 2.3
+                }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 6), .completed)
+                if !close.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
+                XCTAssertTrue(close.waitForExistence(timeout: 5)); XCTAssertFalse(app.otherElements["media.preview"].exists)
+            }
+            let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "local-fullscreen-" + engine + "-" + name; shot.lifetime = .keepAlways; add(shot)
+            close.tap()
+            XCTAssertTrue(search.waitForExistence(timeout: 8), "Closing must return directly to the files list")
+            XCTAssertTrue(close.waitForNonExistence(timeout: 5))
+            app.terminate(); XCUIDevice.shared.orientation = .portrait
+        }
+    }
+
     func testRuleManagementWithFilteringEnabled() { checkRules(enabled: true) }
     func testRuleManagementWithFilteringDisabled() { checkRules(enabled: false) }
     func testRuleManagementFromSettings() { checkRules(enabled: true, fromSettings: true) }
@@ -440,7 +945,7 @@ final class SettingsNavigationUITests: XCTestCase {
         XCTAssertTrue(settings.waitForExistence(timeout: 10)); settings.tap()
         let search = app.searchFields.firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Ad Blocking")
-        app.buttons["Ad Blocking"].firstMatch.tap()
+        app.buttons["settings.adBlock"].firstMatch.tap()
         checkRuleRoutes(app, populated: true, expectsAutomaticRefresh: true)
     }
 
@@ -493,7 +998,7 @@ final class SettingsNavigationUITests: XCTestCase {
         if fromSettings {
             let search = app.searchFields.firstMatch
             XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Ad Blocking")
-            app.buttons["Ad Blocking"].firstMatch.tap()
+            app.buttons["settings.adBlock"].firstMatch.tap()
         }
         checkRuleRoutes(app, populated: populated)
     }

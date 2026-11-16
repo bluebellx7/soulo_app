@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "অঙ্গভঙ্গি ও প্রতিক্রিয়া";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "প্ল্যাটফর্ম";
+"toolbar_more_panel" = "আরও প্যানেল";
+"show_platform_bar" = "প্ল্যাটফর্ম বার দেখান";
+"toolbar_restore" = "ডিফল্ট ফিরিয়ে আনুন";
+"platform_bar_hidden_hint" = "প্ল্যাটফর্ম বার লুকানো থাকলে প্ল্যাটফর্ম ও গ্রুপ বদলাতে «%1$@» যোগ করুন («%2$@»-এ)।";
+"platform_bar_disabled_hint" = "প্ল্যাটফর্ম বার লুকানো আছে। স্বয়ংক্রিয়ভাবে লুকানো চালুর আগে «%@» খুলতে ট্যাপ করুন।";
+
+"storage_files_group" = "ডাউনলোড ও ফাইল";
+"storage_cache_group" = "ক্যাশ ও অস্থায়ী ফাইল";
+"storage_saved_group" = "সংরক্ষিত বিষয়বস্তু";
+
+"storage_clear_offline_media_warning" = "এখানকার সব অফলাইন ভিডিও ও তাদের ফাইলের তথ্য মুছে যাবে। অসম্পূর্ণ ফাইল/ভিডিও ডাউনলোড, প্লেব্যাক ও এক্সপোর্ট বন্ধ হবে।";
+"storage_clear_active_temp_warning" = "অসম্পূর্ণ ফাইল/ভিডিও ডাউনলোড বাতিল করে প্লেব্যাক ও এক্সপোর্ট বন্ধ করে, তারপর মুক্ত অস্থায়ী ফাইল মুছে দেয়। সম্পূর্ণ ডাউনলোড রাখা হয়।";
+"storage_files_still_in_use" = "কিছু ফাইল এখনও ব্যবহৃত হচ্ছে। মুক্ত ফাইলগুলি মুছে দেওয়া হয়েছে; একটু পরে আবার চেষ্টা করুন।";
+
+"storage_system_caches" = "সিস্টেম ক্যাশ";
+"storage_offline_media" = "অফলাইন ভিডিও";
+"storage_system_data_retained" = "সিস্টেম পরিচালিত ফাইল ব্যবহৃত থাকতে পারে বা আবার তৈরি হতে পারে। সিঙ্ক করা সেটিংস রাখা হবে।";
+
+"storage_clear_offline_remnants_warning" = "তালিকাবহির্ভূত অফলাইন ভিডিও মুছে ফেলবে। সংরক্ষিত ডাউনলোড রাখা হবে। অসম্পূর্ণ ডাউনলোড, প্লেব্যাক ও এক্সপোর্ট থামবে।";
+
+"settings_ads_and_privacy" = "বিজ্ঞাপন ও গোপনীয়তা";
+
+"storage_cleanup_cache_desc" = "মুক্ত করা যায় এমন ক্যাশ ও অস্থায়ী ফাইল মুছবে; ব্যবহৃত ফাইল রাখা হবে।";
+"storage_cleanup_downloads_desc" = "সংরক্ষিত ডাউনলোড ফাইল ও তাদের রেকর্ড মুছবে।";
+"storage_cleanup_wallpapers_desc" = "ওয়ালপেপার পছন্দ থেকে সরিয়ে তাদের ফাইল মুছবে।";
+"storage_cleanup_reading_desc" = "অফলাইন নিবন্ধ, বইয়ের লাইব্রেরি ও পড়ার অগ্রগতি মুছবে।";
+
+"storage_cleanup_offline_desc" = "ডাউনলোড রেকর্ড ছাড়া অবশিষ্ট অফলাইন ভিডিও মুছবে।";

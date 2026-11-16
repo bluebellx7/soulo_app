@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Cử chỉ và phản hồi";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Nền tảng";
+"toolbar_more_panel" = "Bảng Thêm";
+"show_platform_bar" = "Hiện thanh nền tảng";
+"toolbar_restore" = "Khôi phục mặc định";
+"platform_bar_hidden_hint" = "Thêm “%1$@” trong “%2$@” để chuyển nền tảng và nhóm khi thanh nền tảng bị ẩn.";
+"platform_bar_disabled_hint" = "Thanh nền tảng đang ẩn. Chạm để mở “%@” trước khi bật tự động ẩn.";
+
+"storage_files_group" = "Tệp tải xuống và tệp";
+"storage_cache_group" = "Bộ nhớ đệm và tệp tạm";
+"storage_saved_group" = "Nội dung đã lưu";
+
+"storage_clear_offline_media_warning" = "Xóa mọi video ngoại tuyến ở đây và các mục tệp liên quan. Các lượt tải tệp/video chưa hoàn tất, phát lại và xuất sẽ dừng.";
+"storage_clear_active_temp_warning" = "Hủy các lượt tải tệp/video chưa hoàn tất, dừng phát lại và xuất, rồi xóa các tệp tạm đã được giải phóng. Các lượt tải hoàn tất được giữ lại.";
+"storage_files_still_in_use" = "Một số tệp vẫn đang được sử dụng. Các tệp đã giải phóng đã được xóa; hãy thử lại sau ít phút.";
+
+"storage_system_caches" = "Bộ nhớ đệm hệ thống";
+"storage_offline_media" = "Video ngoại tuyến";
+"storage_system_data_retained" = "Tệp hệ thống có thể vẫn đang được dùng hoặc được tạo lại. Các cài đặt đã đồng bộ được giữ lại.";
+
+"storage_clear_offline_remnants_warning" = "Xóa video ngoại tuyến không có trong danh sách tệp. Giữ các bản tải xuống đã lưu. Các bản tải chưa xong, phát lại và xuất sẽ dừng.";
+
+"settings_ads_and_privacy" = "Quảng cáo & Quyền riêng tư";
+
+"storage_cleanup_cache_desc" = "Xóa bộ nhớ đệm và tệp tạm có thể giải phóng; giữ nội dung đang dùng.";
+"storage_cleanup_downloads_desc" = "Xóa các tệp tải xuống đã lưu và bản ghi tương ứng.";
+"storage_cleanup_wallpapers_desc" = "Bỏ yêu thích hình nền và xóa tệp của chúng.";
+"storage_cleanup_reading_desc" = "Xóa bài viết ngoại tuyến, thư viện sách và tiến độ đọc.";
+
+"storage_cleanup_offline_desc" = "Xóa video ngoại tuyến còn sót lại không có bản ghi tải xuống.";

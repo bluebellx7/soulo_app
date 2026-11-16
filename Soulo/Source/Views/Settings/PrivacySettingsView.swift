@@ -1,8 +1,62 @@
 import SwiftUI
-import CoreData
+
+struct ProtectionPageTitle: ViewModifier {
+    let embedded: Bool
+    let title: String
+    @ViewBuilder func body(content: Content) -> some View {
+        if embedded { content }
+        else { content.navigationTitle(title).navigationBarTitleDisplayMode(.inline) }
+    }
+}
+
+struct ProtectionSettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    enum Page: Int, CaseIterable {
+        case ads, privacy
+        @MainActor var title: String { LanguageManager.shared.localizedString(self == .ads ? "ad_block_management" : "settings_privacy") }
+    }
+    @State private var selection: Page
+    var currentHost: String? = nil
+    var showsDoneButton = false
+    var currentURL: URL? = nil
+    var onMarkAdvertisement: (() -> Void)? = nil
+    var onChanged: (() -> Void)? = nil
+
+    init(initialPage: Page = .ads, currentHost: String? = nil, showsDoneButton: Bool = false,
+         currentURL: URL? = nil, onMarkAdvertisement: (() -> Void)? = nil, onChanged: (() -> Void)? = nil) {
+        _selection = State(initialValue: initialPage)
+        self.currentHost = currentHost; self.showsDoneButton = showsDoneButton; self.currentURL = currentURL
+        self.onMarkAdvertisement = onMarkAdvertisement; self.onChanged = onChanged
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker(ToolText.text("settings_ads_and_privacy"), selection: $selection) {
+                ForEach(Page.allCases, id: \.rawValue) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented).padding(.horizontal, 20).padding(.vertical, 12)
+            .accessibilityIdentifier("protection.section")
+            TabView(selection: $selection) {
+                AnyView(AdBlockManagementView(currentHost: currentHost,
+                    currentURL: currentURL, onMarkAdvertisement: onMarkAdvertisement, onChanged: onChanged, embedded: true))
+                    .tag(Page.ads)
+                AnyView(PrivacySettingsView(embedded: true)).tag(Page.privacy)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle(selection.title).navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if showsDoneButton {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+                }
+            }
+        }
+    }
+}
 
 struct PrivacySettingsView: View {
-    @Environment(\.managedObjectContext) private var modelContext
     @EnvironmentObject private var tabManager: TabManager
     @EnvironmentObject private var searchVM: SearchViewModel
 
@@ -16,20 +70,7 @@ struct PrivacySettingsView: View {
     @AppStorage("privacy_cookie_banner_enabled")
     private var cookieBannerEnabled = PrivacyFeatureDefaults.cookieBannerHandling
 
-    @AppStorage(BrowsingHistoryExitPolicy.preferenceKey) private var clearBrowsingOnExit = false
-
-    @State private var showClearHistoryAlert = false
-    @State private var showClearBookmarksAlert = false
-    @State private var showClearCacheAlert = false
-
-    @State private var clearingHistory = false
-    @State private var clearingBookmarks = false
-    @State private var clearingCache = false
-
-    @State private var historyCleared = false
-    @State private var bookmarksCleared = false
-    @State private var cacheCleared = false
-    @State private var cacheSizeText: String?
+    var embedded = false
 
     var body: some View {
         ZStack {
@@ -100,104 +141,21 @@ struct PrivacySettingsView: View {
                     Text(LanguageManager.shared.localizedString("privacy_global_scope_desc"))
                 }
 
-                // MARK: - Data Management
                 Section {
-                    PrivacyToggleRow(
-                        icon: "clock.badge.xmark", color: .orange,
-                        title: LanguageManager.shared.localizedString("privacy_clear_browsing_on_exit"),
-                        description: LanguageManager.shared.localizedString("privacy_clear_browsing_on_exit_desc"),
-                        isOn: $clearBrowsingOnExit
-                    )
-                    .accessibilityIdentifier("privacy.clear-browsing-on-exit")
-                    // Clear Search History
-                    DestructiveActionRow(
-                        icon: "clock.arrow.circlepath",
-                        title: LanguageManager.shared.localizedString("privacy_clear_history"),
-                        description: LanguageManager.shared.localizedString("privacy_clear_history_desc"),
-                        isLoading: clearingHistory,
-                        isCompleted: historyCleared
-                    ) {
-                        showClearHistoryAlert = true
-                    }
-                    .alert(
-                        LanguageManager.shared.localizedString("privacy_clear_history_confirm_title"),
-                        isPresented: $showClearHistoryAlert
-                    ) {
-                        Button(
-                            LanguageManager.shared.localizedString("privacy_clear_action"),
-                            role: .destructive
-                        ) {
-                            clearSearchHistory()
-                        }
-                        Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
-                    } message: {
-                        Text(LanguageManager.shared.localizedString("privacy_clear_history_confirm_message"))
-                    }
-
-                    // Clear Bookmarks
-                    DestructiveActionRow(
-                        icon: "bookmark.slash.fill",
-                        title: LanguageManager.shared.localizedString("privacy_clear_bookmarks"),
-                        description: LanguageManager.shared.localizedString("privacy_clear_bookmarks_desc"),
-                        isLoading: clearingBookmarks,
-                        isCompleted: bookmarksCleared
-                    ) {
-                        showClearBookmarksAlert = true
-                    }
-                    .sheet(isPresented: $showClearBookmarksAlert) {
-                        ClearBookmarksConfirmationView {
-                            showClearBookmarksAlert = false
-                            clearBookmarks()
-                        }
-                    }
-
-                    // Clear browser cache without deleting account sessions.
-                    CacheActionRow(
-                        icon: "internaldrive.fill",
-                        title: LanguageManager.shared.localizedString("privacy_clear_cache"),
-                        description: LanguageManager.shared.localizedString("privacy_clear_cache_desc"),
-                        detail: cacheSizeText,
-                        isLoading: clearingCache,
-                        isCompleted: cacheCleared
-                    ) {
-                        showClearCacheAlert = true
-                    }
-                    .alert(
-                        LanguageManager.shared.localizedString("privacy_clear_cache_confirm_title"),
-                        isPresented: $showClearCacheAlert
-                    ) {
-                        Button(
-                            LanguageManager.shared.localizedString("privacy_clear_action"),
-                            role: .destructive
-                        ) {
-                            clearWebViewCache()
-                        }
-                        Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
-                    } message: {
-                        Text(LanguageManager.shared.localizedString("privacy_clear_cache_confirm_message") + "\n\n" + FeatureText.text("Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first."))
-                    }
+                    NavigationLink {
+                        StorageUsageView()
+                    } label: {
+                        Label(FeatureText.text("Storage"), systemImage: "internaldrive")
+                    }.accessibilityIdentifier("privacy.storage")
                 } header: {
                     SectionHeader(title: LanguageManager.shared.localizedString("privacy_section_data"))
-                } footer: {
-                    HStack(alignment: .top, spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                        Text(LanguageManager.shared.localizedString("privacy_data_footer"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, 4)
                 }
+
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
         }
-        .navigationTitle(LanguageManager.shared.localizedString("settings_privacy"))
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            await refreshCacheSize()
-        }
+        .modifier(ProtectionPageTitle(embedded: embedded, title: LanguageManager.shared.localizedString("settings_privacy")))
         .onCompatibleChange(of: isIncognito) { _, enabled in
             let wasBrowsing = searchVM.isSearching
             let pageURL = tabManager.activeWebViewModel?.currentURL
@@ -216,72 +174,6 @@ struct PrivacySettingsView: View {
         }
     }
 
-    // MARK: - Actions
-
-    private func clearSearchHistory() {
-        clearingHistory = true
-        Task {
-            do {
-                try SearchHistoryService.clearAll(in: modelContext)
-                await MainActor.run {
-                    searchVM.recentSearches = []
-                    clearingHistory = false
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        historyCleared = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        withAnimation { historyCleared = false }
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    clearingHistory = false
-                }
-            }
-        }
-    }
-
-    private func clearBookmarks() {
-        clearingBookmarks = true
-        Task {
-            do {
-                try BookmarkService.clearAll(in: modelContext)
-                await MainActor.run {
-                    clearingBookmarks = false
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        bookmarksCleared = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        withAnimation { bookmarksCleared = false }
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    clearingBookmarks = false
-                }
-            }
-        }
-    }
-
-    private func clearWebViewCache() {
-        clearingCache = true
-        Task {
-            await BrowserCacheService.clear(
-                tabManager: tabManager,
-                historyContext: modelContext
-            )
-            clearingCache = false
-            cacheSizeText = nil
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                cacheCleared = true
-            }
-        }
-    }
-
-    private func refreshCacheSize() async {
-        let byteCount = await BrowserCacheService.currentSizeInBytes()
-        cacheSizeText = BrowserCacheService.formattedSize(byteCount)
-    }
 }
 
 struct PrivacyToggleRow: View {
@@ -436,47 +328,5 @@ struct CacheActionRow: View {
 #Preview {
     NavigationStack {
         PrivacySettingsView()
-    }
-}
-
-private struct ClearBookmarksConfirmationView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var confirmation = ""
-    let onConfirm: () -> Void
-
-    private var matches: Bool {
-        confirmation.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "CLEAR"
-    }
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Text(LanguageManager.shared.localizedString("privacy_clear_bookmarks_confirm_message"))
-                        .foregroundStyle(.secondary)
-                    if UserDefaults.standard.bool(forKey: BookmarkCloudSyncService.enabledKey) {
-                        Text(FeatureText.text("This deletion also syncs to your other devices.")).foregroundStyle(.secondary)
-                    }
-                    Text(String(format: FeatureText.text("Type %@ to confirm."), "CLEAR"))
-                    TextField("CLEAR", text: $confirmation)
-                        .textInputAutocapitalization(.characters).autocorrectionDisabled()
-                        .accessibilityIdentifier("privacy.clear-bookmarks.confirmation")
-                }
-                Section {
-                    Button(role: .destructive) {
-                        guard matches else { return }
-                        onConfirm()
-                    } label: {
-                        Label(LanguageManager.shared.localizedString("privacy_clear_action"), systemImage: "trash")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .disabled(!matches)
-                    .accessibilityIdentifier("privacy.clear-bookmarks.execute")
-                }
-            }
-            .navigationTitle(LanguageManager.shared.localizedString("privacy_clear_bookmarks_confirm_title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button(LanguageManager.shared.localizedString("cancel")) { dismiss() } } }
-        }
-        .presentationDetents([.medium, .large])
     }
 }

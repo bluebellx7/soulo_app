@@ -1,0 +1,69 @@
+{
+  "status": "implemented_verified",
+  "build": "1.2.15 (56)",
+  "evidence_root": "/tmp/soulo-storage-video-20261116",
+  "changes": [
+    "Present storage as five groups: website data, downloads and files, caches and temporary files, saved content, and other application data. The groups partition all categories without counting any category twice.",
+    "Normalize physical-device /private/var aliases and sandbox symlink aliases before classification and inventory deduplication. Downloads, temporary segments, rule caches and website databases retain their correct owners.",
+    "Provide one combined website total and a bulk website-data removal action. IndexedDB is included in website data, without a separate redundant storage row.",
+    "Open local audio and video directly in the fullscreen host. Keep portrait and landscape fullscreen, with close returning to the originating list. Suppress compact preview controls during entry and dismissal.",
+    "Present media previews independently of optional navigation pushes on iOS 16, including download playback. Keep document previews and the modern navigation paths intact. Runtime sampling found continuous SwiftUI navigation updates while a media push tried to enter fullscreen."
+  ],
+  "validation": {
+    "storage_unit": {
+      "status": "passed",
+      "cases_per_runtime": 19,
+      "runtimes": ["iOS 26.2 simulator", "iOS 16.0 simulator"],
+      "evidence": ["phone.xcresult", "ios16-final.xcresult"],
+      "scope": [
+        "Private-var path classification, sandbox aliases, unique byte accounting and five-group category partitioning.",
+        "Safe partial cleanup, active temporary-file retention, live compiled-rule retention and stale scan invalidation.",
+        "Real WebKit IndexedDB, CacheStorage, localStorage and cookies on two origins: targeted database removal preserves the other origin, then bulk removal clears both websites.",
+        "Offline HLS references include their external Library package once, including when two references point to the same package."
+      ],
+      "note": "The iOS 16 unit suite passed before the subsequent UI run was interrupted to investigate a local-media navigation hang. The entire interrupted result is not represented as passing."
+    },
+    "storage_ui": {
+      "status": "passed",
+      "phone_cases": 3,
+      "ipad_cases": 2,
+      "ios16_cases": 1,
+      "evidence": ["phone.xcresult", "ipad.xcresult", "ios16-media-route-final.xcresult"],
+      "scope": "Five groups, bulk website clearing confirmation, usable anchored confirmation width, cache byte reduction after deletion, and refreshed totals after returning from a real download deletion."
+    },
+    "fullscreen_ui": {
+      "phone": "passed",
+      "ipad": "passed",
+      "ios16": "passed",
+      "cases_per_runtime": 2,
+      "evidence": ["phone-media-stable.xcresult (Soulo method)", "phone-geometry-final.xcresult (native method)", "ipad-media-stable.xcresult", "ios16-media-isolated-final.xcresult"],
+      "scope": "Local MP4 and WAV in native and Soulo engines: fullscreen entry with no compact preview, loaded timeline, rotation to the opposite of the actual opening orientation, and close returning to the file list.",
+      "note": "Earlier driver runs failed when timed controls disappeared during XCTest's idle wait, when searching across inactive iOS 16 library pages retained part of the previous filename, or when a landscape-opening video was incorrectly expected to stay landscape after rotation. The final driver starts each fixture with fresh search state and derives the opposite orientation. Failed runs remain as evidence and are not counted as successful."
+    },
+    "visual_review": {
+      "status": "passed",
+      "evidence": ["ipad-attachments", "ipad-media-stable-attachments", "ios16-media-final-attachments", "phone-screen-rotation-1.png"],
+      "scope": "Grouped storage page, full-width confirmation popovers, and video/audio fullscreen controls. Application-only XCTest screenshots crop a physically rotated iPhone window incorrectly; raw simulator display captures show the complete player and are used for its visual review."
+    },
+    "build": {
+      "status": "passed",
+      "configuration": "Debug arm64 simulator, minimum iOS 16.0",
+      "evidence": ["ios16-media-route-build2.log", "isolated-media-driver-build.log"]
+    },
+    "localization": "passed, 50 locales",
+    "metadata": "passed, 50 locales",
+    "whitespace": "passed"
+  },
+  "user_managed_assets": {
+    "user_reported_bytes": "972.4 MB",
+    "status": "ownership_not_verified_on_user_device",
+    "finding": "Soulo stores AVFoundation offline HLS packages under Library and resolves them through validated .soulohls references. Referenced packages count toward Downloads and are removed through the file-owning deletion flow. A UserManagedAssets folder name alone does not prove all its contents are disposable.",
+    "action": "Preserve the reported folder. No raw removal or physical-device operation was performed. The other listed directories total approximately 2.6 MB and can be left alone."
+  },
+  "boundaries": [
+    "QA uses the isolated com.dkluge.Soulo.Acceptance simulator container and task-named media fixtures. No production user data is cleared.",
+    "After acceptance, the six task-created media copies were removed from the three QA containers and the task-owned iOS 16 simulator was shut down.",
+    "iOS 27.2.1 physical-device behavior is not inferred from simulator results.",
+    "No codec library removed, version increment, commit, push, website deployment or TestFlight upload performed."
+  ]
+}

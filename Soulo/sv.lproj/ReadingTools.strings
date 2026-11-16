@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gester och återkoppling";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Plattformar";
+"toolbar_more_panel" = "Mer-panel";
+"show_platform_bar" = "Visa plattformsrad";
+"toolbar_restore" = "Återställ standard";
+"platform_bar_hidden_hint" = "Lägg till ”%1$@” i ”%2$@” för att byta plattform och grupp när plattformsraden är dold.";
+"platform_bar_disabled_hint" = "Plattformsraden är dold. Tryck för att öppna ”%@” innan automatisk döljning aktiveras.";
+
+"storage_files_group" = "Hämtningar och filer";
+"storage_cache_group" = "Cache och tillfälliga filer";
+"storage_saved_group" = "Sparat innehåll";
+
+"storage_clear_offline_media_warning" = "Raderar alla offlinevideor här och deras filposter. Oavslutade fil-/videohämtningar, uppspelning och exporter stoppas.";
+"storage_clear_active_temp_warning" = "Avbryter oavslutade fil-/videohämtningar, stoppar uppspelning och exporter och rensar frigjorda tillfälliga filer. Slutförda hämtningar behålls.";
+"storage_files_still_in_use" = "Vissa filer används fortfarande. Frigjorda filer har rensats. Försök igen om en stund.";
+
+"storage_system_caches" = "Systemcache";
+"storage_offline_media" = "Offlinevideor";
+"storage_system_data_retained" = "Systemfiler kan fortsätta användas eller återskapas. Synkroniserade inställningar behålls.";
+
+"storage_clear_offline_remnants_warning" = "Tar bort offlinevideor utan filpost. Sparade hämtningar behålls. Ofullständiga hämtningar, uppspelning och exporter stoppas.";
+
+"settings_ads_and_privacy" = "Annonser och integritet";
+
+"storage_cleanup_cache_desc" = "Rensar frigörbar cache och tillfälliga filer; filer som används behålls.";
+"storage_cleanup_downloads_desc" = "Tar bort sparade hämtade filer och deras poster.";
+"storage_cleanup_wallpapers_desc" = "Tar bort bakgrunder från favoriter och raderar deras filer.";
+"storage_cleanup_reading_desc" = "Rensar offlineartiklar, bokbiblioteket och läsförloppet.";
+
+"storage_cleanup_offline_desc" = "Tar bort rester av offlinevideor utan hämtningsposter.";

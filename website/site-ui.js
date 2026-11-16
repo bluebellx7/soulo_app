@@ -82,7 +82,7 @@
       'movies.sidebarAction': '浏览可导入的搜索源',
       'movies.resetFilters': '查看全部网站',
       'movies.aboutTitle': '一份按用途整理的影视收藏夹。',
-      'movies.aboutDesc': 'Soulo 影视导航收录综合影视、电影下载、追剧、动漫、找片搜索、网盘资源、字幕台词、影评片单、纪录直播和影视工具。每个入口都标注网站名称、域名与用途，点击后在新标签页打开。',
+      'movies.aboutDesc': 'Soulo 影视导航收录综合影视、官方平台、海外访问、电影下载、追剧、动漫、找片搜索、网盘资源、字幕台词、影评片单和纪录直播。每个入口都标注网站名称、域名与用途，点击后在新标签页打开。',
       'movies.faq1Q': '怎么找到想要的网站？',
       'movies.faq1A': '按左侧分类浏览，或搜索网站名称、域名和用途。点击网站卡片打开对应网站，点击爱心将入口加入当前浏览器的收藏。',
       'movies.faq2Q': '收藏保存在哪里？',
@@ -177,7 +177,7 @@
       'movies.sidebarAction': 'Browse importable search sources',
       'movies.resetFilters': 'Show All Sites',
       'movies.aboutTitle': 'A movie directory organized by how you watch.',
-      'movies.aboutDesc': 'Soulo Movies curates streaming sites, downloads, series, anime, search engines, cloud shares, subtitles, reviews, documentaries, and playback tools. Each entry shows its name, domain, and purpose, opening in a new tab.',
+      'movies.aboutDesc': 'Soulo Movies curates streaming sites, official platforms, overseas-access websites, downloads, series, anime, search engines, cloud shares, subtitles, reviews, and documentaries. Each entry shows its name, domain, and purpose, opening in a new tab.',
       'movies.faq1Q': 'How do I find the site I need?',
       'movies.faq1A': 'Browse categories on the left or search by name, domain, or tag. Click any card to visit the site, or click the heart icon to save it to your browser favorites.',
       'movies.faq2Q': 'Where are my favorites stored?',
@@ -281,6 +281,8 @@
   };
 
   const movieCategories = {
+    official: {zh: ['官方平台', '官方影视、视频与直播平台入口。'], en: ['Official Platforms', 'Official movie, video, and live TV platforms.']},
+    overseas: {zh: ['海外访问', '需要海外网络环境访问的网站入口。'], en: ['Overseas Access', 'Websites requiring an overseas network connection.']},
     streaming: {zh: ['综合影视', '电影、剧集和综艺，一个入口慢慢挑。'], en: ['Streaming', 'Movies, series, and variety shows in one place.']},
     movies: {zh: ['电影下载', '收藏电影，也收藏值得重看的故事。'], en: ['Movie Downloads', 'Collect films and stories worth rewatching.']},
     series: {zh: ['追剧专区', '日剧、韩剧与海外剧，接上喜欢的下一集。'], en: ['Series & Drama', 'J-dramas, K-dramas, and global series to binge next.']},
@@ -290,7 +292,6 @@
     subtitles: {zh: ['字幕与台词', '补一份字幕，或找回那句忘不掉的对白。'], en: ['Subtitles & Quotes', 'Download subtitles or find a movie by a memorable line.']},
     discovery: {zh: ['影评与片单', '不知道看什么时，给自己一点灵感。'], en: ['Reviews & Lists', 'Curated watchlists and ratings when you need inspiration.']},
     documentary: {zh: ['纪录与直播', '真实世界的故事，还有正在发生的现场。'], en: ['Docs & Live TV', 'Real-world documentaries and live broadcasts.']},
-    tools: {zh: ['影视工具', '播放器与影视资源接口。'], en: ['Media Tools', 'Players and media resource utilities.']}
   };
 
   const pageTitles = {

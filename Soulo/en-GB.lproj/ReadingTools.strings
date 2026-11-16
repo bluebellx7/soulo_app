@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gestures & Feedback";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platforms";
+"toolbar_more_panel" = "More Panel";
+"show_platform_bar" = "Show Platform Bar";
+"toolbar_restore" = "Restore Defaults";
+"platform_bar_hidden_hint" = "Add “%1$@” in “%2$@” to switch platforms and groups when the platform bar is hidden.";
+"platform_bar_disabled_hint" = "Platform bar hidden. Tap to open “%@” before enabling automatic hiding.";
+
+"storage_files_group" = "Downloads & files";
+"storage_cache_group" = "Caches & temporary files";
+"storage_saved_group" = "Saved content";
+
+"storage_clear_offline_media_warning" = "Deletes all offline videos here and their file entries. Unfinished file/video downloads, playback and exports will stop.";
+"storage_clear_active_temp_warning" = "Cancels unfinished file/video downloads and stops playback and exports, then clears released temporary files. Completed downloads are kept.";
+"storage_files_still_in_use" = "Some files are still in use. Released files were cleared; try again shortly.";
+
+"storage_system_caches" = "System caches";
+"storage_offline_media" = "Offline videos";
+"storage_system_data_retained" = "Files managed by the system may remain in use or be recreated. Synced settings are kept.";
+
+"storage_clear_offline_remnants_warning" = "Deletes unlisted offline videos. Saved downloads are kept. Unfinished downloads, playback and exports will stop.";
+
+"settings_ads_and_privacy" = "Ads & Privacy";
+
+"storage_cleanup_cache_desc" = "Clears releasable cache and temporary files; files in use are kept.";
+"storage_cleanup_downloads_desc" = "Deletes saved downloaded files and their records.";
+"storage_cleanup_wallpapers_desc" = "Unfavorites and deletes favorite wallpaper files.";
+"storage_cleanup_reading_desc" = "Clears offline articles, the book library and reading progress.";
+
+"storage_cleanup_offline_desc" = "Deletes offline video remnants without download records.";

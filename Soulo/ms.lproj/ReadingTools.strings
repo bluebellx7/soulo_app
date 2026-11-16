@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gerak Isyarat & Maklum Balas";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platform";
+"toolbar_more_panel" = "Panel Lagi";
+"show_platform_bar" = "Tunjukkan Bar Platform";
+"toolbar_restore" = "Pulihkan Lalai";
+"platform_bar_hidden_hint" = "Tambah “%1$@” dalam “%2$@” untuk menukar platform dan kumpulan apabila bar platform disembunyikan.";
+"platform_bar_disabled_hint" = "Bar platform disembunyikan. Ketik untuk membuka “%@” sebelum mengaktifkan sembunyi automatik.";
+
+"storage_files_group" = "Muat turun dan fail";
+"storage_cache_group" = "Cache dan fail sementara";
+"storage_saved_group" = "Kandungan disimpan";
+
+"storage_clear_offline_media_warning" = "Memadam semua video luar talian di sini dan entri failnya. Muat turun fail/video yang belum selesai, main balik dan eksport akan dihentikan.";
+"storage_clear_active_temp_warning" = "Membatalkan muat turun fail/video yang belum selesai, menghentikan main balik dan eksport, kemudian mengosongkan fail sementara yang telah dilepaskan. Muat turun selesai dikekalkan.";
+"storage_files_still_in_use" = "Sesetengah fail masih digunakan. Fail yang dilepaskan telah dibersihkan; cuba lagi sebentar nanti.";
+
+"storage_system_caches" = "Cache sistem";
+"storage_offline_media" = "Video luar talian";
+"storage_system_data_retained" = "Fail sistem mungkin masih digunakan atau dicipta semula. Tetapan yang disegerakkan dikekalkan.";
+
+"storage_clear_offline_remnants_warning" = "Memadam video luar talian yang tidak disenaraikan. Muat turun tersimpan dikekalkan. Muat turun belum selesai, main balik dan eksport dihentikan.";
+
+"settings_ads_and_privacy" = "Iklan & Privasi";
+
+"storage_cleanup_cache_desc" = "Membersihkan cache dan fail sementara yang boleh dilepaskan; fail digunakan dikekalkan.";
+"storage_cleanup_downloads_desc" = "Memadam fail muat turun tersimpan dan rekodnya.";
+"storage_cleanup_wallpapers_desc" = "Membuang kertas dinding daripada kegemaran dan memadam failnya.";
+"storage_cleanup_reading_desc" = "Membersihkan artikel luar talian, pustaka buku dan kemajuan bacaan.";
+
+"storage_cleanup_offline_desc" = "Memadam sisa video luar talian tanpa rekod muat turun.";

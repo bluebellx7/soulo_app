@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "الإيماءات والاستجابة";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "المنصات";
+"toolbar_more_panel" = "لوحة المزيد";
+"show_platform_bar" = "إظهار شريط المنصات";
+"toolbar_restore" = "استعادة الافتراضي";
+"platform_bar_hidden_hint" = "أضف «%1$@» في «%2$@» للتبديل بين المنصات والمجموعات عند إخفاء شريط المنصات.";
+"platform_bar_disabled_hint" = "شريط المنصات مخفي. اضغط لفتح «%@» قبل تفعيل الإخفاء التلقائي.";
+
+"storage_files_group" = "التنزيلات والملفات";
+"storage_cache_group" = "ذاكرة التخزين والملفات المؤقتة";
+"storage_saved_group" = "المحتوى المحفوظ";
+
+"storage_clear_offline_media_warning" = "يحذف جميع مقاطع الفيديو غير المتصلة هنا وسجلات ملفاتها. ستتوقف تنزيلات الملفات/الفيديو غير المكتملة والتشغيل والتصدير.";
+"storage_clear_active_temp_warning" = "يلغي تنزيلات الملفات/الفيديو غير المكتملة ويوقف التشغيل والتصدير، ثم يمسح الملفات المؤقتة المحررة. تبقى التنزيلات المكتملة محفوظة.";
+"storage_files_still_in_use" = "بعض الملفات لا تزال قيد الاستخدام. تم مسح الملفات المحررة؛ حاول مجددًا بعد قليل.";
+
+"storage_system_caches" = "ذاكرة النظام المؤقتة";
+"storage_offline_media" = "فيديوهات دون اتصال";
+"storage_system_data_retained" = "قد تبقى الملفات التي يديرها النظام قيد الاستخدام أو يعاد إنشاؤها. تُحفظ الإعدادات المتزامنة.";
+
+"storage_clear_offline_remnants_warning" = "يحذف الفيديوهات غير المدرجة دون اتصال ويحفظ التنزيلات المحفوظة. ستتوقف التنزيلات غير المكتملة والتشغيل والتصدير.";
+
+"settings_ads_and_privacy" = "الإعلانات والخصوصية";
+
+"storage_cleanup_cache_desc" = "يمسح الذاكرة المؤقتة والملفات القابلة للتحرير ويحفظ الملفات المستخدمة.";
+"storage_cleanup_downloads_desc" = "يحذف الملفات المنزّلة المحفوظة وسجلاتها.";
+"storage_cleanup_wallpapers_desc" = "يلغي تفضيل الخلفيات ويحذف ملفاتها.";
+"storage_cleanup_reading_desc" = "يمسح المقالات دون اتصال ومكتبة الكتب وتقدم القراءة.";
+
+"storage_cleanup_offline_desc" = "يحذف بقايا الفيديوهات دون اتصال التي لا تملك سجلات تنزيل.";

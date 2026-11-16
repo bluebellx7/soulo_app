@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "اشارے اور ردعمل";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "پلیٹ فارمز";
+"toolbar_more_panel" = "مزید پینل";
+"show_platform_bar" = "پلیٹ فارم بار دکھائیں";
+"toolbar_restore" = "ڈیفالٹ بحال کریں";
+"platform_bar_hidden_hint" = "پلیٹ فارم بار چھپی ہو تو پلیٹ فارم اور گروپ بدلنے کے لیے «%1$@» شامل کریں («%2$@» میں)۔";
+"platform_bar_disabled_hint" = "پلیٹ فارم بار چھپی ہوئی ہے۔ خودکار چھپانا فعال کرنے سے پہلے «%@» کھولنے کے لیے ٹیپ کریں۔";
+
+"storage_files_group" = "ڈاؤن لوڈز اور فائلیں";
+"storage_cache_group" = "کیش اور عارضی فائلیں";
+"storage_saved_group" = "محفوظ مواد";
+
+"storage_clear_offline_media_warning" = "یہاں کی تمام آف لائن ویڈیوز اور ان کے فائل اندراجات حذف ہوں گے۔ نامکمل فائل/ویڈیو ڈاؤن لوڈ، پلے بیک اور برآمد رک جائیں گے۔";
+"storage_clear_active_temp_warning" = "نامکمل فائل/ویڈیو ڈاؤن لوڈ منسوخ کرکے پلے بیک اور برآمد روکتا ہے، پھر آزاد عارضی فائلیں صاف کرتا ہے۔ مکمل ڈاؤن لوڈ برقرار رہتے ہیں۔";
+"storage_files_still_in_use" = "کچھ فائلیں اب بھی استعمال میں ہیں۔ آزاد فائلیں صاف کر دی گئی ہیں؛ کچھ دیر بعد دوبارہ کوشش کریں۔";
+
+"storage_system_caches" = "سسٹم کیش";
+"storage_offline_media" = "آف لائن ویڈیوز";
+"storage_system_data_retained" = "سسٹم فائلیں زیر استعمال رہ سکتی ہیں یا دوبارہ بن سکتی ہیں۔ مطابقت پذیر ترتیبات محفوظ رہیں گی۔";
+
+"storage_clear_offline_remnants_warning" = "فہرست میں موجود نہ ہونے والی آف لائن ویڈیوز حذف کرتا ہے۔ محفوظ ڈاؤن لوڈ برقرار رہتے ہیں۔ نامکمل ڈاؤن لوڈ، پلے بیک اور برآمد رک جائیں گے۔";
+
+"settings_ads_and_privacy" = "اشتہارات اور رازداری";
+
+"storage_cleanup_cache_desc" = "خالی ہونے والا کیش اور عارضی فائلیں صاف کرتا ہے؛ زیر استعمال مواد برقرار رہتا ہے۔";
+"storage_cleanup_downloads_desc" = "محفوظ ڈاؤن لوڈ فائلیں اور ان کے ریکارڈ حذف کرتا ہے۔";
+"storage_cleanup_wallpapers_desc" = "وال پیپر کو پسندیدہ سے ہٹا کر ان کی فائلیں حذف کرتا ہے۔";
+"storage_cleanup_reading_desc" = "آف لائن مضامین، کتابوں کی لائبریری اور پڑھنے کی پیش رفت صاف کرتا ہے۔";
+
+"storage_cleanup_offline_desc" = "ڈاؤن لوڈ ریکارڈ کے بغیر آف لائن ویڈیو کی باقیات حذف کرتا ہے۔";

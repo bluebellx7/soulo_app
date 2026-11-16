@@ -220,6 +220,15 @@ final class SeparatedMediaDownloadService: NSObject, @preconcurrency URLSessionD
         continuations.removeValue(forKey: id)?.resume(throwing: CancellationError())
     }
 
+    func pendingTasksForStorageCleanup() async -> Bool {
+        let pending = await session.allTasks
+        return !tasks.isEmpty || !merges.isEmpty || !exporters.isEmpty || pending.contains(where: { $0.state != .completed })
+    }
+    func cancelTasksForStorageCleanup() async {
+        Set(tasks.keys).union(merges.keys).union(exporters.keys).forEach { cancel(id: $0) }
+        for task in await session.allTasks { task.cancel() }
+    }
+
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
                     didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         guard let key = Self.parseTaskKey(downloadTask.taskDescription) else { return }

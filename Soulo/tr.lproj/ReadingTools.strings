@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Hareketler ve Geri Bildirim";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platformlar";
+"toolbar_more_panel" = "Diğer paneli";
+"show_platform_bar" = "Platform çubuğunu göster";
+"toolbar_restore" = "Varsayılanları geri yükle";
+"platform_bar_hidden_hint" = "Platform çubuğu gizliyken platform ve grup değiştirmek için “%1$@” seçeneğini “%2$@” bölümüne ekleyin.";
+"platform_bar_disabled_hint" = "Platform çubuğu gizli. Otomatik gizlemeyi açmadan önce “%@” seçeneğini açmak için dokunun.";
+
+"storage_files_group" = "İndirmeler ve dosyalar";
+"storage_cache_group" = "Önbellek ve geçici dosyalar";
+"storage_saved_group" = "Kaydedilen içerik";
+
+"storage_clear_offline_media_warning" = "Buradaki tüm çevrimdışı videoları ve dosya kayıtlarını siler. Tamamlanmamış dosya/video indirmeleri, oynatma ve dışa aktarma durdurulur.";
+"storage_clear_active_temp_warning" = "Tamamlanmamış dosya/video indirmelerini iptal eder, oynatmayı ve dışa aktarmayı durdurur, ardından serbest bırakılan geçici dosyaları temizler. Tamamlanan indirmeler korunur.";
+"storage_files_still_in_use" = "Bazı dosyalar hâlâ kullanımda. Serbest bırakılan dosyalar temizlendi; biraz sonra yeniden deneyin.";
+
+"storage_system_caches" = "Sistem önbelleği";
+"storage_offline_media" = "Çevrimdışı videolar";
+"storage_system_data_retained" = "Sistem dosyaları kullanımda kalabilir veya yeniden oluşturulabilir. Eşzamanlanan ayarlar korunur.";
+
+"storage_clear_offline_remnants_warning" = "Listede olmayan çevrimdışı videoları siler. Kaydedilmiş indirmeler korunur. Tamamlanmamış indirmeler, oynatma ve dışa aktarma durur.";
+
+"settings_ads_and_privacy" = "Reklamlar ve Gizlilik";
+
+"storage_cleanup_cache_desc" = "Serbest bırakılabilir önbelleği ve geçici dosyaları temizler; kullanılanları korur.";
+"storage_cleanup_downloads_desc" = "Kaydedilmiş indirilen dosyaları ve kayıtlarını siler.";
+"storage_cleanup_wallpapers_desc" = "Duvar kâğıtlarını favorilerden çıkarır ve dosyalarını siler.";
+"storage_cleanup_reading_desc" = "Çevrimdışı makaleleri, kitaplığı ve okuma ilerlemesini temizler.";
+
+"storage_cleanup_offline_desc" = "İndirme kaydı olmayan çevrimdışı video kalıntılarını siler.";

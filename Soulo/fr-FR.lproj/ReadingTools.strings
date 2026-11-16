@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gestes et retour";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Plateformes";
+"toolbar_more_panel" = "Panneau Plus";
+"show_platform_bar" = "Afficher la barre des plateformes";
+"toolbar_restore" = "Rétablir par défaut";
+"platform_bar_hidden_hint" = "Ajoutez « %1$@ » dans « %2$@ » pour changer de plateforme et de groupe lorsque la barre est masquée.";
+"platform_bar_disabled_hint" = "La barre des plateformes est masquée. Touchez pour ouvrir « %@ » avant d’activer le masquage automatique.";
+
+"storage_files_group" = "Téléchargements et fichiers";
+"storage_cache_group" = "Cache et fichiers temporaires";
+"storage_saved_group" = "Contenu enregistré";
+
+"storage_clear_offline_media_warning" = "Supprime toutes les vidéos hors ligne ici et leurs entrées de fichier. Les téléchargements de fichiers/vidéos inachevés, la lecture et les exports seront arrêtés.";
+"storage_clear_active_temp_warning" = "Annule les téléchargements de fichiers/vidéos inachevés, arrête la lecture et les exports, puis efface les fichiers temporaires libérés. Les téléchargements terminés sont conservés.";
+"storage_files_still_in_use" = "Certains fichiers sont encore utilisés. Les fichiers libérés ont été effacés. Réessayez dans un instant.";
+
+"storage_system_caches" = "Cache système";
+"storage_offline_media" = "Vidéos hors ligne";
+"storage_system_data_retained" = "Les fichiers système peuvent rester utilisés ou être recréés. Les réglages synchronisés sont conservés.";
+
+"storage_clear_offline_remnants_warning" = "Supprime les vidéos hors ligne non répertoriées. Les téléchargements enregistrés sont conservés. Les téléchargements incomplets, la lecture et les exportations s'arrêtent.";
+
+"settings_ads_and_privacy" = "Publicités et confidentialité";
+
+"storage_cleanup_cache_desc" = "Efface le cache et les fichiers temporaires libérables ; conserve ceux utilisés.";
+"storage_cleanup_downloads_desc" = "Supprime les fichiers téléchargés enregistrés et leurs entrées.";
+"storage_cleanup_wallpapers_desc" = "Retire les fonds d'écran des favoris et supprime leurs fichiers.";
+"storage_cleanup_reading_desc" = "Efface les articles hors ligne, la bibliothèque et la progression de lecture.";
+
+"storage_cleanup_offline_desc" = "Supprime les restes de vidéos hors ligne sans entrée de téléchargement.";

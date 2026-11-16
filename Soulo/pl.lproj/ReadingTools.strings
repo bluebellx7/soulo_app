@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gesty i reakcje";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platformy";
+"toolbar_more_panel" = "Panel Więcej";
+"show_platform_bar" = "Pokaż pasek platform";
+"toolbar_restore" = "Przywróć domyślne";
+"platform_bar_hidden_hint" = "Dodaj „%1$@” w „%2$@”, aby przełączać platformy i grupy, gdy pasek jest ukryty.";
+"platform_bar_disabled_hint" = "Pasek platform jest ukryty. Stuknij, aby otworzyć „%@” przed włączeniem automatycznego ukrywania.";
+
+"storage_files_group" = "Pobrane pliki";
+"storage_cache_group" = "Pamięć podręczna i pliki tymczasowe";
+"storage_saved_group" = "Zapisana zawartość";
+
+"storage_clear_offline_media_warning" = "Usuwa wszystkie filmy offline w tym miejscu i ich wpisy plików. Niedokończone pobieranie plików/filmów, odtwarzanie i eksport zostaną zatrzymane.";
+"storage_clear_active_temp_warning" = "Anuluje niedokończone pobieranie plików/filmów, zatrzymuje odtwarzanie i eksport, a następnie usuwa zwolnione pliki tymczasowe. Ukończone pobrania pozostają.";
+"storage_files_still_in_use" = "Niektóre pliki są nadal używane. Zwolnione pliki zostały usunięte. Spróbuj ponownie za chwilę.";
+
+"storage_system_caches" = "Pamięć podręczna systemu";
+"storage_offline_media" = "Filmy offline";
+"storage_system_data_retained" = "Pliki systemowe mogą pozostać w użyciu lub zostać utworzone ponownie. Zsynchronizowane ustawienia zostaną zachowane.";
+
+"storage_clear_offline_remnants_warning" = "Usuwa filmy offline spoza listy. Zapisane pobrania pozostają. Niedokończone pobrania, odtwarzanie i eksport zostaną zatrzymane.";
+
+"settings_ads_and_privacy" = "Reklamy i prywatność";
+
+"storage_cleanup_cache_desc" = "Czyści możliwą do zwolnienia pamięć podręczną i pliki tymczasowe; używane pozostają.";
+"storage_cleanup_downloads_desc" = "Usuwa zapisane pobrane pliki i ich wpisy.";
+"storage_cleanup_wallpapers_desc" = "Usuwa tapety z ulubionych i kasuje ich pliki.";
+"storage_cleanup_reading_desc" = "Czyści artykuły offline, bibliotekę książek i postęp czytania.";
+
+"storage_cleanup_offline_desc" = "Usuwa pozostałości filmów offline bez wpisów pobierania.";

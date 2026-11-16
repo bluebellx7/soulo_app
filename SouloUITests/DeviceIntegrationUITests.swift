@@ -3,6 +3,147 @@ import UIKit
 
 @MainActor
 final class DeviceIntegrationUITests: XCTestCase {
+    func testLiveTencentPlaybackAndFullscreenDoNotShowSpuriousFailure() async throws {
+        guard #available(iOS 16.4, *), ProcessInfo.processInfo.environment["SOULO_LIVE_TENCENT_QA"] == "1",
+              SouloUITestApplication.bundleIdentifier.hasSuffix(".Acceptance") else {
+            throw XCTSkip("Opt-in live Tencent playback in the isolated acceptance app")
+        }
+        continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language","zh-Hans","-appearance","light","-wallpaper_source","gradient",
+            "-is_incognito","YES","-icloud_sync_enabled","NO","-review.requestedOnce","YES",
+            "-browser_toolbar_hidden","NO","-keep_fullscreen_browsing","NO","-ad_block_confirm_cross_domain","NO",
+            "-video.takeOverWebPlayers","NO","-video.showsWebTools","YES"]
+        app.launchEnvironment["SOULO_ACCEPTANCE_PROBE"] = "1"
+        app.launchEnvironment["SOULO_ACCEPTANCE_LIVE_VIDEO"] = "1"
+        app.launchEnvironment["SOULO_VIDEO_VOLUME_TRACE"] = "1"
+        app.launch()
+        defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
+        var route = URLComponents(string: "soulo://open")!
+        route.queryItems = [URLQueryItem(name: "url", value: ProcessInfo.processInfo.environment["SOULO_TENCENT_URL"]
+            ?? "https://v.qq.com/x/cover/mzc002001bk7moh/o41028027ng.html")]
+        app.open(try XCTUnwrap(route.url))
+        let probe = app.staticTexts["qa.acceptance"]
+        XCTAssertTrue(probe.waitForExistence(timeout: 15))
+        func state() -> [String: Any] {
+            guard let text = probe.value as? String, let range = text.range(of: ";extension="),
+                  let data = String(text[range.upperBound...]).data(using: .utf8),
+                  let result = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [:] }
+            return result
+        }
+        func record(_ name: String) {
+            let report = XCTAttachment(string: String(describing: state()))
+            report.name = "tencent-" + name; report.lifetime = .keepAlways; add(report)
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            shot.name = "tencent-" + name; shot.lifetime = .keepAlways; add(shot)
+        }
+        func video() -> [String: Any]? { (state()["videos"] as? [[String: Any]])?.first { ($0["width"] as? Int ?? 0)>0 } }
+        func tap(_ rect: [String: Double]) {
+            let facts = state()
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+                dx:(facts["originX"] as? Double ?? 0)+(rect["x"] ?? 0)+(rect["width"] ?? 0)/2,
+                dy:(facts["originY"] as? Double ?? 0)+(rect["y"] ?? 0)+(rect["height"] ?? 0)/2)).tap()
+        }
+        for _ in 0..<60 {
+            if !(state()["videos"] as? [[String: Any]] ?? []).isEmpty { break }
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        record("loaded")
+        XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
+        // Let the publisher's preroll finish naturally. Touching the video
+        // during an ad opens its advertiser, which does not test fullscreen.
+        // A decoded advertisement alone is not evidence of program playback.
+        for _ in 0..<160 {
+            let text=state()["text"] as? String ?? ""
+            if let v=video(), (v["ready"] as? Int ?? 0)>=2, v["paused"] as? Bool == false,
+               (v["duration"] as? Double ?? 0) > 60, (v["time"] as? Double ?? 0) > 0.5,
+               !text.contains("关闭该广告"), !text.contains("点击画面，查看详情") { break }
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        record("playing")
+        guard let before=video(), (before["ready"] as? Int ?? 0)>=2, before["paused"] as? Bool == false,
+              (before["duration"] as? Double ?? 0) > 60 else {
+            XCTFail("Tencent did not produce a playing decoded video: \(state())"); return
+        }
+        XCTAssertEqual(state()["handoffError"] as? String, "")
+        XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
+        let priorTime=before["time"] as? Double ?? 0
+        try await Task.sleep(for: .seconds(2))
+        XCTAssertGreaterThan(video()?["time"] as? Double ?? 0, priorTime + 0.5)
+        if ProcessInfo.processInfo.environment["SOULO_TENCENT_FULLSCREEN_MODE"] == "tools" {
+            for iteration in 0..<2 {
+                let toggle=app.webViews.buttons["视频工具"].firstMatch
+                XCTAssertTrue(toggle.waitForExistence(timeout: 5), app.debugDescription); toggle.tap()
+                let controls=state()["controls"] as? [[String: Any]] ?? []
+                guard let full=controls.first(where: { ($0["label"] as? String)=="全屏" && ($0["classes"] as? String)=="" }),
+                      let rect=full["rect"] as? [String: Double] else {
+                    record("missing-soulo-tool"); XCTFail("The expanded Soulo fullscreen tool must be visible: \(state())"); return
+                }
+                tap(rect)
+                let player=app.otherElements["media.mkv.fullscreen.player"].firstMatch
+                guard player.waitForExistence(timeout: 20) else {
+                    record("soulo-tool-failed"); XCTFail(app.debugDescription); return
+                }
+                let diagnostic=app.staticTexts["media.volume.diagnostics"].firstMatch
+                let decoded=XCTNSPredicateExpectation(predicate:NSPredicate(format:"label CONTAINS %@","frameReady=true"),object:diagnostic)
+                guard XCTWaiter.wait(for:[decoded],timeout:25) == .completed else {
+                    record("soulo-no-frame"); XCTFail(diagnostic.exists ? diagnostic.label : app.debugDescription); return
+                }
+                let report=XCTAttachment(string:diagnostic.label)
+                report.name="tencent-soulo-decoded-\(iteration)"; report.lifetime = .keepAlways; add(report)
+                record("soulo-fullscreen-\(iteration)")
+                let close=app.buttons["media.mkv.fullscreen.close"]
+                for _ in 0..<3 where !close.exists {
+                    player.coordinate(withNormalizedOffset:CGVector(dx:0.3,dy:0.4)).tap()
+                    try await Task.sleep(for:.milliseconds(150))
+                }
+                XCTAssertTrue(close.exists, app.debugDescription); close.tap()
+                try await Task.sleep(for:.seconds(3))
+                record("soulo-returned-\(iteration)")
+                XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
+                XCTAssertEqual(state()["handoffError"] as? String, "")
+                XCTAssertTrue(app.webViews.firstMatch.exists)
+            }
+            return
+        }
+        for iteration in 0..<2 {
+            // Reveal the publisher's controls, then use its own fullscreen entry.
+            if let rect=video()?["rect"] as? [String: Double] { tap(rect) }
+            try await Task.sleep(for: .milliseconds(500))
+            let controls=state()["controls"] as? [[String: Any]] ?? []
+            let full=controls.first { c in
+                let label=c["label"] as? String ?? "", classes=c["classes"] as? String ?? ""
+                return !classes.contains("soulo") && (label=="全屏" || classes.contains("fullscreen"))
+            }
+            guard let rect=full?["rect"] as? [String: Double] else {
+                record("missing-fullscreen"); XCTFail("Publisher fullscreen control not found: \(state())"); return
+            }
+            tap(rect)
+            let close=app.buttons.matching(NSPredicate(format:"label IN %@",["Done","完成","Close","关闭"])).firstMatch
+            guard close.waitForExistence(timeout: 10) else {
+                // Some Tencent mobile programs intentionally route their
+                // fullscreen button to the publisher's App-download page.
+                // Verify that outcome separately, never call it fullscreen.
+                if (state()["url"] as? String ?? "").contains("/activity/downapp_activity.html") {
+                    record("publisher-app-handoff")
+                    XCTAssertTrue(app.buttons["browser.external-app-confirmation.cancel"].exists, app.debugDescription)
+                    XCTAssertEqual(state()["handoffError"] as? String, "")
+                    XCTAssertFalse(app.alerts.firstMatch.exists)
+                    app.buttons["browser.external-app-confirmation.cancel"].tap()
+                    return
+                }
+                record("fullscreen-not-entered"); XCTFail(app.debugDescription); return
+            }
+            record("fullscreen-\(iteration)")
+            close.tap()
+            try await Task.sleep(for: .seconds(3))
+            record("returned-\(iteration)")
+            XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
+            XCTAssertEqual(state()["handoffError"] as? String, "")
+        }
+    }
+
     func testBookmarkAndNewTabDragShareTheSavedOrder() throws {
         guard SouloUITestApplication.bundleIdentifier.hasSuffix(".Acceptance") else { throw XCTSkip("Isolated library acceptance") }
         continueAfterFailure = false

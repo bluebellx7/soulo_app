@@ -21,6 +21,7 @@ struct AdBlockManagementView: View {
     var currentURL: URL? = nil
     var onMarkAdvertisement: (() -> Void)? = nil
     var onChanged: (() -> Void)? = nil
+    var embedded = false
 
     private var currentHostProtectionEnabled: Bool {
         adBlockEnabled && !service.isAllowlisted(currentHost)
@@ -111,8 +112,7 @@ struct AdBlockManagementView: View {
             }
 
         }
-        .navigationTitle(LanguageManager.shared.localizedString("ad_block_management"))
-        .navigationBarTitleDisplayMode(.inline)
+        .modifier(ProtectionPageTitle(embedded: embedded, title: LanguageManager.shared.localizedString("ad_block_management")))
         .toolbar {
             if showsDoneButton {
                 ToolbarItem(placement: .topBarTrailing) {

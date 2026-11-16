@@ -668,21 +668,57 @@ enum WebExtensionPackagePreparer {
       };
       \#(WebExtensionDownloadsScript.javaScript)
       \#(WebExtensionUserScriptsScript.javaScript)
-      // WebKit can report install again when a context is re-created. Preserve
-      // the first install and real version updates, without re-quarantining an
-      // existing script collection each time the user enables the extension.
+      // WebKit can report install again when a context is re-created. All
+      // publishers, including welcome-page listeners, share the native version
+      // gate; the old adapter entry point uses this same event subscription.
       if (!root.__souloAddInstallationListener) {
-        const listeners=new Set();let registered=false;
-        Object.defineProperty(root,'__souloAddInstallationListener',{value:function(listener) {
-          listeners.add(listener);
-          if(registered)return;registered=true;
-          chrome.runtime.onInstalled.addListener(function(details) {
-            const dispatch=event=>{for(const listener of listeners){try{listener(event);}catch(error){console.error(error);}}};
-            native({souloCompatibility:1,api:'lifecycle',operation:'installation',details}).then(result=>{
-              if(!result?.skip)dispatch(result?.details||details);
-            },error=>{console.error(error);dispatch(details);});
-          });
-        }});
+        const source=chrome.runtime.onInstalled;
+        const originalAdd=source?.addListener?.bind(source);
+        const originalRemove=source?.removeListener?.bind(source);
+        if(originalAdd) {
+          const listeners=new Set();let registered=false;
+          const dispatch=details=>{
+            for(const listener of Array.from(listeners)) {
+              if(!listeners.has(listener))continue;
+              try{listener(details);}catch(error){console.error(error);}
+            }
+          };
+          const receive=details=>native({souloCompatibility:1,api:'lifecycle',operation:'installation',details}).then(result=>{
+            if(!result?.skip)dispatch(result?.details||details);
+          },error=>{console.error(error);dispatch(details);});
+          const methods={
+            addListener(listener) {
+              if(typeof listener!=='function')throw new TypeError('Installation listener must be a function.');
+              listeners.add(listener);
+              if(!registered){originalAdd(receive);registered=true;}
+            },
+            removeListener(listener) {
+              listeners.delete(listener);
+              if(!listeners.size&&registered&&originalRemove){originalRemove(receive);registered=false;}
+            },
+            hasListener(listener){return listeners.has(listener);},
+            hasListeners(){return listeners.size>0;}
+          };
+          Object.defineProperty(root,'__souloAddInstallationListener',{value:methods.addListener});
+          const replace=(target,key,value)=>{
+            try{Object.defineProperty(target,key,{configurable:true,writable:true,value});}catch(_) {
+              try{target[key]=value;}catch(_){}
+            }
+            return target[key]===value;
+          };
+          const events=new Set([source,root.browser?.runtime?.onInstalled]);
+          for(const installation of events) {
+            if(!installation)continue;
+            // Shadow native event methods, retaining the real add/remove pair
+            // above. Minified aliases of chrome/browser use the same wrapper.
+            for(const [key,value] of Object.entries(methods))replace(installation,key,value);
+          }
+          // Prefer a stable facade even if a native namespace getter creates
+          // another event wrapper on the next property access.
+          for(const runtime of new Set([chrome.runtime,root.browser?.runtime])) {
+            if(runtime)replace(runtime,'onInstalled',methods);
+          }
+        }
       }
 
       const notifications = chrome.notifications || {};
@@ -1689,7 +1725,8 @@ final class WebExtensionCompatibilityHost {
                 let identity = ObjectIdentifier(context)
                 var event = installationEvents[identity]!
                 let previous = event.previousVersion
-                if details["reason"] as? String == "install", event.delivered || previous == version {
+                let isVersionEvent = ["install", "update"].contains(details["reason"] as? String ?? "")
+                if isVersionEvent && (event.delivered || previous == version) {
                     replyHandler(["skip": true], nil)
                 } else {
                     if details["reason"] as? String == "install", let previous {

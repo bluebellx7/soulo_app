@@ -379,7 +379,7 @@ enum CloudSettingsSyncEngine {
          "dynamic_theme": "midnight", "home_title": "Soulo", "home_subtitle": AppConstants.defaultHomeSubtitle,
          "show_bookmarks_on_home": false, "show_group_picker_on_home": false, "show_recent_searches_on_home": true,
          "auto_hide_platform_bar": false, "show_top_tab_bar": true,
-         "show_top_search_bar": false, "keep_fullscreen_browsing": false, "extend_page_background": false, "page_background_gradient": false, "freeze_page_background_on_scroll": false, "web_follows_app_color_scheme": true,
+         "show_top_search_bar": false, "keep_fullscreen_browsing": false, "extend_page_background": BrowserInitialPreferences.extendPageBackground, "page_background_gradient": false, "freeze_page_background_on_scroll": false, "web_follows_app_color_scheme": true,
          "web_warm_color_shift": false, "web_force_dark_pages": false, "web_reduce_page_motion": false,
          "web_underline_links": false, "browser_shake_action": "none", "browser_shake_intensity": "standard",
          BrowserShakeDirection.preferenceKey: BrowserShakeDirection.horizontal.rawValue,

@@ -747,6 +747,66 @@ final class WebEpisodeTests: XCTestCase {
         XCTAssertNil(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
     }
 
+    func testOpaquePlaybackRoutesRecognizeNumericEpisodesAcrossSites() async throws {
+        let tokens = (1...3).map { Data("show_42-episode_\($0)".utf8).base64EncodedString() }
+        for (host, route) in [("first-media.example", "v_play"), ("second-video.example", "v-play")] {
+            let links = tokens.enumerated().map { index, token in
+                "<a href='/\(route)/\(token).html'>\(index + 1)</a>"
+            }.joined()
+            let (web, capture) = try await page("<iframe src='/embed/opaque'></iframe><div class='custom-items'>\(links)</div>",
+                url: "https://\(host)/\(route)/\(tokens[1]).html")
+            let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
+            let items = list.sources.flatMap(\.episodes)
+            XCTAssertEqual(items.map(\.title), ["1", "2", "3"])
+            XCTAssertEqual(Set(items.map { $0.url.host }), [host])
+            XCTAssertTrue(items.allSatisfy { $0.url.path.hasPrefix("/\(route)/") })
+        }
+    }
+
+    func testOpaquePlaybackRoutesUseLeafCurrentMarkersWithoutAddingRecommendations() async throws {
+        let (web, capture) = try await page("""
+        <div><span aria-current='true'>1</span><a href='/v_play/c2.html'>2</a><a href='/v_play/c3.html'>3</a></div>
+        <div class='recommendations'><a href='/v_play/c1.html'>1</a><a href='/v_play/r2.html'>2</a></div>
+        <nav><a href='/v_play/c1.html'>1</a><a href='/v_play/c2.html'>2</a></nav>
+        <ul><li><a href='/v-play/other1.html'>1</a></li><li><a href='/v-play/other2.html'>2</a></li></ul>
+        """, url: "https://opaque-video.example/v_play/c1.html")
+        let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map(\.title), ["1", "2", "3"])
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map { $0.url.lastPathComponent }, ["c1.html", "c2.html", "c3.html"])
+    }
+
+    func testOpaquePlaybackRoutesRejectUnanchoredCrossOriginAndPaginationLists() async throws {
+        let cases = [
+            "<ul><li><a href='/v_play/r1.html'>1</a></li><li><a href='/v_play/r2.html'>2</a></li></ul>",
+            "<ul><li><a href='/v_play/c1.html'>1</a></li><li><a href='/v_play/copy.html'>1</a></li></ul>",
+            "<ul class='playlist'><li><a href='/v_play/c1.html'>1</a></li><li><a href='https://foreign-video.example/v_play/c2.html'>2</a></li></ul>",
+            "<div><a aria-current='page' href='/v_play/c1.html?page=1'>1</a><a href='/v_play/c1.html?page=2'>2</a></div>",
+            "<ul class='active'><li><a href='/v_play/r1.html'>1</a></li><li><a href='/v_play/r2.html'>2</a></li></ul>"
+        ]
+        for html in cases {
+            let (web, capture) = try await page(html, url: "https://opaque-video.example/v_play/c1.html")
+            XCTAssertNil(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)), html)
+        }
+    }
+
+    func testOpaquePlaybackRoutesKeepNamedSpecialsOnlyBesideValidatedEpisodes() async throws {
+        let (web, capture) = try await page("""
+        <div>
+          <a href='/v_play/c1.html'>1</a><a href='/v_play/c2.html'>2</a>
+          <a href='/v_play/special-a.html'>Special A — Prelude</a><a href='/v_play/special-b.html'>幕后特别篇</a>
+          <div><a href='/v_play/recommended.html'>Another series</a></div>
+          <div class='recommendations'><a href='/v_play/related.html'>Related special</a></div>
+          <a href='/v_play/c1.html?reply=1'>回复作者</a><a href='#reply'>Reply</a>
+          <a href='/v_play/cancel.html#respond'>点击这里取消回复。</a>
+          <a href='/v_play/poster.html'><img src='/poster.png'>Poster special</a>
+          <a href='javascript:alert(1)'>Unsafe special</a><a href='https://another.example/v_play/special.html'>Foreign special</a>
+        </div>
+        """, url: "https://special-video.example/v_play/c1.html")
+        let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map(\.title), ["1", "2", "Special A — Prelude", "幕后特别篇"])
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map { $0.url.lastPathComponent }, ["c1.html", "c2.html", "special-a.html", "special-b.html"])
+    }
+
     func testBilibiliPartsAndCollectionsUsePageIDsAndRealTitles() async throws {
         let (web, _) = try await page("""
         <script>window.__INITIAL_STATE__={videoData:{title:'课程',pages:[{page:1,part:'起步'},{page:2,part:'实践'}],ugc_season:{title:'合集',sections:[{title:'后续',episodes:[{bvid:'BV1NextA',title:'附录甲'},{bvid:'BV1NextB',title:'附录乙'}]}]}}}</script>

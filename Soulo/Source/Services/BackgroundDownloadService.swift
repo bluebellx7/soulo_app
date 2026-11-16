@@ -194,6 +194,19 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
         complete(id: id, result: .failure(CancellationError()))
     }
 
+    func pendingTasksForStorageCleanup() async -> Bool {
+        for source in [session, foregroundFallbackSession] {
+            let tasks = await source.allTasks
+            if tasks.contains(where: { $0.state != .completed }) { return true }
+        }
+        return false
+    }
+    func cancelTasksForStorageCleanup() async {
+        for source in [session, foregroundFallbackSession] {
+            for task in await source.allTasks { task.cancel() }
+        }
+    }
+
     func urlSession(
         _ session: URLSession,
         downloadTask: URLSessionDownloadTask,

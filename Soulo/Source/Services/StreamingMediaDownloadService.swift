@@ -252,6 +252,15 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     """#
     private var finishedHLSEvents = false
     var hasPendingHLSFinalization: Bool { hlsTransfers.values.contains { $0.finalizationTask != nil } }
+    func pendingTasksForStorageCleanup() async -> Bool {
+        let tasks = await hlsSession.allTasks
+        return !transfers.isEmpty || !hlsTransfers.isEmpty || !AuthenticatedHLSDownloadService.shared.activeIDs.isEmpty
+            || tasks.contains(where: { $0.state != .completed })
+    }
+    func cancelTasksForStorageCleanup() async {
+        cancelAll()
+        for task in await hlsSession.allTasks { task.cancel() }
+    }
     var backgroundEventsCompletionHandler: (() -> Void)? {
         didSet { finishHLSEventsIfPossible() }
     }

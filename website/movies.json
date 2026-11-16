@@ -1,11 +1,23 @@
 {
-  "updated": "2026-11-15",
+  "updated": "2026-11-16",
   "categories": [
     {
       "id": "streaming",
       "name": "综合影视",
       "description": "电影、剧集和综艺，一个入口慢慢挑。",
       "icon": "play"
+    },
+    {
+      "id": "official",
+      "name": "官方平台",
+      "description": "官方影视、视频与直播平台入口。",
+      "icon": "tv"
+    },
+    {
+      "id": "overseas",
+      "name": "海外访问",
+      "description": "需要海外网络环境访问的网站入口。",
+      "icon": "globe"
     },
     {
       "id": "movies",
@@ -54,12 +66,6 @@
       "name": "纪录与直播",
       "description": "真实世界的故事，还有正在发生的现场。",
       "icon": "globe"
-    },
-    {
-      "id": "tools",
-      "name": "影视工具",
-      "description": "播放器与影视资源接口。",
-      "icon": "tool"
     }
   ],
   "sites": [
@@ -79,7 +85,7 @@
       "id": "kkys",
       "name": "可可影视",
       "url": "https://www.kkys02.com/",
-      "category": "streaming",
+      "category": "overseas",
       "description": "浏览电影与海外剧集。",
       "tags": [
         "电影",
@@ -92,7 +98,7 @@
       "id": "netflix",
       "name": "Netflix",
       "url": "https://www.netflix.com/hk/",
-      "category": "streaming",
+      "category": "official",
       "description": "Netflix 官方电影与剧集平台。",
       "tags": [
         "官方平台",
@@ -105,7 +111,7 @@
       "id": "disney",
       "name": "Disney+",
       "url": "https://www.disneyplus.com/zh-hk",
-      "category": "streaming",
+      "category": "official",
       "description": "Disney+ 官方电影、动画与剧集。",
       "tags": [
         "官方平台",
@@ -183,7 +189,7 @@
       "id": "bilibili",
       "name": "哔哩哔哩",
       "url": "https://www.bilibili.com/",
-      "category": "anime",
+      "category": "official",
       "description": "动画番剧、国创与弹幕社区。",
       "tags": [
         "番剧",
@@ -244,7 +250,7 @@
     {
       "id": "y80s",
       "name": "80s 电影",
-      "url": "https://y80s.tv/movie/search/",
+      "url": "https://www.80sgod.com/",
       "category": "search",
       "description": "直接进入 80s 电影搜索页面。",
       "tags": [
@@ -265,30 +271,6 @@
       ],
       "mark": "狐",
       "icon": "images/movie-icons/cupfox.png"
-    },
-    {
-      "id": "soupian",
-      "name": "搜片",
-      "url": "https://soupian.one/",
-      "category": "search",
-      "description": "影视关键词与片名搜索入口。",
-      "tags": [
-        "影视搜索"
-      ],
-      "mark": "搜",
-      "icon": "images/movie-icons/soupian.png"
-    },
-    {
-      "id": "i8k",
-      "name": "i8K 影视导航",
-      "url": "https://i8k.tv/",
-      "category": "search",
-      "description": "按类型发现更多影视网站。",
-      "tags": [
-        "网站导航"
-      ],
-      "mark": "i8",
-      "icon": "images/movie-icons/i8k.png"
     },
     {
       "id": "pan666",
@@ -443,7 +425,7 @@
       "id": "cctv",
       "name": "CCTV 在线",
       "url": "https://tv.cctv.com/live/cctv1/",
-      "category": "documentary",
+      "category": "official",
       "description": "央视网官方电视频道直播。",
       "tags": [
         "官方平台",
@@ -464,29 +446,6 @@
       ],
       "mark": "8",
       "icon": "images/movie-icons/zhibo8.png"
-    },
-    {
-      "id": "zyplayer",
-      "name": "ZY Player",
-      "url": "https://zyplayer.fun/",
-      "category": "tools",
-      "description": "桌面视频播放器与项目信息。",
-      "tags": [
-        "播放器"
-      ],
-      "mark": "ZY",
-      "icon": "images/movie-icons/zyplayer.png"
-    },
-    {
-      "id": "mtzy",
-      "name": "茅台资源站",
-      "url": "https://mtzy.me/",
-      "category": "tools",
-      "description": "影视资源目录与采集入口。",
-      "tags": [
-        "资源目录"
-      ],
-      "mark": "茅"
     },
     {
       "id": "site-bbibb-top",
@@ -557,7 +516,7 @@
       "id": "site-cupfox-lol",
       "name": "茶杯狐影视",
       "url": "https://www.cupfox.lol/",
-      "category": "streaming",
+      "category": "overseas",
       "description": "按电影、剧集和动漫分类浏览。",
       "tags": [
         "电影",
@@ -570,7 +529,7 @@
       "id": "site-knvod-com",
       "name": "柯南影视",
       "url": "https://www.knvod.com/",
-      "category": "streaming",
+      "category": "overseas",
       "description": "浏览电影、热播剧与综艺栏目。",
       "tags": [
         "电影",
@@ -583,7 +542,7 @@
       "id": "site-freeokk-pro",
       "name": "FreeOK",
       "url": "https://www.freeokk.pro/",
-      "category": "streaming",
+      "category": "overseas",
       "description": "电影、电视剧与动漫作品入口。",
       "tags": [
         "电影",
@@ -596,7 +555,7 @@
       "id": "site-kpkuang-fun",
       "name": "看片狂人",
       "url": "https://www.kpkuang.fun/",
-      "category": "streaming",
+      "category": "overseas",
       "description": "按类型与片名浏览影视条目。",
       "tags": [
         "电影",
@@ -619,18 +578,6 @@
       "icon": "images/movie-icons/site-zxzjhd-com.png"
     },
     {
-      "id": "site-dcjyb-com",
-      "name": "樱花影院",
-      "url": "https://www.dcjyb.com/",
-      "category": "streaming",
-      "description": "电影、电视剧与综艺分类浏览。",
-      "tags": [
-        "电影",
-        "综艺"
-      ],
-      "mark": "樱"
-    },
-    {
       "id": "site-kanju1-com",
       "name": "看剧 AI",
       "url": "https://kanju1.com/",
@@ -647,7 +594,7 @@
       "id": "site-v-qq-com",
       "name": "腾讯视频",
       "url": "https://v.qq.com/",
-      "category": "streaming",
+      "category": "official",
       "description": "腾讯视频官方电影、剧集与综艺平台。",
       "tags": [
         "官方平台",
@@ -660,7 +607,7 @@
       "id": "site-iqiyi-com",
       "name": "爱奇艺",
       "url": "https://www.iqiyi.com/",
-      "category": "streaming",
+      "category": "official",
       "description": "爱奇艺官方电影、剧集与综艺平台。",
       "tags": [
         "官方平台",
@@ -673,7 +620,7 @@
       "id": "site-apple-com",
       "name": "Apple TV",
       "url": "https://www.apple.com/apple-tv-plus",
-      "category": "streaming",
+      "category": "official",
       "description": "Apple 官方影视与订阅服务介绍。",
       "tags": [
         "官方平台",
@@ -699,7 +646,7 @@
       "id": "site-mgtv-com",
       "name": "芒果 TV",
       "url": "https://www.mgtv.com/",
-      "category": "streaming",
+      "category": "official",
       "description": "芒果 TV 官方综艺、剧集与电影平台。",
       "tags": [
         "官方平台",
@@ -721,32 +668,6 @@
       "icon": "images/movie-icons/site-xiaomapan-com.png"
     },
     {
-      "id": "site-yyets-click",
-      "name": "人人影视分享",
-      "url": "https://yyets.click/",
-      "category": "movies",
-      "description": "按作品条目查看影视下载分享。",
-      "tags": [
-        "电影",
-        "下载"
-      ],
-      "mark": "人",
-      "icon": "images/movie-icons/site-yyets-click.png"
-    },
-    {
-      "id": "site-gagays-com",
-      "name": "嘎嘎影视",
-      "url": "https://www.gagays.com/",
-      "category": "movies",
-      "description": "电影与剧集的资源条目和搜索入口。",
-      "tags": [
-        "电影",
-        "资源"
-      ],
-      "mark": "嘎",
-      "icon": "images/movie-icons/site-gagays-com.png"
-    },
-    {
       "id": "site-acg-rip",
       "name": "ACG.RIP",
       "url": "https://acg.rip/",
@@ -758,32 +679,6 @@
       ],
       "mark": "A",
       "icon": "images/movie-icons/site-acg-rip.png"
-    },
-    {
-      "id": "site-yunpan1-cc",
-      "name": "云盘资源社区",
-      "url": "https://yunpan1.cc/",
-      "category": "cloud",
-      "description": "浏览影视网盘分享与社区主题。",
-      "tags": [
-        "网盘",
-        "社区"
-      ],
-      "mark": "云",
-      "icon": "images/movie-icons/site-yunpan1-cc.png"
-    },
-    {
-      "id": "site-piaohua-com",
-      "name": "飘花电影",
-      "url": "https://www.piaohua.com/",
-      "category": "movies",
-      "description": "按分类与更新日期查找影视下载信息。",
-      "tags": [
-        "电影",
-        "下载"
-      ],
-      "mark": "飘",
-      "icon": "images/movie-icons/site-piaohua-com.png"
     },
     {
       "id": "site-chaospace-xyz",
@@ -838,19 +733,6 @@
       "icon": "images/movie-icons/site-cinefox-com.png"
     },
     {
-      "id": "site-yysub-net",
-      "name": "人人影视字幕组",
-      "url": "https://www.yysub.net/",
-      "category": "subtitles",
-      "description": "查看字幕作品、影视条目与社区动态。",
-      "tags": [
-        "字幕",
-        "社区"
-      ],
-      "mark": "人",
-      "icon": "images/movie-icons/site-yysub-net.png"
-    },
-    {
       "id": "site-treehousesub-com",
       "name": "树屋经典影视",
       "url": "https://treehousesub.com/forum.php",
@@ -862,19 +744,6 @@
       ],
       "mark": "树",
       "icon": "images/movie-icons/site-treehousesub-com.png"
-    },
-    {
-      "id": "site-weibo-com",
-      "name": "天府泰剧",
-      "url": "https://weibo.com/tfthaimovie",
-      "category": "series",
-      "description": "在微博查看泰剧译制与作品动态。",
-      "tags": [
-        "泰剧",
-        "微博"
-      ],
-      "mark": "天",
-      "icon": "images/movie-icons/site-weibo-com.png"
     },
     {
       "id": "site-jlpzj-net",
@@ -893,7 +762,7 @@
       "id": "site-ymck-pro",
       "name": "影猫の仓库",
       "url": "https://ymck.pro/",
-      "category": "streaming",
+      "category": "overseas",
       "description": "按电影、剧集和动漫浏览影视作品。",
       "tags": [
         "电影",
@@ -916,23 +785,10 @@
       "icon": "images/movie-icons/site-x8kb9k8-com.png"
     },
     {
-      "id": "site-novipnoad-net",
-      "name": "NO 视频",
-      "url": "https://www.novipnoad.net/",
-      "category": "streaming",
-      "description": "电影、海外剧与动漫的分类入口。",
-      "tags": [
-        "海外剧",
-        "动漫"
-      ],
-      "mark": "N",
-      "icon": "images/movie-icons/site-novipnoad-net.png"
-    },
-    {
       "id": "site-weishitv-xyz",
       "name": "威视 TV",
       "url": "https://weishitv.xyz/",
-      "category": "streaming",
+      "category": "overseas",
       "description": "按影视分类与片名浏览作品。",
       "tags": [
         "电影",
@@ -953,32 +809,6 @@
       ],
       "mark": "人",
       "icon": "images/movie-icons/site-rrdynb-com.png"
-    },
-    {
-      "id": "site-dianying4k-com",
-      "name": "Ultra4K",
-      "url": "https://dianying4k.com/",
-      "category": "movies",
-      "description": "需登录的影视资源目录与账户入口。",
-      "tags": [
-        "4K 资源",
-        "需登录"
-      ],
-      "mark": "U",
-      "icon": "images/movie-icons/site-dianying4k-com.png"
-    },
-    {
-      "id": "site-dyjie-net",
-      "name": "电影街",
-      "url": "https://dyjie.net/",
-      "category": "movies",
-      "description": "登录后浏览电影与剧集资源。",
-      "tags": [
-        "影视资源",
-        "需登录"
-      ],
-      "mark": "电",
-      "icon": "images/movie-icons/site-dyjie-net.png"
     },
     {
       "id": "site-btdx8-net",
@@ -1033,19 +863,6 @@
       "icon": "images/movie-icons/site-list-mtime-com.png"
     },
     {
-      "id": "site-animes-garden",
-      "name": "Anime Garden",
-      "url": "https://animes.garden/",
-      "category": "anime",
-      "description": "聚合动画资源与番剧更新条目。",
-      "tags": [
-        "番剧",
-        "资源"
-      ],
-      "mark": "AG",
-      "icon": "images/movie-icons/site-animes-garden.png"
-    },
-    {
       "id": "site-6huo-com",
       "name": "预告片世界",
       "url": "https://www.6huo.com/",
@@ -1088,7 +905,7 @@
       "id": "site-jishi-cctv-com",
       "name": "央视纪实",
       "url": "https://jishi.cctv.com/",
-      "category": "documentary",
+      "category": "official",
       "description": "央视网官方纪录片与纪实节目片库。",
       "tags": [
         "官方平台",

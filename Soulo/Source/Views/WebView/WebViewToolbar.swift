@@ -159,6 +159,10 @@ struct WebViewToolbar: View {
     @State private var showMediaRateControls = false
     @State private var isChangingMediaRate = false
     @State private var showMoreMenu = false
+    @State private var showPlatformMenu = false
+    @State private var pendingPlatformAction: (() -> Void)?
+    @State private var presentPlatformsAfterKeyboard = false
+    @State private var presentSiteInformationAfterKeyboard = false
     @State private var showMoreSiteInformation = false
     @State private var menuAnchorGeneration = 0
     @State private var menuAnchorNeedsRefresh = false
@@ -167,6 +171,7 @@ struct WebViewToolbar: View {
     @State private var presentMenuAfterKeyboard = false
     @State private var extensionActionRevision = 0
 
+    var platformPicker: BrowserPlatformPickerContext? = nil
     var tabManager: TabManager?
     var onShare: (() -> Void)?
     var onBookmarkToggle: (() -> Void)?
@@ -202,17 +207,85 @@ struct WebViewToolbar: View {
     var onFloatingMoreDragChanged: ((CGSize) -> Void)?
     var onFloatingMoreDragEnded: ((CGSize) -> Void)?
 
-    @ViewBuilder
     var body: some View {
-        if showsOnlyMore {
-            moreMenu
-        } else if #available(iOS 26.0, *) {
-            GlassEffectContainer(spacing: 4) {
-                toolbarContent
+        toolbarSurface
+            .compatiblePopover(isPresented: Binding(
+                get: { showPlatformMenu || showSiteInformation },
+                set: { if !$0 { showPlatformMenu = false; showSiteInformation = false } }
+            ), attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+                auxiliaryPopoverContent
             }
-        } else {
-            toolbarContent
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                menuKeyboardVisible = true; showMoreMenu = false; showPlatformMenu = false; showSiteInformation = false
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+                guard menuKeyboardVisible || presentMenuAfterKeyboard || presentPlatformsAfterKeyboard || presentSiteInformationAfterKeyboard else { return }
+                menuKeyboardVisible = false; showMoreMenu = false; showPlatformMenu = false
+                menuAnchorNeedsRefresh = true
+                if presentSiteInformationAfterKeyboard {
+                    presentSiteInformationAfterKeyboard = false
+                    DispatchQueue.main.async { showSiteInformation = true }
+                } else if presentPlatformsAfterKeyboard {
+                    presentPlatformsAfterKeyboard = false
+                    DispatchQueue.main.async { showPlatformMenu = true }
+                } else if presentMenuAfterKeyboard {
+                    presentMenuAfterKeyboard = false
+                    presentMoreMenuOnStableAnchor()
+                }
+            }
+            .onCompatibleChange(of: showPlatformMenu) { _, _ in reportMoreMenuPresentationState() }
+            .onCompatibleChange(of: showSiteInformation) { _, _ in reportMoreMenuPresentationState() }
+    }
+
+    private var toolbarSurface: AnyView {
+        if showsOnlyMore { return moreMenu }
+        if #available(iOS 26.0, *) {
+            return AnyView(GlassEffectContainer(spacing: 4) { toolbarContent })
         }
+        return AnyView(toolbarContent)
+    }
+
+    private var auxiliaryPopoverContent: AnyView {
+        if showSiteInformation { return AnyView(siteInformationPanel) }
+        return platformPopoverContent
+    }
+
+    private var platformPopoverContent: AnyView {
+        guard let context = platformPicker else { return AnyView(EmptyView()) }
+        return AnyView(BrowserPlatformPanel(context: context, onSelect: { scope, platform in
+            pendingPlatformAction = { context.onSelect(scope, platform) }
+            showPlatformMenu = false
+        }, onManage: {
+            pendingPlatformAction = context.onManage
+            showPlatformMenu = false
+        }, onClose: { showPlatformMenu = false })
+            .background(MoreMenuDismissalObserver(onDismiss: completePlatformAction))
+            .compatiblePopoverAdaptation()
+            .compatiblePresentationBackground(.ultraThinMaterial)
+            .compatiblePresentationCornerRadius(26))
+    }
+
+    private func completePlatformAction() {
+        guard let action = pendingPlatformAction else { return }
+        pendingPlatformAction = nil
+        DispatchQueue.main.async(execute: action)
+    }
+
+    private func presentSiteInformation() {
+        presentMenuAfterKeyboard = false; presentPlatformsAfterKeyboard = false
+        if menuKeyboardVisible {
+            presentSiteInformationAfterKeyboard = true
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        } else { showSiteInformation = true }
+    }
+
+    private func presentPlatforms() {
+        presentSiteInformationAfterKeyboard = false
+        presentMenuAfterKeyboard = false
+        if menuKeyboardVisible {
+            presentPlatformsAfterKeyboard = true
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        } else { showPlatformMenu = true }
     }
 
     private var toolbarContent: some View {
@@ -238,44 +311,13 @@ struct WebViewToolbar: View {
 
     private var addressControl: some View {
         HStack(spacing: 0) {
-            Button {
-                guard viewModel.currentURL?.host != nil else { return }
-                HapticsManager.light()
-                showSiteInformation.toggle()
-            } label: {
-                Image(systemName: isIncognito
-                    ? "eye.slash.fill"
-                    : viewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe"
-                )
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(
-                        isIncognito
-                            ? Color.teal.opacity(0.9)
-                            : Color.primary.opacity(viewModel.currentURL?.host == nil ? 0.25 : 0.68)
-                    )
-                    .frame(width: 27, height: 32)
-                    .contentShape(Rectangle())
+            if toolbarConfiguration.leadingAction != .none {
+                addressLeadingAction
+                Rectangle()
+                    .fill(Color.primary.opacity(0.12))
+                    .frame(width: 0.5, height: 16)
+                    .accessibilityHidden(true)
             }
-            .buttonStyle(.plain)
-            .disabled(viewModel.currentURL?.host == nil)
-            .accessibilityLabel(
-                LanguageManager.shared.localizedString(
-                    isIncognito ? "privacy_incognito" : "site_information"
-                )
-            )
-            .accessibilityIdentifier("browser.siteInformation")
-            .compatiblePopover(
-                isPresented: $showSiteInformation,
-                attachmentAnchor: .rect(.bounds),
-                arrowEdge: .bottom
-            ) {
-                siteInformationPanel
-            }
-
-            Rectangle()
-                .fill(Color.primary.opacity(0.12))
-                .frame(width: 0.5, height: 16)
-                .accessibilityHidden(true)
 
             Button {
                 HapticsManager.light()
@@ -388,6 +430,26 @@ struct WebViewToolbar: View {
         .frame(minHeight: 40)
         .browserToolbarCapsuleGlass(tint: toolbarGlassTint)
         .layoutPriority(1)
+    }
+
+    private var addressLeadingAction: some View {
+        let action = toolbarConfiguration.leadingAction
+        let siteInfo = action == .siteInformation
+        return Button {
+            HapticsManager.light()
+            performToolbarAction(action)
+        } label: {
+            Image(systemName: siteInfo
+                ? (isIncognito ? "eye.slash.fill" : viewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
+                : toolbarSymbol(for: action))
+                .font(.system(size: siteInfo ? 10 : 12, weight: .semibold))
+                .foregroundStyle(siteInfo && isIncognito ? Color.teal.opacity(0.9) : Color.primary.opacity(isToolbarActionEnabled(action) ? 0.68 : 0.25))
+                .frame(width: 27, height: 32).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!isToolbarActionEnabled(action))
+        .accessibilityLabel(siteInfo && isIncognito ? LanguageManager.shared.localizedString("privacy_incognito") : action.localizedTitle)
+        .accessibilityIdentifier(siteInfo ? "browser.siteInformation" : "browser.addressLeading." + action.rawValue)
     }
 
     private var toolbarGlassTint: Color? {
@@ -512,101 +574,100 @@ struct WebViewToolbar: View {
             .foregroundStyle(isActive == true ? Color(uiColor: activeColor) : Color.primary)
     }
 
-    private var moreMenu: some View {
-        Group {
-            if showsOnlyMore,
-               let onFloatingMoreDragChanged,
-               let onFloatingMoreDragEnded {
-                NativeMoreMenuButton(
-                    accessibilityLabel: LanguageManager.shared.localizedString("show_more"),
-                    onTap: presentMoreMenu,
-                    onDragChanged: onFloatingMoreDragChanged,
-                    onDragEnded: onFloatingMoreDragEnded
-                )
-                .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
-                .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
-                .contentShape(Circle())
-            } else {
-                Button(action: presentMoreMenu) {
-                    moreMenuLauncherLabel
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
-            }
-        }
-        .compatiblePopover(
-            isPresented: $showMoreMenu,
-            attachmentAnchor: .rect(.bounds),
-            arrowEdge: .bottom
-        ) {
+    private var moreMenuLauncher: AnyView {
+        AnyView(
             Group {
-                if showMoreSiteInformation { siteInformationPanel }
-                else { moreMenuPanel }
-            }
-                .background(MoreMenuDismissalObserver(onDismiss: completeMoreMenuAction))
-                .compatiblePopoverAdaptation()
-                .compatiblePresentationBackground(.ultraThinMaterial)
-                .compatiblePresentationCornerRadius(26)
-        }
-        .accessibilityIdentifier("browser.more")
-        .id(menuAnchorGeneration)
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-            menuKeyboardVisible = true
-            showMoreMenu = false
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
-            // Hardware keyboards and native presentations may emit an unpaired hide.
-            // Only rebuild the anchor after a keyboard that we actually observed.
-            guard menuKeyboardVisible || presentMenuAfterKeyboard else { return }
-            menuKeyboardVisible = false
-            showMoreMenu = false
-            // Rebuild only before the next presentation. Replacing an anchor
-            // while its popover/submenu is dismissing leaves stale menu chrome.
-            menuAnchorNeedsRefresh = true
-            if presentMenuAfterKeyboard {
-                presentMenuAfterKeyboard = false
-                presentMoreMenuOnStableAnchor()
-            }
-        }
-        .sheet(isPresented: $showZoomControls) {
-            persistentZoomPanel
-                .presentationDetents([.height(190)])
-                .presentationDragIndicator(.visible)
-                .compatiblePresentationBackground(.ultraThinMaterial)
-        }
-        .sheet(isPresented: $showMediaRateControls) {
-            mediaRatePanel
-                .presentationDetents([.height(250)])
-                .presentationDragIndicator(.visible)
-                .compatiblePresentationBackground(.ultraThinMaterial)
-        }
-        .task(id: showMoreMenu) {
-            guard showMoreMenu else { return }
-            // Poll only while the panel is visible, so late SPA/video content appears.
-            while !Task.isCancelled {
-                if let web = viewModel.webView {
-                    let url = web.url
-                    let result = await WebPageToolsAvailability.inspect(web)
-                    if !Task.isCancelled && viewModel.webView === web && web.url == url {
-                        if pageAvailability != result { pageAvailability = result }
-                        if webMediaRate != result.mediaRate { webMediaRate = result.mediaRate }
+                if showsOnlyMore,
+                   let onFloatingMoreDragChanged,
+                   let onFloatingMoreDragEnded {
+                    NativeMoreMenuButton(
+                        accessibilityLabel: LanguageManager.shared.localizedString("show_more"),
+                        onTap: presentMoreMenu,
+                        onDragChanged: onFloatingMoreDragChanged,
+                        onDragEnded: onFloatingMoreDragEnded
+                    )
+                    .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
+                    .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
+                    .contentShape(Circle())
+                } else {
+                    Button(action: presentMoreMenu) {
+                        moreMenuLauncherLabel
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
                 }
-                do { try await Task.sleep(for: .seconds(1)) } catch { break }
             }
-        }
-        .onCompatibleChange(of: viewModel.currentURL) { _, _ in
-            pageAvailability = .init(); webMediaRate = 1; showMediaRateControls = false
-        }
-        .onCompatibleChange(of: showMoreMenu) { _, _ in
-            reportMoreMenuPresentationState()
-        }
-        .onCompatibleChange(of: showZoomControls) { _, _ in
-            reportMoreMenuPresentationState()
-        }
-        .onCompatibleChange(of: showMediaRateControls) { _, _ in
-            reportMoreMenuPresentationState()
-        }
+        )
+    }
+
+    private var moreMenuPresentation: AnyView {
+        AnyView(moreMenuLauncher
+            .compatiblePopover(isPresented: $showMoreMenu, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+                moreMenuPopoverContent
+            }
+            .accessibilityIdentifier("browser.more")
+            .id(menuAnchorGeneration)
+
+        )
+    }
+
+    private var moreMenuPopoverContent: AnyView {
+        let panel = showMoreSiteInformation ? AnyView(siteInformationPanel) : AnyView(moreMenuPanel)
+        return AnyView(panel
+            .background(MoreMenuDismissalObserver(onDismiss: completeMoreMenuAction))
+            .compatiblePopoverAdaptation()
+            .compatiblePresentationBackground(.ultraThinMaterial)
+            .compatiblePresentationCornerRadius(26))
+    }
+
+    private var moreMenuSheets: AnyView {
+        AnyView(moreMenuPresentation
+            .sheet(isPresented: $showZoomControls) {
+                AnyView(persistentZoomPanel
+                    .presentationDetents([.height(190)])
+                    .presentationDragIndicator(.visible)
+                    .compatiblePresentationBackground(.ultraThinMaterial))
+            }
+            .sheet(isPresented: $showMediaRateControls) {
+                AnyView(mediaRatePanel
+                    .presentationDetents([.height(250)])
+                    .presentationDragIndicator(.visible)
+                    .compatiblePresentationBackground(.ultraThinMaterial))
+            })
+    }
+
+    // Do not let the modifier chain become part of toolbarAction's generic
+    // return type. These are fixed menu boundaries, not per-row type erasure.
+    private var moreMenu: AnyView {
+        AnyView(moreMenuSheets
+            .task(id: showMoreMenu) {
+                guard showMoreMenu else { return }
+                // Poll only while the panel is visible, so late SPA/video content appears.
+                while !Task.isCancelled {
+                    if let web = viewModel.webView {
+                        let url = web.url
+                        let result = await WebPageToolsAvailability.inspect(web)
+                        if !Task.isCancelled && viewModel.webView === web && web.url == url {
+                            if pageAvailability != result { pageAvailability = result }
+                            if webMediaRate != result.mediaRate { webMediaRate = result.mediaRate }
+                        }
+                    }
+                    do { try await Task.sleep(for: .seconds(1)) } catch { break }
+                }
+            }
+            .onCompatibleChange(of: viewModel.currentURL) { _, _ in
+                pageAvailability = .init(); webMediaRate = 1; showMediaRateControls = false
+            }
+            .onCompatibleChange(of: showMoreMenu) { _, _ in
+                reportMoreMenuPresentationState()
+            }
+            .onCompatibleChange(of: showZoomControls) { _, _ in
+                reportMoreMenuPresentationState()
+            }
+            .onCompatibleChange(of: showMediaRateControls) { _, _ in
+                reportMoreMenuPresentationState()
+            }
+        )
     }
 
     private var moreMenuLauncherLabel: some View {
@@ -971,120 +1032,31 @@ struct WebViewToolbar: View {
     }
 
     private var moreMenuShortcutGrid: some View {
-        Grid(horizontalSpacing: 0, verticalSpacing: 2) {
-            GridRow {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 4), spacing: 2) {
+            ForEach(Array(toolbarConfiguration.moreActions.enumerated()).filter { $0.element != .none }, id: \.offset) { _, action in
                 moreMenuShortcut(
-                    "home_screen",
-                    systemImage: "house.fill",
-                    isEnabled: onGoHome != nil
-                ) {
-                    onGoHome?()
-                }
-                moreMenuShortcut(
-                    "browser_reload",
-                    systemImage: "arrow.clockwise",
-                    isEnabled: viewModel.currentURL != nil
-                ) {
-                    viewModel.reload()
-                }
-                moreMenuShortcut(
-                    "browser_back",
-                    systemImage: "chevron.left",
-                    isEnabled: viewModel.canGoBack
-                ) {
-                    viewModel.goBack()
-                }
-                moreMenuShortcut(
-                    "browser_forward",
-                    systemImage: "chevron.right",
-                    isEnabled: viewModel.canGoForward
-                ) {
-                    viewModel.goForward()
-                }
-            }
-
-            GridRow {
-                moreMenuShortcut(
-                    isFullscreen ? "exit_fullscreen" : "enter_fullscreen",
-                    systemImage: isFullscreen
-                        ? "arrow.down.right.and.arrow.up.left"
-                        : "arrow.up.left.and.arrow.down.right",
-                    isEnabled: viewModel.currentURL != nil && onToggleFullscreen != nil,
-                    isActive: isFullscreen
-                ) {
-                    onToggleFullscreen?()
-                }
-                moreMenuShortcut(
-                    "desktop_mode",
-                    systemImage: "display",
-                    isEnabled: viewModel.currentURL != nil && tabManager != nil,
-                    isActive: tabManager?.isDesktopMode ?? false
-                ) {
-                    tabManager?.toggleDesktopMode()
-                }
-                moreMenuShortcut(
-                    "web_force_dark_short",
-                    systemImage: webAppearance.forceDarkPages ? "moon.fill" : "moon",
-                    isEnabled: viewModel.currentURL != nil,
-                    isActive: webAppearance.forceDarkPages
-                ) {
-                    webAppearance.toggleForceDarkPages()
-                    if let webView = viewModel.webView {
-                        webAppearance.apply(to: webView)
-                    }
-                }
-                moreMenuShortcut(
-                    "browser_tabs",
-                    systemImage: "square",
-                    isEnabled: tabManager != nil
-                ) {
-                    guard let tabManager else { return }
-                    tabManager.refreshSnapshotsForSwitcher()
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
-                        tabManager.showTabOverview = true
-                    }
-                }
-            }
-
-            GridRow {
-                moreMenuShortcut(
-                    "share",
-                    systemImage: "square.and.arrow.up",
-                    isEnabled: viewModel.currentURL != nil && onShare != nil
-                ) {
-                    onShare?()
-                }
-                .accessibilityIdentifier("browser.moreMenu.share")
+                    action == .fullscreen && isFullscreen ? "exit_fullscreen" : action.titleKey,
+                    systemImage: toolbarSymbol(for: action),
+                    isEnabled: isToolbarActionEnabled(action),
+                    isActive: toolbarActionIsActive(action),
+                    activeColor: action == .bookmark ? .systemOrange : AppTheme.uiAccent,
+                    localizedTitle: action == .fullscreen && isFullscreen
+                        ? LanguageManager.shared.localizedString("exit_fullscreen") : action.localizedTitle
+                ) { performToolbarAction(action) }
+                .accessibilityIdentifier("browser.moreMenu." + action.rawValue)
                 .accessibilityAddTraits(.isButton)
-                moreMenuShortcut(
-                    "copy_link",
-                    systemImage: "doc.on.doc",
-                    isEnabled: viewModel.currentURL != nil
-                ) {
-                    guard let url = viewModel.currentURL else { return }
-                    UIPasteboard.general.url = url
-                    HapticsManager.success()
-                    NotificationCenter.default.post(name: .linkCopied, object: nil)
-                }
-                moreMenuShortcut(
-                    "bookmarks",
-                    systemImage: isBookmarked ? "bookmark.fill" : "bookmark",
-                    isEnabled: viewModel.currentURL != nil && onBookmarkToggle != nil,
-                    isActive: isBookmarked,
-                    activeColor: .systemOrange
-                ) {
-                    onBookmarkToggle?()
-                }
-                moreMenuShortcut(
-                    "library",
-                    systemImage: "books.vertical",
-                    isEnabled: onShowLibrary != nil
-                ) {
-                    onShowLibrary?()
-                }
             }
+        }.padding(.horizontal, 2)
+    }
+
+    private func toolbarActionIsActive(_ action: BrowserToolbarAction) -> Bool {
+        switch action {
+        case .bookmark: isBookmarked
+        case .fullscreen: isFullscreen
+        case .desktopMode: tabManager?.isDesktopMode == true
+        case .darkMode: webAppearance.forceDarkPages
+        default: false
         }
-        .padding(.horizontal, 2)
     }
 
     private func moreMenuActionRow(
@@ -1147,35 +1119,17 @@ struct WebViewToolbar: View {
         isEnabled: Bool = true,
         isActive: Bool = false,
         activeColor: UIColor = AppTheme.uiAccent,
+        localizedTitle: String? = nil,
         action: @escaping () -> Void
     ) -> some View {
-        let title = LanguageManager.shared.localizedString(titleKey)
+        let title = localizedTitle ?? LanguageManager.shared.localizedString(titleKey)
         return Button {
             performMoreMenuAction(action)
         } label: {
-            VStack(spacing: 5) {
-                Group {
-                    if titleKey == "browser_tabs" {
-                        TabCountSymbol(count: tabManager?.tabCount ?? 0)
-                    } else {
-                        Image(systemName: systemImage)
-                            .font(.system(size: 19, weight: .regular))
-                    }
-                }
-                .foregroundStyle(isActive ? Color(uiColor: activeColor) : Color.primary)
-                .frame(height: 23)
-
-                Text(title)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.58)
-                    .allowsTightening(true)
-                    .frame(maxWidth: .infinity)
-            }
-            .frame(width: 74)
-            .frame(minHeight: 57)
-            .contentShape(Rectangle())
+            BrowserMoreShortcutLabel(symbol: systemImage, title: title,
+                tabCount: titleKey == "browser_tabs" ? tabManager?.tabCount ?? 0 : nil,
+                tint: isActive ? Color(uiColor: activeColor) : .primary)
+                .frame(width: 74)
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
@@ -1196,6 +1150,8 @@ struct WebViewToolbar: View {
     }
 
     private func presentMoreMenu() {
+        presentSiteInformationAfterKeyboard = false
+        presentPlatformsAfterKeyboard = false
         HapticsManager.light()
         if menuKeyboardVisible {
             presentMenuAfterKeyboard = true
@@ -1237,7 +1193,7 @@ struct WebViewToolbar: View {
     }
 
     private func reportMoreMenuPresentationState() {
-        onMoreMenuPresentationChange?(showMoreMenu || showZoomControls || showMediaRateControls)
+        onMoreMenuPresentationChange?(showMoreMenu || showPlatformMenu || showSiteInformation || showZoomControls || showMediaRateControls)
     }
 
     private var mediaRatePanel: some View {
@@ -1404,6 +1360,7 @@ struct WebViewToolbar: View {
                 performToolbarAction(action)
             }
             .accessibilityLabel(action.localizedTitle)
+            .accessibilityIdentifier("browser.action." + action.rawValue)
         }
     }
 
@@ -1432,6 +1389,9 @@ struct WebViewToolbar: View {
         case .none: true
         case .home: onGoHome != nil
         case .newTab: onNewTab != nil
+        case .platforms: platformPicker != nil
+        case .siteInformation: viewModel.currentURL?.host != nil
+        case .tabs: tabManager != nil
         case .back: viewModel.canGoBack
         case .forward: viewModel.canGoForward
         case .share: onShare != nil
@@ -1466,7 +1426,15 @@ struct WebViewToolbar: View {
             viewModel.goBack()
         case .forward:
             viewModel.goForward()
-        case .tabs, .more:
+        case .tabs:
+            guard let tabManager else { return }
+            tabManager.refreshSnapshotsForSwitcher()
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) { tabManager.showTabOverview = true }
+        case .platforms:
+            presentPlatforms()
+        case .siteInformation:
+            presentSiteInformation()
+        case .more:
             break
         case .share:
             onShare?()

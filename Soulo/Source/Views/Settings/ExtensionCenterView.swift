@@ -44,14 +44,18 @@ struct ExtensionCenterView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
+            .accessibilityIdentifier("extensions.section")
 
             Divider().opacity(0.45)
 
-            if selectedTab == .installed {
-                installedContent
-            } else {
-                installContent
+            // Let the native page container arbitrate horizontal navigation
+            // with List's own row-swipe actions. A simultaneous DragGesture on
+            // the whole screen would also change pages when deleting an item.
+            TabView(selection: $selectedTab) {
+                installedContent.tag(ExtensionCenterTab.installed)
+                installContent.tag(ExtensionCenterTab.install)
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
         }
         .navigationTitle(LanguageManager.shared.localizedString("userscripts"))
         .navigationBarTitleDisplayMode(.inline)
@@ -330,13 +334,11 @@ struct ExtensionCenterView: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(item.name).font(.body.weight(.medium)).lineLimit(2)
+                Text(item.name).font(.callout.weight(.medium)).lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 if let error = service.webExtensionErrors[item.id] {
                     Text(error).font(.caption).foregroundStyle(.red).lineLimit(3)
                 }
-                Text(FeatureText.text(service.loadingWebExtensions.contains(item.id) ? "Loading" : item.isEnabled ? "Enabled" : "Disabled"))
-                    .font(.caption2).foregroundStyle(.secondary)
                 Text(webExtensionDetail(item))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -356,9 +358,7 @@ struct ExtensionCenterView: View {
                     extensionIcon(systemName: "arrow.down.circle", tint: .orange)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(ToolText.text("web_video_download"))
-                            .font(.body.weight(.medium)).lineLimit(1)
-                        Text(FeatureText.text(showsVideoDownloadControls ? "Enabled" : "Disabled"))
-                            .font(.caption2).foregroundStyle(.secondary)
+                            .font(.callout.weight(.medium)).lineLimit(1)
                         Text(ToolText.text("web_video_download_description"))
                             .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         Text(ToolText.text("builtin_extension"))
@@ -380,7 +380,7 @@ struct ExtensionCenterView: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(BuiltInUserScripts.displayName(for: script))
-                        .font(.body.weight(.medium))
+                        .font(.callout.weight(.medium))
                         .lineLimit(1)
                     if script.isBuiltIn == true && showBuiltInBadge {
                         Text(LanguageManager.shared.localizedString("userscript_builtin_badge"))
@@ -396,7 +396,6 @@ struct ExtensionCenterView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                Text(FeatureText.text(script.isEnabled ? "Enabled" : "Disabled")).font(.caption2).foregroundStyle(.secondary)
                 Text((BuiltInUserScripts.displayDescription(for: script)
                     .flatMap { $0.isEmpty ? nil : $0 })
                     ?? script.matchPatterns.prefix(2).joined(separator: ", "))

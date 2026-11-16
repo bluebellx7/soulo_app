@@ -532,3 +532,34 @@
 
 
 "gestures_feedback_settings" = "Gesturi și feedback";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platforme";
+"toolbar_more_panel" = "Panoul Mai multe";
+"show_platform_bar" = "Afișează bara de platforme";
+"toolbar_restore" = "Restabilește valorile";
+"platform_bar_hidden_hint" = "Adăugați „%1$@” în „%2$@” pentru a schimba platformele și grupurile când bara este ascunsă.";
+"platform_bar_disabled_hint" = "Bara de platforme este ascunsă. Atingeți pentru a deschide „%@” înainte de a activa ascunderea automată.";
+
+"storage_files_group" = "Descărcări și fișiere";
+"storage_cache_group" = "Cache și fișiere temporare";
+"storage_saved_group" = "Conținut salvat";
+
+"storage_clear_offline_media_warning" = "Șterge toate videoclipurile offline de aici și înregistrările lor de fișiere. Descărcările de fișiere/video neterminate, redarea și exporturile se vor opri.";
+"storage_clear_active_temp_warning" = "Anulează descărcările de fișiere/video neterminate, oprește redarea și exporturile, apoi șterge fișierele temporare eliberate. Descărcările finalizate sunt păstrate.";
+"storage_files_still_in_use" = "Unele fișiere sunt încă utilizate. Fișierele eliberate au fost șterse. Încearcă din nou în scurt timp.";
+
+"storage_system_caches" = "Cache de sistem";
+"storage_offline_media" = "Videoclipuri offline";
+"storage_system_data_retained" = "Fișierele de sistem pot rămâne în uz sau pot fi recreate. Setările sincronizate sunt păstrate.";
+
+"storage_clear_offline_remnants_warning" = "Șterge videoclipurile offline nelistate. Descărcările salvate sunt păstrate. Descărcările neterminate, redarea și exporturile se opresc.";
+
+"settings_ads_and_privacy" = "Reclame și confidențialitate";
+
+"storage_cleanup_cache_desc" = "Curăță cache-ul și fișierele temporare eliberabile; păstrează fișierele în uz.";
+"storage_cleanup_downloads_desc" = "Șterge fișierele descărcate salvate și înregistrările lor.";
+"storage_cleanup_wallpapers_desc" = "Elimină imaginile de fundal din favorite și le șterge fișierele.";
+"storage_cleanup_reading_desc" = "Curăță articolele offline, biblioteca și progresul lecturii.";
+
+"storage_cleanup_offline_desc" = "Șterge resturile video offline fără înregistrări de descărcare.";

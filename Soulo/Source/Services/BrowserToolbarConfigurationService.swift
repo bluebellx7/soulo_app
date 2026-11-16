@@ -7,6 +7,8 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
     case forward
     case tabs
     case newTab
+    case platforms
+    case siteInformation
     case more
     case share
     case bookmark
@@ -39,6 +41,8 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .forward: "browser_forward"
         case .tabs: "browser_tabs"
         case .newTab: "tab_new_tab"
+        case .platforms: "toolbar_platforms"
+        case .siteInformation: "site_information"
         case .more: "show_more"
         case .share: "share"
         case .bookmark: "bookmarks"
@@ -71,6 +75,8 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .forward: "chevron.right"
         case .tabs: "square"
         case .newTab: "plus.square"
+        case .platforms: "square.grid.2x2"
+        case .siteInformation: "lock"
         case .more: "ellipsis"
         case .share: "square.and.arrow.up"
         case .bookmark: "bookmark"
@@ -97,14 +103,14 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
 
     @MainActor var localizedTitle: String {
         switch self {
-        case .readerMode, .files, .books, .wifiTransfer: ToolText.text(titleKey)
+        case .readerMode, .files, .books, .wifiTransfer, .platforms: ToolText.text(titleKey)
         default: LanguageManager.shared.localizedString(titleKey)
         }
     }
 
     var requiresPage: Bool {
         switch self {
-        case .none, .home, .tabs, .newTab, .more, .settings, .extensions, .library, .hideToolbar, .files, .books, .downloads, .wifiTransfer:
+        case .none, .home, .tabs, .newTab, .platforms, .more, .settings, .extensions, .library, .hideToolbar, .files, .books, .downloads, .wifiTransfer:
             false
         default:
             true
@@ -117,7 +123,14 @@ final class BrowserToolbarConfigurationService: ObservableObject {
     static let shared = BrowserToolbarConfigurationService()
     static let actionsKey = "browser_toolbar_actions"
     static let addressActionKey = "browser_toolbar_address_action"
+    static let leadingActionKey = "browser_toolbar_leading_action"
+    static let moreActionsKey = "browser_more_menu_actions"
+    static let defaultMoreActions: [BrowserToolbarAction] = [
+        .home, .reload, .back, .forward, .fullscreen, .desktopMode, .darkMode, .tabs,
+        .share, .copyLink, .bookmark, .library
+    ]
     static let defaultActions: [BrowserToolbarAction] = [.home, .back, .tabs, .more]
+    static let defaultLeadingAction: BrowserToolbarAction = .siteInformation
     static let defaultAddressAction: BrowserToolbarAction = .darkMode
     static let unsupportedAddressActions: Set<BrowserToolbarAction> = [.tabs, .more]
     /// Keep this hook for actions that must temporarily disappear without
@@ -125,12 +138,16 @@ final class BrowserToolbarConfigurationService: ObservableObject {
     static let temporarilyUnavailableActions: Set<BrowserToolbarAction> = [.books]
 
     @Published private(set) var actions: [BrowserToolbarAction]
+    @Published private(set) var leadingAction: BrowserToolbarAction
     @Published private(set) var addressAction: BrowserToolbarAction
+    @Published private(set) var moreActions: [BrowserToolbarAction]
 
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        moreActions = Self.decodedMoreActions(from: defaults)
+        leadingAction = Self.normalizedLeadingAction(defaults.string(forKey: Self.leadingActionKey).flatMap(BrowserToolbarAction.init(rawValue:)))
         actions = Self.decodedActions(from: defaults) ?? Self.defaultActions
         addressAction = Self.normalizedAddressAction(
             defaults.string(forKey: Self.addressActionKey)
@@ -138,20 +155,49 @@ final class BrowserToolbarConfigurationService: ObservableObject {
         )
     }
 
-    func save(actions: [BrowserToolbarAction], addressAction: BrowserToolbarAction) {
+    func save(actions: [BrowserToolbarAction], addressAction: BrowserToolbarAction, moreActions: [BrowserToolbarAction]? = nil, leadingAction: BrowserToolbarAction? = nil) {
         let normalized = Self.normalized(actions)
         self.actions = normalized
         let normalizedAddressAction = Self.normalizedAddressAction(addressAction)
         self.addressAction = normalizedAddressAction
         defaults.set(normalized.map(\.rawValue), forKey: Self.actionsKey)
         defaults.set(normalizedAddressAction.rawValue, forKey: Self.addressActionKey)
+        if let moreActions { saveMoreActions(moreActions) }
+        if let leadingAction {
+            self.leadingAction = Self.normalizedLeadingAction(leadingAction)
+            defaults.set(self.leadingAction.rawValue, forKey: Self.leadingActionKey)
+        }
+    }
+
+    func saveMoreActions(_ actions: [BrowserToolbarAction]) {
+        moreActions = Self.normalizedMoreActions(actions)
+        defaults.set(moreActions.map(\.rawValue), forKey: Self.moreActionsKey)
+    }
+
+    func resetMoreActions() { saveMoreActions(Self.defaultMoreActions) }
+
+    static func normalizedMoreActions(_ actions: [BrowserToolbarAction]) -> [BrowserToolbarAction] {
+        var result = Array(actions.prefix(defaultMoreActions.count)).map {
+            $0 == .books ? .files : ($0 == .more || temporarilyUnavailableActions.contains($0)) ? .none : $0
+        }
+        while result.count < defaultMoreActions.count { result.append(defaultMoreActions[result.count]) }
+        return result
+    }
+
+    private static func decodedMoreActions(from defaults: UserDefaults) -> [BrowserToolbarAction] {
+        guard let values = defaults.stringArray(forKey: moreActionsKey) else { return defaultMoreActions }
+        return normalizedMoreActions(values.prefix(defaultMoreActions.count).enumerated().map { index, raw in
+            BrowserToolbarAction(rawValue: raw) ?? defaultMoreActions[index]
+        })
     }
 
     func reset() {
-        save(actions: Self.defaultActions, addressAction: Self.defaultAddressAction)
+        save(actions: Self.defaultActions, addressAction: Self.defaultAddressAction, leadingAction: Self.defaultLeadingAction)
     }
 
     func reloadFromDefaults() {
+        leadingAction = Self.normalizedLeadingAction(defaults.string(forKey: Self.leadingActionKey).flatMap(BrowserToolbarAction.init(rawValue:)))
+        moreActions = Self.decodedMoreActions(from: defaults)
         actions = Self.decodedActions(from: defaults) ?? Self.defaultActions
         addressAction = Self.normalizedAddressAction(
             defaults.string(forKey: Self.addressActionKey)
@@ -167,6 +213,12 @@ final class BrowserToolbarConfigurationService: ObservableObject {
             result.append(defaultActions[result.count])
         }
         return result
+    }
+
+    static func normalizedLeadingAction(_ action: BrowserToolbarAction?) -> BrowserToolbarAction {
+        guard let action, !unsupportedAddressActions.contains(action) else { return defaultLeadingAction }
+        if action == .books { return .files }
+        return temporarilyUnavailableActions.contains(action) ? .none : action
     }
 
     static func normalizedAddressAction(_ action: BrowserToolbarAction?) -> BrowserToolbarAction {

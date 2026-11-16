@@ -1,0 +1,91 @@
+{
+  "date": "2026-11-16",
+  "request": "Test live Tencent video for the previously reported media_unavailable alert",
+  "version": "1.2.15",
+  "build": "56",
+  "status": "verified_scoped_live_sample",
+  "device": {
+    "model": "iPhone 17 simulator",
+    "os": "iOS 26.2 (23C54)",
+    "id": "145C5440-55DB-42F5-9762-DF9809F00B35",
+    "bundle": "com.dkluge.Soulo.Acceptance"
+  },
+  "sample": {
+    "entry": "https://v.qq.com/x/cover/mzc002001bk7moh/o41028027ng.html",
+    "resolved": "https://m.v.qq.com/x/m/play?cid=mzc002001bk7moh&vid=o41028027ng",
+    "title": "现在就出发 第4季 第5期下",
+    "access": "Anonymous publisher-provided mobile preview, approximately 3 minutes; not a full paid episode",
+    "decodedDurationSeconds": 212.4
+  },
+  "configuration": {
+    "privateWebsiteData": true,
+    "extensions": "none installed in the fresh isolated app",
+    "automaticWebPlayerTakeover": false,
+    "videoTools": true,
+    "selectedSouloPlayer": true,
+    "filtering": "normal application defaults"
+  },
+  "verification": [
+    {
+      "scenario": "Website playback after separate preroll",
+      "result": "passed",
+      "evidence": "A decoded video with readyState 4, advancing clock, dimensions 864x486 and duration 212.4 seconds; no handoff error or native failure alert"
+    },
+    {
+      "scenario": "Explicit Soulo tool despite automatic takeover being off",
+      "result": "passed",
+      "repeatCount": 2,
+      "evidence": "Real taps on Video tools / Fullscreen, actual VLC displayed-picture evidence (frameReady=true) and native fullscreen host each time"
+    },
+    {
+      "scenario": "Close fullscreen, return to site and open again",
+      "result": "passed",
+      "repeatCount": 2,
+      "evidence": "Browser returned, videoOrientationError empty, no native error alert after either close"
+    },
+    {
+      "scenario": "Publisher fullscreen entry",
+      "result": "observed_app_download_handoff",
+      "evidence": "This sample routes its own txp_btn_fullscreen to /activity/downapp_activity.html. Screenshot shows Soulo external-app confirmation, not media_unavailable. Not counted as a native-fullscreen pass."
+    }
+  ],
+  "test": {
+    "name": "DeviceIntegrationUITests/testLiveTencentPlaybackAndFullscreenDoNotShowSpuriousFailure",
+    "variant": "SOULO_TENCENT_FULLSCREEN_MODE=tools",
+    "passed": 1,
+    "failed": 0,
+    "seconds": 80.38,
+    "buildLog": "/tmp/soulo-tencent-20261116/build5.log",
+    "log": "/tmp/soulo-tencent-20261116/phone-tools1.log",
+    "resultBundle": "/tmp/soulo-tencent-20261116/phone-tools1.xcresult"
+  },
+  "artifacts": {
+    "tencent-soulo-returned-1": "/tmp/soulo-tencent-20261116/tools-attachments/60B737DB-F23C-45E7-85CE-10B5D0A0F455.txt",
+    "tencent-soulo-fullscreen-1": "/tmp/soulo-tencent-20261116/tools-attachments/67636578-190F-42E3-9A3F-3C926E79C61F.txt",
+    "tencent-soulo-decoded-1": "/tmp/soulo-tencent-20261116/tools-attachments/968098DA-961D-419D-A7E0-45F3E9316C64.txt",
+    "tencent-soulo-returned-0": "/tmp/soulo-tencent-20261116/tools-attachments/F0229839-1502-49B0-B05C-1A7475497AF4.txt",
+    "tencent-soulo-fullscreen-0": "/tmp/soulo-tencent-20261116/tools-attachments/CC3605DD-84EE-4A24-B557-1873894AC30D.txt",
+    "tencent-soulo-decoded-0": "/tmp/soulo-tencent-20261116/tools-attachments/D6D6AA2C-9BA0-41DC-9AF9-9E5803E485F4.txt",
+    "tencent-playing": "/tmp/soulo-tencent-20261116/tools-attachments/038F2EDA-2587-435D-BA00-E5AAB637BBAB.txt",
+    "tencent-loaded": "/tmp/soulo-tencent-20261116/tools-attachments/3E196004-1829-4C6C-A10B-C40B44F5D28F.txt"
+  },
+  "earlierAttempts": [
+    "Simulator service had stale device/runtime references; service was restarted and a fresh named QA simulator was created without erasing user devices.",
+    "First observer failed on SVG innerText; corrected the acceptance-only observer to safely read attributes/textContent. That attempt is not counted as a playback failure.",
+    "An early test touched preroll content and followed its advertiser; the final test waits for the publisher preview naturally.",
+    "A native-fullscreen-only expectation was incorrect for this sample because its own button routes to the publisher App-download page; preserved screenshots and classified the outcome separately."
+  ],
+  "limitations": [
+    "The screenshot does not contain the original video URL; this is a different publicly reachable Tencent preview sample.",
+    "No physical iOS 27.2.1 verification, login/VIP full episode, DRM playback, or FastStream-installed combination in this run.",
+    "No reproduction of the reported false alert in this scope; not a guarantee for all Tencent videos."
+  ],
+  "changes": "Added opt-in live Tencent UI verification and a read-only acceptance-only media observer. No production playback behavior changed in this task.",
+  "sourceSHA256": {
+    "Soulo/Source/Views/WebView/WebViewRepresentable.swift": "e6ab28e57cc83f49681c32dae638ece40bb5f7107621039942f732be3b268d88",
+    "Soulo/Source/Services/ReadingTools/WebMediaPlaybackBridge.swift": "874a1fee2ba80881d409da9356a94bf06538cd82ccc88d300f50ba39261f7b79",
+    "Soulo/Source/Services/ReadingTools/VideoPlaybackPreferences.swift": "57e3ea7b51e15e85e955ad5cfc145cfc21604692991e21c3e906dc9db5f72425",
+    "Soulo/Source/Services/DeviceAcceptanceProbe.swift": "8b79cbe6bf16119e5588e5682d1a53925af046faba833fae7934e0b997eacd01",
+    "SouloUITests/DeviceIntegrationUITests.swift": "c33e2dc381421272e94d8fabbee295c988263fe8409146437a148b2da64d9741"
+  }
+}

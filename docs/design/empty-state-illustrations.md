@@ -1,5 +1,9 @@
 # 应用内手绘插画
 
+2026-11-15 打包优化：`ToolIllustration` 的最大宽度为 280 pt。九张原来为 1536 × 1024 的插画按三倍屏的显示上限打包为 840 × 560，保留 sRGB、透明通道和 PNG 无损编码。`IllustrationPlayback` 已是该尺寸，`IllustrationPageQR` 已小于上限，两者不变。App 图标、Logo 及平台图标不参与本次调整。原始素材保留在此前的 Git 版本及本机 `/tmp/soulo-app-size-20261115/lossless.xcassets/`；以后需要更大显示尺寸时应从原始素材重新生成，避免反复缩放。对照时以相同屏幕显示尺寸比较，而不是把打包图放大回 1536 像素。
+
+本次未采用 HEVC 有损或 GPU 有损压缩；原生插画目录仍使用默认无损 Asset Catalog 编码。缩小解码像素量也减少图片的解码内存，无需新增解码库或网络请求。具体体积和兼容验证见 `docs/qa/2026-11-15-app-size-audit.json`。
+
 2026-11-05：使用 imagegen 技能和内置 image_gen 工具生成。风格参考项目原有 `IllustrationTransfer`，保留细炭笔线条、淡紫色和奶油色、轻微纸张纹理，透明背景，不包含文字。
 
 图片分别用于下载、收藏、历史的空列表，沿用 `ToolIllustration` 的尺寸和深色模式处理，不在首页预加载。文件列表和 Wi-Fi 传输的现有插画保留。

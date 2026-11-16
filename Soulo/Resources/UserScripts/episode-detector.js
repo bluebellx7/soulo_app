@@ -39,7 +39,7 @@
   }
   function resourcePlaybackURL(url) {
     return /\.(?:m3u8|mp4|m4v|mov|webm)$/i.test(url.pathname)
-      || /\/(?:play(?:er)?|vodplay|watch|episodes?|vplay|share)(?:[/.\-_]|$)/i.test(url.pathname);
+      || /\/(?:play(?:er)?|vodplay|watch|episodes?|v[_-]?play|share)(?:[/.\-_]|$)/i.test(url.pathname);
   }
   function safeURL(raw) {
     if (typeof raw !== 'string' || !raw.trim() || raw.length > 8192) return null;
@@ -184,9 +184,13 @@
   }
   function looksPlayable(url) {
     if ([...url.searchParams.keys()].some(key => /^(?:page|pageindex|page_no)$/i.test(key))) return false;
-    return /\/(?:play(?:er)?|vodplay|watch|episodes?|vplay)(?:[\/.\-_]|$)/i.test(url.pathname)
+    return /\/(?:play(?:er)?|vodplay|watch|episodes?|v[_-]?play)(?:[\/.\-_]|$)/i.test(url.pathname)
       || [...url.searchParams.keys()].some(key => /^(?:ep|episode|episodeid|eid|nid|play)$/i.test(key))
       || (/\/video\//i.test(url.pathname) && url.pathname === location.pathname && /^\d+$/.test(url.searchParams.get('p') || ''));
+  }
+  function opaquePlayFamily(url) {
+    const route = url?.pathname.match(/^(.*\/v[_-]?play)\/[^/]+\/?$/i);
+    return route ? url.origin + route[1].toLowerCase() + '/' : null;
   }
   function headingText(group) {
     const heading = group.previousElementSibling;
@@ -283,9 +287,65 @@
     const groups = new Set([...document.querySelectorAll(listSelector),...resourceGroups.keys()]);
     const currentQuery = location.search.match(/^\?(\d+)-(\d+)-(\d+)\.html$/i);
     const current = location.pathname.match(playPath), videoPage = !!document.querySelector('video,iframe[src*="player"],iframe[src*="play/"]');
+    const currentURL = safeURL(location.href), currentOpaqueFamily = opaquePlayFamily(currentURL);
+    const opaqueGroups = new Map(), selectedRows = new WeakMap();
+    function opaqueGroup(group,family) {
+      let cached = opaqueGroups.get(group);
+      if (!cached) { cached = new Map(); opaqueGroups.set(group,cached); }
+      if (cached.has(family)) return cached.get(family);
+      const numbers = new Set(), urls = new Set(), numericParents = new Set();
+      let anchored = false, currentTitle = '', count = 0;
+      if (!currentURL || currentOpaqueFamily && family !== currentOpaqueFamily) {
+        const result = {valid:false,family,currentTitle,numericParents}; cached.set(family,result); return result;
+      }
+      for (const link of group.querySelectorAll(linkSelector)) {
+        if (++count > 5000) break;
+        if (excludedGroup(link) || auxiliaryLink(link) || link.hasAttribute('download')
+            || link.querySelector('img,picture,video,form,input')) continue;
+        const url = destination(link), title = clean(link.textContent) || buttonTitle(link), number = episodeNumber(title);
+        if (!url || !looksPlayable(url) || url.origin !== currentURL.origin || opaquePlayFamily(url) !== family
+            || !episodeLabel(title) || number === undefined || urls.has(url.href)) continue;
+        urls.add(url.href); numbers.add(number); numericParents.add(link.parentElement);
+        const row = link.closest('li,[role="listitem"]') || link.parentElement;
+        let selectedRow = false;
+        if (row && row !== group && selectedButton(row)) {
+          if (!selectedRows.has(row)) selectedRows.set(row,row.querySelectorAll(linkSelector).length === 1);
+          selectedRow = selectedRows.get(row);
+        }
+        if (url.href === currentURL.href || selectedButton(link) || selectedRow) anchored = true;
+      }
+      // Some templates render the current episode as a selected span, not a
+      // link. Accept a leaf episode marker, never an active whole list/tab.
+      count = 0;
+      for (const marker of group.querySelectorAll('[aria-current],[aria-selected="true"],.active,.selected,.current')) {
+        if (++count > 1000) break;
+        if (!selectedButton(marker) || excludedGroup(marker) || marker.matches(linkSelector)
+            || marker.querySelector(linkSelector + ',button,[role="button"]')) continue;
+        const title = clean(marker.textContent) || buttonTitle(marker), number = episodeNumber(title);
+        if (!episodeLabel(title) || number === undefined) continue;
+        numbers.add(number); anchored = true;
+        if (!currentTitle && currentOpaqueFamily === family) currentTitle = title;
+      }
+      const result = {valid:anchored && urls.size > 0 && numbers.size >= 2,family,currentTitle,numericParents};
+      cached.set(family,result); return result;
+    }
+    function namedOpaquePeer(link,title,url,opaque) {
+      if (!title || title.length > 48 || !opaque.numericParents.has(link.parentElement)
+          || excludedGroup(link) || auxiliaryLink(link) || link.hasAttribute('download')
+          || link.querySelector('img,picture,video,form,input')
+          || /^\s*#/.test(link.getAttribute('href') || '')
+          || /#(?:respond|reply|comments?)(?:\b|[-_])/i.test(link.getAttribute('href') || '')
+          || [...url.searchParams.keys()].some(key => /^(?:reply|replyto|reply_to|comment|commentid|comment_id|post|action)$/i.test(key))) return false;
+      return !/^(?:回复|回復|回覆|评论|評論|留言|reply|comments?)(?:\s*(?:[（(]?\d+[)）]?|[:：].*|作者|楼主|樓主|TA|to\b.*))?$/i.test(title)
+        && !/(?:取消\s*(?:回复|回復|回覆|评论|評論)|cancel\s+(?:reply|comment))/i.test(title)
+        && !/(?:^|[-_\s])(?:reply|comment|cancel|report|copy|download)(?:[-_\s]|$)/i.test(link.className || '')
+        && !/^https?:\/\//i.test(title);
+    }
     // Fall back to repeated, labelled links instead of any site's class names.
     // Require playback context so numeric pagination and catalog cards stay out.
+    let scannedLinks = 0;
     for (const link of document.querySelectorAll(linkSelector)) {
+      if (++scannedLinks > 6000) break;
       if (groups.size >= 60 || link.closest(listSelector)) continue;
       const title = clean(link.textContent || link.getAttribute('title') || link.getAttribute('aria-label'));
       const url = destination(link);
@@ -294,7 +354,15 @@
       for (let depth = 0; group && depth < 4; depth++, group = group.parentElement) {
         if (group === document.body || group === document.documentElement || excludedGroup(group)) break;
         const semantic = semanticGroup(group);
-        if (!(semantic || looksPlayable(url) || (videoPage && !plainNumber.test(labelText(title))))) break;
+        if (!(semantic || looksPlayable(url) || (videoPage && !plainNumber.test(labelText(title))))) continue;
+        const family = opaquePlayFamily(url);
+        if (family) {
+          if (opaqueGroup(group,family).valid) { groups.add(group); break; }
+          // Do not merge independent lists above a rejected recommendation or
+          // pagination block merely to find the current URL in a sibling list.
+          if (group.matches('ul,ol,[role="list"]')) break;
+          continue;
+        }
         let count = 0;
         for (const candidate of group.querySelectorAll(linkSelector)) {
           if (destination(candidate) && episodeLabel(clean(candidate.textContent || candidate.getAttribute('title') || candidate.getAttribute('aria-label'))) && ++count >= 2) break;
@@ -330,21 +398,37 @@
         continue;
       }
       if (group.matches(resourceListSelector)) continue;
+      let opaque = null, opaqueFamily = null;
+      for (const link of group.querySelectorAll(linkSelector)) {
+        const family = opaquePlayFamily(destination(link));
+        if (!family) continue;
+        if (!opaqueFamily) opaqueFamily = family;
+        if (family === currentOpaqueFamily) { opaqueFamily = family; break; }
+      }
+      if (opaqueFamily) opaque = opaqueGroup(group,opaqueFamily);
+      if (opaque && !opaque.valid) continue;
       for (const link of group.querySelectorAll(linkSelector)) {
         if (total >= 5000) break;
         if (link.closest('.pagination,.pager,.related,.recommend,.recommendations,[data-recommendations]')) continue;
         const url = destination(link);
         if (!url) continue;
+        if (opaque && (!looksPlayable(url) || url.origin !== currentURL.origin || opaquePlayFamily(url) !== opaque.family
+            || excludedGroup(link) || auxiliaryLink(link) || link.hasAttribute('download')
+            || link.querySelector('img,picture,video,form,input'))) continue;
         if (currentQuery) {
           const query = url.search.match(/^\?(\d+)-(\d+)-(\d+)\.html$/i);
           if (url.pathname !== location.pathname || !query || query[1] !== currentQuery[1]) continue;
         }
         const title = clean(link.textContent || link.getAttribute('title') || link.getAttribute('aria-label'));
         const match = url.pathname.match(playPath);
-        if (!title || !(match || episodeLabel(title) || (known && /^(?:HD|BD|正片|全集)/i.test(title)))) continue;
+        if (!title || !(match || episodeLabel(title) || (opaque ? namedOpaquePeer(link,title,url,opaque)
+            : known && /^(?:HD|BD|正片|全集)/i.test(title)))) continue;
         if (current && match && match[1] !== current[1]) continue;
         if (seen.has(url.href) || used.has(url.href)) continue;
         seen.add(url.href); episodes.push({title,url:url.href}); total++;
+      }
+      if (opaque?.currentTitle && !seen.has(currentURL.href) && !used.has(currentURL.href) && total < 5000) {
+        episodes.push({title:opaque.currentTitle,url:currentURL.href}); total++;
       }
       if (!episodes.length) continue;
       const playItem = group.closest('.play-item');

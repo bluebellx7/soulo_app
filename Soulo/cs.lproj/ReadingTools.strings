@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "Gesta a odezva";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platformy";
+"toolbar_more_panel" = "Panel Více";
+"show_platform_bar" = "Zobrazit panel platforem";
+"toolbar_restore" = "Obnovit výchozí";
+"platform_bar_hidden_hint" = "Přidejte „%1$@“ v „%2$@“ a přepínejte platformy a skupiny, když je panel skrytý.";
+"platform_bar_disabled_hint" = "Panel platforem je skrytý. Klepnutím otevřete „%@“ před zapnutím automatického skrývání.";
+
+"storage_files_group" = "Stahování a soubory";
+"storage_cache_group" = "Mezipaměť a dočasné soubory";
+"storage_saved_group" = "Uložený obsah";
+
+"storage_clear_offline_media_warning" = "Smaže všechna offline videa v tomto umístění a jejich záznamy souborů. Nedokončené stahování souborů/videí, přehrávání a exporty se zastaví.";
+"storage_clear_active_temp_warning" = "Zruší nedokončené stahování souborů/videí, zastaví přehrávání a exporty a vymaže uvolněné dočasné soubory. Dokončená stažení zůstanou zachována.";
+"storage_files_still_in_use" = "Některé soubory se stále používají. Uvolněné soubory byly vymazány. Zkuste to za chvíli znovu.";
+
+"storage_system_caches" = "Systémová mezipaměť";
+"storage_offline_media" = "Offline videa";
+"storage_system_data_retained" = "Systémové soubory mohou zůstat používané nebo se znovu vytvořit. Synchronizovaná nastavení zůstanou zachována.";
+
+"storage_clear_offline_remnants_warning" = "Smaže neuvedená offline videa. Uložená stahování zůstanou. Nedokončená stahování, přehrávání a exporty se zastaví.";
+
+"settings_ads_and_privacy" = "Reklamy a soukromí";
+
+"storage_cleanup_cache_desc" = "Vymaže uvolnitelnou mezipaměť a dočasné soubory; používané soubory ponechá.";
+"storage_cleanup_downloads_desc" = "Smaže uložené stažené soubory a jejich záznamy.";
+"storage_cleanup_wallpapers_desc" = "Odebere tapety z oblíbených a smaže jejich soubory.";
+"storage_cleanup_reading_desc" = "Vymaže offline články, knihovnu a postup čtení.";
+
+"storage_cleanup_offline_desc" = "Smaže zbytky offline videí bez záznamů o stažení.";

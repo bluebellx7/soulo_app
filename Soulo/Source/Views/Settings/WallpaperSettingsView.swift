@@ -247,7 +247,7 @@ struct WallpaperSettingsView: View {
         } label: {
             VStack(spacing: 8) {
                 sourceSample(src, appearance: wallpaperManager.source.isRemote ? WallpaperAppearance(colorScheme) : editingAppearance)
-                    .frame(width: 80, height: 60)
+                    .frame(width: 70, height: 60)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.themePrimary : Color.primary.opacity(0.12), lineWidth: selected ? 2 : 0.5))
                     .accessibilityHidden(true)

@@ -1,0 +1,47 @@
+{
+  "status": "code_complete_compiled_manual_acceptance_pending",
+  "app_size": {
+    "installed_debug_logical_bytes": 160356354,
+    "installed_debug_allocated_bytes": 162373632,
+    "debug_dylib_bytes": 107147552,
+    "comparison_release_regular_files_bytes": 84303849,
+    "source": "/Users/shunfei.z/Library/Developer/Xcode/DerivedData/Soulo-bgftwxhmdrdgyoaumamssvujqitc/Build/Products/Debug-iphoneos/Soulo.app",
+    "finding": "Screenshot 162.4 MB matches allocated Debug bundle. Previous 84.3 MB was the Release regular-file total, not installed size. No downloads or caches are included in App size.",
+    "action": "No size or measurement changes, per user request after Debug build cause confirmed."
+  },
+  "confirmation": "Offline-video remnants retain a tap confirmation without requiring CLEAR. Bookmark deletion still requires typed confirmation. Offline media is still opt-in, not selected with safe cache defaults.",
+  "swiping": {
+    "page_tabs": [
+      "Ads and Privacy",
+      "Browser Toolbar and More panel",
+      "Extensions Installed and Add"
+    ],
+    "page_behavior": "Native paged TabView, preserves row swipe actions and separate scroll/edit state.",
+    "value_selectors": [
+      "Batch import Append/Replace",
+      "Article appearance",
+      "Book appearance",
+      "Archive format",
+      "Advertisement scope"
+    ],
+    "value_behavior": "Control-only horizontal drag, 24-point threshold, RTL direction, no wrap, anchored to gesture-start selection."
+  },
+  "validation": "Prior batch compiled and localization checked; the later row-description removal passed diff checks only. No new regression run per user request.",
+  "cleanup_list": {
+    "order": [
+      "history",
+      "offlineMedia",
+      "websiteData",
+      "downloadedFiles",
+      "wallpapers",
+      "reading",
+      "backups",
+      "bookmarks"
+    ],
+    "cache_group": "Remains above saved-data group",
+    "sizes": "Each item shows corresponding scope size. Logical/shared-store and changing-file estimates use ≈; unknown is —. Background disk scans and private-queue CoreData queries.",
+    "descriptions": "Per later user request, per-item descriptions are removed; rows show title, size and selection only. Section warnings remain.",
+    "typed_confirmation": "Fixed safe-area bottom input, avoids keyboard. Offline media only needs tap confirmation; bookmarks retain typed confirmation."
+  },
+  "build_log": "/tmp/soulo-storage-device-20261116/cleanup-sizes-and-swipe-build.log"
+}

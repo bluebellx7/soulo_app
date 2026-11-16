@@ -532,3 +532,34 @@
 
 
 "gestures_feedback_settings" = "Gestur & Umpan Balik";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "Platform";
+"toolbar_more_panel" = "Panel Lainnya";
+"show_platform_bar" = "Tampilkan Bilah Platform";
+"toolbar_restore" = "Pulihkan Default";
+"platform_bar_hidden_hint" = "Tambahkan “%1$@” di “%2$@” untuk beralih platform dan grup saat bilah platform disembunyikan.";
+"platform_bar_disabled_hint" = "Bilah platform disembunyikan. Ketuk untuk membuka “%@” sebelum mengaktifkan sembunyikan otomatis.";
+
+"storage_files_group" = "Unduhan dan file";
+"storage_cache_group" = "Cache dan file sementara";
+"storage_saved_group" = "Konten tersimpan";
+
+"storage_clear_offline_media_warning" = "Menghapus semua video offline di sini beserta entri filenya. Unduhan file/video yang belum selesai, pemutaran, dan ekspor akan dihentikan.";
+"storage_clear_active_temp_warning" = "Membatalkan unduhan file/video yang belum selesai, menghentikan pemutaran dan ekspor, lalu membersihkan file sementara yang telah dilepas. Unduhan selesai tetap disimpan.";
+"storage_files_still_in_use" = "Beberapa file masih digunakan. File yang telah dilepas sudah dibersihkan; coba lagi sebentar.";
+
+"storage_system_caches" = "Cache sistem";
+"storage_offline_media" = "Video offline";
+"storage_system_data_retained" = "File sistem mungkin tetap digunakan atau dibuat ulang. Pengaturan yang disinkronkan tetap disimpan.";
+
+"storage_clear_offline_remnants_warning" = "Menghapus video offline yang tidak terdaftar. Unduhan tersimpan tetap ada. Unduhan belum selesai, pemutaran, dan ekspor akan dihentikan.";
+
+"settings_ads_and_privacy" = "Iklan & Privasi";
+
+"storage_cleanup_cache_desc" = "Membersihkan cache dan file sementara yang dapat dilepas; file yang dipakai tetap ada.";
+"storage_cleanup_downloads_desc" = "Menghapus file unduhan tersimpan dan catatannya.";
+"storage_cleanup_wallpapers_desc" = "Menghapus wallpaper dari favorit beserta filenya.";
+"storage_cleanup_reading_desc" = "Membersihkan artikel offline, pustaka buku, dan progres membaca.";
+
+"storage_cleanup_offline_desc" = "Menghapus sisa video offline tanpa catatan unduhan.";

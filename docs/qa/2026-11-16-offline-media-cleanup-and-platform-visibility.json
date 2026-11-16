@@ -1,0 +1,98 @@
+{
+  "status": "implemented_verified",
+  "build": "1.2.15 (56)",
+  "evidence_root": "/tmp/soulo-media-cleanup-platform-20261116",
+  "changes": {
+    "platform_visibility": {
+      "preference": "show_platform_bar",
+      "default": true,
+      "switches": [
+        "settings.browsingDisplay.platformBar",
+        "platform.show-platform-bar"
+      ],
+      "name": "Show Platform Bar / 显示平台栏",
+      "automatic_controls": [
+        "home.auto-hide-platforms",
+        "search.auto-hide-platforms",
+        "platform.auto-hide-platforms"
+      ],
+      "behavior": "All three automatic-hide controls are conditional on the shared visibility preference. The saved automatic-hide choice is preserved when the bar is disabled. Both management layouts use the same controls. Disabling the bar opens the existing illustrated toolbar-shortcut guide."
+    },
+    "offline_media": "Other app data exposes a confirmed trash action for real, direct Library/com.apple.UserManagedAssets.* directories. Cleanup removes released files and only the .soulohls references whose packages disappeared, then invalidates storage accounting. Other Library folders and symlinks are rejected.",
+    "temporary_media": "The temporary-files detail page offers Stop · Clear. Confirmation cancels unfinished ordinary file/web-video downloads, stops native playback and exports, and waits for URLSession and export owners to finish. Completed ordinary downloads and peer-download jobs are preserved.",
+    "retention": "Public F_GETPATH queries inspect descriptors in the app process. Live extension Blob leases also remain protected between read chunks. Cleanup continues per file, retaining open files, links, new writes and WebKit/system databases; retained files are reported. A pending system downloader prevents raw removal of its managed container."
+  },
+  "validation": {
+    "build": {
+      "status": "passed",
+      "configuration": "Debug arm64 simulator, minimum iOS 16.0",
+      "evidence": "verified-build.log"
+    },
+    "storage_unit": {
+      "status": "passed",
+      "cases_per_runtime": 22,
+      "runtimes": [
+        "iOS 26.2 simulator",
+        "iOS 16.0 simulator"
+      ],
+      "evidence": [
+        "phone.xcresult",
+        "ios16.xcresult"
+      ]
+    },
+    "platform_unit": {
+      "status": "passed",
+      "cases": 5,
+      "runtime": "iOS 26.2 simulator",
+      "evidence": "phone.xcresult"
+    },
+    "phone_ui": {
+      "status": "passed",
+      "cases": 4,
+      "scope": "Visibility disables and restores the automatic-hide control, both management layouts retain automatic-hide settings, and a seeded managed-assets container is actually deleted.",
+      "evidence": [
+        "phone.xcresult",
+        "phone-temporary.xcresult"
+      ]
+    },
+    "ios16_ui": {
+      "status": "passed",
+      "cases": 3,
+      "evidence": [
+        "ios16.xcresult (managed-media method)",
+        "ios16-final.xcresult"
+      ],
+      "scope": "Managed-media deletion, visibility/automatic-hide linkage, and confirmed stop-and-clear flow."
+    },
+    "temporary_ui": {
+      "status": "passed",
+      "runtimes": [
+        "iOS 26.2 simulator",
+        "iOS 16.0 simulator"
+      ],
+      "evidence": [
+        "phone-temporary.xcresult",
+        "ios16-final.xcresult"
+      ]
+    },
+    "localization": "passed: 512 ReadingTools keys in 50 locales",
+    "metadata": "passed: all 50 locales; version unchanged",
+    "whitespace": "passed",
+    "physical_fixture_removal": "Confirmed both managed-assets and temporary fixture paths no longer exist in both isolated QA containers.",
+    "visual_review": {
+      "status": "passed",
+      "evidence": [
+        "ios16-attachments/C64ED146-CC3F-47F4-A916-86D952672E59.png",
+        "ios16-final-attachments/377F14CD-86D3-4B06-B5D9-621E0F39B89E.png"
+      ],
+      "scope": "Readable anchored confirmation warnings for managed offline media and Stop · Clear; both confirmation buttons remain visible."
+    }
+  },
+  "notes": [
+    "The initial iOS 16 visibility driver hit the merged SwiftUI accessibility frame above the native UISwitch after its row shrank. The final driver targets the observed native child control; this failed run is retained and is not counted as passing.",
+    "The managed-media test uses a 1 MiB task-owned fixture, verifies the destructive warning, and confirms actual filesystem removal in both isolated QA containers.",
+    "Open-handle tests retain the active file, remove its released sibling, and then reclaim the formerly active file after its handle closes. Separate checks preserve outside downloads, extension state, symlinks, future writes and WebKit cache databases.",
+    "No physical user device or its reported 972.4 MB folder was operated. No commit, push, deployment or version increment was performed."
+  ],
+  "primary_reference": "https://developer.apple.com/documentation/avfoundation/using-avfoundation-to-play-and-persist-http-live-streams"
+}

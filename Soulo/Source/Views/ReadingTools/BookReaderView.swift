@@ -155,6 +155,7 @@ struct BookReaderView: View {
                         Text(ToolText.text("light")).tag("light")
                         Text(ToolText.text("dark")).tag("dark")
                     }.pickerStyle(.segmented)
+                    .segmentedValueSwipe(selection: $theme, values: ["paper", "light", "dark"])
                     if !isPDF {
                         Picker(ToolText.text("chinese_display"), selection: $chineseDisplay) {
                             Text(ToolText.text("original_text")).tag("original")

@@ -1,0 +1,79 @@
+{
+  "status": "fixed_with_local_validation_device_recheck_pending",
+  "reported_build": "1.2.15 (55)",
+  "fixed_build": "1.2.15 (56)",
+  "report": {
+    "source": "User-provided TestFlight crash report; raw feedback and contact details are excluded from the repository",
+    "device": "iPhone18,3",
+    "os": "iOS 27.2.1 (24B156)",
+    "elapsed_after_launch_seconds": 3.8364,
+    "exception": "EXC_BAD_ACCESS / KERN_PROTECTION_FAILURE in the main thread Stack Guard",
+    "symbolicated_path": [
+      "Swift generic type metadata resolution and demangling",
+      "WebViewToolbar.moreMenu.getter",
+      "WebViewToolbar.toolbarAction / toolbarContent / body",
+      "NewTabPageView.body"
+    ],
+    "diagnosis": "Main-thread stack exhaustion while resolving the deeply nested SwiftUI toolbar/menu type during a new-tab update"
+  },
+  "changes": [
+    "Introduce stable AnyView boundaries between the more-menu launcher, popover, panel content, sheets and state observers",
+    "Erase the compatiblePopover OS branches and panel type at the presentation boundary",
+    "Construct legacy iOS 16 popover content only when presented, while retaining its anchor and dismissal behavior",
+    "Keep saved tabs, preferences and user data intact",
+    "Add structural metadata regression coverage and cold-launch/restoration UI coverage",
+    "Increment the app, Widget and Share extension build numbers to 56; retain marketing version 1.2.15"
+  ],
+  "metadata_regression": {
+    "toolchain": "Xcode 26.2 / iOS 26.2 Simulator SDK",
+    "baseline": { "type_description_utf8_bytes": 205786, "generic_depth": 70, "bounded_type_test": "failed_as_expected" },
+    "fixed": { "type_description_utf8_bytes": 10479, "generic_depth": 27, "bounded_type_test": "passed" },
+    "limits": { "type_description_utf8_bytes_less_than": 65536, "generic_depth_less_than": 64 },
+    "evidence": [
+      "/tmp/soulo-testflight-crash-20261115/baseline-metadata.log",
+      "/tmp/soulo-testflight-crash-20261115/fixed-metadata.log",
+      "/tmp/soulo-testflight-crash-20261115/phone-regressions.log"
+    ]
+  },
+  "verification": [
+    {
+      "scope": "BrowserUIPreferencesTests: 9 tests, including metadata complexity and existing toolbar/preferences behavior",
+      "result": "passed",
+      "evidence": "/tmp/soulo-testflight-crash-20261115/phone-regressions.log"
+    },
+    {
+      "scope": "iPhone iOS 26.2 Simulator: ordinary menu, cold launch with retained tabs, floating menu, site information and compact popover placement",
+      "result": "2 UI tests passed; retained-state fixture contained 56 tabs; menu screenshot visually reviewed",
+      "evidence": "/tmp/soulo-testflight-crash-20261115/phone-regressions.xcresult"
+    },
+    {
+      "scope": "iPad iOS 26.2 Simulator: fullscreen source/options panels and windowed rotation with both player engines",
+      "result": "passed",
+      "evidence": "/tmp/soulo-testflight-crash-20261115/ipad-regressions.xcresult"
+    },
+    {
+      "scope": "Minimum deployment target iOS 16.0: compile fixed sources with the legacy popover implementation",
+      "result": "passed",
+      "evidence": "/tmp/soulo-testflight-crash-20261115/ios16-build.log"
+    },
+    {
+      "scope": "iPhone iOS 16.0 Simulator: open and dismiss the site information and more-menu legacy popovers, assert content-sized presentation",
+      "result": "passed",
+      "evidence": "/tmp/soulo-testflight-crash-20261115/ios16-regressions-reboot.xcresult",
+      "test_environment": "Initial runner stalled inside dyld before launching the app. Restarting the isolated QA simulator resolved the runner startup; the actual app UI test then passed."
+    },
+    {
+      "scope": "Unsigned Release device build; app and both extensions report 1.2.15 (56), minimum iOS 16.0",
+      "result": "passed",
+      "evidence": "/tmp/soulo-testflight-crash-20261115/release-build56.log"
+    },
+    {
+      "scope": "50-language strict localization check, generated App Store JSON check and git diff whitespace check",
+      "result": "passed"
+    }
+  ],
+  "limitations": [
+    "This local toolchain does not provide iOS 27.2.1. The exact reported OS/device requires a new build 56 TestFlight verification; local tests do not substitute for it.",
+    "No physical devices were operated and no TestFlight upload was performed for this fix."
+  ]
+}

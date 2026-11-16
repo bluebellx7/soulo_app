@@ -228,6 +228,8 @@ final class WebViewModel: ObservableObject {
     // MARK: - WebView Reference
 
     private var pendingRequest: URLRequest?
+    private var retainedInteractionState: Data?
+    private var retainedInteractionURL: URL?
     private let historyTransition = WebHistoryTransition()
 
     var webView: WKWebView? {
@@ -254,6 +256,19 @@ final class WebViewModel: ObservableObject {
             mediaSession.webView = webView
             restorePageZoom(for: currentURL, force: true)
             applyWebPreferences(to: webView)
+            if let state = retainedInteractionState, !cancelledBeforeAttachment {
+                retainedInteractionState = nil
+                retainedInteractionURL = nil
+                webView.interactionState = state
+                // Invalid or obsolete WebKit data is ignored by the public
+                // API. Fall back to the saved URL when it restored no entry.
+                if let item = webView.backForwardList.currentItem, item.url == currentURL {
+                    pendingRequest = nil
+                    canGoBack = webView.canGoBack
+                    canGoForward = webView.canGoForward
+                    return
+                }
+            }
             if let request = pendingRequest {
                 pendingRequest = nil
                 webView.load(request)
@@ -284,6 +299,8 @@ final class WebViewModel: ObservableObject {
 
     func loadRequest(_ request: URLRequest, keepSnapshotUntilLoaded: Bool = false, mediaHandoff: WebMediaPlaybackHandoff? = nil) {
         guard let url = request.url else { return }
+        retainedInteractionState = nil
+        retainedInteractionURL = nil
         recordNavigationRequest(url)
         mediaSession.beginNavigation(to: url, startsNewRequest: true)
         cancelScheduledSnapshot()
@@ -430,8 +447,24 @@ final class WebViewModel: ObservableObject {
             })
     }
 
-    func loadCachedURL(_ url: URL) {
+    func loadCachedURL(_ url: URL, interactionState: Data? = nil) {
+        let state = interactionState ?? (retainedInteractionURL == url ? retainedInteractionState : nil)
         loadURL(url, cachePolicy: .returnCacheDataElseLoad, keepSnapshotUntilLoaded: true)
+        retainedInteractionState = state
+        retainedInteractionURL = state == nil ? nil : url
+    }
+
+    /// WebKit's public state is an opaque Data object, including the current
+    /// back/forward position. Reading it never creates a suspended web view.
+    func browserInteractionState(forPersistence: Bool = false) -> Data? {
+        if forPersistence && (UserDefaults.standard.bool(forKey: "is_incognito")
+            || UserDefaults.standard.bool(forKey: BrowsingHistoryExitPolicy.preferenceKey)) { return nil }
+        guard currentURL?.scheme?.lowercased() != "webkit-extension" else { return nil }
+        guard let webView else { return retainedInteractionURL == currentURL ? retainedInteractionState : nil }
+        guard webView.backForwardList.currentItem?.url == currentURL else { return nil }
+        let entries = webView.backForwardList.backList + webView.backForwardList.forwardList
+        guard !entries.contains(where: { $0.url.scheme?.lowercased() == "webkit-extension" }) else { return nil }
+        return webView.interactionState as? Data
     }
 
     func goBack() {
@@ -545,6 +578,8 @@ final class WebViewModel: ObservableObject {
     /// Releases the expensive WebKit runtime while preserving the tab URL and snapshot.
     /// The view is recreated lazily the next time the tab becomes active.
     func releaseWebViewRuntime() {
+        retainedInteractionState = browserInteractionState()
+        retainedInteractionURL = retainedInteractionState == nil ? nil : currentURL
         pendingScriptWindowCoordinator = nil
         hasPresentedContent = false
         clearVideoHoldSpeed()
@@ -576,6 +611,8 @@ final class WebViewModel: ObservableObject {
     /// Recreates WebKit so document-start UserScripts and their permissions are
     /// rebuilt before the next navigation, while preserving the current page.
     func rebuildWebViewRuntime() {
+        retainedInteractionState = browserInteractionState()
+        retainedInteractionURL = retainedInteractionState == nil ? nil : currentURL
         hasPresentedContent = false
         cancelScheduledSnapshot()
         historyTransition.cancel()

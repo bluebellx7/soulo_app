@@ -235,6 +235,7 @@ struct BatchImportView: View {
                 Text(FeatureText.text("Replace all")).tag(true)
             }
             .pickerStyle(.segmented)
+            .segmentedValueSwipe(selection: $replacesAll, values: [false, true])
             .accessibilityIdentifier("batch-import.mode")
         }
         .padding(16)

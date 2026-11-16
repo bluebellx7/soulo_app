@@ -16,10 +16,6 @@ struct SettingsView: View {
     @State private var selectedAppearance: String = ThemeManager.shared.appearance
     @AppStorage(VideoScreenAwakeService.preferenceKey) private var keepScreenAwake = false
     @State private var settingsQuery = ""
-    @State private var showClearCacheAlert = false
-    @State private var clearingCache = false
-    @State private var cacheCleared = false
-    @State private var cacheSizeText: String?
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -181,20 +177,9 @@ struct SettingsView: View {
                         }
 
                         NavigationLink(value: Destination.adBlock) {
-                            SettingsNavigationLabel(
-                                icon: "shield.lefthalf.filled",
-                                color: neutralIconColor,
-                                title: LanguageManager.shared.localizedString("ad_block_management")
-                            )
-                        }
-
-                        NavigationLink(value: Destination.privacy) {
-                            SettingsNavigationLabel(
-                                icon: "hand.raised.fill",
-                                color: neutralIconColor,
-                                title: LanguageManager.shared.localizedString("settings_privacy")
-                            )
-                        }
+                            SettingsNavigationLabel(icon: "shield.lefthalf.filled", color: neutralIconColor,
+                                title: ToolText.text("settings_ads_and_privacy"))
+                        }.accessibilityIdentifier("settings.protection")
 
                         NavigationLink(value: Destination.extensions) {
                             SettingsNavigationLabel(
@@ -224,32 +209,6 @@ struct SettingsView: View {
                             SettingsNavigationLabel(icon: "internaldrive", color: neutralIconColor, title: FeatureText.text("Storage"))
                         }.accessibilityIdentifier("settings.storage")
 
-                        CacheActionRow(
-                            icon: "internaldrive.fill",
-                            title: LanguageManager.shared.localizedString("privacy_clear_cache"),
-                            description: LanguageManager.shared.localizedString("privacy_clear_cache_desc"),
-                            detail: cacheSizeText,
-                            isLoading: clearingCache,
-                            isCompleted: cacheCleared
-                        ) {
-                            showClearCacheAlert = true
-                        }
-                        .accessibilityIdentifier("settings.clearCache")
-                        .task { await refreshCacheSize() }
-                        .alert(
-                            LanguageManager.shared.localizedString("privacy_clear_cache_confirm_title"),
-                            isPresented: $showClearCacheAlert
-                        ) {
-                            Button(
-                                LanguageManager.shared.localizedString("privacy_clear_action"),
-                                role: .destructive
-                            ) {
-                                clearBrowserCache()
-                            }
-                            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
-                        } message: {
-                            Text(LanguageManager.shared.localizedString("privacy_clear_cache_confirm_message") + "\n\n" + FeatureText.text("Removes temporary extension media data. Keeps settings, scripts, playback progress and downloaded files. Close extension and video pages and finish downloads first."))
-                        }
                     } header: {
                         SectionHeader(title: ToolText.text("settings_other"))
                     }
@@ -333,8 +292,7 @@ struct SettingsView: View {
         .init(destination: .homeDisplay, key: "home_display_settings", icon: "rectangle"),
         .init(destination: .browsingDisplay, key: "browsing_display_settings", icon: "rectangle.topthird.inset.filled"),
         .init(destination: .homeToolbar, key: "home_toolbar_customize", icon: "rectangle.split.2x2"),
-        .init(destination: .adBlock, key: "ad_block_management", icon: "shield.lefthalf.filled"),
-        .init(destination: .privacy, key: "settings_privacy", icon: "hand.raised.fill"),
+        .init(destination: .adBlock, key: "settings_ads_and_privacy", icon: "shield.lefthalf.filled"),
         .init(destination: .extensions, key: "userscripts", icon: "puzzlepiece.extension"),
         .init(destination: .backups, key: "settings_backups", icon: "clock.arrow.circlepath"),
         .init(destination: .quickActions, key: "quick_actions_title", icon: "hand.tap"),
@@ -347,10 +305,12 @@ struct SettingsView: View {
         Self.searchableEntries.filter { entry in
             let aliases: [String]
             switch entry.destination {
+            case .adBlock: aliases = ["ad_block_management", "settings_privacy"]
+            case .storage: aliases = ["privacy_section_data", "privacy_clear_cache", "privacy_clear_history", "privacy_clear_bookmarks", "privacy_clear_browsing_on_exit"]
             case .gestures: aliases = ["gesture_title"]
             case .feedbackPreferences: aliases = ["gesture_haptics", "gesture_sound"]
             case .homeDisplay: aliases = ["home_screen", "home_display_settings", "edit_title", "edit_subtitle", "show_bookmarks_home", "show_group_picker_home", "show_recent_searches_home", "live_activity"]
-            case .browsingDisplay: aliases = ["show_top_search_bar", "keep_fullscreen_browsing", "extend_page_background", "page_background_gradient", "freeze_page_background_on_scroll", "keep_page_above_toolbar"]
+            case .browsingDisplay: aliases = ["show_platform_bar", "show_top_search_bar", "keep_fullscreen_browsing", "extend_page_background", "page_background_gradient", "freeze_page_background_on_scroll", "keep_page_above_toolbar"]
             case .backups: aliases = ["icloud_settings_sync"]
             case .quickActions: aliases = ["quick_actions_explanation"]
             case .version: aliases = ["settings_version", "settings_rate", "settings_feedback", "URL Scheme"]
@@ -370,7 +330,7 @@ struct SettingsView: View {
         ["settings_platforms"],
         ["settings_section_appearance", "settings_appearance", "settings_language", "settings_wallpaper", "screen_keep_awake"],
         ["home_screen", "home_display_settings", "edit_title", "edit_subtitle", "home_toolbar_customize", "show_bookmarks_home", "show_group_picker_home", "show_recent_searches_home", "live_activity"],
-        ["browsing", "browsing_display_settings", "settings_default_browser", "show_top_search_bar", "extend_page_background", "keep_page_above_toolbar", "keep_fullscreen_browsing", "video_settings", "web_appearance", "gestures_feedback_settings", "shake_action", "gesture_title", "gesture_settings_title", "page_zoom", "toolbar_customize", "ad_block_management", "settings_privacy", "userscripts"],
+        ["browsing", "settings_ads_and_privacy", "browsing_display_settings", "settings_default_browser", "show_top_search_bar", "extend_page_background", "keep_page_above_toolbar", "keep_fullscreen_browsing", "video_settings", "web_appearance", "gestures_feedback_settings", "shake_action", "gesture_title", "gesture_settings_title", "page_zoom", "toolbar_customize", "ad_block_management", "settings_privacy", "userscripts"],
         ["settings_other", "Storage", "privacy_clear_cache", "feedback_settings", "gesture_haptics", "gesture_sound", "icloud_settings_sync", "settings_backups", "quick_actions_title"],
         ["settings_section_about_support", "settings_rate", "settings_feedback", "settings_version", "feedback_telegram", "URL Scheme"],
     ]
@@ -392,27 +352,7 @@ struct SettingsView: View {
         case adBlock, privacy, extensions, backups, quickActions, version, storage, telegram
     }
 
-    private func clearBrowserCache() {
-        clearingCache = true
-        Task {
-            await BrowserCacheService.clear(
-                tabManager: tabManager,
-                historyContext: modelContext
-            )
-            clearingCache = false
-            cacheSizeText = nil
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                cacheCleared = true
-            }
-        }
-    }
 
-    private func refreshCacheSize() async {
-        guard cacheSizeText == nil else { return }
-        let byteCount = await BrowserCacheService.currentSizeInBytes()
-        guard !Task.isCancelled else { return }
-        cacheSizeText = BrowserCacheService.formattedSize(byteCount)
-    }
 }
 
 /// Destination identity depends on its route and stable dependencies, not
@@ -439,8 +379,8 @@ private struct SettingsDestinationView: View {
         case .homeToolbar: HomeToolbarSettingsView()
         case .homeDisplay: HomeDisplaySettingsView()
         case .browsingDisplay: BrowsingDisplaySettingsView()
-        case .adBlock: AdBlockManagementView(currentHost: nil)
-        case .privacy: PrivacySettingsView()
+        case .adBlock: ProtectionSettingsView()
+        case .privacy: ProtectionSettingsView(initialPage: .privacy)
         case .extensions:
             ExtensionCenterView(onOpenInBrowser: { [tabManager, searchVM, dismiss] url in
                 tabManager.openURLFromBrowserControls(url, searchID: searchVM.searchID, inNewTab: true)
@@ -586,7 +526,9 @@ struct HomeDisplaySettingsView: View {
 }
 
 struct BrowsingDisplaySettingsView: View {
-    @AppStorage(AppConstants.StorageKeys.extendPageBackground) private var extendPageBackground = false
+    var focusPlatformBar = false
+    @AppStorage(PlatformBarPreferences.visibilityKey) private var showPlatformBar = true
+    @AppStorage(AppConstants.StorageKeys.extendPageBackground) private var extendPageBackground = BrowserInitialPreferences.extendPageBackground
     @AppStorage(AppConstants.StorageKeys.pageBackgroundGradient) private var pageBackgroundGradient = false
     @AppStorage(AppConstants.StorageKeys.freezePageBackgroundOnScroll) private var freezePageBackgroundOnScroll = false
     @State private var example: BrowsingDisplayExample?
@@ -596,8 +538,19 @@ struct BrowsingDisplaySettingsView: View {
     @AppStorage(AppConstants.StorageKeys.keepPageAboveToolbar) private var keepPageAboveToolbar = false
 
     var body: some View {
+        ScrollViewReader { proxy in
         List {
             Section {
+                Toggle(isOn: Binding(get: { showPlatformBar }, set: {
+                    showPlatformBar = $0
+                    if !$0 { example = .platformBar }
+                })) {
+                    SettingsDescriptionLabel(icon: "square.grid.2x2", color: showPlatformBar ? Color.themePrimary : Color(uiColor: .systemGray3),
+                        title: ToolText.text("show_platform_bar"), description: PlatformBarPreferences.hiddenHint)
+                }
+                .id("platform-bar-setting")
+                .accessibilityIdentifier("settings.browsingDisplay.platformBar")
+
                 Toggle(isOn: Binding(get: { showTopSearchBar }, set: { showTopSearchBar = $0; if $0 { example = .topSearch } })) {
                     SettingsDescriptionLabel(
                         icon: "rectangle.topthird.inset.filled",
@@ -666,6 +619,10 @@ struct BrowsingDisplaySettingsView: View {
                 }.accessibilityIdentifier("settings.webAppearance")
             }
         }
+        .onAppear {
+            if focusPlatformBar { DispatchQueue.main.async { proxy.scrollTo("platform-bar-setting", anchor: .top) } }
+        }
+        }
         .listStyle(.insetGrouped).tint(.themePrimary)
         .navigationTitle(ToolText.text("browsing_display_settings"))
         .navigationBarTitleDisplayMode(.inline)
@@ -675,6 +632,7 @@ struct BrowsingDisplaySettingsView: View {
     }
     private func exampleBinding(_ item: BrowsingDisplayExample) -> Binding<Bool> {
         switch item {
+        case .platformBar: $showPlatformBar
         case .topSearch: $showTopSearchBar
         case .fullscreen: $keepFullscreenBrowsing
         case .background: $extendPageBackground

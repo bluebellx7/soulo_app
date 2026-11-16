@@ -44,7 +44,7 @@ struct SearchResultsView: View {
     @State private var platformBarHiddenByPageTap = false
     @State private var pageReady = false
     @State private var pageEdgePalette: WebPageEdgePalette?
-    @AppStorage(AppConstants.StorageKeys.extendPageBackground) private var extendPageBackground = false
+    @AppStorage(AppConstants.StorageKeys.extendPageBackground) private var extendPageBackground = BrowserInitialPreferences.extendPageBackground
     @AppStorage(AppConstants.StorageKeys.pageBackgroundGradient) private var pageBackgroundGradient = false
     private var displayedPageEdgePalette: WebPageEdgePalette? { pageEdgePalette?.forDisplay(gradients: pageBackgroundGradient) }
     private var pageEdgePublisher: AnyPublisher<WebPageEdgePalette?, Never> {
@@ -68,6 +68,7 @@ struct SearchResultsView: View {
     @AppStorage("last_selected_region") private var lastRegion: String = ""
     @AppStorage("last_selected_group_id") private var lastGroupID: String = ""
     @AppStorage("auto_hide_platform_bar") private var autoHidePlatformBar = false
+    @AppStorage(PlatformBarPreferences.visibilityKey) private var showPlatformBar = true
     @AppStorage("show_top_tab_bar") private var showTopTabBar = true
     @AppStorage("show_top_search_bar") private var showTopSearchBar = BrowserInitialPreferences.showTopSearchBar
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
@@ -240,6 +241,9 @@ struct SearchResultsView: View {
             // platform management or the home search menu.
             for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
         }
+        .onCompatibleChange(of: showPlatformBar) { _, _ in
+            for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
+        }
         .onCompatibleChange(of: keepFullscreenBrowsing) { _, enabled in
             guard PersistentFullscreenBehavior.shouldEnter(
                 enabled: enabled,
@@ -343,7 +347,10 @@ struct SearchResultsView: View {
                                 recordCurrentPageVisit(from: activeTab.webViewModel)
                             },
                             topSafeAreaInset: geo.safeAreaInsets.top,
-                            bottomSafeAreaInset: geo.safeAreaInsets.bottom
+                            bottomSafeAreaInset: geo.safeAreaInsets.bottom,
+                            platformPicker: BrowserPlatformPickerContext(scope: searchVM.selectedSearchScope,
+                                selectedPlatformID: searchVM.selectedPlatform?.id, onSelect: selectPlatformFromPanel,
+                                onManage: { showPlatformManagement = true })
                         )
                         .id(activeTab.id)
                         .environment(\.colorScheme, extendPageBackground ? (displayedPageEdgePalette?.bottomScheme ?? appColorScheme) : appColorScheme)
@@ -556,14 +563,14 @@ struct SearchResultsView: View {
         showGroupPicker = false
         autoHidePlatformHintTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(350)) } catch { return }
-            guard !Task.isCancelled, autoHidePlatformBar else { return }
+            guard !Task.isCancelled, autoHidePlatformBar, showPlatformBar else { return }
             showAutoHidePlatformHint = true
         }
     }
 
     private var platformSwitcher: some View {
         Group {
-            if hasVisiblePlatforms && (!searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch)
+            if showPlatformBar && hasVisiblePlatforms && (!searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch)
                 && (!autoHidePlatformBar || !platformBarHiddenByPageTap) {
                 platformBar
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -658,11 +665,13 @@ struct SearchResultsView: View {
                 .frame(maxHeight: 350)
 
                 Divider()
+                if showPlatformBar {
                 Toggle(ToolText.text("auto_hide_platform_bar"), isOn: Binding(get: { autoHidePlatformBar }, set: setAutoHidePlatformBar))
                     .font(.subheadline)
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .accessibilityIdentifier("search.auto-hide-platforms")
                 Divider()
+                }
 
                 Button {
                     showGroupPicker = false
@@ -699,6 +708,29 @@ struct SearchResultsView: View {
     }
 
     // Computed: platforms for current selection (region or custom group)
+    private func selectPlatformFromPanel(_ scope: SearchGroupScope, _ platform: SearchPlatform) {
+        switch scope {
+        case .region(let region):
+            searchVM.selectedRegion = region; searchVM.selectedGroupID = nil
+            lastRegion = region.rawValue; lastGroupID = ""
+        case .custom(let id):
+            guard platformStore.customGroups.contains(where: { $0.id == id }) else { return }
+            searchVM.selectedGroupID = id; searchVM.selectedRegion = platform.region
+            lastGroupID = id.uuidString; lastRegion = ""
+        }
+        // Direct webpage/new-tab sessions have no reusable search terms.
+        // Opening a platform there should open its home, not reload the old URL.
+        if tabManager.activeWebViewModel?.currentURL == nil || searchVM.currentKeyword.isEmpty
+            || (searchVM.currentKeyword.isValidURL && !searchVM.isSelectionSearch) {
+            let home = platform.homeURL.isEmpty ? platform.searchURL(for: "")?.absoluteString : platform.homeURL
+            guard let home, let url = URL(string: home), ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return }
+            searchVM.currentKeyword = url.absoluteString; searchVM.searchText = url.absoluteString
+            searchVM.isSelectionSearch = false
+        }
+        searchVM.selectPlatform(platform)
+        loadCurrentPlatformURL()
+    }
+
     private var currentPlatforms: [SearchPlatform] {
         searchVM.availableSearchPlatforms
     }

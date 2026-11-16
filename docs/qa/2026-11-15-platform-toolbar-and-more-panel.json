@@ -1,0 +1,112 @@
+{
+  "status": "implemented_verified",
+  "build": "1.2.15 (56)",
+  "requests": [
+    {
+      "id": "platform_shortcut",
+      "scope": "Add Platforms as a bottom/address toolbar action; compact grid of every platform in the current group, including hidden entries. Plain-text group menu scales to many groups, with a platform-management shortcut beside it. Browse groups locally and commit only after choosing a platform. Search terms are preserved; direct pages and new tabs open the platform home."
+    },
+    {
+      "id": "more_editor",
+      "scope": "Top segmented editor for Browser Toolbar and More Panel. Twelve independent More slots support replacement, hiding and reset without changing existing toolbar layouts. Preview and actual panel share icon, caption and cell metrics. The More action itself is excluded to prevent recursive menus."
+    },
+    {
+      "id": "leading_address_action",
+      "scope": "Make the address capsule leading lock/site-information action replaceable or hideable, independently of its trailing action. Keep the existing default and save callers compatible. Site information remains available as an action in the toolbar or More panel; popup presentation is independent of the removed lock button."
+    },
+    {
+      "id": "visibility",
+      "scope": "Show Platform Bar defaults on. Turning it off hides the bar, shows an illustrated guide and provides a shortcut to toolbar customization."
+    },
+    {
+      "id": "recovery",
+      "scope": "Automatic hiding is disabled when the bar is permanently hidden, in platform management and other entry points. A tappable explanation in both platform-management layouts opens Browsing Display focused on the visibility setting."
+    },
+    {
+      "id": "persistence",
+      "scope": "Menu configuration, leading address action and bar visibility are included in iCloud settings sync and backups, without overwriting existing choices."
+    },
+    {
+      "id": "compatibility",
+      "scope": "Retain bounded AnyView/menu presentation boundaries from the TestFlight startup fix, lazy popup creation and deferred actions after dismissal. All six new runtime labels are localized in 50 languages."
+    }
+  ],
+  "validation": {
+    "unit": {
+      "status": "passed",
+      "cases": 14,
+      "runtimes": [
+        "iOS 26.2",
+        "iOS 16.0"
+      ],
+      "scope": "Preference defaults, malformed/unknown action fallback, independent toolbar/More resets, leading action migration and round trips, sync/backup allowlist, bounded toolbar metadata, retained browser UI preferences.",
+      "test_result": "refined-phone.xcresult"
+    },
+    "phone_ui": {
+      "status": "passed",
+      "runtime": "iOS 26.2",
+      "cases": 4,
+      "scope": "Platforms from toolbar and More, text group selection, hidden entries and empty groups, preserved search query, new-tab/direct home navigation, management shortcut, replacement lock action, alternate site-information action, editor segment switching and final slot, compact popover sizing, restored normal/floating More menus.",
+      "test_result": "refined-phone.xcresult"
+    },
+    "ipad_ui": {
+      "status": "passed",
+      "runtime": "iPadOS 26.2",
+      "cases": 2,
+      "scope": "Same complete platform navigation and More/leading editor flows.",
+      "test_result": "refined-ipad.xcresult"
+    },
+    "ios16": {
+      "status": "passed",
+      "runtime": "iOS 16.0 native arm64 simulator",
+      "ui_cases": 5,
+      "unit_cases": 14,
+      "scope": "Complete platform navigation and management, More/leading editor, hidden-bar recovery link, illustrated guide, anchored content-sized site-information and More popovers.",
+      "test_result": "refined-ios16.xcresult"
+    },
+    "release": {
+      "status": "passed",
+      "configuration": "Release, generic iOS device, unsigned",
+      "version": "1.2.15",
+      "build": "56",
+      "uncompressed_app_bytes": 84449960,
+      "log": "refined-release-build.log"
+    },
+    "localization": {
+      "status": "passed",
+      "command": "python3 scripts/check_localization.py --strict",
+      "locales": 50
+    },
+    "metadata_json": {
+      "status": "passed",
+      "command": "python3 scripts/export_metadata_json.py --check",
+      "locales": 50
+    },
+    "diff_whitespace": "passed",
+    "physical_ios27": "Not run; this task used simulators only. Installed Xcode is 26.2.",
+    "test_count_in_this_pass": 39
+  },
+  "evidence_root": "/tmp/soulo-platform-panel-20261115",
+  "distribution": "No push or upload performed.",
+  "vlc": "No VLC changes. Current framework remains bundled; dynamic/native downloads are not adopted.",
+  "toolbar_metadata": {
+    "type_descriptor_bytes": 477,
+    "generic_depth": 6,
+    "baseline_before_startup_fix_bytes": 205786,
+    "baseline_depth": 70
+  },
+  "visual_review": {
+    "status": "passed",
+    "screenshots": [
+      "refined-ipad-attachments/5CAAFF68-C50F-4CBB-81C9-950D37F1ADAD.png",
+      "refined-ipad-attachments/21564C0C-B704-4F25-A818-8EECBE8C6920.png",
+      "refined-phone-attachments/951B4026-E68D-4454-AFA9-BE204358AE32.png",
+      "refined-ios16-attachments/40D13040-CCE1-432A-9102-3405F7D990F5.png"
+    ],
+    "scope": "Compact More preview matches actual grid metrics; group name is a text menu, with management and close actions. No platform chips or overflow in the examined iPad presentation. Phone platform panel and iOS 16 site-information popover were also inspected at their rendered dimensions; no full-screen blank sheet or clipped bottom controls."
+  },
+  "observations": [
+    "Xcode recorded UIKit _UIReparentingView runtime warnings while opening native SwiftUI menus on iPadOS 26.2; the tested menu, selection, dismissal and follow-on navigation all passed. No app-owned reparenting code was added."
+  ],
+  "cleanup": "All QA apps terminated by tests; task-owned iOS 16 simulator shut down. User-owned devices and other simulator instances untouched."
+}

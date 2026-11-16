@@ -1,10 +1,11 @@
 import SwiftUI
 
 enum BrowsingDisplayExample: String, Identifiable {
-    case topSearch, fullscreen, background, aboveToolbar
+    case topSearch, fullscreen, background, aboveToolbar, platformBar
     var id: String { rawValue }
     @MainActor var title: String {
         switch self {
+        case .platformBar: ToolText.text("show_platform_bar")
         case .topSearch: LanguageManager.shared.localizedString("show_top_search_bar")
         case .fullscreen: LanguageManager.shared.localizedString("keep_fullscreen_browsing")
         case .background: ToolText.text("extend_page_background")
@@ -13,6 +14,7 @@ enum BrowsingDisplayExample: String, Identifiable {
     }
     @MainActor var explanation: String {
         switch self {
+        case .platformBar: PlatformBarPreferences.hiddenHint
         case .topSearch: LanguageManager.shared.localizedString("show_top_search_bar_desc")
         case .fullscreen: LanguageManager.shared.localizedString("keep_fullscreen_browsing_desc")
         case .background: ToolText.text("extend_page_background_desc")
@@ -33,6 +35,12 @@ struct BrowsingDisplayGuide: View {
                     Text(example.explanation).font(.body)
                     Toggle(example.title, isOn: $enabled)
                         .accessibilityIdentifier("browsing-guide.enabled")
+                    if example == .platformBar {
+                        SettingsSubpageLink { BrowserToolbarSettingsView() } label: {
+                            Label(LanguageManager.shared.localizedString("toolbar_customize"), systemImage: "square.grid.2x2")
+                                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        }.accessibilityIdentifier("browsing-guide.customize-toolbar")
+                    }
                     Text(LanguageManager.shared.localizedString("settings") + " → " + ToolText.text("browsing_display_settings"))
                         .font(.footnote).foregroundStyle(.secondary)
                 }.padding(24)
@@ -86,7 +94,13 @@ struct BrowsingDisplayGuide: View {
                     if example == .fullscreen { Image(systemName: "arrow.up.left.and.arrow.down.right").font(.largeTitle).foregroundStyle(Color.accentColor) }
                 }
                 if example != .fullscreen {
-                    HStack { Image(systemName: "house"); Spacer(); Capsule().frame(width: 60, height: 5); Spacer(); Image(systemName: "ellipsis") }
+                    HStack {
+                        Image(systemName: example == .platformBar ? "square.grid.2x2" : "house")
+                            .foregroundStyle(example == .platformBar ? Color.themePrimary : Color.primary)
+                            .padding(5)
+                            .background(example == .platformBar ? Color.themePrimary.opacity(0.15) : .clear, in: RoundedRectangle(cornerRadius: 7))
+                        Spacer(); Capsule().frame(width: 60, height: 5); Spacer(); Image(systemName: "ellipsis")
+                    }
                         .font(.system(size: 12)).padding(10).background(.regularMaterial, in: Capsule())
                 }
                 Capsule().fill(extended ? .white : Color.primary).frame(width: 65, height: 4)

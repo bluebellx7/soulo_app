@@ -58,6 +58,7 @@ struct ManualAdPickerBar: View {
                         Text(ToolText.text("manual_ad_page")).tag(false)
                         Text(ToolText.text("manual_ad_site")).tag(true)
                     }.pickerStyle(.segmented)
+                    .segmentedValueSwipe(selection: $wholeSite, values: [false, true])
                     Button {
                         model.saveMarkedAdvertisement(wholeSite: wholeSite)
                     } label: {

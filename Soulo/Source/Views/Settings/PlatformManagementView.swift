@@ -30,6 +30,8 @@ struct PlatformManagementView: View {
     @State private var showBatchImport = false
     @State private var showPlatformRequestFeedback = false
     @State private var showAutoHidePlatformHint = false
+    @State private var showPlatformBarGuide = false
+    @AppStorage(PlatformBarPreferences.visibilityKey) private var showPlatformBar = true
     @AppStorage("auto_hide_platform_bar") private var autoHidePlatformBar = false
     @AppStorage("platform_management_layout") private var layoutRawValue = PlatformManagementLayout.list.rawValue
 
@@ -87,6 +89,9 @@ struct PlatformManagementView: View {
         }
         .navigationTitle(LanguageManager.shared.localizedString("platform_management"))
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showPlatformBarGuide) {
+            BrowsingDisplayGuide(example: .platformBar, enabled: $showPlatformBar)
+        }
         .alert(ToolText.text("auto_hide_platform_bar"), isPresented: $showAutoHidePlatformHint) {
             Button(ToolText.text("done"), role: .cancel) { }
         } message: {
@@ -206,8 +211,8 @@ struct PlatformManagementView: View {
         PlatformNativeList(
             sections: sections,
             autoHideControl: AnyView(autoHidePlatformToggle),
-            autoHideEnabled: autoHidePlatformBar,
-            hint: ToolText.text("auto_hide_platform_bar_hint"),
+            autoHideEnabled: autoHidePlatformBar && showPlatformBar,
+            hint: showPlatformBar ? ToolText.text("auto_hide_platform_bar_hint") : "",
             requestControl: AnyView(platformRequestButton),
             headerNames: sections.map { defaultSearch.engine(for: $0.scope).name },
             header: { AnyView(platformSectionHeader($0)) },
@@ -223,6 +228,18 @@ struct PlatformManagementView: View {
     }
 
     private var autoHidePlatformToggle: some View {
+        VStack(alignment: .leading, spacing: 10) {
+        Toggle(ToolText.text("show_platform_bar"), isOn: Binding(
+            get: { showPlatformBar },
+            set: { enabled in
+                showPlatformBar = enabled
+                for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
+                if !enabled { showPlatformBarGuide = true }
+            }
+        ))
+        .accessibilityIdentifier("platform.show-platform-bar")
+        if showPlatformBar {
+        Divider()
         Toggle(ToolText.text("auto_hide_platform_bar"), isOn: Binding(
             get: { autoHidePlatformBar },
             set: { enabled in
@@ -232,6 +249,8 @@ struct PlatformManagementView: View {
             }
         ))
         .accessibilityIdentifier("platform.auto-hide-platforms")
+        }
+        }
     }
 
     private func beginPlatformDrag(_ platform: SearchPlatform, in section: GroupSection) -> NSItemProvider {
@@ -276,10 +295,11 @@ struct PlatformManagementView: View {
                     autoHidePlatformToggle
                         .padding(14)
                         .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
-                    Text(ToolText.text("auto_hide_platform_bar_hint"))
+                    if showPlatformBar { Text(ToolText.text("auto_hide_platform_bar_hint"))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 14)
+                    }
                 }
                 ForEach(sections) { section in
                     VStack(alignment: .leading, spacing: 12) {

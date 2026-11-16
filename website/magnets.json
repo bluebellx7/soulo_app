@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-11",
+  "updated": "2026-11-16",
   "categories": [
     {
       "id": "engine",
@@ -36,20 +36,6 @@
   ],
   "sites": [
     {
-      "id": "wuji",
-      "name": "无极磁链",
-      "url": "https://wuji.me/",
-      "category": "engine",
-      "description": "收录 277 万+ 磁力链接索引，支持按关键词快速检索 BT 种子资源。",
-      "tags": [
-        "DHT 索引",
-        "极简搜索"
-      ],
-      "mark": "无",
-      "featured": true,
-      "icon": "images/movie-icons/magnet-wuji.png"
-    },
-    {
       "id": "xcili",
       "name": "无极磁链镜像",
       "url": "https://xcili.net/",
@@ -75,19 +61,6 @@
       "mark": "熊",
       "featured": true,
       "icon": "images/movie-icons/magnet-xiongmao.png"
-    },
-    {
-      "id": "cilipao",
-      "name": "磁力炮",
-      "url": "https://www.cilipao.pics/",
-      "category": "engine",
-      "description": "支持按相关度、文件大小与收录时间筛选的磁力链接搜索引擎。",
-      "tags": [
-        "磁力搜索",
-        "多维排序"
-      ],
-      "mark": "炮",
-      "icon": "images/movie-icons/magnet-cilipao.png"
     },
     {
       "id": "cilime",
@@ -116,32 +89,6 @@
       "icon": "images/movie-icons/magnet-cilisousuo.png"
     },
     {
-      "id": "btmovi",
-      "name": "磁力蜘蛛",
-      "url": "https://btmovi.cyou/",
-      "category": "engine",
-      "description": "专注 BT 种子元数据与磁力链接索引的垂直搜索站点。",
-      "tags": [
-        "元数据",
-        "垂直搜索"
-      ],
-      "mark": "蛛",
-      "icon": "images/movie-icons/magnet-btmovi.png"
-    },
-    {
-      "id": "ciliwang",
-      "name": "磁力王",
-      "url": "https://www.ciliwang360.shop/",
-      "category": "engine",
-      "description": "24 小时自动更新的 DHT 磁力搜索引擎，收录影视、音乐与游戏种子。",
-      "tags": [
-        "实时更新",
-        "综合磁力"
-      ],
-      "mark": "王",
-      "icon": "images/movie-icons/magnet-ciliwang.png"
-    },
-    {
       "id": "zhongziba",
       "name": "种子吧",
       "url": "https://zzb05.top/",
@@ -153,32 +100,6 @@
       ],
       "mark": "种",
       "icon": "images/movie-icons/magnet-zhongziba.png"
-    },
-    {
-      "id": "cilihu",
-      "name": "磁力虎",
-      "url": "https://www.cilihu.vip/",
-      "category": "engine",
-      "description": "磁力链接任务搜索引擎与多线路可用节点入口。",
-      "tags": [
-        "多线路",
-        "磁力搜索"
-      ],
-      "mark": "虎",
-      "icon": "images/movie-icons/magnet-cilihu.png"
-    },
-    {
-      "id": "cilidada",
-      "name": "磁力大大",
-      "url": "https://www.cilidada.org/v/",
-      "category": "engine",
-      "description": "磁力链接与影视种子资源数据库，支持按关键词快速检索。",
-      "tags": [
-        "种子库",
-        "磁力检索"
-      ],
-      "mark": "大",
-      "icon": "images/movie-icons/magnet-cilidada.png"
     },
     {
       "id": "tiantian-cili",
@@ -325,19 +246,6 @@
       "icon": "images/movie-icons/site-yyets-click.png"
     },
     {
-      "id": "dianying4k",
-      "name": "Ultra4K",
-      "url": "https://dianying4k.com/",
-      "category": "movie",
-      "description": "专注 4K UHD、REMUX 与蓝光原盘电影资料及种子目录（需登录）。",
-      "tags": [
-        "4K 原盘",
-        "需登录"
-      ],
-      "mark": "4K",
-      "icon": "images/movie-icons/site-dianying4k-com.png"
-    },
-    {
       "id": "mikanani",
       "name": "蜜柑计划 Mikan",
       "url": "https://mikanani.me/",
@@ -464,18 +372,6 @@
         "关键词"
       ],
       "mark": "狗"
-    },
-    {
-      "id": "tokyotosho",
-      "name": "Tokyo Toshokan",
-      "url": "https://www.tokyotosho.info/",
-      "category": "anime",
-      "description": "以动漫等日本文化资源为主的种子目录，支持关键词检索。",
-      "tags": [
-        "动漫",
-        "种子目录"
-      ],
-      "mark": "TT"
     }
   ]
 }

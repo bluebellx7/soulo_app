@@ -24,6 +24,7 @@ final class WebExtensionURLDownload: NSObject, WKDownloadDelegate, WKNavigationD
     private var started = false
     private var expectedBytes: Int64 = -1
     private var temporaryDestination: URL?
+    var retainedTemporaryFileURL: URL? { temporaryDestination }
     private var temporaryCompletion: ((URL, String, Int64) -> Void)?
     private var mimeType = "application/octet-stream"
 

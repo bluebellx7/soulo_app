@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "હાવભાવ અને પ્રતિસાદ";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "પ્લેટફોર્મ";
+"toolbar_more_panel" = "વધુ પેનલ";
+"show_platform_bar" = "પ્લેટફોર્મ પટ્ટી બતાવો";
+"toolbar_restore" = "મૂળભૂત પુનઃસ્થાપિત કરો";
+"platform_bar_hidden_hint" = "પ્લેટફોર્મ પટ્ટી છુપાયેલી હોય ત્યારે પ્લેટફોર્મ અને જૂથ બદલવા «%1$@» ઉમેરો («%2$@» માં).";
+"platform_bar_disabled_hint" = "પ્લેટફોર્મ પટ્ટી છુપાયેલી છે. આપમેળે છુપાવવાનું ચાલુ કરતાં પહેલાં «%@» ખોલવા ટૅપ કરો.";
+
+"storage_files_group" = "ડાઉનલોડ અને ફાઇલો";
+"storage_cache_group" = "કૅશ અને અસ્થાયી ફાઇલો";
+"storage_saved_group" = "સાચવેલી સામગ્રી";
+
+"storage_clear_offline_media_warning" = "અહીંના બધા ઑફલાઇન વિડિયો અને તેમની ફાઇલ નોંધો કાઢી નાખશે. અધૂરા ફાઇલ/વિડિયો ડાઉનલોડ, પ્લેબૅક અને નિકાસ બંધ થશે.";
+"storage_clear_active_temp_warning" = "અધૂરા ફાઇલ/વિડિયો ડાઉનલોડ રદ કરી, પ્લેબૅક અને નિકાસ બંધ કર્યા પછી મુક્ત થયેલી અસ્થાયી ફાઇલો સાફ કરે છે. પૂર્ણ ડાઉનલોડ જાળવવામાં આવે છે.";
+"storage_files_still_in_use" = "કેટલીક ફાઇલો હજી ઉપયોગમાં છે. મુક્ત થયેલી ફાઇલો સાફ થઈ ગઈ છે; થોડી વારે ફરી પ્રયાસ કરો.";
+
+"storage_system_caches" = "સિસ્ટમ કૅશ";
+"storage_offline_media" = "ઑફલાઇન વિડિઓ";
+"storage_system_data_retained" = "સિસ્ટમ દ્વારા સંચાલિત ફાઇલો ઉપયોગમાં રહી શકે અથવા ફરી બની શકે. સમન્વયિત સેટિંગ્સ જળવાય છે.";
+
+"storage_clear_offline_remnants_warning" = "સૂચિમાં ન હોય તેવા ઑફલાઇન વિડિઓ કાઢે છે. સાચવેલા ડાઉનલોડ રહે છે. અધૂરા ડાઉનલોડ, પ્લેબૅક અને નિકાસ અટકશે.";
+
+"settings_ads_and_privacy" = "જાહેરાત અને ગોપનીયતા";
+
+"storage_cleanup_cache_desc" = "છોડી શકાય તેવી કૅશ અને અસ્થાયી ફાઇલો કાઢે છે; ઉપયોગમાંની ફાઇલો રાખે છે.";
+"storage_cleanup_downloads_desc" = "સાચવેલી ડાઉનલોડ ફાઇલો અને તેમની નોંધો કાઢે છે.";
+"storage_cleanup_wallpapers_desc" = "વૉલપેપરને મનપસંદમાંથી દૂર કરી તેમની ફાઇલો કાઢે છે.";
+"storage_cleanup_reading_desc" = "ઑફલાઇન લેખો, પુસ્તક લાઇબ્રેરી અને વાંચનની પ્રગતિ સાફ કરે છે.";
+
+"storage_cleanup_offline_desc" = "ડાઉનલોડ નોંધો વગરના ઑફલાઇન વિડિઓ અવશેષો કાઢે છે.";

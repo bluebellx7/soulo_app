@@ -531,3 +531,34 @@
 
 
 "gestures_feedback_settings" = "ジェスチャとフィードバック";
+
+/* Platform picker and toolbar panels */
+"toolbar_platforms" = "プラットフォーム";
+"toolbar_more_panel" = "その他パネル";
+"show_platform_bar" = "プラットフォームバーを表示";
+"toolbar_restore" = "初期設定に戻す";
+"platform_bar_hidden_hint" = "バーを非表示にした場合は「%1$@」ボタンを「%2$@」で追加すると、プラットフォームやグループを切り替えられます。";
+"platform_bar_disabled_hint" = "プラットフォームバーは非表示です。自動非表示を設定する前に、タップして「%@」を有効にしてください。";
+
+"storage_files_group" = "ダウンロードとファイル";
+"storage_cache_group" = "キャッシュと一時ファイル";
+"storage_saved_group" = "保存済みコンテンツ";
+
+"storage_clear_offline_media_warning" = "この場所のオフライン動画と関連ファイル項目をすべて削除します。未完了のファイル・動画のダウンロード、再生、書き出しを停止します。";
+"storage_clear_active_temp_warning" = "未完了のファイル・動画のダウンロードをキャンセルし、再生と書き出しを停止して、解放された一時ファイルを削除します。完了済みのダウンロードは保持します。";
+"storage_files_still_in_use" = "使用中のファイルが残っています。解放されたファイルは削除しました。しばらくしてから再試行してください。";
+
+"storage_system_caches" = "システムキャッシュ";
+"storage_offline_media" = "オフライン動画";
+"storage_system_data_retained" = "システム管理のファイルは使用中のため残る場合や、再作成される場合があります。同期設定は保持されます。";
+
+"storage_clear_offline_remnants_warning" = "ファイル一覧にないオフライン動画を削除します。保存済みのダウンロードは保持されます。未完了のダウンロード、再生、書き出しは停止します。";
+
+"settings_ads_and_privacy" = "広告とプライバシー";
+
+"storage_cleanup_cache_desc" = "解放できるキャッシュと一時ファイルを削除し、使用中の内容は保持します。";
+"storage_cleanup_downloads_desc" = "保存済みのダウンロードファイルと対応する記録を削除します。";
+"storage_cleanup_wallpapers_desc" = "壁紙のお気に入りを解除し、画像ファイルを削除します。";
+"storage_cleanup_reading_desc" = "オフライン記事、本棚、読書の進み具合を消去します。";
+
+"storage_cleanup_offline_desc" = "ダウンロード記録のないオフライン動画の残りを削除します。";

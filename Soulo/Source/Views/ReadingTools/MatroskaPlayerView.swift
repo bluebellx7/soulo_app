@@ -741,19 +741,20 @@ struct MatroskaPlayerView: View {
         self.url = url; self.resourceLease = resourceLease; self.requestContext = requestContext
         self.title = title; self.persistPosition = persistPosition; self.startAt = startAt; self.autoplay = autoplay
         self.options = options; self.startsFullscreen = startsFullscreen
+        _expanded = State(initialValue: startsFullscreen)
         let current = MediaSession.shared.soulo
         _playback = StateObject(wrappedValue: current?.sourceURL == url ? current! : MatroskaPlayback())
     }
     var body: some View {
         VStack(spacing: 0) {
-            if expanded { Color.black }
+            if expanded || options?.fullscreenOnly == true { Color.black }
             else {
                 MatroskaVideoContent(playback: playback, url: url, resourceLease: resourceLease, onTap: controls.toggle)
                     .modifier(VideoTransportOverlay(visibility: controls, playing: playback.playing, buffering: playback.buffering,
                         identifier: "media.mkv.play", toggle: playback.togglePlayback,
                         seek: { playback.seek(playback.elapsed + $0) }))
             }
-            if !expanded {
+            if !expanded && options?.fullscreenOnly != true {
                 MatroskaControls(playback: playback, options: playbackOptions, showEpisodes: { episodesVisible = true },
                                  expand: { episodesVisible = false; expanded = true }, interactionChanged: controls.interaction)
                     .padding(20).background(Color(UIColor.secondarySystemGroupedBackground))
@@ -762,7 +763,7 @@ struct MatroskaPlayerView: View {
         .modifier(FileVideoEpisodeDrawer(isPresented: $episodesVisible, playlist: playbackOptions?.playlist))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                if !expanded, let options = playbackOptions {
+                if !expanded, options?.fullscreenOnly != true, let options = playbackOptions {
                     MatroskaOptionsMenu(options: options, playback: playback,
                         settingsVisible: $settingsVisible, showsVideoDownloadControls: showsVideoDownloadControls,
                         language: LanguageManager.shared.currentLanguage)
@@ -1053,7 +1054,7 @@ struct FileMediaPlaybackView: View {
     var initialSystemPlayer: Bool? = nil
     @AppStorage(VideoPlaybackPreferences.defaultPlayerKey) private var defaultPlayer = "soulo"
     @State private var selectedSystemPlayer: Bool?
-    @State private var preserveFullscreen = false
+    @State private var preserveFullscreen = true
     @State private var selectedURL: URL?
     @State private var siblings: [URL] = []
     @State private var asset: AVURLAsset?
@@ -1128,6 +1129,7 @@ struct FileMediaPlaybackView: View {
         result.airPlayPresentation = $airPlayRequested
         result.shareURL = currentURL
         result.closePlayback = { dismiss() }
+        result.fullscreenOnly = true
         return result
     }
     var body: some View {
@@ -1137,7 +1139,8 @@ struct FileMediaPlaybackView: View {
                 ProgressView(ToolText.text("loading"))
             } else if usesSystem {
                 MediaPlaybackContent(videoOptions: options, showEpisodes: { episodesVisible = true }, airPlayRequested: $airPlayRequested,
-                                     initialFullscreen: preserveFullscreen, initialSystemPlayer: true)
+                                     initialFullscreen: true, fullscreenOnly: true, initialSystemPlayer: true,
+                                     onFullscreenClose: { dismiss() })
                     .task(id: resolvedURL) {
                         guard resolvedURL == currentURL else { return }
                         guard native.soulo != nil || native.url != currentURL || native.player.currentItem == nil else { return }
@@ -1160,7 +1163,7 @@ struct FileMediaPlaybackView: View {
         }
         .modifier(FileVideoEpisodeDrawer(isPresented: $episodesVisible, playlist: videoPlaylist))
         .navigationTitle((currentPath as NSString).lastPathComponent)
-        .toolbar { if currentURL.isFileURL { ShareLink(item: currentURL) { Image(systemName: "square.and.arrow.up") } } }
+        .toolbar(.hidden, for: .navigationBar)
         .onReceive(native.$error) { error in
             guard error != nil, usesSystem, native.url == currentURL,
                   native.player.currentItem?.status == .failed else { return }

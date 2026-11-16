@@ -31,6 +31,7 @@ struct SearchBarView: View {
     @State private var showAutoHidePlatformHint = false
     @State private var autoHidePlatformHintTask: Task<Void, Never>?
     @AppStorage("auto_hide_platform_bar") private var autoHidePlatformBar = false
+    @AppStorage(PlatformBarPreferences.visibilityKey) private var showPlatformBar = true
 
     private var isLight: Bool {
         !isCompact && wallpaperManager.prefersDarkForeground(for: WallpaperAppearance(colorScheme))
@@ -271,6 +272,7 @@ struct SearchBarView: View {
                 }
                 .frame(maxHeight: 190)
 
+                if showPlatformBar {
                 Divider()
                 Toggle(ToolText.text("auto_hide_platform_bar"), isOn: Binding(
                     get: { autoHidePlatformBar },
@@ -282,7 +284,7 @@ struct SearchBarView: View {
                         showSearchActions = false
                         autoHidePlatformHintTask = Task { @MainActor in
                             do { try await Task.sleep(for: .milliseconds(350)) } catch { return }
-                            guard !Task.isCancelled, autoHidePlatformBar else { return }
+                            guard !Task.isCancelled, autoHidePlatformBar, showPlatformBar else { return }
                             showAutoHidePlatformHint = true
                         }
                     }
@@ -290,6 +292,7 @@ struct SearchBarView: View {
                 .font(.subheadline)
                 .padding(.horizontal, 16).padding(.vertical, 10)
                 .accessibilityIdentifier("home.auto-hide-platforms")
+                }
 
                 if let onPlatformManagementTap {
                     Divider()

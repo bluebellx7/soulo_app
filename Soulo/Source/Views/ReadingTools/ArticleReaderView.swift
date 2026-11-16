@@ -112,6 +112,7 @@ struct ArticleReaderView: View {
                                 Text(ToolText.text("light")).tag("light")
                                 Text(ToolText.text("dark")).tag("dark")
                             }.pickerStyle(.segmented)
+                            .segmentedValueSwipe(selection: $theme, values: ["paper", "light", "dark"])
                             Toggle(ToolText.text("continuous_reading"), isOn: $continuous).onCompatibleChange(of: continuous) {
                                 _, enabled in if !enabled { reader.cancel() }
                             }

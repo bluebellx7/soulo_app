@@ -1,0 +1,83 @@
+{
+  "status": "implemented_verified",
+  "build": "1.2.15 (56)",
+  "changes": [
+    "Remove ad-rule archive maintenance from the blocking storage-page load path. Share/coalesce disk scans, prepare path classifiers once, reuse installed-bundle size and keep existing values visible while refreshing.",
+    "Refresh on return from modern navigation and iOS 16 management sheets. Invalidate stale in-flight scans after cleanup so deleted files cannot reappear in cached totals.",
+    "Separate cache-only website files from saved IndexedDB/local storage and cookies; use matching cleanup scope and keep total category accounting without duplicate bytes.",
+    "Continue clearing other eligible files and categories when a file is active, protected, missing or unavailable; report retained categories and individual failures.",
+    "Anchor per-row deletion confirmation to its source button. Left-aligned text controls open below the button instead of forcing a narrow popover to its left.",
+    "Remove the misleading full-Documents Files shortcut from Other app data. Its entries show only actual classified files; Downloads retains its own file-management route.",
+    "Show website origin lists before optional size measurement completes, and refresh those lists after child management returns."
+  ],
+  "validation": {
+    "unit": {
+      "status": "passed",
+      "cases_per_runtime": 16,
+      "runtimes": [
+        "iOS 26.2 simulator",
+        "iOS 16.0 simulator"
+      ],
+      "evidence": [
+        "phone-ready.log",
+        "ios16-ready.log"
+      ],
+      "scope": "Disk accounting, website-cache/persistent-data separation, retained active files with eligible files removed, download ownership, live rule lists, symlink safety, coalesced and invalidated scans, deleted-download refresh, real WebKit IndexedDB behavior."
+    },
+    "phone_ui": {
+      "status": "passed",
+      "runtime": "iOS 26.2",
+      "cases": 3,
+      "evidence": [
+        "phone-ready.log",
+        "phone-return.xcresult"
+      ]
+    },
+    "ipad_ui": {
+      "status": "passed",
+      "runtime": "iPadOS 26.2",
+      "cases": 3,
+      "evidence": [
+        "ipad-ready.log",
+        "ipad-return.xcresult"
+      ]
+    },
+    "ios16_ui": {
+      "status": "passed",
+      "runtime": "iOS 16.0",
+      "cases": 3,
+      "evidence": [
+        "ios16-ready.log",
+        "ios16-cache.xcresult"
+      ]
+    },
+    "release": {
+      "status": "passed",
+      "configuration": "Unsigned generic iOS device Release",
+      "evidence": "release-ready-build.log",
+      "version": "1.2.15",
+      "build": "56"
+    },
+    "localization": "passed (50 locales)",
+    "metadata": "passed (50 locales)",
+    "whitespace": "passed"
+  },
+  "evidence_root": "/tmp/soulo-storage-20261116",
+  "performance": {
+    "fixture_files": 2500,
+    "phone_scan_seconds": 0.10823607444763184,
+    "ios16_scan_seconds": 0.12511193752288818,
+    "scope": "Isolated simulator disk fixture; physical-device performance not inferred."
+  },
+  "qa_fixtures": "Only com.dkluge.Soulo.Acceptance simulator containers: 1 MiB Other caches, 1 MiB wallpaper preview, 2 MiB download. No user container data is cleared.",
+  "notes": [
+    "Early UI download setup used an incorrect navigation/Done assumption and did not scroll/filter offscreen files; failed driver runs are not counted as passing. Final storage acceptance uses deterministic seeded QA files, with real file deletion and before/after totals.",
+    "No commit, push, deployment or TestFlight upload performed. No physical iPhone operated.",
+    "Final navigation tests use the minimum-iOS-16 QA binary on iOS 26.2 and iPadOS 26.2 as well. These exercise the shipping minimum deployment target while leaving the separate Release build undisturbed."
+  ],
+  "visual_review": {
+    "status": "passed",
+    "screenshot": "ipad-return-attachments",
+    "scope": "The left-aligned clear button now presents a normal-width popover below its anchor. Screenshot inspected; buttons and text visible, no narrow strip."
+  }
+}

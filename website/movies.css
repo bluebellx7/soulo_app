@@ -159,8 +159,13 @@ html[data-resolved-theme="dark"] :is(.quick-pick:hover, .quick-pick:focus-visibl
   .favorite-picks { margin-top: 18px; }
   .directory-intro { margin: 0 2px 11px; font-size: 11px; }
   .directory-intro span { display: none; }
-  .quick-picks { grid-template-columns: 1fr; gap: 10px; }
-  .quick-pick { padding: 14px 16px; border-radius: 14px; }
+  .quick-picks { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .quick-pick { min-width: 0; gap: 10px; padding: 12px; border-radius: 14px; }
+  .quick-mark { width: 32px; height: 34px; border-radius: 9px; font-size: 12px; }
+  .quick-mark img { width: 26px; height: 26px; border-radius: 5px; }
+  .quick-pick strong { font-size: 13px; }
+  .quick-pick > span:nth-child(2) span { font-size: 10px; }
+  .quick-pick > svg { display: none; }
   .directory-toolbar { flex-wrap: wrap; gap: 14px; margin-block: 22px 18px; }
   .movie-search { max-width: none; flex-basis: 100%; height: 49px; border-radius: 12px; }
   .movie-search kbd { display: none; }

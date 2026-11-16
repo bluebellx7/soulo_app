@@ -215,6 +215,23 @@ struct DeviceAcceptanceProbe: View {
                         if let data = try? JSONSerialization.data(withJSONObject: result, options: .sortedKeys) {
                             extensionState = String(decoding: data, as: UTF8.self)
                         }
+                    } else if ProcessInfo.processInfo.environment["SOULO_ACCEPTANCE_LIVE_VIDEO"] == "1",
+                              let model = tabs.activeWebViewModel, let web = model.webView {
+                        // Read-only live-site evidence. Never synthesize a play
+                        // gesture or change a publisher's media/source state.
+                        if var state = try? await web.evaluateJavaScript("""
+                        (()=>{const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}};
+                        return {url:location.href,title:document.title,text:(document.body?.innerText||'').slice(0,1200),
+                        videos:[...document.querySelectorAll('video')].map(v=>({time:v.currentTime,duration:Number.isFinite(v.duration)?v.duration:0,ready:v.readyState,paused:v.paused,width:v.videoWidth,height:v.videoHeight,fullscreen:!!(v.webkitDisplayingFullscreen||v.webkitPresentationMode==='fullscreen'||document.fullscreenElement),error:v.error?.message||'',rect:rect(v)})),
+                        controls:[...document.querySelectorAll('button,[role=button],[class*=play],[class*=fullscreen],[data-soulo-video-rotate]')].filter(e=>{const r=e.getBoundingClientRect();return r.width>10&&r.height>10&&r.top<innerHeight&&r.bottom>0&&getComputedStyle(e).visibility!=='hidden'}).slice(0,100).map(e=>({label:e.getAttribute('aria-label')||e.getAttribute('title')||(e.textContent||'').slice(0,50),classes:typeof e.className==='string'?e.className:'',rect:rect(e)}))};})()
+                        """) as? [String: Any] {
+                            state["originX"] = web.convert(.zero, to: nil).x
+                            state["originY"] = web.convert(.zero, to: nil).y
+                            state["handoffError"] = model.videoOrientationError ?? ""
+                            if let data = try? JSONSerialization.data(withJSONObject: state, options: .sortedKeys) {
+                                extensionState = String(decoding: data, as: UTF8.self)
+                            }
+                        }
                     }
                     try? await Task.sleep(for: .milliseconds(250))
                 }

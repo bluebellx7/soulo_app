@@ -313,6 +313,42 @@ final class ExtensionManagementTests: XCTestCase {
         let versionUpdate = nextEvent("install")
         XCTAssertEqual(versionUpdate?["skip"] as? Bool, false, "A browser update must not consume the extension version update")
         XCTAssertEqual((versionUpdate?["details"] as? [String: Any])?["reason"] as? String, "update")
+        XCTAssertEqual(nextEvent("update")?["skip"] as? Bool, true, "A repeated update must not reopen its welcome page")
+        XCTAssertEqual(nextEvent("install")?["skip"] as? Bool, true)
+    }
+
+    func testGenericInstallationListenersShareVersionGateAndKeepEventMembership() throws {
+        let js = try XCTUnwrap(JSContext())
+        js.evaluateScript("""
+        var console={error:function(){}}, nativeListeners=[], nativeMessages=[], installationDeliveries=[];
+        var rawInstallationEvent={
+          addListener:function(listener){if(!nativeListeners.includes(listener))nativeListeners.push(listener);},
+          removeListener:function(listener){nativeListeners=nativeListeners.filter(value=>value!==listener);},
+          hasListener:function(listener){return nativeListeners.includes(listener);},
+          hasListeners:function(){return nativeListeners.length>0;}
+        };
+        var chrome={runtime:{onInstalled:rawInstallationEvent,getManifest:function(){return {};},
+          sendNativeMessage:function(host,message,reply){nativeMessages.push(message);reply({skip:false,details:message.details});}}};
+        var browser=chrome;
+        """)
+        js.evaluateScript(WebExtensionPackagePreparer.compatibilitySourceForTesting)
+        js.evaluateScript("""
+        var first=function(details){installationDeliveries.push(['first',details.reason]);};
+        var second=function(details){installationDeliveries.push(['second',details.reason]);};
+        chrome.runtime.onInstalled.addListener(first);
+        browser.runtime.onInstalled.addListener(second);
+        chrome.runtime.onInstalled.addListener(first);
+        """)
+        XCTAssertNil(js.exception)
+        XCTAssertEqual(js.evaluateScript("nativeListeners.length")?.toInt32(), 1)
+        XCTAssertEqual(js.evaluateScript("chrome.runtime.onInstalled.hasListener(first)&&browser.runtime.onInstalled.hasListeners()")?.toBool(), true)
+        js.evaluateScript("chrome.runtime.onInstalled.removeListener(first);browser.runtime.onInstalled.removeListener(second);")
+        XCTAssertNil(js.exception)
+        XCTAssertEqual(js.evaluateScript("nativeListeners.length")?.toInt32(), 0)
+        XCTAssertEqual(js.evaluateScript("chrome.runtime.onInstalled.hasListener(first)||browser.runtime.onInstalled.hasListeners()")?.toBool(), false)
+        js.evaluateScript("globalThis.__souloAddInstallationListener(first);chrome.runtime.onInstalled.addListener(second);")
+        XCTAssertNil(js.exception)
+        XCTAssertEqual(js.evaluateScript("nativeListeners.length")?.toInt32(), 1)
     }
 
     func testUpdateAndRollbackKeepIdentityDecisionsAndExtensionStorage() async throws {

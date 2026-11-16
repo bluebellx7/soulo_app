@@ -108,7 +108,7 @@ final class WebPageEdgeSampler {
     }
     func reset() { generation = UUID(); pending?.cancel(); pending = nil }
     func schedule(on web: WKWebView, model: WebViewModel) {
-        guard UserDefaults.standard.bool(forKey: AppConstants.StorageKeys.extendPageBackground),
+        guard BrowserInitialPreferences.extendsPageBackground(),
               !Self.shouldFreeze(model),
               web.window != nil, !web.isHidden, model.hasPresentedContent, pending == nil else { return }
         let token = generation, url = web.url
@@ -117,7 +117,7 @@ final class WebPageEdgeSampler {
             defer { if self.generation == token { self.pending = nil } }
             do { try await Task.sleep(for: .seconds(max(0.2, 0.8 - Date().timeIntervalSince(self.lastCapture)))) } catch { return }
             guard let web, let model, self.generation == token, web.url == url,
-                  UserDefaults.standard.bool(forKey: AppConstants.StorageKeys.extendPageBackground), web.window != nil else { return }
+                  BrowserInitialPreferences.extendsPageBackground(), web.window != nil else { return }
             guard !Self.shouldFreeze(model) else { return }
             // Wait for touch/deceleration to settle instead of competing with scrolling.
             if web.scrollView.isDragging || web.scrollView.isDecelerating { return }

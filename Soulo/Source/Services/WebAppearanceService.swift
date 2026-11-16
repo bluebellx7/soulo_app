@@ -158,7 +158,7 @@ final class WebAppearanceService: ObservableObject {
 
     private var effectiveAppInterfaceStyle: UIUserInterfaceStyle {
         // Browser chrome contrast must not change the page's requested appearance.
-        if defaults.bool(forKey: AppConstants.StorageKeys.extendPageBackground) {
+        if BrowserInitialPreferences.extendsPageBackground(in: defaults) {
             switch defaults.string(forKey: "appearance") {
             case "light": return .light
             case "dark": return .dark

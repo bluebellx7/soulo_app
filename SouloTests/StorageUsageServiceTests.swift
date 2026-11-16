@@ -16,6 +16,7 @@ final class StorageUsageServiceTests: XCTestCase {
         await new Promise((resolve,reject)=>{const r=indexedDB.open('website-storage-fixture',1);
           r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onerror=()=>reject(r.error);
           r.onsuccess=()=>{const db=r.result,t=db.transaction('files','readwrite');t.objectStore('files').put(new Blob(['m'.repeat(700000)]),'media');t.oncomplete=()=>{db.close();resolve();};};});
+        if (window.caches) { const c=await caches.open('storage-cache-fixture'); await c.put('/fixture-media',new Response('x'.repeat(100000))); }
         return true;
         """#
         for web in [first,second] {
@@ -37,7 +38,14 @@ final class StorageUsageServiceTests: XCTestCase {
         XCTAssertTrue((kept?["names"] as? [String] ?? []).contains("website-storage-fixture"))
         XCTAssertEqual(cleared?["local"] as? String,"keep")
         XCTAssertTrue((cleared?["cookie"] as? String ?? "").contains("storage_fixture=keep"))
-        for entry in [firstEntry,secondEntry] {try await WebsiteStorageService.clear(entry,types:WKWebsiteDataStore.allWebsiteDataTypes())}
+        _ = await StorageUsageService.clearWebsiteData()
+        for web in [first, second] {
+            let value = try await web.callAsyncJavaScript("return {names:(await indexedDB.databases()).map(v=>v.name),local:localStorage.getItem('storage-fixture'),cookie:document.cookie,caches:window.caches?await caches.keys():[]};", arguments: [:], in: nil, contentWorld: .page) as? [String: Any]
+            XCTAssertFalse((value?["names"] as? [String] ?? []).contains("website-storage-fixture"))
+            XCTAssertTrue(value?["local"] is NSNull)
+            XCTAssertFalse((value?["cookie"] as? String ?? "").contains("storage_fixture=keep"))
+            XCTAssertFalse((value?["caches"] as? [String] ?? []).contains("storage-cache-fixture"))
+        }
     }
     func testWebsiteDiskEstimatesAttributePartitionsKeepLegacySupportAndRejectUnknownMetadata() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -91,6 +99,68 @@ final class StorageUsageServiceTests: XCTestCase {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data(repeating: 0xAB, count: 8192).write(to: url)
         return url
+    }
+
+    func testPhysicalDevicePrivateVarAliasesKeepUserFilesOutOfOtherData() throws {
+        let base = URL(fileURLWithPath: "/var/mobile/Containers/Data/Application/StorageFixture")
+        let places = StorageUsageLocations(downloads: base.appendingPathComponent("Documents/Downloads"),
+            applicationSupport: base.appendingPathComponent("Library/Application Support"), caches: base.appendingPathComponent("Library/Caches"),
+            documents: base.appendingPathComponent("Documents"), library: base.appendingPathComponent("Library"), temporary: base.appendingPathComponent("tmp"))
+        let classifier = StoragePathClassifier(locations: places)
+        let fixtures: [(String, StorageUsageCategory)] = [
+            ("Documents/Downloads/video.mp4", .downloads), ("Documents/Downloads/music.flac", .downloads),
+            ("tmp/CFNetworkDownload_fixture.tmp", .temporaryFiles), ("tmp/000260.ts", .temporaryFiles),
+            ("Library/WebKit/ContentRuleLists/ContentRuleListFixture", .ruleCache),
+            ("Library/WebKit/WebsiteData/Default/site/LocalStorage/localstorage.sqlite3-wal", .websiteStorage),
+            ("Library/Caches/CurrentWallpaper/fixture.image", .wallpaperCache)]
+        for (suffix, category) in fixtures {
+            let raw = base.appendingPathComponent(suffix).path
+            let privatePath = "/private" + raw
+            XCTAssertEqual(classifier.category(raw), category, suffix)
+            XCTAssertEqual(classifier.category(privatePath), category, suffix)
+            XCTAssertEqual(classifier.normalizedPath(raw), classifier.normalizedPath(privatePath))
+            XCTAssertTrue(classifier.bucket(privatePath).1.contains("/"), "Paths must show their real category folder, not just a bare filename")
+        }
+    }
+
+    func testAliasedSandboxRootsCountEachFileOnceAndCanClearTheRightCache() throws {
+        let real = root.appendingPathComponent("actual"), alias = root.appendingPathComponent("alias")
+        try FileManager.default.createDirectory(at: real, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: real)
+        let places = StorageUsageLocations(downloads: alias.appendingPathComponent("Documents/Downloads"),
+            applicationSupport: alias.appendingPathComponent("Library/Application Support"), caches: alias.appendingPathComponent("Library/Caches"),
+            documents: real.appendingPathComponent("Documents"), library: real.appendingPathComponent("Library"), temporary: real.appendingPathComponent("tmp"))
+        let download = try write("video.mp4", under: places.downloads)
+        try write("ContentRuleLists/ContentRuleListFixture", under: places.library!.appendingPathComponent("WebKit"))
+        try write("000260.ts", under: places.temporary!)
+        try write("fixture.cache", under: places.caches.appendingPathComponent("misc"))
+        let report = StorageUsageService.measureInventory(locations: places)
+        for category: StorageUsageCategory in [.downloads, .ruleCache, .temporaryFiles, .otherCaches] {
+            XCTAssertGreaterThan(report.records.first { $0.category == category }?.bytes ?? 0, 0, category.rawValue)
+        }
+        XCTAssertEqual(report.records.first { $0.category == .otherData }?.bytes, 0)
+        XCTAssertEqual(report.entries.reduce(0) { $0 + $1.bytes }, report.dataBytes)
+        try StorageUsageService.clearAdditionalCache(.otherCaches, locations: places, olderThan: .distantFuture)
+        let cleared = StorageUsageService.measureInventory(locations: places)
+        XCTAssertEqual(cleared.records.first { $0.category == .otherCaches }?.bytes, 0)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: download.path), "Fixing cache cleanup must never delete a downloaded video")
+    }
+
+    @MainActor func testStorageGroupsPartitionAllDataAndKeepWebsiteDeletionOptIn() {
+        let categories = StorageUsageGroup.allCases.flatMap { $0.categories }
+        XCTAssertEqual(Set(categories), Set(StorageUsageCategory.allCases))
+        XCTAssertEqual(categories.count, StorageUsageCategory.allCases.count)
+        XCTAssertEqual(StorageUsageGroup.allCases.count, 5)
+        XCTAssertEqual(StorageUsageGroup.websites.cleanupChoices, [.websiteData])
+        XCTAssertFalse(StorageCleanupChoice.safeDefaults.contains(.websiteData))
+        XCTAssertEqual(StorageUsageGroup.other.cleanupChoices, [.systemCaches, .offlineMedia])
+        XCTAssertTrue(StorageCleanupChoice.safeDefaults.contains(.systemCaches))
+        XCTAssertFalse(StorageCleanupChoice.safeDefaults.contains(.offlineMedia))
+        XCTAssertFalse(StorageCleanupChoice.offlineMedia.requiresTypedConfirmation)
+        XCTAssertTrue(StorageCleanupChoice.bookmarks.requiresTypedConfirmation)
+        XCTAssertTrue(StorageCleanupChoice.saved.contains(.offlineMedia))
+        XCTAssertEqual(Set(StorageCleanupChoice.saved.map(\.title)).count, StorageCleanupChoice.saved.count,
+                       "Wallpaper favorites and bookmarks must have distinct cleanup labels")
     }
 
     func testDiskCategoriesIncludeReadingListAndKeepUserDataReadOnly() throws {
@@ -147,9 +217,91 @@ final class StorageUsageServiceTests: XCTestCase {
         XCTAssertEqual(report.entries.reduce(0) { $0 + $1.bytes }, report.dataBytes)
         XCTAssertNotNil(report.entries.first { $0.category == .webData && $0.displayPath == "Caches/com.example.app" },
             "WebKit's bundle-nested cache must be assigned to website data, not generic caches")
-        for category: StorageUsageCategory in [.extensions,.downloadTasks,.wallpaperCache,.otherCaches,.temporaryFiles,.personalData,.webData,.sharedData,.otherData] {
+        for category: StorageUsageCategory in [.extensions,.downloadTasks,.wallpaperCache,.otherCaches,.temporaryFiles,.personalData,.webData,.websiteStorage,.sharedData,.otherData] {
             XCTAssertGreaterThan(try XCTUnwrap(report.records.first { $0.category == category }).bytes, 0, category.rawValue)
         }
+    }
+
+    func testWebsiteCacheAndSavedWebsiteDataHaveDifferentCleanupScopes() throws {
+        var places = try XCTUnwrap(locations)
+        places.library = root.appendingPathComponent("Library")
+        let db = try write("WebKit/WebsiteData/Default/top/origin/IndexedDB/database.sqlite3", under: places.library!)
+        let cache = try write("WebKit/WebsiteData/Default/top/origin/CacheStorage/media.bin", under: places.library!)
+        let liveCatalog = try write("com.example.app/Cache.db", under: places.caches)
+        let disposable = try write("previews/image.bin", under: places.caches)
+        let before = StorageUsageService.measureInventory(locations: places)
+        XCTAssertEqual(before.entries.first { $0.category == .websiteStorage }?.bytes, 8192)
+        XCTAssertGreaterThan(before.records.first { $0.category == .webData }?.bytes ?? 0, 0)
+        XCTAssertFalse(StorageUsageCategory.websiteStorage.canClear, "Saved IndexedDB data requires its own explicit deletion")
+        XCTAssertTrue(before.entries.contains { $0.category == .otherData && $0.url.lastPathComponent == "com.example.app" })
+        try StorageUsageService.clearAdditionalCache(.otherCaches, locations: places, olderThan: .distantFuture)
+        let after = StorageUsageService.measureInventory(locations: places)
+        XCTAssertLessThan(after.dataBytes, before.dataBytes)
+        XCTAssertEqual(after.records.first { $0.category == .otherCaches }?.bytes, 0)
+        for file in [db, cache, liveCatalog] { XCTAssertTrue(FileManager.default.fileExists(atPath: file.path)) }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: disposable.path))
+    }
+
+    func testAllActiveTemporaryFilesAreReportedAndKept() throws {
+        var places = try XCTUnwrap(locations)
+        places.temporary = root.appendingPathComponent("Temporary")
+        let active = try write("active.tmp", under: places.temporary!)
+        let report = try StorageUsageService.clearAdditionalCache(.temporaryFiles, locations: places, olderThan: Date(timeIntervalSinceNow: -30))
+        XCTAssertEqual(report.retainedCategories, [.temporaryFiles])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: active.path))
+    }
+
+    @MainActor func testInventoryCacheCoalescesReadsAndRefreshesAfterDeletion() async throws {
+        let file = try write("movie.mp4", under: locations.downloads)
+        let places = try XCTUnwrap(locations)
+        let cache = StorageInventoryCache { knownAppBytes in
+            StorageUsageService.measureInventory(locations: places, knownAppBytes: knownAppBytes)
+        }
+        async let first = cache.inventory(forceRefresh: true)
+        async let second = cache.inventory(forceRefresh: true)
+        let (a, b) = await (first, second)
+        XCTAssertEqual(a.dataBytes, b.dataBytes)
+        XCTAssertGreaterThan(a.dataBytes, 0)
+        try FileManager.default.removeItem(at: file)
+        // This is the same forced refresh used by onAppear after returning
+        // from file management, even while a recent inventory is cached.
+        let refreshed = await cache.inventory(forceRefresh: true)
+        XCTAssertEqual(refreshed.records.first { $0.category == .downloads }?.bytes, 0)
+        cache.invalidate()
+        XCTAssertNil(cache.value)
+    }
+
+    @MainActor func testDeletionInvalidatesAScanAlreadyInFlight() async throws {
+        let file = try write("movie.mp4", under: locations.downloads)
+        let places = try XCTUnwrap(locations), gate = StorageScanGate()
+        let cache = StorageInventoryCache { knownAppBytes in
+            let first = gate.isFirst()
+            let value = StorageUsageService.measureInventory(locations: places, knownAppBytes: knownAppBytes)
+            if first { gate.started.signal(); _ = gate.resume.wait(timeout: .now() + 2) }
+            return value
+        }
+        let old = Task { await cache.inventory(forceRefresh: true) }
+        await Task.detached { _ = gate.started.wait(timeout: .now() + 2) }.value
+        try FileManager.default.removeItem(at: file)
+        cache.invalidate()
+        let fresh = await cache.inventory(forceRefresh: true)
+        gate.resume.signal()
+        let staleReader = await old.value
+        XCTAssertEqual(fresh.dataBytes, 0)
+        XCTAssertEqual(staleReader.dataBytes, 0, "An older scan must not restore the size of a deleted file")
+        XCTAssertEqual(cache.value?.dataBytes, 0)
+        XCTAssertEqual(gate.count, 2)
+    }
+
+    func testInventoryScansLargeExtensionTreesAndPreservesCategoryTotals() throws {
+        for index in 0..<2500 {
+            try write("SouloExtensions/extension/scripts/dir\(index / 25)/file\(index).js", under: locations.applicationSupport)
+        }
+        let start = Date()
+        let report = StorageUsageService.measureInventory(locations: locations)
+        print("STORAGE_SCAN files=2500 elapsed=\(Date().timeIntervalSince(start))")
+        XCTAssertGreaterThan(report.records.first { $0.category == .extensions }?.bytes ?? 0, 0)
+        XCTAssertEqual(report.entries.reduce(0) { $0 + $1.bytes }, report.dataBytes)
     }
 
     func testNewCacheCleanupKeepsFavoritesDownloadsActiveFilesAndExternalSymlinks() throws {
@@ -170,7 +322,8 @@ final class StorageUsageServiceTests: XCTestCase {
         let outside = try write("keep.bin", under: root.appendingPathComponent("Outside"))
         try FileManager.default.createSymbolicLink(at: locations.caches.appendingPathComponent("linked"), withDestinationURL: outside.deletingLastPathComponent())
         for category: StorageUsageCategory in [.otherCaches,.wallpaperCache,.temporaryFiles] {
-            try StorageUsageService.clearAdditionalCache(category, locations: locations, olderThan: cutoff)
+            let report = try StorageUsageService.clearAdditionalCache(category, locations: locations, olderThan: cutoff)
+            if category == .temporaryFiles { XCTAssertEqual(report.retainedCategories, [.temporaryFiles]) }
         }
         for url in [disposable, preview, current, stale] { XCTAssertFalse(FileManager.default.fileExists(atPath: url.path), url.path) }
         for url in retained + [outside] { XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), url.path) }
@@ -267,6 +420,140 @@ final class StorageUsageServiceTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: retained), Data(repeating: 0xAB, count: 8192))
     }
 
+    func testReleasedTemporaryCleanupKeepsOpenFilesNewWritesAndExtensionState() throws {
+        var places = try XCTUnwrap(locations)
+        places.temporary = root.appendingPathComponent("Temporary")
+        let temporary = try XCTUnwrap(places.temporary)
+        let closed = try write("closed.tmp", under: temporary)
+        let open = try write("playing.tmp", under: temporary)
+        let fresh = try write("new-write.tmp", under: temporary)
+        let extensionState = try write("storage.sqlite", under: temporary.appendingPathComponent("extension-script-host-fixture"))
+        let systemCache = try write("Cache.db", under: temporary.appendingPathComponent("WebKit"))
+        let saved = try write("saved.mp4", under: places.downloads)
+        let link = temporary.appendingPathComponent("linked-download")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: saved)
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(60)], ofItemAtPath: fresh.path)
+        let handle = try FileHandle(forReadingFrom: open)
+        defer { try? handle.close() }
+        let protected = StorageMediaCleanup.openFilePaths()
+        XCTAssertTrue(protected.contains(open.standardizedFileURL.resolvingSymlinksInPath().path))
+        let report = try StorageMediaCleanup.removeReleasedFiles(at: temporary, category: .temporaryFiles,
+            locations: places, protectedPaths: protected, olderThan: Date(), removeRoot: false)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: closed.path))
+        for file in [open, fresh, extensionState, systemCache, saved, link] { XCTAssertTrue(FileManager.default.fileExists(atPath: file.path), file.lastPathComponent) }
+        XCTAssertTrue(report.retainedCategories.contains(.temporaryFiles))
+        try handle.close()
+        _ = try StorageMediaCleanup.removeReleasedFiles(at: temporary, category: .temporaryFiles,
+            locations: places, protectedPaths: StorageMediaCleanup.openFilePaths(), olderThan: Date(), removeRoot: false)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: open.path), "A released handle must become reclaimable")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: saved.path))
+    }
+
+    func testManagedMediaDeletionRejectsOtherLibraryFoldersAndClearsReleasedFiles() throws {
+        var places = try XCTUnwrap(locations)
+        places.library = root.appendingPathComponent("Library")
+        let library = try XCTUnwrap(places.library)
+        let managed = library.appendingPathComponent("com.apple.UserManagedAssets.fixture")
+        let media = try write("movie.movpkg/segment.ts", under: managed)
+        let unowned = try write("keep.db", under: library.appendingPathComponent("OtherSystemData"))
+        let handle = try FileHandle(forReadingFrom: media)
+        let first = try StorageMediaCleanup.removeReleasedFiles(at: managed, category: .otherData,
+            locations: places, protectedPaths: StorageMediaCleanup.openFilePaths(), olderThan: Date(), removeRoot: true)
+        XCTAssertTrue(first.retainedCategories.contains(.otherData)); XCTAssertTrue(FileManager.default.fileExists(atPath: media.path))
+        try handle.close()
+        _ = try StorageMediaCleanup.removeReleasedFiles(at: managed, category: .otherData,
+            locations: places, protectedPaths: StorageMediaCleanup.openFilePaths(), olderThan: Date(), removeRoot: true)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: managed.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: unowned.path))
+        XCTAssertThrowsError(try StorageMediaCleanup.removeReleasedFiles(at: unowned.deletingLastPathComponent(), category: .otherData,
+            locations: places, protectedPaths: [], olderThan: Date(), removeRoot: true))
+        let alias = library.appendingPathComponent("com.apple.UserManagedAssets.link")
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: unowned.deletingLastPathComponent())
+        XCTAssertFalse(StorageMediaCleanup.isManagedContainer(alias, locations: places))
+    }
+
+    func testManagedMediaCleanupRemovesOnlyReferencesWhosePackagesWereDeleted() throws {
+        var places = try XCTUnwrap(locations)
+        places.library = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library")
+        places.documents = root.appendingPathComponent("Documents")
+        let managed = places.library!.appendingPathComponent("com.apple.UserManagedAssets.test-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: managed) }
+        let first = managed.appendingPathComponent("released.movpkg"), second = managed.appendingPathComponent("playing.movpkg")
+        try write("segment.ts", under: first)
+        let openFile = try write("segment.ts", under: second)
+        let unopenedSegment = try write("next-segment.ts", under: second)
+        let docs = try XCTUnwrap(places.documents)
+        try FileManager.default.createDirectory(at: docs, withIntermediateDirectories: true)
+        let firstRef = docs.appendingPathComponent("released.soulohls"), secondRef = docs.appendingPathComponent("playing.soulohls")
+        try OfflineHLSReference.write(packageURL: first, to: firstRef)
+        try OfflineHLSReference.write(packageURL: second, to: secondRef)
+        let handle = try FileHandle(forReadingFrom: openFile); defer { try? handle.close() }
+        let result = try StorageMediaCleanup.removeFilesAndReferences(at: managed, category: .otherData, locations: places,
+            protectedPaths: StorageMediaCleanup.openFilePaths(), olderThan: Date(), removeRoot: true)
+        XCTAssertEqual(result.1.map(\.lastPathComponent), [firstRef.lastPathComponent])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: firstRef.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: secondRef.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: openFile.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: unopenedSegment.path), "An in-use HLS package must remain intact")
+    }
+
+    func testOtherCleanupRemovesRebuildableCachesButKeepsDatabasesCloudTokensAndOpenFiles() throws {
+        var places = try XCTUnwrap(locations)
+        places.library = root.appendingPathComponent("Library")
+        let system = places.caches.appendingPathComponent("com.example.app")
+        let released = try write("com.apple.metal/libraries.data", under: system)
+        let opened = try write("com.apple.metal/functions.data", under: system)
+        let db = try write("Cache.db", under: system)
+        let wal = try write("Cache.db-wal", under: system)
+        let cloud = try write("SyncedPreferences/token", under: places.library!)
+        let saved = try write("settings.json", under: places.applicationSupport)
+        let splash = try write("Snapshots/scene.png", under: places.library!.appendingPathComponent("SplashBoard"))
+        let future = try write("future.data", under: system)
+        try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: 60)], ofItemAtPath: future.path)
+        let outside = try write("external.data", under: root)
+        try FileManager.default.createSymbolicLink(at: system.appendingPathComponent("link"), withDestinationURL: outside)
+        let handle = try FileHandle(forReadingFrom: opened); defer { try? handle.close() }
+        let report = try StorageOtherCleanup.removeCacheFiles(at: system, locations: places,
+            protectedPaths: StorageMediaCleanup.openFilePaths(), olderThan: Date())
+        XCTAssertFalse(FileManager.default.fileExists(atPath: released.path))
+        for file in [opened, db, wal, cloud, saved, outside, future] { XCTAssertTrue(FileManager.default.fileExists(atPath: file.path)) }
+        XCTAssertEqual(report.retainedCategories, [.otherData])
+        _ = try StorageOtherCleanup.removeCacheFiles(at: splash.deletingLastPathComponent().deletingLastPathComponent(),
+            locations: places, protectedPaths: [], olderThan: Date())
+        XCTAssertFalse(FileManager.default.fileExists(atPath: splash.path))
+        XCTAssertEqual(StoragePathClassifier(locations: places).category(cloud.path), .personalData)
+        XCTAssertFalse(StorageOtherCleanup.canClearCache(cloud.deletingLastPathComponent(), locations: places))
+        XCTAssertThrowsError(try StorageOtherCleanup.removeCacheFiles(at: places.applicationSupport, locations: places,
+            protectedPaths: [], olderThan: Date()))
+    }
+
+    func testOtherMediaCleanupKeepsSavedPackagesAndDoesNotDoubleCountThem() throws {
+        var places = try XCTUnwrap(locations)
+        places.library = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library")
+        places.documents = root.appendingPathComponent("Documents")
+        let managed = places.library!.appendingPathComponent("com.apple.UserManagedAssets.saved-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: managed) }
+        let saved = managed.appendingPathComponent("saved.movpkg"), orphan = managed.appendingPathComponent("orphan.movpkg")
+        let savedData = try write("segment.frag", under: saved), orphanData = try write("segment.frag", under: orphan)
+        let reference = places.downloads.appendingPathComponent("saved.soulohls")
+        try FileManager.default.createDirectory(at: places.downloads, withIntermediateDirectories: true)
+        try OfflineHLSReference.write(packageURL: saved, to: reference)
+        let preserved = Set(StorageMediaCleanup.references(in: places.documents, under: managed).map { $0.1.standardizedFileURL.resolvingSymlinksInPath().path.replacingOccurrences(of: "/private/var/", with: "/var/") })
+        let result = try StorageMediaCleanup.removeFilesAndReferences(at: managed, category: .otherData, locations: places,
+            protectedPaths: [], olderThan: Date(), removeRoot: true, preservedPackages: preserved)
+        XCTAssertTrue(result.0.retainedCategories.isEmpty)
+        XCTAssertTrue(result.1.isEmpty)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: savedData.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: reference.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: orphanData.path))
+        var measured = places
+        measured.library = managed // Scan only this fixture, not the test host's live Library.
+        let inventory = StorageUsageService.measureInventory(locations: measured)
+        XCTAssertEqual(inventory.records.first { $0.category == .otherData }?.bytes, 0)
+        XCTAssertGreaterThan(inventory.records.first { $0.category == .downloads }?.bytes ?? 0, 0)
+        XCTAssertEqual(inventory.entries.reduce(0) { $0 + $1.bytes }, inventory.dataBytes)
+    }
+
     func testOfflineHLSReferencesIncludeThePackageOnlyOnce() throws {
         let packageRoot = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
             .appendingPathComponent("Library/StorageHLS-" + UUID().uuidString)
@@ -284,4 +571,13 @@ final class StorageUsageServiceTests: XCTestCase {
         XCTAssertGreaterThan(before, 8192)
         XCTAssertEqual(after - before, Int64(size.totalFileAllocatedSize ?? size.fileAllocatedSize ?? size.fileSize ?? 0))
     }
+}
+
+private final class StorageScanGate: @unchecked Sendable {
+    let started = DispatchSemaphore(value: 0)
+    let resume = DispatchSemaphore(value: 0)
+    private let lock = NSLock()
+    private var calls = 0
+    var count: Int { lock.lock(); defer { lock.unlock() }; return calls }
+    func isFirst() -> Bool { lock.lock(); defer { lock.unlock() }; calls += 1; return calls == 1 }
 }
