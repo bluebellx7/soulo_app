@@ -1,6 +1,8 @@
 # Soulo 静态网站
 
-生产地址：https://soulo.dkluge.com/ 。此目录由现有 Nginx 静态托管，日常发布使用 `bash website/upload.sh`。Git push 与网站部署是两个独立步骤。
+生产地址为 https://soulo.dkluge.com/ 。日常发布在项目目录运行 `bash website/upload.sh`。Git push 与网站部署是两个独立步骤。
+
+上传脚本通过 SSH 密钥以 `soulo-deploy` 登录 `8.136.248.180`，把 Git 已跟踪的页面和静态资源上传到 `/srv/www/soulo/releases`。服务端核对 SHA-256 后原子切换 `current`，通过 HTTPS 检查首页和常用文件类型。校验失败时恢复上一个版本。首次从其他电脑发布前，需要为同一个部署用户配置公钥并核对服务器主机密钥。域名、证书与旧机回退见 [HTTPS 维护说明](DOMAIN_TLS.md)。
 
 ## 页面与设计
 

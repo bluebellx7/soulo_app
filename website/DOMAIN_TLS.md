@@ -1,6 +1,25 @@
 # Soulo 域名与 HTTPS 维护
 
-更新：2026-10-04。域名：**soulo.dkluge.com**。A 记录指向 **120.26.56.123**，本次未修改 DNS。服务器登录：`ssh root@120.26.56.123`。服务：/root/app-websites/soulo，由 Nginx 直接托管。
+## 2026-11-18 迁移状态
+
+新服务器为 `8.136.248.180`。宿主机 Nginx 通过 `/etc/nginx/conf.d/soulo.conf` 提供 HTTPS，站点根目录为 `/srv/www/soulo/current`。兼容路径 `/privacy_policy.html` 保留旧站的原始页面，由同一虚拟主机独立提供。
+
+新版本发布使用 `bash website/upload.sh`，默认连接 `soulo-deploy@8.136.248.180`。脚本上传 Git 已跟踪的静态文件，服务器核对全部文件的 SHA-256 后切换 `current` 链接，并通过本机 HTTPS 校验首页和资源 MIME 类型。服务器保留上一版发布目录。首次发布前核对新机 ED25519 主机密钥指纹 `SHA256:S2anlKYPY9cdYYBULjCQ0M+nJyBA5MlYYKZKp+bjIzA`。
+
+权威 DNS 的 A 记录为 `8.136.248.180`，TTL 为 600 秒。新机安全组已放行公网 IPv4 入方向 TCP 80 和 443。公网实测 HTTP 跳转返回 301，HTTPS 首页和旧版隐私政策返回 200。DNS 回退地址为旧机 `120.26.56.123`。
+
+新机从 Let’s Encrypt 独立签发证书，有效期至 2027-02-16 UTC。Nginx 从 `/etc/letsencrypt/live/soulo.dkluge.com` 读取证书和私钥。HTTP-01 目录为 `/var/lib/soulo-acme`，`soulo-tls-renew.timer` 每天北京时间 02:00 和 14:00 检查，随机延迟最多 30 分钟。续期演练通过，并执行了 Nginx 配置检查和热加载。新机只在本机没有对应的 HTTP-01 文件时向旧机查询，以便旧机的回退站点和共用续期继续工作。
+
+```bash
+systemctl list-timers soulo-tls-renew.timer --all
+systemctl show soulo-tls-renew.service -p Result -p ExecMainStatus
+journalctl -u soulo-tls-renew.service -n 60 --no-pager
+/opt/soulo-certbot/bin/certbot renew --dry-run --cert-name soulo.dkluge.com
+```
+
+## 旧服务器与回退
+
+旧服务器 `120.26.56.123` 上的 Nginx 仍从 `/root/app-websites/soulo` 提供站点。以下为原部署和维护方式。
 
 Dkluge、StockClaw、Soulo、IDPhoto 四站共用 node-nginx-1；证书统一由服务器申请、自动续期。完整配置源码和运维手册在 sibling Dkluge 项目：[四站 TLS 运维手册](../../dkluge/docker/nginx/tls/README.md)。
 
