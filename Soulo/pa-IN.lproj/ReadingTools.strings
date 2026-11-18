@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "ਸਥਿਤੀ %d";
 "home_toolbar_reset" = "ਸਭ ਲੁਕਾਓ";
 "home_toolbar_default_hint" = "ਹੋਮ ਸ਼ਾਰਟਕੱਟ ਮੂਲ ਰੂਪ ਵਿੱਚ ਲੁਕੇ ਹੋਏ ਹਨ।";
+"home_toolbar_position" = "ਟਿਕਾਣਾ";
+"home_toolbar_buttons" = "ਬਟਨ";
+"home_toolbar_tiles" = "ਵੱਖਰੇ";
+"home_toolbar_capsule" = "ਕੈਪਸੂਲ";
+"home_toolbar_icons" = "ਸਿਰਫ਼ ਆਈਕਨ";
+"home_toolbar_bottom" = "ਹੇਠਾਂ";
+"home_toolbar_belowSearch" = "ਖੋਜ ਹੇਠਾਂ";
+"home_toolbar_free" = "ਮਨਚਾਹਾ ਟਿਕਾਣਾ";
+"home_toolbar_leading" = "ਸ਼ੁਰੂ ਵੱਲ";
+"home_toolbar_center" = "ਵਿਚਕਾਰ";
+"home_toolbar_trailing" = "ਅੰਤ ਵੱਲ";
+"home_toolbar_drag_position" = "ਟੂਲਬਾਰ ਨੂੰ ਮਨਚਾਹੀ ਥਾਂ ਖਿੱਚੋ।";
+"home_toolbar_drag_buttons" = "ਬਟਨ ਬਦਲਣ ਲਈ ਟੈਪ ਕਰੋ। ਕ੍ਰਮ ਬਦਲਣ ਲਈ ਖਿੱਚੋ।";
 "home_toolbar_search" = "ਇੱਕ ਪੰਨਾ ਲੱਭੋ";
 "group_default_search" = "ਪੂਰਵ-ਨਿਰਧਾਰਤ ਖੋਜ";
 "group_search_settings" = "ਸਮੂਹ ਸੈਟਿੰਗਾਂ";
 "group_engine_name" = "ਖੋਜ ਇੰਜਣ ਦਾ ਨਾਮ";
-"group_search_url" = "%@ ਨਾਲ URL ਖੋਜੋ";
-"group_default_search_hint" = "ਵਰਤਿਆ ਜਾਂਦਾ ਹੈ ਜਦੋਂ ਇਸ ਸਮੂਹ ਵਿੱਚ ਕੋਈ ਸਮਰਥਿਤ ਪਲੇਟਫਾਰਮ ਨਹੀਂ ਹੁੰਦਾ ਹੈ। ਖੋਜ ਸ਼ਬਦਾਂ ਲਈ URL ਵਿੱਚ %@ ਸ਼ਾਮਲ ਕਰੋ। ਅਯੋਗ ਪਲੇਟਫਾਰਮ ਅਯੋਗ ਰਹਿੰਦੇ ਹਨ।";
-"group_search_url_invalid" = "ਇੱਕ ਨਾਮ ਦਰਜ ਕਰੋ ਅਤੇ ਇੱਕ ਵੈਧ HTTP ਜਾਂ HTTPS ਖੋਜ URL ਜਿਸ ਵਿੱਚ %@ ਹੋਵੇ।";
+"group_search_url" = "ਖੋਜ URL ਜਾਂ ਮੁੱਖ ਪੰਨੇ ਦਾ ਪਤਾ (ਖੋਜ ਸ਼ਬਦਾਂ ਲਈ %@)";
+"group_default_search_hint" = "ਇਸ ਗਰੁੱਪ ਵਿੱਚ ਕੋਈ ਪਲੇਟਫਾਰਮ ਚਾਲੂ ਨਾ ਹੋਵੇ ਤਾਂ ਵਰਤਿਆ ਜਾਂਦਾ ਹੈ। ਗਰੁੱਪ ਦਾ ਕੋਈ ਵੀ ਪਲੇਟਫਾਰਮ ਚੁਣ ਸਕਦੇ ਹੋ। %@ ਦੀ ਥਾਂ ਖੋਜ ਸ਼ਬਦ ਆਉਣਗੇ; ਪਲੇਸਹੋਲਡਰ ਨਾ ਹੋਣ ’ਤੇ ਪੰਨਾ ਸਿੱਧਾ ਖੁੱਲ੍ਹੇਗਾ। ਬੰਦ ਪਲੇਟਫਾਰਮ ਮੁੜ ਚਾਲੂ ਨਹੀਂ ਹੋਣਗੇ।";
+"group_search_url_invalid" = "ਨਾਮ ਅਤੇ ਸਹੀ HTTP ਜਾਂ HTTPS ਪਤਾ ਦਿਓ; ਖੋਜ ਟੈਂਪਲੇਟ ਵਿੱਚ %@ ਵਰਤ ਸਕਦੇ ਹੋ।";
 "batch_import_new_group" = "ਆਯਾਤ ਸਮੂਹ";
 "image_resources" = "ਸਰੋਤ";
 "screen_keep_awake" = "ਸਕ੍ਰੀਨ ਚਾਲੂ ਰੱਖੋ";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "ਇਹ ਫਾਰਮੈਟ ਸਿਸਟਮ ਪਲੇਅਰ ਨਾਲ ਸਿੱਧਾ ਨਹੀਂ ਭੇਜਿਆ ਜਾ ਸਕਦਾ ਹੈ। Control Center ਖੋਲ੍ਹੋ, ਸਕ੍ਰੀਨ ਮਿਰਰਿੰਗ ਚੁਣੋ, ਫਿਰ ਆਪਣਾ ਟੀਵੀ ਜਾਂ ਮੈਕ ਚੁਣੋ।";
 "userscript_check_updates" = "ਅੱਪਡੇਟਾਂ ਦੀ ਜਾਂਚ ਕਰੋ";
 "userscript_update_no_url" = "ਕੋਈ ਅੱਪਡੇਟ ਪਤਾ ਨਹੀਂ ਦਿੱਤਾ ਗਿਆ ਹੈ। ਇਸਨੂੰ ਅੱਪਡੇਟ ਕਰਨ ਲਈ ਇੱਕ ਨਵੀਂ ਸਕ੍ਰਿਪਟ ਫਾਈਲ ਨੂੰ ਆਯਾਤ ਕਰੋ।";
-"userscript_update_manual_hint" = "ਜਾਂਚ ਸਿਰਫ਼ ਬੇਨਤੀ ਕੀਤੇ ਜਾਣ 'ਤੇ ਹੀ ਚੱਲਦੀ ਹੈ। ਅੱਪਡੇਟ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਨਵੇਂ ਸੰਸਕਰਣ ਦੀ ਸਮੀਖਿਆ ਕਰੋ। ਐਪ ਦੇ ਨਾਲ ਬਿਲਟ-ਇਨ ਸਕ੍ਰਿਪਟਾਂ ਅਪਡੇਟ ਹੁੰਦੀਆਂ ਹਨ।";
+"userscript_update_manual_hint" = "ਇੰਸਟਾਲ ਸੂਚੀ ਖੋਲ੍ਹਣ ’ਤੇ ਹਰ ਵਾਰ ਵੱਧ ਤੋਂ ਵੱਧ 4 ਸਕ੍ਰਿਪਟ, ਹਰ ਸਕ੍ਰਿਪਟ 24 ਘੰਟਿਆਂ ਵਿੱਚ ਇੱਕ ਵਾਰ ਜਾਂਚੀ ਜਾਂਦੀ ਹੈ। ਨਿੱਜੀ ਬ੍ਰਾਊਜ਼ਿੰਗ, ਘੱਟ ਪਾਵਰ ਜਾਂ ਵੱਧ ਗਰਮੀ ਵਿੱਚ ਰੁਕਦਾ ਹੈ। ਅੱਪਡੇਟ ਲਈ ਸਮੀਖਿਆ ਲੋੜੀਂਦੀ ਹੈ।";
 "userscript_update_latest" = "ਅੱਪ ਟੂ ਡੇਟ";
 "userscript_update_invalid" = "ਅੱਪਡੇਟ ਅਵੈਧ ਹੈ, ਇੱਕ ਵੱਖਰੀ ਸਕ੍ਰਿਪਟ ਨਾਲ ਸਬੰਧਿਤ ਹੈ, ਜਾਂ ਇੱਕ ਅਸੰਗਤ ਸੰਸਕਰਣ ਹੈ।";
 "userscript_update_changed" = "ਜਾਂਚ ਤੋਂ ਬਾਅਦ ਇਹ ਸਕ੍ਰਿਪਟ ਬਦਲ ਗਈ। ਅਪਡੇਟਾਂ ਲਈ ਦੁਬਾਰਾ ਜਾਂਚ ਕਰੋ।";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "ਧੁੰਦਲਾ ਕੱਚ";
 "wallpaper_blur_amount" = "ਧੁੰਦਲੇਪਨ ਦੀ ਤੀਬਰਤਾ";
 
-"auto_hide_platform_bar_hint" = "ਵੈੱਬਪੰਨੇ ਦੀ ਸਮੱਗਰੀ ’ਤੇ ਟੈਪ ਕਰਨ ਤੋਂ ਬਾਅਦ ਹੀ ਪਲੇਟਫਾਰਮ ਬਾਰ ਲੁਕੇਗੀ। ਆਪਣੇ ਆਪ ਰੀਡਾਇਰੈਕਟ ਹੋਣ ਜਾਂ ਸਕ੍ਰੋਲ ਕਰਨ ਨਾਲ ਨਹੀਂ। ਮੁੜ ਦਿਖਾਉਣ ਲਈ ਖੋਜ ਨਤੀਜਿਆਂ ’ਤੇ ਵਾਪਸ ਜਾਓ ਜਾਂ ਨਵੀਂ ਖੋਜ ਕਰੋ।";
+"auto_hide_platform_bar_hint" = "ਚਾਲੂ ਹੋਣ ’ਤੇ, ਪੰਨੇ ਦੀ ਸਮੱਗਰੀ ’ਤੇ ਖੁਦ ਟੈਪ ਕਰਨ ਤੋਂ ਬਾਅਦ ਅਤੇ ਪੰਨੇ ਦਾ ਡੋਮੇਨ ਮੌਜੂਦਾ ਬਾਰ ਦੇ ਕਿਸੇ ਵੀ ਪਲੇਟਫਾਰਮ ਨਾਲ ਨਾ ਮਿਲਣ ’ਤੇ ਹੀ ਬਾਰ ਲੁਕਦੀ ਹੈ। ਕਿਸੇ ਪਲੇਟਫਾਰਮ ਨਾਲ ਮਿਲਣ ’ਤੇ ਬਾਰ ਦਿਖਦੀ ਰਹਿੰਦੀ ਹੈ ਜਾਂ ਮੁੜ ਦਿਸਦੀ ਹੈ। ਸਕ੍ਰੋਲ ਅਤੇ ਆਪਣੇ ਆਪ ਰੀਡਾਇਰੈਕਟ ਹੋਣਾ ਬਾਰ ਨੂੰ ਨਹੀਂ ਲੁਕਾਉਂਦੇ।";
 
 "ad_subscription_add" = "ਫਿਲਟਰ ਸੂਚੀ ਜੋੜੋ";
 "ad_subscription_name" = "ਨਾਮ";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "ਪੂਰੀ ਐਪ ਵਿੱਚ ਵਾਈਬ੍ਰੇਸ਼ਨ ਅਤੇ ਇੰਟਰਫੇਸ ਦੀਆਂ ਆਵਾਜ਼ਾਂ ਕੰਟਰੋਲ ਕਰੋ। ਵੈੱਬਪੰਨੇ, ਵੀਡੀਓ ਅਤੇ ਆਡੀਓ ਪਲੇਬੈਕ ਪ੍ਰਭਾਵਿਤ ਨਹੀਂ ਹੁੰਦੇ।";
 
 "home_display_settings" = "ਹੋਮ ਡਿਸਪਲੇ";
-"browsing_display_settings" = "ਬ੍ਰਾਊਜ਼ਿੰਗ ਡਿਸਪਲੇ";
+"browsing_display_settings" = "ਬ੍ਰਾਊਜ਼ਿੰਗ ਸੈਟਿੰਗਾਂ";
 
 "web_video_download" = "ਵੈੱਬ ਵੀਡੀਓ ਡਾਊਨਲੋਡ";
 "web_video_download_description" = "ਵੈੱਬਪੰਨਿਆਂ, ਐਪੀਸੋਡ ਸੂਚੀਆਂ ਅਤੇ ਪਲੇਅਰਾਂ ਵਿੱਚ ਵੀਡੀਓ ਡਾਊਨਲੋਡ ਕੰਟਰੋਲ ਦਿਖਾਓ। ਪਲੇਬੈਕ ਅਤੇ ਮੌਜੂਦਾ ਡਾਊਨਲੋਡ ਨਹੀਂ ਬਦਲਦੇ।";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "ਔਫਲਾਈਨ ਲੇਖ, ਕਿਤਾਬੀ ਲਾਇਬ੍ਰੇਰੀ ਅਤੇ ਪੜ੍ਹਨ ਦੀ ਪ੍ਰਗਤੀ ਸਾਫ਼ ਕਰਦਾ ਹੈ।";
 
 "storage_cleanup_offline_desc" = "ਡਾਊਨਲੋਡ ਰਿਕਾਰਡਾਂ ਤੋਂ ਬਿਨਾਂ ਔਫਲਾਈਨ ਵੀਡੀਓ ਦੇ ਬਚੇ ਹਿੱਸੇ ਮਿਟਾਉਂਦਾ ਹੈ।";
+
+"storage_website_shared" = "ਸਾਂਝਾ ਅਤੇ ਬਿਨਾਂ ਨਿਰਧਾਰਤ ਕੀਤਾ ਡਾਟਾ";
+"storage_website_shared_desc" = "ਸਾਂਝੀ ਨੈੱਟਵਰਕ ਕੈਸ਼, ਕੂਕੀਜ਼ ਅਤੇ ਉਹ ਡਾਟਾ ਸ਼ਾਮਲ ਹੈ ਜਿਸ ਨੂੰ ਇੱਕ ਸਾਈਟ ਨਾਲ ਨਹੀਂ ਜੋੜਿਆ ਜਾ ਸਕਦਾ।";
+"storage_website_clear_scope" = "ਆਮ ਵੈੱਬਸਾਈਟ ਡਾਟਾ ਅਤੇ ਸਾਂਝੀ ਨੈੱਟਵਰਕ ਕੈਸ਼ ਸਾਫ਼ ਕਰਦਾ ਹੈ। ਐਕਸਟੈਂਸ਼ਨ ਮੀਡੀਆ ਲਈ «ਐਕਸਟੈਂਸ਼ਨ ਦੀ ਅਸਥਾਈ ਕੈਸ਼» ਵਰਤੋ; ਐਕਸਟੈਂਸ਼ਨ ਸੈਟਿੰਗਾਂ ਰੱਖੀਆਂ ਜਾਂਦੀਆਂ ਹਨ।";
+
+"storage_quick_clear" = "ਤੁਰੰਤ ਸਫ਼ਾਈ";
+"storage_quick_clear_done" = "ਕੈਸ਼ ਸਾਫ਼ ਹੋਈ";
+
+"storage_website_cleanup_pending" = "ਵੈੱਬਸਾਈਟ ਡਾਟਾ ਅਜੇ ਸਾਫ਼ ਹੋ ਰਿਹਾ ਹੈ। ਤੁਸੀਂ ਪਿੱਛੇ ਜਾ ਕੇ ਬ੍ਰਾਊਜ਼ਿੰਗ ਜਾਰੀ ਰੱਖ ਸਕਦੇ ਹੋ। ਕਿਰਪਾ ਕਰਕੇ ਮੁੜ ਸਫ਼ਾਈ ਸ਼ੁਰੂ ਨਾ ਕਰੋ।";
+
+"storage_auto_cleanup" = "ਆਪਣੇ ਆਪ ਸਫ਼ਾਈ";
+
+"storage_auto_cleanup_desc" = "ਐਪ ਬੈਕਗ੍ਰਾਊਂਡ ਵਿੱਚ ਵਿਹਲੀ ਹੋਣ ਵੇਲੇ ਹਰ 24 ਘੰਟਿਆਂ ਵਿੱਚ ਵੱਧ ਤੋਂ ਵੱਧ ਇੱਕ ਵਾਰ ਕੋਸ਼ਿਸ਼ ਕਰਦੀ ਹੈ। ਸਿਰਫ਼ 24 ਘੰਟਿਆਂ ਤੋਂ ਪੁਰਾਣੀਆਂ, ਵਰਤੋਂ ਵਿੱਚ ਨਾ ਹੋਣ ਵਾਲੀਆਂ ਆਯਾਤ, ਨਿਰਯਾਤ ਅਤੇ ਪ੍ਰੀਵਿਊ ਦੀਆਂ ਅਸਥਾਈ ਫਾਈਲਾਂ ਮਿਟਾਉਂਦੀ ਹੈ। ਹਰ ਵਾਰ ਲਗਭਗ 1 ਸਕਿੰਟ ਜਾਂ 2000 ਆਈਟਮਾਂ ਦੀ ਜਾਂਚ ਤੱਕ ਚੱਲਦੀ ਹੈ; ਐਪ ਵਿੱਚ ਮੁੜ ਆਉਣ ’ਤੇ ਰੁਕ ਜਾਂਦੀ ਹੈ। ਪਲੇਬੈਕ, ਡਾਊਨਲੋਡ, ਨਿਰਯਾਤ, ਲੋ ਪਾਵਰ ਮੋਡ ਚਾਲੂ ਜਾਂ ਜ਼ਿਆਦਾ ਗਰਮੀ ਵੇਲੇ ਛੱਡ ਦਿੰਦੀ ਹੈ। ਬੁੱਕਮਾਰਕ, ਸੰਭਾਲੇ ਡਾਊਨਲੋਡ, ਲੌਗਇਨ ਅਤੇ ਵੈੱਬਸਾਈਟ ਡੇਟਾ ਆਪਣੇ ਆਪ ਨਹੀਂ ਮਿਟਦੇ।";
+
+"restore_last_page_on_launch" = "ਪਿਛਲਾ ਪੰਨਾ ਮੁੜ ਖੋਲ੍ਹੋ";
+"restore_last_page_on_launch_desc" = "ਐਪ ਸ਼ੁਰੂ ਹੋਣ ਵੇਲੇ ਪਿਛਲਾ ਵੈੱਬਪੰਨਾ ਖੋਲ੍ਹੋ। ਨਿੱਜੀ ਟੈਬ ਮੁੜ ਨਹੀਂ ਖੋਲ੍ਹੇ ਜਾਂਦੇ।";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "ਇਸ਼ਾਰੇ ਅਤੇ ਸ਼ਾਰਟਕੱਟ";
+"app_icon_shortcuts" = "ਐਪ ਆਈਕਨ ਸ਼ਾਰਟਕੱਟ";
+"settings_sync_backup" = "ਸਿੰਕ ਅਤੇ ਬੈਕਅੱਪ";
+"icloud_bookmark_sync" = "iCloud ਬੁੱਕਮਾਰਕ ਸਿੰਕ";
+"manual_settings_backups" = "ਮੈਨੁਅਲ ਬੈਕਅੱਪ";
+"create_settings_backup" = "ਬਣਾਓ";
+"toolbar_settings" = "ਟੂਲਬਾਰ";
+"toolbar_section_home" = "ਹੋਮ";
+
+/* Manual backup controls */
+"clear_manual_backups" = "ਮੈਨੁਅਲ ਬੈਕਅੱਪ ਮਿਟਾਓ";
+"clear_manual_backups_message" = "ਸਿਰਫ਼ ਹੱਥੀਂ ਬਣਾਏ ਜਾਂ ਆਯਾਤ ਕੀਤੇ ਬੈਕਅੱਪ ਮਿਟਦੇ ਹਨ। ਸਵੈਚਲਿਤ ਅਤੇ ਪੁਰਾਣੀਆਂ ਰਿਕਵਰੀ ਕਾਪੀਆਂ, ਮੌਜੂਦਾ ਸੈਟਿੰਗਾਂ ਅਤੇ iCloud ਸਿੰਕ ਬਰਕਰਾਰ ਰਹਿੰਦੇ ਹਨ।";
+"recovery_settings_backups" = "ਸਵੈਚਲਿਤ ਅਤੇ ਪੁਰਾਣੇ ਬੈਕਅੱਪ";
+
+/* Settings hierarchy */
+"settings_personalization" = "ਵਿਅਕਤੀਗਤ ਬਣਾਓ";
+"appearance_home_settings" = "ਹੋਮ ਅਤੇ ਵਾਲਪੇਪਰ";
+"settings_data" = "ਡੇਟਾ";
+"about_feedback_settings" = "ਜਾਣਕਾਰੀ ਅਤੇ ਫੀਡਬੈਕ";
+"browsing_startup_tabs" = "ਸ਼ੁਰੂਆਤ ਅਤੇ ਟੈਬ";
+"browsing_interface" = "ਇੰਟਰਫੇਸ";
+"browsing_web_display" = "ਵੈੱਬਪੰਨੇ";
+"manual_backups_empty" = "ਅਜੇ ਕੋਈ ਮੈਨੁਅਲ ਬੈਕਅੱਪ ਨਹੀਂ";
+"browsing_display_settings_legacy" = "ਬ੍ਰਾਊਜ਼ਿੰਗ ਡਿਸਪਲੇ";

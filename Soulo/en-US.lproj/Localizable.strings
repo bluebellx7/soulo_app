@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Supported";
 "userscript_docs_supported_desc" = "Core matching, document-start/end, styles/elements, single and bulk storage, local value listeners, clipboard, menus, in-page notifications, tabs, downloads, tab data, cookies, resources, URL changes, and permission-scoped requests.";
 "userscript_docs_partial_title" = "Partially supported";
-"userscript_docs_partial_desc" = "Network requests omit upload/progress and cookie transport. Notifications are in-page, resource APIs are asynchronous, and value-change listeners report changes made by the current page. Update checks are manual.";
+"userscript_docs_partial_desc" = "Notifications stay in-page; resource APIs return Promises. The explicit cookie option requires GM_cookie permission; requests do not automatically send cookies.";
 "userscript_docs_unsupported_title" = "Not currently supported";
-"userscript_docs_unsupported_desc" = "GM_webRequest interception, GM_audio, sandbox/run-in isolation, automatic update checks, and exact desktop-only behaviors that WKWebView cannot provide.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in isolation, and desktop-specific behavior unavailable in WKWebView.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Human-readable script name and optional description shown before installation and in script details.";
 "userscript_docs_metadata_version" = "Use a stable, unique namespace and increment the version whenever the bundled script changes.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Deletes one persistent value for this script.";
 "userscript_docs_api_list" = "Returns all persistent storage keys owned by this script.";
 "userscript_docs_api_bulk" = "Reads, writes, or deletes multiple JSON values in one operation; writes are validated atomically by the native store.";
-"userscript_docs_api_listener" = "Observes storage changes made by the script in the current webpage. Cross-tab remote notifications are not emitted.";
+"userscript_docs_api_listener" = "Observes local and cross-tab storage changes. Changes from another tab are reported with remote=true.";
 "userscript_docs_api_element" = "Creates and appends an element with attributes, including safely during document-start.";
 "userscript_docs_api_clipboard" = "Copies text to the system clipboard through Soulo’s native bridge.";
 "userscript_docs_extended_title" = "Menus, tabs, files, and page integration";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Network requests";
 "userscript_docs_network_legacy" = "Starts a privileged request and returns an abort handle. Declare the matching grant and @connect hosts.";
 "userscript_docs_network_modern" = "Modern alias of the privileged request API with the same details object and callback behavior.";
-"userscript_docs_network_details" = "Supports url, method, headers, data, timeout, responseType, onloadstart, onreadystatechange, onload, onerror, and onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Use json, blob, arraybuffer, or leave empty for text. Responses include status, finalUrl, headers, responseText, and response.";
 "userscript_docs_network_connect" = "Use self for the page host, a domain for it and its subdomains, a wildcard domain, or * only when truly necessary.";
 "userscript_docs_limits_title" = "Behavior and limits";
 "userscript_docs_limits_web" = "Standard DOM, events, MutationObserver, fetch, timers, and other WKWebView APIs are available. Normal fetch still follows CORS.";
 "userscript_docs_limits_storage" = "Stored values must be JSON-serializable: up to 256 KB per value and 1 MB total per script.";
-"userscript_docs_limits_network" = "Privileged responses are limited to 20 MB, timeout is clamped to 1–60 seconds, and Cookie/Host/Origin headers are not accepted.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts do not run in Private Browsing.";
 "userscript_docs_limits_require" = "HTTPS @require files are downloaded and cached when installing or saving, then run in order before the script.";
 "userscript_docs_template_title" = "Minimal template";

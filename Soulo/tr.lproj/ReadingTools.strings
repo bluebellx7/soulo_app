@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Konum %d";
 "home_toolbar_reset" = "Tümünü Gizle";
 "home_toolbar_default_hint" = "Ana kısayollar varsayılan olarak gizlidir.";
+"home_toolbar_position" = "Konum";
+"home_toolbar_buttons" = "Düğmeler";
+"home_toolbar_tiles" = "Ayrı";
+"home_toolbar_capsule" = "Kapsül";
+"home_toolbar_icons" = "Yalnızca simgeler";
+"home_toolbar_bottom" = "Altta";
+"home_toolbar_belowSearch" = "Aramanın altında";
+"home_toolbar_free" = "Serbest yerleşim";
+"home_toolbar_leading" = "Başlangıca hizala";
+"home_toolbar_center" = "Ortala";
+"home_toolbar_trailing" = "Sona hizala";
+"home_toolbar_drag_position" = "Araç çubuğunu istediğiniz yere sürükleyin.";
+"home_toolbar_drag_buttons" = "Düğmeyi değiştirmek için dokunun. Sıralamak için sürükleyin.";
 "home_toolbar_search" = "Bir sayfa bul";
 "group_default_search" = "Varsayılan arama";
 "group_search_settings" = "Grup Ayarları";
 "group_engine_name" = "Arama motoru adı";
-"group_search_url" = "URL'yi %@ ile arayın";
-"group_default_search_hint" = "Bu grupta etkin platform bulunmadığında kullanılır. Arama terimleri için URL'ye %@ ekleyin. Devre dışı bırakılan platformlar devre dışı kalır.";
-"group_search_url_invalid" = "Bir ad girin ve %@ içeren geçerli bir HTTP veya HTTPS araması URL girin.";
+"group_search_url" = "Arama URL’si veya ana sayfa adresi (anahtar sözcük: %@)";
+"group_default_search_hint" = "Grupta etkin platform yokken kullanılır. Gruptaki herhangi bir platform seçilebilir. %@ yerine anahtar sözcükler gelir; yer tutucu yoksa sayfa doğrudan açılır. Kapatılmış platformlar yeniden açılmaz.";
+"group_search_url_invalid" = "Bir ad ve geçerli bir HTTP veya HTTPS adresi girin; arama şablonlarında %@ kullanılabilir.";
 "batch_import_new_group" = "İthal Grup";
 "image_resources" = "Kaynaklar";
 "screen_keep_awake" = "Ekranı Açık Tut";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Bu format doğrudan sistem oynatıcısıyla gönderilemez. Control Center uygulamasını açın, Ekran Aynalama'yı seçin, ardından TV'nizi veya Mac'inizi seçin.";
 "userscript_check_updates" = "Güncellemeleri Kontrol Et";
 "userscript_update_no_url" = "Güncelleme adresi sağlanmadı. Güncellemek için daha yeni bir komut dosyasını içe aktarın.";
-"userscript_update_manual_hint" = "Kontroller yalnızca istendiğinde gerçekleştirilir. Güncellemeden önce yeni sürümü inceleyin. Yerleşik komut dosyaları uygulamayla birlikte güncellenir.";
+"userscript_update_manual_hint" = "Yüklüler açıldığında ziyaret başına en çok 4 betik, her biri 24 saatte bir denetlenir. Gizli tarama, düşük güç veya yüksek sıcaklıkta duraklar. Güncellemeler inceleme gerektirir.";
 "userscript_update_latest" = "güncel";
 "userscript_update_invalid" = "Güncelleme geçersiz, farklı bir betiğe ait veya tutarsız bir sürüme sahip.";
 "userscript_update_changed" = "Bu komut dosyası kontrolden sonra değişti. Güncellemeleri tekrar kontrol edin.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Buzlu Cam";
 "wallpaper_blur_amount" = "Bulanıklık Gücü";
 
-"auto_hide_platform_bar_hint" = "Platform çubuğu yalnızca web sayfası içeriğine dokunduğunuzda gizlenir. Otomatik yönlendirmeler ve kaydırma çubuğu gizlemez. Yeniden göstermek için sonuçlara dönün veya yeni bir arama başlatın.";
+"auto_hide_platform_bar_hint" = "Açıkken çubuk yalnızca sayfa içeriğine dokunduğunuzda ve sayfanın alan adı mevcut çubuktaki hiçbir platformla eşleşmediğinde gizlenir. Herhangi biriyle eşleşirse çubuk görünür kalır veya yeniden gösterilir. Kaydırma ve otomatik yönlendirmeler çubuğu gizlemez.";
 
 "ad_subscription_add" = "Filtre listesi ekle";
 "ad_subscription_name" = "Ad";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Uygulama genelinde titreşimi ve arayüz seslerini yönetin. Web sayfası, video ve ses oynatma etkilenmez.";
 
 "home_display_settings" = "Ana Sayfa Görünümü";
-"browsing_display_settings" = "Tarayıcı Görünümü";
+"browsing_display_settings" = "Tarama Ayarları";
 
 "web_video_download" = "Web Videosu İndirme";
 "web_video_download_description" = "Web sayfalarında, bölüm listelerinde ve oynatıcılarda video indirme denetimlerini gösterir. Oynatma ve mevcut indirmeler değişmez.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "Çevrimdışı makaleleri, kitaplığı ve okuma ilerlemesini temizler.";
 
 "storage_cleanup_offline_desc" = "İndirme kaydı olmayan çevrimdışı video kalıntılarını siler.";
+
+"storage_website_shared" = "Paylaşılan ve atanmamış veriler";
+"storage_website_shared_desc" = "Paylaşılan ağ önbelleklerini, çerezleri ve tek bir siteye atanamayan verileri içerir.";
+"storage_website_clear_scope" = "Normal site verilerini ve paylaşılan ağ önbelleklerini temizler. Uzantı medyası için «Geçici eklenti önbelleği» kullanın; uzantı ayarları korunur.";
+
+"storage_quick_clear" = "Hızlı temizle";
+"storage_quick_clear_done" = "Önbellek temizlendi";
+
+"storage_website_cleanup_pending" = "Web sitesi verileri hâlâ temizleniyor. Geri dönüp gezinmeye devam edebilirsiniz. Lütfen başka bir temizleme başlatmayın.";
+
+"storage_auto_cleanup" = "Otomatik temizleme";
+
+"storage_auto_cleanup_desc" = "Uygulama arka planda boşta olduğunda en fazla 24 saatte bir dener. Yalnızca 24 saatten eski, kullanılmayan geçici içe aktarma, dışa aktarma ve önizleme dosyalarını kaldırır. Her tur yaklaşık 1 saniye sürer veya 2000 öğeyi denetler; uygulamaya dönünce durur. Oynatma, indirme, dışa aktarma, Düşük Güç Modu açıkken veya belirgin ısınma sırasında atlanır. Yer imleri, kaydedilen indirmeler, oturumlar ve site verileri otomatik silinmez.";
+
+"restore_last_page_on_launch" = "Son sayfayı geri yükle";
+"restore_last_page_on_launch_desc" = "Uygulama başladığında son web sayfasını açar. Özel sekmeler geri yüklenmez.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Hareketler ve Kestirmeler";
+"app_icon_shortcuts" = "Uygulama Simgesi Kestirmeleri";
+"settings_sync_backup" = "Eşzamanlama ve Yedekleme";
+"icloud_bookmark_sync" = "iCloud Yer İmleri";
+"manual_settings_backups" = "Elle alınan yedekler";
+"create_settings_backup" = "Oluştur";
+"toolbar_settings" = "Araç Çubukları";
+"toolbar_section_home" = "Ana Sayfa";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Elle alınan yedekleri sil";
+"clear_manual_backups_message" = "Yalnızca elle oluşturulan veya içe aktarılan yedekleri siler. Otomatik ve eski kurtarma kopyaları, mevcut ayarlar ve iCloud eşzamanlaması korunur.";
+"recovery_settings_backups" = "Otomatik ve önceki yedekler";
+
+/* Settings hierarchy */
+"settings_personalization" = "Kişiselleştirme";
+"appearance_home_settings" = "Ana Sayfa ve Duvar Kâğıdı";
+"settings_data" = "Veriler";
+"about_feedback_settings" = "Hakkında ve Geri Bildirim";
+"browsing_startup_tabs" = "Başlangıç ve Sekmeler";
+"browsing_interface" = "Arayüz";
+"browsing_web_display" = "Web Sayfaları";
+"manual_backups_empty" = "Henüz elle alınmış yedek yok";
+"browsing_display_settings_legacy" = "Tarayıcı Görünümü";

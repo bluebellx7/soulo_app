@@ -42,6 +42,10 @@ struct SearchResultsView: View {
     @State private var topTabRecoveryTask: Task<Void, Never>?
     @State private var showGroupPicker = false
     @State private var platformBarHiddenByPageTap = false
+    @State private var platformBarMatchingHosts: Set<String> = []
+    @State private var platformBarMatchingSources: [PlatformBarDomainPolicy.Source] = []
+    @State private var platformBarMatchingEntries: [PlatformBarDomainPolicy.Entry] = []
+    @State private var highlightedPlatformID: UUID?
     @State private var pageReady = false
     @State private var pageEdgePalette: WebPageEdgePalette?
     @AppStorage(AppConstants.StorageKeys.extendPageBackground) private var extendPageBackground = BrowserInitialPreferences.extendPageBackground
@@ -106,16 +110,65 @@ struct SearchResultsView: View {
         return Just(false).eraseToAnyPublisher()
     }
 
-    var body: some View {
+    private var platformBarURLPublisher: AnyPublisher<URL?, Never> {
+        tabManager.activeWebViewModel?.$currentURL.removeDuplicates().eraseToAnyPublisher()
+            ?? Just(nil).eraseToAnyPublisher()
+    }
+
+    private var currentPlatformBarSources: [PlatformBarDomainPolicy.Source] {
+        currentPlatforms.map(PlatformBarDomainPolicy.Source.init)
+    }
+
+    @discardableResult private func synchronizePlatformBarMatchingHosts() -> Set<String> {
+        let sources = currentPlatformBarSources
+        let hosts: Set<String>
+        if sources != platformBarMatchingSources {
+            let entries = PlatformBarDomainPolicy.entries(for: sources)
+            hosts = Set(entries.flatMap(\.hosts))
+            platformBarMatchingSources = sources
+            platformBarMatchingHosts = hosts
+            platformBarMatchingEntries = entries
+        } else { hosts = platformBarMatchingHosts }
+        tabManager.activeWebViewModel?.setPlatformBarMatchingHosts(hosts)
+        synchronizePlatformBarHighlight(for: tabManager.activeWebViewModel?.currentURL)
+        return hosts
+    }
+
+    private func synchronizePlatformBarHighlight(for url: URL?) {
+        let id = PlatformBarDomainPolicy.highlightedPlatformID(for: url,
+            entries: platformBarMatchingEntries, preferredID: searchVM.selectedPlatform?.id)
+        if highlightedPlatformID != id { highlightedPlatformID = id }
+    }
+
+    @discardableResult private func applyPendingPlatformBarTabActivation() -> Bool {
+        guard let model = tabManager.activeWebViewModel else { return false }
+        let applied = model.applyPendingPlatformBarTabActivation(autoHideEnabled: showPlatformBar && autoHidePlatformBar)
+        platformBarHiddenByPageTap = model.platformBarHiddenByPageTap
+        return applied
+    }
+
+    private var platformObservedSurface: some View {
         browserSurface
         .onReceive(pageEdgePublisher) { pageEdgePalette = $0 }
         .onReceive(platformBarAutoHidePublisher) { platformBarHiddenByPageTap = $0 }
+        .onReceive(platformBarURLPublisher) { synchronizePlatformBarHighlight(for: $0) }
+        .onCompatibleChange(of: currentPlatformBarSources) { _, _ in synchronizePlatformBarMatchingHosts() }
         .onCompatibleChange(of: tabManager.activeTab?.id) { _, _ in
+            synchronizePlatformBarMatchingHosts()
+            applyPendingPlatformBarTabActivation()
             cancelAIInteraction()
             if let vm = tabManager.activeWebViewModel {
                 pageReady = vm.hasVisibleContent || vm.estimatedProgress >= 0.98 || (!vm.isLoading && vm.currentURL != nil)
             }
         }
+        .onCompatibleChange(of: tabManager.platformBarTabActivationRevision) { _, _ in
+            synchronizePlatformBarMatchingHosts()
+            applyPendingPlatformBarTabActivation()
+        }
+    }
+
+    var body: some View {
+        platformObservedSurface
         // Handle "open in new tab" from WebView (target="_blank" links)
         .onReceive(NotificationCenter.default.publisher(for: .openInNewTab), perform: openRequestedBrowserTab)
         .onReceive(NotificationCenter.default.publisher(for: .closeScriptOpenedTab), perform: closeScriptOpenedTab)
@@ -132,7 +185,7 @@ struct SearchResultsView: View {
         .onReceive(NotificationCenter.default.publisher(for: .focusUserScriptCurrentTab)) { notification in
             guard let source = notification.object as? WebViewModel,
                   let index = tabManager.tabs.firstIndex(where: { $0.webViewModel === source }) else { return }
-            tabManager.switchToTab(at: index)
+            tabManager.switchToTab(at: index, userInitiated: false)
         }
         .sheet(isPresented: $showVoiceInput) {
             VoiceInputView(
@@ -163,7 +216,10 @@ struct SearchResultsView: View {
             }
         }
         .onAppear {
-            tabManager.activeWebViewModel?.resetPlatformBarAutoHide()
+            synchronizePlatformBarMatchingHosts()
+            if !applyPendingPlatformBarTabActivation() {
+                tabManager.activeWebViewModel?.resetPlatformBarAutoHide()
+            }
             if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
                !searchVM.isIncognito, #available(iOS 18.4, *) {
                 NativeWebExtensionRuntime.shared.attach(tabManager: tabManager)
@@ -353,7 +409,7 @@ struct SearchResultsView: View {
                                 onManage: { showPlatformManagement = true })
                         )
                         .id(activeTab.id)
-                        .environment(\.colorScheme, extendPageBackground ? (displayedPageEdgePalette?.bottomScheme ?? appColorScheme) : appColorScheme)
+                        .environment(\.browserChromeColorScheme, extendPageBackground ? (displayedPageEdgePalette?.bottomScheme ?? appColorScheme) : appColorScheme)
                         .transition(.opacity)
                     }
 
@@ -442,7 +498,9 @@ struct SearchResultsView: View {
         // Keep page controls clear of cameras and system bars on either side.
         .ignoresSafeArea(isFullscreen ? .container : [], edges: .vertical)
         .statusBarHidden(isFullscreen)
-        .preferredColorScheme(extendedTopScheme)
+        // Limit the page preference to browser chrome. preferredColorScheme
+        // propagates into the window and can override app settings sheets.
+        .toolbarColorScheme(extendedTopScheme, for: .navigationBar)
         .persistentSystemOverlays(isFullscreen ? .hidden : .automatic)
         .overlay(alignment: .top) {
             if showLoginAlert {
@@ -578,6 +636,7 @@ struct SearchResultsView: View {
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: autoHidePlatformBar && platformBarHiddenByPageTap)
         .onCompatibleChange(of: searchVM.selectedPlatform?.id) { _, _ in
+            synchronizePlatformBarHighlight(for: tabManager.activeWebViewModel?.currentURL)
             guard !searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch else { return }
             guard tabManager.activeWebViewModel?.currentURL?.scheme?.lowercased() != "webkit-extension" else { return }
             loadCurrentPlatformURL()
@@ -589,6 +648,7 @@ struct SearchResultsView: View {
             PlatformTabBar(
                 platforms: currentPlatforms,
                 selectedPlatform: $searchVM.selectedPlatform,
+                highlightedPlatformID: highlightedPlatformID,
                 usesContrastingControlSurface: !showTopSearchBar,
                 onSelection: { _ in loadCurrentPlatformURL() }
             )
@@ -632,7 +692,8 @@ struct SearchResultsView: View {
                 ?? platformStore.regionDisplayName(for: searchVM.selectedRegion)
         )
         .accessibilityHint(languageManager.localizedString("accessibility_group_picker_hint"))
-        .compatiblePopover(isPresented: $showGroupPicker, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+        .compatiblePopover(isPresented: $showGroupPicker, attachmentAnchor: .rect(.bounds), arrowEdge: .top,
+            usesAppAppearance: true) {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 0) {
@@ -806,6 +867,7 @@ struct SearchResultsView: View {
         let keyword = searchVM.currentKeyword
         guard let tab = tabManager.prepareTabForPlatformNavigation(keyword: keyword, platform: platform) else { return }
         let webVM = tab.webViewModel
+        webVM.setPlatformBarMatchingHosts(synchronizePlatformBarMatchingHosts())
         let tabID = tab.id
         let request = SearchNavigationRequest(searchID: searchVM.searchID, tabID: tabID,
             platformID: platform.id, scopeID: searchVM.selectedSearchScope.id, template: platform.searchURLTemplate, keyword: keyword)

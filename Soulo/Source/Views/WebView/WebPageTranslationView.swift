@@ -423,7 +423,7 @@ enum WebPageTranslationBridge {
 
     static func extract(from webView: WKWebView?) async throws -> PageTranslationSnapshot {
         guard let webView else { throw WebPageTranslationError.unavailable }
-        let value = try await webView.evaluateJavaScript(extractionScript)
+        let value = try await webView.evaluateCompatibleJavaScript(extractionScript)
         guard let result = value as? [String: Any],
               let token = result["token"] as? String,
               !token.isEmpty,
@@ -487,7 +487,7 @@ enum WebPageTranslationBridge {
             return { stale: false, applied: applied };
         })(\#(json));
         """#
-        let value = try await webView.evaluateJavaScript(script)
+        let value = try await webView.evaluateCompatibleJavaScript(script)
         guard let result = value as? [String: Any],
               (result["stale"] as? Bool) == false,
               (result["applied"] as? Int ?? 0) > 0 else {
@@ -497,7 +497,7 @@ enum WebPageTranslationBridge {
 
     static func restore(on webView: WKWebView?) async throws {
         guard let webView else { throw WebPageTranslationError.unavailable }
-        let value = try await webView.evaluateJavaScript(#"""
+        let value = try await webView.evaluateCompatibleJavaScript(#"""
         (function() {
             var registry = window.__souloPageTranslation;
             if (!registry || registry.url !== location.href || !registry.entries) return false;
@@ -517,7 +517,7 @@ enum WebPageTranslationBridge {
 
     static func hasAppliedTranslation(on webView: WKWebView?) async -> Bool {
         guard let webView,
-              let value = try? await webView.evaluateJavaScript(
+              let value = try? await webView.evaluateCompatibleJavaScript(
                 "Boolean(window.__souloPageTranslation && window.__souloPageTranslation.isTranslated)"
               ) else { return false }
         return (value as? Bool) ?? false

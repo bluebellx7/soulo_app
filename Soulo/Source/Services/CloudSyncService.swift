@@ -121,6 +121,7 @@ final class CloudSyncService: NSObject, ObservableObject {
         "show_group_picker_on_home",
         "show_recent_searches_on_home",
         "show_top_search_bar", "auto_hide_platform_bar", "show_top_tab_bar",
+        BrowserInitialPreferences.restoreLastPageKey,
         "keep_fullscreen_browsing", "extend_page_background", "page_background_gradient", "freeze_page_background_on_scroll",
         "web_follows_app_color_scheme",
         "web_warm_color_shift",
@@ -146,6 +147,7 @@ final class CloudSyncService: NSObject, ObservableObject {
         PlatformBarPreferences.visibilityKey,
         HomeToolbarConfigurationService.storageKey,
         HomeToolbarConfigurationService.backgroundKey,
+        HomeToolbarConfigurationService.layoutKey,
         GroupDefaultSearchService.storageKey,
         "browser_toolbar_address_action",
         "ad_block_enabled",
@@ -362,8 +364,13 @@ final class CloudSyncService: NSObject, ObservableObject {
         try backups.deleteAll()
     }
 
+    func clearManualBackups() throws {
+        defer { backupRevision += 1 }
+        try backups.deleteManualBackups()
+    }
+
     func saveBackup() throws {
-        try backups.save(CloudSettingsSyncEngine.snapshot(defaults), date: now())
+        try backups.save(CloudSettingsSyncEngine.snapshot(defaults), manual: true, date: now())
         backupRevision += 1
     }
 

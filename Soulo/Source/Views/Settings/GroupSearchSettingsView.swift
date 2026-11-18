@@ -5,11 +5,21 @@ struct GroupSearchSettingsView: View {
     let originalName: String
     let onSaveName: (String) -> Void
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var store = PlatformDataStore.shared
     @State private var groupName = ""
     @State private var engine = GroupDefaultSearchEngine.presets[0]
     @State private var engineName = ""
     @State private var template = ""
     @State private var error: String?
+    private struct EngineOption: Identifiable {
+        let source: String
+        let engine: GroupDefaultSearchEngine
+        var id: String { source + ":" + engine.id.uuidString }
+    }
+    private var groupOptions: [EngineOption] {
+        GroupDefaultSearchEngine.groupOptions(for: scope, platforms: store.platforms, customGroups: store.customGroups)
+            .map { EngineOption(source: scope.id, engine: $0) }
+    }
     var body: some View {
         NavigationStack {
             Form {
@@ -19,8 +29,18 @@ struct GroupSearchSettingsView: View {
                 }
                 Section {
                     Menu {
-                        ForEach(GroupDefaultSearchEngine.presets) { preset in
-                            Button(LanguageManager.shared.localizedString(preset.name)) { setEngine(preset) }
+                        Section(ToolText.text("group_default_search")) {
+                            ForEach(GroupDefaultSearchEngine.presets.map { EngineOption(source: "preset", engine: $0) }) { option in
+                                Button(LanguageManager.shared.localizedString(option.engine.name)) { setEngine(option.engine) }
+                            }
+                        }
+                        if !groupOptions.isEmpty {
+                            Section(groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? originalName : groupName) {
+                                ForEach(groupOptions) { option in
+                                    Button(LanguageManager.shared.localizedString(option.engine.name)) { setEngine(option.engine) }
+                                        .disabled(!option.engine.hasValidURLs)
+                                }
+                            }
                         }
                     } label: {
                         LabeledContent(ToolText.text("group_default_search"), value: engineName)
@@ -63,9 +83,10 @@ struct GroupSearchSettingsView: View {
         // Keep localization keys for unchanged built-in names.
         next.name = engineName == LanguageManager.shared.localizedString(engine.name) ? engine.name : engineName.trimmingCharacters(in: .whitespacesAndNewlines)
         next.template = value
-        if var home = URLComponents(string: value.replacingOccurrences(of: "%@", with: "test")) {
-            home.path = ""; home.query = nil; home.fragment = nil
-            next.homeURL = home.url?.absoluteString ?? ""
+        // Selecting a platform must preserve its explicit homepage, including
+        // its path. Only derive a new homepage when the user edits the URL.
+        if value != engine.template {
+            next.homeURL = value.contains("%@") ? SearchPlatformURLInput.derivedHomeURL(from: value) : value
         }
         do {
             try GroupDefaultSearchService.shared.save(next, for: scope)

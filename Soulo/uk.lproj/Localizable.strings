@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Підтримується";
 "userscript_docs_supported_desc" = "Основна відповідність, початок/кінець документа, стилі/елементи, одиночне та масове зберігання, локальні прослуховувачі значень, буфер обміну, меню, сповіщення на сторінці, вкладки, завантаження, дані вкладок, файли cookie, ресурси, зміни URL-адрес і запити на рівні дозволів.";
 "userscript_docs_partial_title" = "Частково підтримується";
-"userscript_docs_partial_desc" = "У мережевих запитах пропускається завантаження/перебіг і передача файлів cookie. Сповіщення є внутрішньосторінковими, API ресурсів є асинхронними, а слухачі змін значення повідомляють про зміни, внесені поточною сторінкою. Перевірки оновлень виконуються вручну.";
+"userscript_docs_partial_desc" = "Сповіщення залишаються на сторінці; API ресурсів повертають Promise. cookie потребує GM_cookie; cookies не надсилаються автоматично.";
 "userscript_docs_unsupported_title" = "Зараз не підтримується";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, ізоляція пісочниці/запуску, автоматичні перевірки оновлень і точна поведінка лише для робочого столу, яку WKWebView не може забезпечити.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, ізоляція sandbox/run-in і функції настільного браузера, недоступні у WKWebView.";
 "userscript_docs_metadata_title" = "Метадані";
 "userscript_docs_metadata_identity" = "Зрозуміла назва сценарію та необов’язковий опис відображаються перед установкою та в деталях сценарію.";
 "userscript_docs_metadata_version" = "Використовуйте стабільний унікальний простір імен і збільшуйте версію кожного разу, коли змінюється пакетний сценарій.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Видаляє одне постійне значення для цього сценарію.";
 "userscript_docs_api_list" = "Повертає всі ключі постійного зберігання, що належать цьому сценарію.";
 "userscript_docs_api_bulk" = "Читає, записує або видаляє кілька значень JSON за одну операцію; записи перевіряються атомарно рідним сховищем.";
-"userscript_docs_api_listener" = "Спостерігає за змінами пам’яті, внесеними сценарієм на поточній веб-сторінці. Перехресні віддалені сповіщення не надсилаються.";
+"userscript_docs_api_listener" = "Відстежує локальні зміни сховища та зміни інших вкладок із remote=true.";
 "userscript_docs_api_element" = "Створює та додає елемент з атрибутами, зокрема безпечно під час запуску документа.";
 "userscript_docs_api_clipboard" = "Копіює текст у системний буфер обміну через рідний міст Soulo.";
 "userscript_docs_extended_title" = "Інтеграція меню, вкладок, файлів і сторінок";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Мережеві запити";
 "userscript_docs_network_legacy" = "Починає привілейований запит і повертає дескриптор скасування. Оголошіть відповідні хости дозволу та @connect.";
 "userscript_docs_network_modern" = "Сучасний псевдонім API привілейованого запиту з тим самим об’єктом деталей і поведінкою зворотного виклику.";
-"userscript_docs_network_details" = "Підтримує URL-адресу, метод, заголовки, дані, час очікування, responseType, onloadstart, onreadystatechange, onload, onerror і onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Використовуйте json, blob, arraybuffer або залиште пустим для тексту. Відповіді включають статус, кінцеву URL-адресу, заголовки, текст відповіді та відповідь.";
 "userscript_docs_network_connect" = "Використовуйте self для хосту сторінки, домену для нього та його субдоменів, домену підстановки або *, лише коли це дійсно необхідно.";
 "userscript_docs_limits_title" = "Поведінка та обмеження";
 "userscript_docs_limits_web" = "Доступні стандартний DOM, події, MutationObserver, вибірка, таймери та інші WKWebView API. Звичайна вибірка все ще відповідає CORS.";
 "userscript_docs_limits_storage" = "Збережені значення мають бути серіалізованими за допомогою JSON: до 256 КБ на значення та 1 МБ загалом на сценарій.";
-"userscript_docs_limits_network" = "Розмір привілейованих відповідей обмежено 20 МБ, час очікування обмежується 1–60 секундами, а заголовки Cookie/Host/Origin не приймаються.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts не запускаються в режимі приватного перегляду.";
 "userscript_docs_limits_require" = "Файли @require через HTTPS завантажуються й кешуються під час встановлення або збереження, потім виконуються по черзі перед скриптом.";
 "userscript_docs_template_title" = "Мінімальний шаблон";

@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Destekleniyor";
 "userscript_docs_supported_desc" = "Çekirdek eşleştirme, belge başlangıç/bitiş, stiller/öğeler, tek ve toplu depolama, yerel değer dinleyicileri, pano, menüler, sayfa içi bildirimler, sekmeler, indirmeler, sekme verileri, çerezler, kaynaklar, URL değişiklikleri ve izin kapsamlı istekler.";
 "userscript_docs_partial_title" = "Kısmen destekleniyor";
-"userscript_docs_partial_desc" = "Ağ istekleri, yükleme/ilerleme ve çerez aktarımını atlar. Bildirimler sayfa içidir, kaynak API'leri eşzamansızdır ve değer değişikliği dinleyicileri geçerli sayfa tarafından yapılan değişiklikleri bildirir. Güncelleme kontrolleri manueldir.";
+"userscript_docs_partial_desc" = "Bildirimler sayfada gösterilir; kaynak API’leri Promise döndürür. cookie için GM_cookie izni gerekir; çerezler otomatik gönderilmez.";
 "userscript_docs_unsupported_title" = "Şu anda desteklenmiyor";
-"userscript_docs_unsupported_desc" = "GM_webRequest müdahalesi, GM_audio, sandbox/run-in izolasyonu, otomatik güncelleme kontrolleri ve WKWebView'ün sağlayamadığı tam olarak yalnızca masaüstüne yönelik davranışlar.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in yalıtımı ve WKWebView’da bulunmayan masaüstü davranışları.";
 "userscript_docs_metadata_title" = "Meta veriler";
 "userscript_docs_metadata_identity" = "İnsan tarafından okunabilen komut dosyası adı ve isteğe bağlı açıklama, kurulumdan önce ve komut dosyası ayrıntılarında gösterilir.";
 "userscript_docs_metadata_version" = "Sabit, benzersiz bir ad alanı kullanın ve paketteki komut dosyası değiştiğinde sürümü artırın.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Bu komut dosyası için kalıcı bir değeri siler.";
 "userscript_docs_api_list" = "Bu betiğin sahip olduğu tüm kalıcı depolama anahtarlarını döndürür.";
 "userscript_docs_api_bulk" = "Tek bir işlemde birden fazla JSON değerini okur, yazar veya siler; yazma işlemleri yerel mağaza tarafından atomik olarak doğrulanır.";
-"userscript_docs_api_listener" = "Geçerli web sayfasında komut dosyası tarafından yapılan depolama değişikliklerini gözlemler. Çapraz sekme uzaktan bildirimleri yayınlanmaz.";
+"userscript_docs_api_listener" = "Yerel ve sekmeler arası depolama değişikliklerini izler. Diğer sekmelerin değişikliklerinde remote=true olur.";
 "userscript_docs_api_element" = "Belge başlatma sırasında güvenli bir şekilde dahil olmak üzere özniteliklere sahip bir öğe oluşturur ve ekler.";
 "userscript_docs_api_clipboard" = "Metni Soulo'nin yerel köprüsü aracılığıyla sistem panosuna kopyalar.";
 "userscript_docs_extended_title" = "Menüler, sekmeler, dosyalar ve sayfa entegrasyonu";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Ağ istekleri";
 "userscript_docs_network_legacy" = "Ayrıcalıklı bir istek başlatır ve bir iptal tanıtıcısı döndürür. Eşleşen hibe ve @connect ana bilgisayarlarını bildirin.";
 "userscript_docs_network_modern" = "Ayrıcalıklı istek API'sinin aynı ayrıntılar nesnesine ve geri çağırma davranışına sahip modern takma adı.";
-"userscript_docs_network_details" = "URL, yöntem, başlıklar, veriler, zaman aşımı, ResponseType, onloadstart, onreadystatechange, onload, onerror ve onloadend'i destekler.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Json, blob, arraybuffer kullanın veya metin için boş bırakın. Yanıtlar; durumu, finalUrl'yi, başlıkları, ResponseText'i ve yanıtı içerir.";
 "userscript_docs_network_connect" = "Sayfa ana bilgisayarı için self, kendisi ve alt alanları için bir alan adı, bir joker karakter alanı veya yalnızca gerçekten gerekli olduğunda * kullanın.";
 "userscript_docs_limits_title" = "Davranış ve sınırlar";
 "userscript_docs_limits_web" = "Standart DOM, olaylar, MutationObserver, fetch, zamanlayıcılar ve diğer WKWebView API'leri mevcuttur. Normal getirme hala CORS'u takip ediyor.";
 "userscript_docs_limits_storage" = "Saklanan değerler JSON ile serileştirilebilir olmalıdır: değer başına en fazla 256 KB ve komut dosyası başına toplam 1 MB.";
-"userscript_docs_limits_network" = "Ayrıcalıklı yanıtlar 20 MB ile sınırlıdır, zaman aşımı 1-60 saniyeye sabitlenir ve Cookie/Host/Origin başlıkları kabul edilmez.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScript'ler Özel Dolaşma'da çalışmaz.";
 "userscript_docs_limits_require" = "HTTPS @require dosyaları yükleme veya kaydetme sırasında indirilip önbelleğe alınır ve betikten önce sırayla çalıştırılır.";
 "userscript_docs_template_title" = "Minimum şablon";

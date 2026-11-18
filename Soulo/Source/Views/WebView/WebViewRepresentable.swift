@@ -2066,9 +2066,22 @@ struct WebViewRepresentable: UIViewRepresentable {
                     replyHandler(true, nil)
                     return
                 }
-                guard userScriptRequests[key] == nil else {
-                    replyHandler(nil, "Duplicate UserScript request identifier")
+                guard userScriptRequests[key] == nil,
+                      userScriptRequests.count < UserScriptHTTPBridge.maximumConcurrentRequests else {
+                    replyHandler(nil, "Duplicate or excessive UserScript request")
                     return
+                }
+                let token = userScriptBridgeToken
+                let webView = message.webView
+                let pageURL = webView?.url
+                let reportProgress: @MainActor @Sendable (UserScriptHTTPBridge.Progress) -> Void = { [weak self, weak webView] progress in
+                    guard let self, let webView, self.userScriptBridgeToken == token,
+                          self.userScriptRequests[key] != nil,
+                          (webView.navigationDelegate as? Coordinator) === self,
+                          BrowserExtensionService.shared.userScript(id: script.id)?.isEnabled == true,
+                          let source = UserScriptRuntime.networkProgressScript(progress,
+                            scriptID: script.id, requestID: requestID, bridgeToken: token) else { return }
+                    webView.evaluateJavaScript(source, completionHandler: { _, _ in })
                 }
                 userScriptRequests[key] = Task { @MainActor [weak self] in
                     defer { self?.userScriptRequests[key] = nil }
@@ -2077,12 +2090,18 @@ struct WebViewRepresentable: UIViewRepresentable {
                             try await UserScriptHTTPBridge.response(
                                 for: body,
                                 script: script,
-                                pageURL: message.webView?.url
+                                pageURL: pageURL,
+                                onProgress: { progress in await reportProgress(progress) }
                             ),
                             nil
                         )
                     } catch {
-                        replyHandler(nil, error.localizedDescription)
+                        let code = (error as NSError).code
+                        if (error as NSError).domain == NSURLErrorDomain && code == NSURLErrorTimedOut {
+                            replyHandler(["__souloErrorType": "timeout", "message": error.localizedDescription], nil)
+                        } else if error is CancellationError || (error as NSError).domain == NSURLErrorDomain && code == NSURLErrorCancelled {
+                            replyHandler(["__souloErrorType": "abort", "message": error.localizedDescription], nil)
+                        } else { replyHandler(nil, error.localizedDescription) }
                     }
                 }
                 return
@@ -3941,6 +3960,15 @@ struct WebViewRepresentable: UIViewRepresentable {
             } == true
             guard nativeRequest || viewModel.manualAdSelection == nil else { return nil }
             let explicit = isExplicitNavigation(navigationAction, in: webView, nativeRequest: nativeRequest)
+            let sourceURL = navigationAction.sourceFrame.requestURL ?? webView.url
+            if !explicit,
+               sourceURL?.scheme?.lowercased() != "webkit-extension",
+               webView.url?.scheme?.lowercased() != "webkit-extension",
+               AdBlockSettingsService.filteringEnabled(),
+               !AdBlockSettingsService.isHostAllowlisted(sourceURL?.host,
+                    allowlistedHosts: AdBlockSettingsService.shared.allowlistedHosts) {
+                return nil
+            }
             if navigationAction.targetFrame == nil || !(navigationAction.targetFrame?.isMainFrame ?? false) {
                 if let url = navigationAction.request.url {
                     switch WebNavigationPolicyService.shared.decision(for: url) {

@@ -69,58 +69,37 @@ private struct SuggestionChip: View {
     let onTap: () -> Void
     let onDelete: () -> Void
 
-    @State private var showDelete = false
-
     @ObservedObject private var wallpaperManager = WallpaperManager.shared
     @Environment(\.colorScheme) private var colorScheme
     private var isLight: Bool { wallpaperManager.prefersDarkForeground(for: WallpaperAppearance(colorScheme)) }
 
     var body: some View {
-        ZStack(alignment: .trailing) {
-            Button(action: onTap) {
-                HStack(spacing: 0) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "clock")
-                            .font(.system(size: 10))
-                            .accessibilityHidden(true)
-                        Text(text)
-                            .font(.system(size: 12, weight: .medium))
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .frame(maxWidth: 150)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    if showDelete { Spacer(minLength: 0).frame(width: 44) }
-                }
-                .background(isLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
-                .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.7))
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(isLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.08), lineWidth: 0.5))
-                .contentShape(Capsule())
+        Button(action: onTap) {
+            HStack(spacing: 4) {
+                Image(systemName: "clock")
+                    .font(.system(size: 10))
+                    .accessibilityHidden(true)
+                Text(text)
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 150)
             }
-
-            if showDelete {
-                Button(action: onDelete) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .padding(.vertical, 6)
-                        .frame(width: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(HomePressButtonStyle())
-                .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.7))
-                .accessibilityHidden(true)
-                .transition(.scale.combined(with: .opacity))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(isLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
+            .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.7))
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(isLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.08), lineWidth: 0.5))
+            .contentShape(Capsule())
+        }
+        // Let the system arbitrate the context menu and the normal Button tap.
+        // A high-priority custom long press consumes short taps on iOS 17.4.
+        .contextMenu {
+            Button(role: .destructive, action: onDelete) {
+                Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
             }
         }
-        .contentShape(Capsule())
-        .highPriorityGesture(LongPressGesture().onEnded { _ in
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                showDelete.toggle()
-            }
-            HapticsManager.light()
-        })
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
             AppAccessibility.formatted("accessibility_recent_search", text)

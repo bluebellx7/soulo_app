@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Posição %d";
 "home_toolbar_reset" = "Ocultar tudo";
 "home_toolbar_default_hint" = "Os atalhos iniciais ficam ocultos por padrão.";
+"home_toolbar_position" = "Posição";
+"home_toolbar_buttons" = "Botões";
+"home_toolbar_tiles" = "Separados";
+"home_toolbar_capsule" = "Cápsula";
+"home_toolbar_icons" = "Só ícones";
+"home_toolbar_bottom" = "Em baixo";
+"home_toolbar_belowSearch" = "Abaixo da pesquisa";
+"home_toolbar_free" = "Posição livre";
+"home_toolbar_leading" = "Alinhar ao início";
+"home_toolbar_center" = "Centrar";
+"home_toolbar_trailing" = "Alinhar ao fim";
+"home_toolbar_drag_position" = "Arraste a barra para onde quiser.";
+"home_toolbar_drag_buttons" = "Toque para trocar um botão. Arraste para reordenar.";
 "home_toolbar_search" = "Encontre uma página";
 "group_default_search" = "Pesquisa padrão";
 "group_search_settings" = "Configurações de grupo";
 "group_engine_name" = "Nome do mecanismo de pesquisa";
-"group_search_url" = "Pesquise URL com %@";
-"group_default_search_hint" = "Usado quando este grupo não possui plataformas habilitadas. Inclua %@ em URL para os termos de pesquisa. As plataformas desativadas permanecem desativadas.";
-"group_search_url_invalid" = "Insira um nome e uma pesquisa HTTP ou HTTPS válida URL contendo %@.";
+"group_search_url" = "URL de pesquisa ou página inicial (palavras-chave: %@)";
+"group_default_search_hint" = "Usado quando o grupo não tem plataformas ativas. Pode escolher qualquer plataforma do grupo. %@ é substituído pelas palavras-chave; sem marcador, a página abre diretamente. As plataformas desativadas não serão reativadas.";
+"group_search_url_invalid" = "Introduza um nome e um URL HTTP ou HTTPS válido; os modelos de pesquisa podem usar %@.";
 "batch_import_new_group" = "Grupo importado";
 "image_resources" = "Recursos";
 "screen_keep_awake" = "Mantenha a tela ligada";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Este formato não pode ser enviado diretamente com o player do sistema. Abra Control Center, escolha Screen Mirroring e selecione sua TV ou Mac.";
 "userscript_check_updates" = "Verifique as atualizações";
 "userscript_update_no_url" = "Nenhum endereço de atualização é fornecido. Importe um arquivo de script mais recente para atualizá-lo.";
-"userscript_update_manual_hint" = "As verificações são executadas somente quando solicitadas. Revise a nova versão antes de atualizar. Os scripts integrados são atualizados com o aplicativo.";
+"userscript_update_manual_hint" = "Abrir Instalados verifica até 4 scripts por visita, cada um uma vez em 24 horas. Pausa na navegação privada, poupança de energia ou calor elevado. As atualizações exigem revisão.";
 "userscript_update_latest" = "Atualizado";
 "userscript_update_invalid" = "A atualização é inválida, pertence a um script diferente ou possui uma versão inconsistente.";
 "userscript_update_changed" = "Este script mudou após a verificação. Verifique se há atualizações novamente.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Vidro fosco";
 "wallpaper_blur_amount" = "Intensidade do desfoque";
 
-"auto_hide_platform_bar_hint" = "A barra de plataformas só é ocultada ao tocar no conteúdo da página. Os redirecionamentos automáticos e o deslocamento não a ocultam. Volte aos resultados ou inicie uma nova pesquisa para a mostrar novamente.";
+"auto_hide_platform_bar_hint" = "Quando ativado, só oculta a barra após tocar no conteúdo da página e se o domínio não corresponder a nenhuma plataforma na barra atual. Se corresponder a alguma, a barra mantém-se ou volta a aparecer. O deslocamento e os redirecionamentos automáticos não a ocultam.";
 
 "ad_subscription_add" = "Adicionar lista de filtros";
 "ad_subscription_name" = "Nome";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Controle a vibração e os sons da interface em toda a app. A reprodução de páginas web, vídeo e áudio não é afetada.";
 
 "home_display_settings" = "Apresentação do início";
-"browsing_display_settings" = "Apresentação da navegação";
+"browsing_display_settings" = "Definições de navegação";
 
 "web_video_download" = "Descargas de vídeo web";
 "web_video_download_description" = "Mostra controlos de descarga de vídeo em páginas web, listas de episódios e leitores. A reprodução e as descargas existentes mantêm-se iguais.";
@@ -563,3 +576,45 @@
 "storage_cleanup_reading_desc" = "Limpa artigos offline, a biblioteca e o progresso de leitura.";
 
 "storage_cleanup_offline_desc" = "Elimina restos de vídeos offline sem registos de transferência.";
+
+"storage_website_shared" = "Dados partilhados e não atribuídos";
+"storage_website_shared_desc" = "Inclui caches de rede partilhadas, cookies e dados que não podem ser atribuídos a um único site.";
+"storage_website_clear_scope" = "Limpa dados de sites comuns e caches de rede partilhadas. Para conteúdos multimédia de extensões, use «Cache temporária das extensões»; as definições das extensões são mantidas.";
+
+"storage_quick_clear" = "Limpeza rápida";
+"storage_quick_clear_done" = "Cache limpa";
+
+"storage_website_cleanup_pending" = "Os dados dos sites ainda estão a ser eliminados. Pode voltar e continuar a navegar. Não inicie outra limpeza.";
+
+"storage_auto_cleanup" = "Limpeza automática";
+
+"storage_auto_cleanup_desc" = "Tenta no máximo uma vez a cada 24 horas quando a app está inativa em segundo plano. Remove apenas ficheiros temporários de importação, exportação e pré-visualização sem uso e com mais de 24 horas. Cada execução dura cerca de 1 segundo ou verifica 2000 itens e para ao regressar à app. É ignorada durante reprodução, descargas, exportação, com modo de baixo consumo ativo ou aquecimento percetível. Favoritos, descargas guardadas, sessões e dados de sites nunca são apagados automaticamente.";
+
+"restore_last_page_on_launch" = "Restaurar a última página";
+"restore_last_page_on_launch_desc" = "Abre a última página web ao iniciar a app. Os separadores privados não são restaurados.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Gestos e atalhos";
+"app_icon_shortcuts" = "Atalhos do ícone da app";
+"settings_sync_backup" = "Sincronização e cópias";
+"icloud_bookmark_sync" = "Marcadores do iCloud";
+"manual_settings_backups" = "Cópias manuais";
+"create_settings_backup" = "Criar";
+"toolbar_settings" = "Barras de ferramentas";
+"toolbar_section_home" = "Início";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Limpar cópias manuais";
+"clear_manual_backups_message" = "Apaga apenas cópias criadas manualmente ou importadas. As cópias automáticas e antigas, as definições atuais e a sincronização com o iCloud são preservadas.";
+"recovery_settings_backups" = "Cópias automáticas e anteriores";
+
+/* Settings hierarchy */
+"settings_personalization" = "Personalização";
+"appearance_home_settings" = "Início e papel de parede";
+"settings_data" = "Dados";
+"about_feedback_settings" = "Sobre e comentários";
+"browsing_startup_tabs" = "Arranque e separadores";
+"browsing_interface" = "Interface";
+"browsing_web_display" = "Páginas web";
+"manual_backups_empty" = "Ainda não há cópias manuais";
+"browsing_display_settings_legacy" = "Apresentação da navegação";

@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Didukung";
 "userscript_docs_supported_desc" = "Pencocokan inti, awal/akhir dokumen, gaya/elemen, penyimpanan tunggal dan massal, pemroses nilai lokal, papan klip, menu, pemberitahuan dalam halaman, tab, unduhan, data tab, cookie, sumber daya, perubahan URL, dan permintaan cakupan izin.";
 "userscript_docs_partial_title" = "Didukung sebagian";
-"userscript_docs_partial_desc" = "Permintaan jaringan menghilangkan unggahan/kemajuan dan pengangkutan cookie. Notifikasi ada di dalam halaman, API sumber daya tidak sinkron, dan pemroses perubahan nilai melaporkan perubahan yang dibuat oleh halaman saat ini. Pemeriksaan pembaruan bersifat manual.";
+"userscript_docs_partial_desc" = "Notifikasi tampil di halaman; API sumber daya mengembalikan Promise. cookie memerlukan izin GM_cookie; cookie tidak dikirim otomatis.";
 "userscript_docs_unsupported_title" = "Saat ini tidak didukung";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, isolasi sandbox/run-in, pemeriksaan pembaruan otomatis, dan perilaku khusus desktop yang tidak dapat disediakan oleh WKWebView.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, isolasi sandbox/run-in, dan perilaku desktop yang tidak tersedia di WKWebView.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Nama skrip yang dapat dibaca manusia dan deskripsi opsional ditampilkan sebelum instalasi dan dalam detail skrip.";
 "userscript_docs_metadata_version" = "Gunakan namespace yang stabil dan unik, serta tingkatkan versinya setiap kali skrip yang dibundel berubah.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Menghapus satu nilai persisten untuk skrip ini.";
 "userscript_docs_api_list" = "Mengembalikan semua kunci penyimpanan persisten yang dimiliki oleh skrip ini.";
 "userscript_docs_api_bulk" = "Membaca, menulis, atau menghapus beberapa nilai JSON dalam satu operasi; penulisan divalidasi secara atom oleh penyimpanan asli.";
-"userscript_docs_api_listener" = "Mengamati perubahan penyimpanan yang dibuat oleh skrip di halaman web saat ini. Notifikasi jarak jauh lintas tab tidak dikeluarkan.";
+"userscript_docs_api_listener" = "Memantau perubahan penyimpanan lokal dan antartab. Perubahan dari tab lain ditandai remote=true.";
 "userscript_docs_api_element" = "Membuat dan menambahkan elemen dengan atribut, termasuk dengan aman selama permulaan dokumen.";
 "userscript_docs_api_clipboard" = "Menyalin teks ke clipboard sistem melalui jembatan asli Soulo.";
 "userscript_docs_extended_title" = "Menu, tab, file, dan integrasi halaman";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Permintaan jaringan";
 "userscript_docs_network_legacy" = "Memulai permintaan istimewa dan mengembalikan pegangan pembatalan. Deklarasikan hibah yang cocok dan host @connect.";
 "userscript_docs_network_modern" = "Alias modern dari API permintaan istimewa dengan objek detail dan perilaku panggilan balik yang sama.";
-"userscript_docs_network_details" = "Mendukung url, metode, header, data, batas waktu, tipe respons, onloadstart, onreadystatechange, onload, onerror, dan onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Gunakan json, blob, arraybuffer, atau biarkan kosong untuk teks. Respons mencakup status, finalUrl, header, respondText, dan respons.";
 "userscript_docs_network_connect" = "Gunakan self untuk host halaman, domain untuk halaman tersebut dan subdomainnya, domain wildcard, atau * hanya jika benar-benar diperlukan.";
 "userscript_docs_limits_title" = "Perilaku dan batasan";
 "userscript_docs_limits_web" = "DOM standar, peristiwa, MutationObserver, pengambilan, pengatur waktu, dan API WKWebView lainnya tersedia. Pengambilan normal masih mengikuti CORS.";
 "userscript_docs_limits_storage" = "Nilai yang disimpan harus dapat diserialkan JSON: hingga 256 KB per nilai dan total 1 MB per skrip.";
-"userscript_docs_limits_network" = "Respons istimewa dibatasi hingga 20 MB, batas waktu dibatasi hingga 1–60 detik, dan header Cookie/Host/Asal tidak diterima.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts tidak berjalan di Penjelajahan Pribadi.";
 "userscript_docs_limits_require" = "File @require HTTPS diunduh dan disimpan dalam cache saat memasang atau menyimpan, lalu dijalankan berurutan sebelum skrip.";
 "userscript_docs_template_title" = "Templat minimal";

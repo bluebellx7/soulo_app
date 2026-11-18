@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Posisi %d";
 "home_toolbar_reset" = "Sembunyikan Semua";
 "home_toolbar_default_hint" = "Pintasan beranda disembunyikan secara default.";
+"home_toolbar_position" = "Posisi";
+"home_toolbar_buttons" = "Tombol";
+"home_toolbar_tiles" = "Terpisah";
+"home_toolbar_capsule" = "Kapsul";
+"home_toolbar_icons" = "Hanya ikon";
+"home_toolbar_bottom" = "Di bawah";
+"home_toolbar_belowSearch" = "Di bawah pencarian";
+"home_toolbar_free" = "Posisi bebas";
+"home_toolbar_leading" = "Rata awal";
+"home_toolbar_center" = "Tengah";
+"home_toolbar_trailing" = "Rata akhir";
+"home_toolbar_drag_position" = "Seret bilah alat ke posisi yang diinginkan.";
+"home_toolbar_drag_buttons" = "Ketuk untuk mengganti tombol. Seret untuk mengurutkan.";
 "home_toolbar_search" = "Temukan halaman";
 "group_default_search" = "Pencarian bawaan";
 "group_search_settings" = "Pengaturan Grup";
 "group_engine_name" = "Nama mesin pencari";
-"group_search_url" = "Telusuri URL dengan %@";
-"group_default_search_hint" = "Digunakan ketika grup ini tidak memiliki platform yang diaktifkan. Sertakan %@ di URL untuk istilah pencarian. Platform yang dinonaktifkan tetap dinonaktifkan.";
-"group_search_url_invalid" = "Masukkan nama dan pencarian HTTP atau HTTPS yang valid URL yang berisi %@.";
+"group_search_url" = "URL pencarian atau beranda (kata kunci: %@)";
+"group_default_search_hint" = "Digunakan saat grup ini tidak memiliki platform aktif. Anda dapat memilih platform mana pun dalam grup ini. %@ diganti dengan kata kunci; tanpa penanda, halaman dibuka langsung. Platform yang dinonaktifkan tetap nonaktif.";
+"group_search_url_invalid" = "Masukkan nama dan URL HTTP atau HTTPS yang valid. Templat pencarian dapat menggunakan %@.";
 "batch_import_new_group" = "Grup yang Diimpor";
 "image_resources" = "Sumber daya";
 "screen_keep_awake" = "Tetap Aktifkan Layar";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Format ini tidak dapat dikirim langsung dengan pemutar sistem. Buka Control Center, pilih Screen Mirroring, lalu pilih TV atau Mac Anda.";
 "userscript_check_updates" = "Periksa Pembaruan";
 "userscript_update_no_url" = "Tidak ada alamat pembaruan yang diberikan. Impor file skrip yang lebih baru untuk memperbaruinya.";
-"userscript_update_manual_hint" = "Pemeriksaan hanya dijalankan bila diminta. Tinjau versi baru sebelum memperbarui. Pembaruan skrip bawaan dengan aplikasi.";
+"userscript_update_manual_hint" = "Membuka Terpasang memeriksa hingga 4 skrip per kunjungan, masing-masing sekali tiap 24 jam. Dijeda saat privat, daya rendah, atau suhu tinggi. Pembaruan harus ditinjau.";
 "userscript_update_latest" = "Terkini";
 "userscript_update_invalid" = "Pembaruan tidak valid, berasal dari skrip yang berbeda, atau memiliki versi yang tidak konsisten.";
 "userscript_update_changed" = "Skrip ini berubah setelah pemeriksaan. Periksa pembaruan lagi.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Kaca Buram";
 "wallpaper_blur_amount" = "Kekuatan Buram";
 
-"auto_hide_platform_bar_hint" = "Bilah platform hanya disembunyikan setelah Anda mengetuk konten halaman. Pengalihan otomatis dan menggulir tidak menyembunyikannya. Kembali ke hasil atau mulai pencarian baru untuk menampilkannya lagi.";
+"auto_hide_platform_bar_hint" = "Saat diaktifkan, bilah hanya disembunyikan setelah Anda mengetuk konten halaman web dan domain halaman tidak cocok dengan platform mana pun di bilah saat ini. Jika cocok, bilah tetap atau kembali ditampilkan. Menggulir dan pengalihan otomatis tidak menyembunyikannya.";
 
 "ad_subscription_add" = "Tambah daftar filter";
 "ad_subscription_name" = "Nama";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Atur getaran dan suara antarmuka di seluruh app. Pemutaran halaman web, video, dan audio tidak terpengaruh.";
 
 "home_display_settings" = "Tampilan Beranda";
-"browsing_display_settings" = "Tampilan Penjelajahan";
+"browsing_display_settings" = "Pengaturan Penjelajahan";
 
 "web_video_download" = "Unduhan Video Web";
 "web_video_download_description" = "Tampilkan kontrol unduhan video di halaman web, daftar episode, dan pemutar. Pemutaran serta unduhan yang ada tidak berubah.";
@@ -563,3 +576,45 @@
 "storage_cleanup_reading_desc" = "Membersihkan artikel offline, pustaka buku, dan progres membaca.";
 
 "storage_cleanup_offline_desc" = "Menghapus sisa video offline tanpa catatan unduhan.";
+
+"storage_website_shared" = "Data bersama dan tanpa atribusi";
+"storage_website_shared_desc" = "Mencakup cache jaringan bersama, cookie, dan data yang tidak dapat dikaitkan dengan satu situs.";
+"storage_website_clear_scope" = "Menghapus data situs biasa dan cache jaringan bersama. Gunakan «Cache sementara ekstensi» untuk media ekstensi; pengaturan ekstensi tetap disimpan.";
+
+"storage_quick_clear" = "Bersihkan cepat";
+"storage_quick_clear_done" = "Cache dibersihkan";
+
+"storage_website_cleanup_pending" = "Data situs masih dibersihkan. Anda dapat kembali dan melanjutkan penelusuran. Jangan mulai pembersihan lagi.";
+
+"storage_auto_cleanup" = "Pembersihan otomatis";
+
+"storage_auto_cleanup_desc" = "Mencoba paling sering sekali setiap 24 jam saat app tidak aktif di latar belakang. Hanya menghapus file impor, ekspor, dan pratinjau sementara berusia lebih dari 24 jam yang tidak digunakan. Tiap proses berlangsung sekitar 1 detik atau memeriksa 2000 item, lalu berhenti saat app dibuka kembali. Dilewati saat pemutaran, pengunduhan, ekspor, Mode Daya Rendah aktif, atau perangkat terasa panas. Penanda, unduhan tersimpan, login, dan data situs tidak pernah dihapus otomatis.";
+
+"restore_last_page_on_launch" = "Pulihkan halaman terakhir";
+"restore_last_page_on_launch_desc" = "Buka halaman web terakhir saat aplikasi dimulai. Tab privat tidak dipulihkan.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Gestur & Pintasan";
+"app_icon_shortcuts" = "Pintasan Ikon Aplikasi";
+"settings_sync_backup" = "Sinkronisasi & Cadangan";
+"icloud_bookmark_sync" = "Sinkronisasi Penanda iCloud";
+"manual_settings_backups" = "Cadangan manual";
+"create_settings_backup" = "Buat";
+"toolbar_settings" = "Bilah Alat";
+"toolbar_section_home" = "Beranda";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Hapus cadangan manual";
+"clear_manual_backups_message" = "Hanya menghapus cadangan yang dibuat manual atau diimpor. Salinan pemulihan otomatis dan lama, pengaturan saat ini, serta sinkronisasi iCloud tetap disimpan.";
+"recovery_settings_backups" = "Cadangan otomatis & sebelumnya";
+
+/* Settings hierarchy */
+"settings_personalization" = "Personalisasi";
+"appearance_home_settings" = "Beranda & Wallpaper";
+"settings_data" = "Data";
+"about_feedback_settings" = "Tentang & Masukan";
+"browsing_startup_tabs" = "Mulai & Tab";
+"browsing_interface" = "Antarmuka";
+"browsing_web_display" = "Halaman Web";
+"manual_backups_empty" = "Belum ada cadangan manual";
+"browsing_display_settings_legacy" = "Tampilan Penjelajahan";

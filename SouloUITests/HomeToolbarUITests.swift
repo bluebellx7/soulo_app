@@ -890,10 +890,10 @@ final class HomeToolbarUITests: XCTestCase {
         app.open(URL(string: "soulo://")!)
         XCTAssertTrue(recent.waitForExistence(timeout: 5))
         recent.press(forDuration: 1)
-        XCTAssertTrue(app.buttons["home.menu"].isHittable, "Long press must reveal deletion without starting a search")
-        recent.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5))
-            .withOffset(CGVector(dx: -22, dy: 0)).tap()
-        XCTAssertTrue(recent.waitForNonExistence(timeout: 5), "The inline delete control must remain tappable")
+        let deleteRecent = app.buttons["Delete"].firstMatch
+        XCTAssertTrue(deleteRecent.waitForExistence(timeout: 5), "Long press must reveal deletion without starting a search")
+        deleteRecent.tap()
+        XCTAssertTrue(recent.waitForNonExistence(timeout: 5), "The delete action must remain tappable")
 
         let bookmark = app.buttons[title]
         XCTAssertTrue(bookmark.waitForExistence(timeout: 5))
@@ -1235,7 +1235,7 @@ final class HomeToolbarUITests: XCTestCase {
     private func openSettings(_ app: XCUIApplication) {
         app.buttons["home.menu"].tap()
         app.buttons["Settings"].firstMatch.tap()
-        let entry = app.buttons["settings.homeToolbar"]
+        let entry = app.buttons["settings.toolbar"]
         for _ in 0..<4 where !entry.isHittable { app.swipeUp() }
         XCTAssertTrue(entry.waitForExistence(timeout: 5), app.debugDescription)
         entry.tap()
@@ -1247,12 +1247,10 @@ final class HomeToolbarUITests: XCTestCase {
         app.launch(); app.open(URL(string: "soulo://")!)
         XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
         openSettings(app)
-        let background = app.switches["home-toolbar.background"].firstMatch
-        XCTAssertTrue(background.waitForExistence(timeout: 5), app.debugDescription)
-        if background.value as? String != "1" {
-            background.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        }
-        XCTAssertEqual(background.value as? String, "1")
+        let tiles = app.buttons["home-toolbar.style.tiles"]
+        XCTAssertTrue(tiles.waitForExistence(timeout: 5), app.debugDescription)
+        tiles.tap()
+        XCTAssertTrue(tiles.isSelected)
         let actions = ["downloads", "files", "bookmarks", "history", "wallpaper"]
         for (index, action) in actions.enumerated() {
             app.buttons["home-toolbar.slot.\(index)"].tap()
@@ -1284,10 +1282,10 @@ final class HomeToolbarUITests: XCTestCase {
         let returned = XCTAttachment(screenshot: app.screenshot())
         returned.name = "home-shortcuts-after-presentations"; returned.lifetime = .keepAlways; add(returned)
         openSettings(app)
-        let restoredBackground = app.switches["home-toolbar.background"].firstMatch
-        XCTAssertEqual(restoredBackground.value as? String, "1")
-        restoredBackground.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        XCTAssertEqual(restoredBackground.value as? String, "0")
+        XCTAssertTrue(tiles.isSelected)
+        let icons = app.buttons["home-toolbar.style.icons"]
+        icons.tap()
+        XCTAssertTrue(icons.isSelected)
         let setting = XCTAttachment(screenshot: app.screenshot())
         setting.name = "home-toolbar-background-setting"; setting.lifetime = .keepAlways; add(setting)
         app.buttons["home-toolbar.save"].tap()
@@ -1297,9 +1295,9 @@ final class HomeToolbarUITests: XCTestCase {
         let plain = XCTAttachment(screenshot: app.screenshot())
         plain.name = "five-home-plain-shortcuts"; plain.lifetime = .keepAlways; add(plain)
         openSettings(app)
-        XCTAssertEqual(app.switches["home-toolbar.background"].firstMatch.value as? String, "0")
-        app.buttons["Hide All"].firstMatch.tap()
-        app.sheets.buttons["Hide All"].tap()
+        XCTAssertTrue(icons.isSelected)
+        app.buttons["toolbar.restore"].tap()
+        app.alerts.buttons["Restore Defaults"].tap()
         app.navigationBars.buttons.firstMatch.tap()
         app.buttons["Done"].firstMatch.tap()
         XCTAssertFalse(app.buttons["home.toolbar.0"].exists)
@@ -1339,8 +1337,9 @@ final class HomeToolbarUITests: XCTestCase {
         XCTAssertTrue(app.switches["settings.keepScreenAwake"].waitForExistence(timeout: 5))
         let appearance = XCTAttachment(screenshot: app.screenshot())
         appearance.name = "settings-aligned-appearance-rows"; appearance.lifetime = .keepAlways; add(appearance)
-        let toolbar = app.buttons["settings.homeToolbar"]
+        let toolbar = app.buttons["settings.toolbar"]
         reveal(toolbar, in: app); toolbar.tap()
+        app.buttons["home-toolbar.slot.0"].tap()
         let normalHeight = app.buttons["home-toolbar.action.downloads"].frame.height
         let longTitle = app.buttons["home-toolbar.action.urlSchemes"]
         reveal(longTitle, in: app)
@@ -1348,6 +1347,7 @@ final class HomeToolbarUITests: XCTestCase {
         XCTAssertEqual(longTitle.frame.height, app.buttons["home-toolbar.action.quickActions"].frame.height, accuracy: 1)
         let cards = XCTAttachment(screenshot: app.screenshot())
         cards.name = "toolbar-long-titles-uniform-height"; cards.lifetime = .keepAlways; add(cards)
+        app.navigationBars.buttons["Cancel"].tap()
         app.navigationBars.buttons.firstMatch.tap()
         let version = app.buttons["settings.version"]
         reveal(version, in: app); version.tap()
@@ -1376,19 +1376,17 @@ final class HomeToolbarUITests: XCTestCase {
         app.launch(); app.open(URL(string: "soulo://")!)
         XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
         openSettings(app)
+        app.buttons["home-toolbar.slot.0"].tap()
         assertFourColumns(app, prefix: "home-toolbar.action.", firstRow: ["none", "downloads", "files", "bookmarks"], next: "history")
-        let background = app.switches["home-toolbar.background"].firstMatch
-        let originalBackground = background.value as? String
-        if originalBackground != "1" { background.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap() }
         let homePicker = XCTAttachment(screenshot: app.screenshot())
         homePicker.name = "home-toolbar-four-columns"; homePicker.lifetime = .keepAlways; add(homePicker)
-        for (index, action) in ["refreshWallpaper", "wallpaper", "help", "homeToolbar", "browserToolbar"].enumerated() {
+        app.navigationBars.buttons["Cancel"].tap()
+        for (index, action) in ["refreshWallpaper", "wallpaper", "version", "homeToolbar", "browserToolbar"].enumerated() {
             let slot = app.buttons["home-toolbar.slot.\(index)"]
             reveal(slot, in: app, downward: true); slot.tap()
-            XCTAssertTrue(slot.isSelected)
             let choice = app.buttons["home-toolbar.action." + action]
             reveal(choice, in: app); choice.tap()
-            XCTAssertTrue(choice.isSelected, "The selected action must be assigned before saving")
+            XCTAssertTrue(choice.waitForNonExistence(timeout: 5))
         }
         app.buttons["home-toolbar.save"].tap(); app.alerts.buttons["Done"].tap()
         app.navigationBars.buttons.firstMatch.tap(); app.buttons["Done"].firstMatch.tap()
@@ -1414,7 +1412,7 @@ final class HomeToolbarUITests: XCTestCase {
         }
         app.buttons["Done"].firstMatch.tap()
         app.buttons["home.toolbar.2"].tap()
-        XCTAssertTrue(app.navigationBars["Help Center"].waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.navigationBars["About & Feedback"].waitForExistence(timeout: 5), app.debugDescription)
         app.buttons["Done"].firstMatch.tap()
         app.buttons["home.toolbar.4"].tap()
         assertFourColumns(app, prefix: "browser-toolbar.action.", firstRow: ["none", "home", "back", "forward"], next: "tabs")
@@ -1426,11 +1424,8 @@ final class HomeToolbarUITests: XCTestCase {
         app.buttons["home.toolbar.3"].tap()
         app.buttons["home-toolbar.slot.0"].tap()
         XCTAssertTrue(app.buttons["home-toolbar.action.refreshWallpaper"].isSelected)
-        let restoredBackground = app.switches["home-toolbar.background"].firstMatch
-        if restoredBackground.value as? String != originalBackground {
-            restoredBackground.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        }
-        app.buttons["Hide All"].firstMatch.tap(); app.sheets.buttons["Hide All"].tap()
+        app.navigationBars.buttons["Cancel"].tap()
+        app.buttons["toolbar.restore"].tap(); app.alerts.buttons["Restore Defaults"].tap()
         app.buttons["home-toolbar.save"].tap(); app.alerts.buttons["Done"].tap()
         app.buttons["Done"].firstMatch.tap()
         XCTAssertFalse(app.buttons["home.toolbar.0"].exists)

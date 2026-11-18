@@ -1,1 +1,4 @@
-Millores a les finestres de l’iPad, l’entrada de veu, els resums locals i l’accessibilitat. Millores a l’exportació multimèdia en segon pla, les Dreceres i la compatibilitat de les extensions. Algunes funcions depenen del dispositiu, el sistema i l’idioma.
+• Hem reorganitzat la configuració. Previsualitza la barra d’eines d’inici, canvia’n l’estil, reordena els botons i arrossega-la on vulguis.
+• Si actives la restauració en reiniciar, Soulo torna a l’inici o a la darrera pàgina que estaves visitant.
+• Hem millorat el contrast dels menús del navegador. Pots tornar a mostrar la barra d’eines des del menú Més.
+• Hem millorat les peticions de xarxa i la cerca d’actualitzacions dels scripts d’usuari.

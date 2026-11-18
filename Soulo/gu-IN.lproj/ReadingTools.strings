@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "સ્થિતિ %d";
 "home_toolbar_reset" = "બધા છુપાવો";
 "home_toolbar_default_hint" = "હોમ શૉર્ટકટ્સ ડિફૉલ્ટ રૂપે છુપાયેલા છે.";
+"home_toolbar_position" = "સ્થાન";
+"home_toolbar_buttons" = "બટનો";
+"home_toolbar_tiles" = "અલગ";
+"home_toolbar_capsule" = "કેપ્સ્યુલ";
+"home_toolbar_icons" = "માત્ર ચિહ્નો";
+"home_toolbar_bottom" = "નીચે";
+"home_toolbar_belowSearch" = "શોધની નીચે";
+"home_toolbar_free" = "મુક્ત સ્થાન";
+"home_toolbar_leading" = "શરૂઆતમાં ગોઠવો";
+"home_toolbar_center" = "મધ્યમાં ગોઠવો";
+"home_toolbar_trailing" = "અંતમાં ગોઠવો";
+"home_toolbar_drag_position" = "ટૂલબારને યોગ્ય સ્થાને ખેંચો.";
+"home_toolbar_drag_buttons" = "બટન બદલવા ટેપ કરો. ક્રમ બદલવા ખેંચો.";
 "home_toolbar_search" = "એક પૃષ્ઠ શોધો";
 "group_default_search" = "ડિફૉલ્ટ શોધ";
 "group_search_settings" = "જૂથ સેટિંગ્સ";
 "group_engine_name" = "શોધ એન્જિન નામ";
-"group_search_url" = "%@ સાથે URL શોધો";
-"group_default_search_hint" = "જ્યારે આ જૂથમાં કોઈ સક્ષમ પ્લેટફોર્મ ન હોય ત્યારે વપરાય છે. શોધ શબ્દો માટે URL માં %@ શામેલ કરો. અક્ષમ પ્લેટફોર્મ અક્ષમ રહે છે.";
-"group_search_url_invalid" = "નામ દાખલ કરો અને માન્ય HTTP અથવા HTTPS શોધ URL જેમાં %@ હોય.";
+"group_search_url" = "શોધ અથવા હોમપેજનું URL (શોધના શબ્દો: %@)";
+"group_default_search_hint" = "આ જૂથમાં કોઈ પ્લેટફોર્મ ચાલુ ન હોય ત્યારે વપરાય છે. આ જૂથનું કોઈપણ પ્લેટફોર્મ પસંદ કરી શકો છો. %@ ને શોધના શબ્દોથી બદલવામાં આવશે; પ્લેસહોલ્ડર ન હોય તો પેજ સીધું ખુલશે. બંધ કરેલા પ્લેટફોર્મ બંધ જ રહેશે.";
+"group_search_url_invalid" = "નામ અને માન્ય HTTP અથવા HTTPS URL દાખલ કરો. શોધના નમૂનામાં %@ વાપરી શકો છો.";
 "batch_import_new_group" = "આયાતી જૂથ";
 "image_resources" = "સંસાધનો";
 "screen_keep_awake" = "સ્ક્રીન ચાલુ રાખો";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "આ ફોર્મેટ સીધું સિસ્ટમ પ્લેયર સાથે મોકલી શકાતું નથી. Control Center ખોલો, સ્ક્રીન મિરરિંગ પસંદ કરો, પછી તમારું ટીવી અથવા Mac પસંદ કરો.";
 "userscript_check_updates" = "અપડેટ્સ તપાસો";
 "userscript_update_no_url" = "કોઈ અપડેટ સરનામું આપવામાં આવ્યું નથી. તેને અપડેટ કરવા માટે નવી સ્ક્રિપ્ટ ફાઇલ આયાત કરો.";
-"userscript_update_manual_hint" = "જ્યારે વિનંતી કરવામાં આવે ત્યારે જ ચેક ચાલે છે. અપડેટ કરતા પહેલા નવા સંસ્કરણની સમીક્ષા કરો. એપ્લિકેશન સાથે બિલ્ટ-ઇન સ્ક્રિપ્ટ્સ અપડેટ થાય છે.";
+"userscript_update_manual_hint" = "ઇન્સ્ટોલ કરેલી યાદી ખોલતાં દરેક મુલાકાતે વધુમાં વધુ 4 સ્ક્રિપ્ટ તપાસાય છે, દરેક 24 કલાકમાં એકવાર. ખાનગી બ્રાઉઝિંગ, ઓછી ઊર્જા કે વધારે ગરમીમાં વિરામ રહે છે. અપડેટની સમીક્ષા જરૂરી છે.";
 "userscript_update_latest" = "અપ ટુ ડેટ";
 "userscript_update_invalid" = "અપડેટ અમાન્ય છે, અલગ સ્ક્રિપ્ટનું છે અથવા અસંગત સંસ્કરણ ધરાવે છે.";
 "userscript_update_changed" = "ચેક પછી આ સ્ક્રિપ્ટ બદલાઈ ગઈ. અપડેટ્સ માટે ફરીથી તપાસો.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "ધૂંધળો કાચ";
 "wallpaper_blur_amount" = "ધૂંધળાપાની તીવ્રતા";
 
-"auto_hide_platform_bar_hint" = "વેબપૃષ્ઠની સામગ્રી પર ટૅપ કર્યા પછી જ પ્લેટફોર્મ બાર છુપાશે. આપમેળે રીડાયરેક્ટ થવાથી કે સ્ક્રોલ કરવાથી નહીં. ફરી બતાવવા શોધ પરિણામો પર પાછા જાઓ અથવા નવી શોધ કરો.";
+"auto_hide_platform_bar_hint" = "ચાલુ હોય ત્યારે, વેબપેજની સામગ્રી પર જાતે ટૅપ કર્યા પછી જ અને પેજનું ડોમેન વર્તમાન બારમાંના કોઈ પ્લેટફોર્મ સાથે ન મળતું હોય ત્યારે જ બાર છુપાશે. કોઈ પ્લેટફોર્મ સાથે મેળ પડે તો બાર દેખાતો રહેશે અથવા ફરી દેખાશે. સ્ક્રોલ કરવાથી કે આપમેળે રીડાયરેક્ટ થવાથી તે છુપાશે નહીં.";
 
 "ad_subscription_add" = "ફિલ્ટર સૂચિ ઉમેરો";
 "ad_subscription_name" = "નામ";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "સમગ્ર ઍપમાં કંપન અને ઇન્ટરફેસના અવાજ નિયંત્રિત કરો. વેબપેજ, વિડિઓ અને ઑડિઓ પ્લેબૅકને અસર થતી નથી.";
 
 "home_display_settings" = "હોમનું પ્રદર્શન";
-"browsing_display_settings" = "બ્રાઉઝિંગનું પ્રદર્શન";
+"browsing_display_settings" = "બ્રાઉઝિંગ સેટિંગ્સ";
 
 "web_video_download" = "વેબ વિડિઓ ડાઉનલોડ";
 "web_video_download_description" = "વેબપેજ, એપિસોડ સૂચિ અને પ્લેયરમાં વિડિઓ ડાઉનલોડ નિયંત્રણો બતાવો. પ્લેબૅક અને હાલના ડાઉનલોડ બદલાતા નથી.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "ઑફલાઇન લેખો, પુસ્તક લાઇબ્રેરી અને વાંચનની પ્રગતિ સાફ કરે છે.";
 
 "storage_cleanup_offline_desc" = "ડાઉનલોડ નોંધો વગરના ઑફલાઇન વિડિઓ અવશેષો કાઢે છે.";
+
+"storage_website_shared" = "શેર કરેલો અને ફાળવણી વગરનો ડેટા";
+"storage_website_shared_desc" = "શેર કરેલી નેટવર્ક કૅશ, કૂકીઝ અને કોઈ એક સાઇટને ફાળવી ન શકાય તેવો ડેટા શામેલ છે.";
+"storage_website_clear_scope" = "સામાન્ય વેબસાઇટનો ડેટા અને શેર કરેલી નેટવર્ક કૅશ સાફ કરે છે. એક્સ્ટેન્શન મીડિયાને સાફ કરવા «એક્સ્ટેન્શનની અસ્થાયી કૅશ» વાપરો; એક્સ્ટેન્શન સેટિંગ્સ જળવાય છે.";
+
+"storage_quick_clear" = "ઝડપી સફાઈ";
+"storage_quick_clear_done" = "કૅશ સાફ થઈ";
+
+"storage_website_cleanup_pending" = "વેબસાઇટ ડેટા હજી સાફ થઈ રહ્યો છે. તમે પાછા જઈને બ્રાઉઝિંગ ચાલુ રાખી શકો છો. કૃપા કરીને બીજી સફાઈ શરૂ ન કરો.";
+
+"storage_auto_cleanup" = "આપમેળે સફાઈ";
+
+"storage_auto_cleanup_desc" = "ઍપ બૅકગ્રાઉન્ડમાં નિષ્ક્રિય હોય ત્યારે વધુમાં વધુ દર 24 કલાકે એક વાર પ્રયાસ કરે છે. ફક્ત 24 કલાકથી જૂની, ઉપયોગમાં ન હોય તેવી આયાત, નિકાસ અને પૂર્વાવલોકનની અસ્થાયી ફાઇલો કાઢે છે. દરેક પ્રયાસ આશરે 1 સેકન્ડ અથવા 2000 વસ્તુઓની તપાસ સુધી ચાલે છે; ઍપમાં પાછા આવતાં બંધ થાય છે. પ્લેબૅક, ડાઉનલોડ, નિકાસ, પાવર સેવિંગ મોડ ચાલુ અથવા વધુ ગરમી હોય ત્યારે ટાળે છે. બુકમાર્ક, સાચવેલા ડાઉનલોડ, લૉગિન અને વેબસાઇટ ડેટા આપમેળે કાઢતું નથી.";
+
+"restore_last_page_on_launch" = "છેલ્લું પૃષ્ઠ પુનઃસ્થાપિત કરો";
+"restore_last_page_on_launch_desc" = "ઍપ શરૂ થાય ત્યારે છેલ્લું વેબપૃષ્ઠ ખોલો. ખાનગી ટૅબ પુનઃસ્થાપિત થતા નથી.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "હાવભાવ અને શૉર્ટકટ";
+"app_icon_shortcuts" = "ઍપ આઇકન શૉર્ટકટ";
+"settings_sync_backup" = "સિંક અને બૅકઅપ";
+"icloud_bookmark_sync" = "iCloud બુકમાર્ક સિંક";
+"manual_settings_backups" = "મેન્યુઅલ બૅકઅપ";
+"create_settings_backup" = "બનાવો";
+"toolbar_settings" = "ટૂલબાર";
+"toolbar_section_home" = "હોમ";
+
+/* Manual backup controls */
+"clear_manual_backups" = "મેન્યુઅલ બૅકઅપ સાફ કરો";
+"clear_manual_backups_message" = "ફક્ત જાતે બનાવેલા અથવા આયાત કરેલા બૅકઅપ કાઢે છે. આપમેળે અને જૂની પુનઃપ્રાપ્તિ નકલો, વર્તમાન સેટિંગ્સ અને iCloud સિંક જળવાય છે.";
+"recovery_settings_backups" = "આપમેળે અને અગાઉના બૅકઅપ";
+
+/* Settings hierarchy */
+"settings_personalization" = "વ્યક્તિગતકરણ";
+"appearance_home_settings" = "હોમ અને વૉલપેપર";
+"settings_data" = "ડેટા";
+"about_feedback_settings" = "વિશે અને પ્રતિસાદ";
+"browsing_startup_tabs" = "શરૂઆત અને ટૅબ";
+"browsing_interface" = "ઇન્ટરફેસ";
+"browsing_web_display" = "વેબપૃષ્ઠો";
+"manual_backups_empty" = "હજુ કોઈ મેન્યુઅલ બૅકઅપ નથી";
+"browsing_display_settings_legacy" = "બ્રાઉઝિંગનું પ્રદર્શન";

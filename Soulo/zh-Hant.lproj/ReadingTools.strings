@@ -437,14 +437,27 @@
 "home_toolbar_slot" = "位置 %d";
 "home_toolbar_reset" = "全部隱藏";
 "home_toolbar_default_hint" = "首頁快捷按鈕預設全部隱藏。";
+"home_toolbar_position" = "位置";
+"home_toolbar_buttons" = "按鈕";
+"home_toolbar_tiles" = "獨立圓角";
+"home_toolbar_capsule" = "連體膠囊";
+"home_toolbar_icons" = "無底色";
+"home_toolbar_bottom" = "螢幕底部";
+"home_toolbar_belowSearch" = "搜尋框下方";
+"home_toolbar_free" = "自由放置";
+"home_toolbar_leading" = "靠左";
+"home_toolbar_center" = "置中";
+"home_toolbar_trailing" = "靠右";
+"home_toolbar_drag_position" = "拖曳工具列以調整位置。";
+"home_toolbar_drag_buttons" = "點按更換按鈕，拖曳調整順序。";
 "home_toolbar_search" = "尋找頁面";
 
 "group_default_search" = "預設搜尋";
 "group_search_settings" = "群組設定";
 "group_engine_name" = "搜尋引擎名稱";
-"group_search_url" = "搜尋網址，關鍵字用 %@";
-"group_default_search_hint" = "此群組沒有啟用的平台時使用。網址中的 %@ 會替換為搜尋關鍵字，不會重新開啟已關閉的平台。";
-"group_search_url_invalid" = "請輸入名稱，以及包含 %@ 的有效 HTTP 或 HTTPS 搜尋網址。";
+"group_search_url" = "搜尋網址或首頁位址（關鍵字用 %@）";
+"group_default_search_hint" = "此群組沒有啟用的平台時使用。可選擇本組任意平台；%@ 會替換為關鍵字，沒有預留位置則直接開啟網頁。不會重新啟用已關閉的平台。";
+"group_search_url_invalid" = "請輸入名稱及有效的 HTTP 或 HTTPS 網址；搜尋範本可使用 %@。";
 
 "batch_import_new_group" = "匯入群組";
 
@@ -473,7 +486,7 @@
 
 "userscript_check_updates" = "檢查更新";
 "userscript_update_no_url" = "此腳本未提供更新網址，可重新匯入新版檔案。";
-"userscript_update_manual_hint" = "僅在點按時檢查更新，檢視新版內容後再更新。內建腳本隨 App 更新。";
+"userscript_update_manual_hint" = "進入已安裝列表後自動檢查，每次最多 4 個腳本、每個腳本每 24 小時最多一次；私密瀏覽、低耗電或高溫時暫停。更新安裝前仍需確認。";
 "userscript_update_latest" = "已是最新版本";
 "userscript_update_invalid" = "更新檔案無效、與原腳本不符，或版本不一致。";
 "userscript_update_changed" = "腳本已發生變更，請重新檢查更新。";
@@ -564,7 +577,7 @@
 "wallpaper_image_blur" = "毛玻璃";
 "wallpaper_blur_amount" = "模糊強度";
 
-"auto_hide_platform_bar_hint" = "手動點擊網頁內容後才隱藏平台列，網頁自動跳轉和捲動不會觸發。返回搜尋結果或開始新搜尋後重新顯示。";
+"auto_hide_platform_bar_hint" = "開啟後，只有手動點選網頁內容，且網頁網域不符合目前平台列中的任何平台時才隱藏；符合任一平台則保持或恢復顯示。捲動和自動重新導向不會主動隱藏平台列。";
 
 "ad_subscription_add" = "新增規則";
 "ad_subscription_name" = "名稱";
@@ -576,7 +589,7 @@
 "feedback_settings_hint" = "統一控制操作時的震動和提示音，不影響網頁、影片及音訊播放。";
 
 "home_display_settings" = "首頁介面顯示";
-"browsing_display_settings" = "瀏覽介面顯示";
+"browsing_display_settings" = "瀏覽設定";
 
 "web_video_download" = "網頁影片下載";
 "web_video_download_description" = "顯示網頁影片、選集及播放器中的下載入口。關閉後不影響播放和既有下載工作。";
@@ -629,3 +642,45 @@
 "storage_cleanup_reading_desc" = "清理離線文章、書庫和閱讀進度。";
 
 "storage_cleanup_offline_desc" = "刪除沒有下載記錄的離線影片殘留。";
+
+"storage_website_shared" = "共用及未歸屬資料";
+"storage_website_shared_desc" = "包括共用網路快取、Cookie 及無法歸屬到單一網站的資料。";
+"storage_website_clear_scope" = "清除一般網站及共用網路快取。擴充功能媒體請透過「擴充功能暫存」清理，擴充功能設定會保留。";
+
+"storage_quick_clear" = "快速清理";
+"storage_quick_clear_done" = "快取已清理";
+
+"storage_website_cleanup_pending" = "網站資料仍在清理中。你可以返回繼續使用，請勿重複清理。";
+
+"storage_auto_cleanup" = "自動清理";
+
+"storage_auto_cleanup_desc" = "App 進入背景且閒置時，最多每 24 小時嘗試一次。僅清理超過 24 小時、未被使用的暫存匯入、匯出及預覽檔案；每次約 1 秒或檢查 2000 個項目，返回前景即停止。播放、下載、匯出、低耗電模式開啟或明顯發熱時略過。收藏、已儲存下載、登入及網站資料不會自動刪除。";
+
+"restore_last_page_on_launch" = "重新啟動恢復上次頁面";
+"restore_last_page_on_launch_desc" = "重新啟動 App 時開啟上次瀏覽的網頁，不恢復私密分頁。";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "手勢與快捷";
+"app_icon_shortcuts" = "App 圖示快捷選單";
+"settings_sync_backup" = "同步與備份";
+"icloud_bookmark_sync" = "iCloud 書籤同步";
+"manual_settings_backups" = "手動備份";
+"create_settings_backup" = "建立";
+"toolbar_settings" = "工具列";
+"toolbar_section_home" = "首頁";
+
+/* Manual backup controls */
+"clear_manual_backups" = "清除手動備份";
+"clear_manual_backups_message" = "僅刪除手動建立或匯入的備份，保留自動及歷史復原快照，不更改目前設定和 iCloud 同步。";
+"recovery_settings_backups" = "自動與歷史備份";
+
+/* Settings hierarchy */
+"settings_personalization" = "個人化";
+"appearance_home_settings" = "首頁與桌布";
+"settings_data" = "資料";
+"about_feedback_settings" = "關於與回饋";
+"browsing_startup_tabs" = "啟動與分頁";
+"browsing_interface" = "介面顯示";
+"browsing_web_display" = "網頁顯示";
+"manual_backups_empty" = "尚無手動備份";
+"browsing_display_settings_legacy" = "瀏覽介面顯示";

@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Position %d";
 "home_toolbar_reset" = "Skjul alle";
 "home_toolbar_default_hint" = "Home shortcuts are hidden by default.";
+"home_toolbar_position" = "Placering";
+"home_toolbar_buttons" = "Knapper";
+"home_toolbar_tiles" = "Separate";
+"home_toolbar_capsule" = "Kapsel";
+"home_toolbar_icons" = "Kun ikoner";
+"home_toolbar_bottom" = "Nederst";
+"home_toolbar_belowSearch" = "Under søgning";
+"home_toolbar_free" = "Fri placering";
+"home_toolbar_leading" = "Juster til start";
+"home_toolbar_center" = "Centrer";
+"home_toolbar_trailing" = "Juster til slut";
+"home_toolbar_drag_position" = "Træk værktøjslinjen på plads.";
+"home_toolbar_drag_buttons" = "Tryk for at skifte en knap. Træk for at flytte den.";
 "home_toolbar_search" = "Find en side";
 "group_default_search" = "Standardsøgning";
 "group_search_settings" = "Gruppeindstillinger";
 "group_engine_name" = "Søgemaskinenavn";
-"group_search_url" = "Search URL with %@";
-"group_default_search_hint" = "Used when this group has no enabled platforms. Inkluder %@ i URL for søgetermerne. Disabled platforms stay disabled.";
-"group_search_url_invalid" = "Indtast et navn og en gyldig HTTP eller HTTPS søgning URL indeholdende %@.";
+"group_search_url" = "Søge- eller startside-URL (søgeord: %@)";
+"group_default_search_hint" = "Bruges, når gruppen ikke har nogen aktiverede platforme. Du kan vælge enhver platform i gruppen. %@ erstattes med søgeord; uden pladsholder åbnes siden direkte. Deaktiverede platforme forbliver deaktiverede.";
+"group_search_url_invalid" = "Indtast et navn og en gyldig HTTP- eller HTTPS-URL. Søgeskabeloner kan bruge %@.";
 "batch_import_new_group" = "Importeret gruppe";
 "image_resources" = "Ressourcer";
 "screen_keep_awake" = "Hold skærmen tændt";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Dette format kan ikke sendes direkte med systemafspilleren. Åbn Control Center, vælg Screen Mirroring, og vælg derefter dit tv eller din Mac.";
 "userscript_check_updates" = "Tjek opdateringer";
 "userscript_update_no_url" = "No update address is provided. Import a newer script file to update it.";
-"userscript_update_manual_hint" = "Checks run only when requested. Review the new version before updating. Built-in scripts update with the app.";
+"userscript_update_manual_hint" = "Åbning af Installeret kontrollerer op til 4 scripts pr. besøg, hvert script én gang pr. 24 timer. Pauser ved privat browsing, energibesparelse eller høj varme. Opdateringer skal gennemgås.";
 "userscript_update_latest" = "Op til dato";
 "userscript_update_invalid" = "Opdateringen er ugyldig, tilhører et andet script eller har en inkonsekvent version.";
 "userscript_update_changed" = "Dette script ændrede sig efter kontrollen. Se efter opdateringer igen.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Matteret glas";
 "wallpaper_blur_amount" = "Sløringsstyrke";
 
-"auto_hide_platform_bar_hint" = "Platformslinjen skjules først, når du trykker på sidens indhold. Automatiske omdirigeringer og rulning skjuler den ikke. Gå tilbage til søgeresultaterne eller start en ny søgning for at vise den igen.";
+"auto_hide_platform_bar_hint" = "Når funktionen er slået til, skjules linjen først, når du trykker på websidens indhold, og kun hvis sidens domæne ikke matcher nogen platform på den aktuelle linje. Et match holder linjen synlig eller viser den igen. Rulning og automatiske omdirigeringer skjuler den ikke.";
 
 "ad_subscription_add" = "Tilføj filterliste";
 "ad_subscription_name" = "Navn";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Styr vibration og brugerfladelyde i hele appen. Afspilning på websider samt video og lyd påvirkes ikke.";
 
 "home_display_settings" = "Visning af startside";
-"browsing_display_settings" = "Browservisning";
+"browsing_display_settings" = "Browserindstillinger";
 
 "web_video_download" = "Webvideodownloads";
 "web_video_download_description" = "Vis knapper til videodownload på websider, episodelister og afspillere. Afspilning og eksisterende downloads ændres ikke.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "Rydder offlineartikler, bogbiblioteket og læsefremskridt.";
 
 "storage_cleanup_offline_desc" = "Sletter rester af offlinevideoer uden downloadposter.";
+
+"storage_website_shared" = "Delte og ikke-tildelte data";
+"storage_website_shared_desc" = "Omfatter delt netværkscache, cookies og data, der ikke kan knyttes til ét websted.";
+"storage_website_clear_scope" = "Rydder data fra almindelige websteder og delt netværkscache. Brug «Midlertidig udvidelsescache» til udvidelsesmedier; udvidelsesindstillinger bevares.";
+
+"storage_quick_clear" = "Hurtig oprydning";
+"storage_quick_clear_done" = "Cache ryddet";
+
+"storage_website_cleanup_pending" = "Webstedsdata ryddes stadig. Du kan gå tilbage og fortsætte med at browse. Start ikke en ny rydning.";
+
+"storage_auto_cleanup" = "Automatisk oprydning";
+
+"storage_auto_cleanup_desc" = "Forsøger højst én gang hver 24. time, når appen er inaktiv i baggrunden. Fjerner kun ubrugte midlertidige import-, eksport- og forhåndsvisningsfiler, der er over 24 timer gamle. Hver kørsel varer ca. 1 sekund eller tjekker 2000 elementer og stopper, når du vender tilbage til appen. Springes over under afspilning, download eller eksport samt ved aktiveret energibesparende funktion eller tydelig varme. Bogmærker, gemte downloads, logins og webstedsdata slettes aldrig automatisk.";
+
+"restore_last_page_on_launch" = "Gendan seneste side";
+"restore_last_page_on_launch_desc" = "Åbn den seneste webside, når appen starter. Private faner gendannes ikke.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Bevægelser og genveje";
+"app_icon_shortcuts" = "Genveje på appikonet";
+"settings_sync_backup" = "Synkronisering og backup";
+"icloud_bookmark_sync" = "Bogmærker via iCloud";
+"manual_settings_backups" = "Manuelle backups";
+"create_settings_backup" = "Opret";
+"toolbar_settings" = "Værktøjslinjer";
+"toolbar_section_home" = "Hjem";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Ryd manuelle backups";
+"clear_manual_backups_message" = "Sletter kun manuelt oprettede eller importerede backups. Automatiske og ældre gendannelseskopier, aktuelle indstillinger og iCloud-synkronisering bevares.";
+"recovery_settings_backups" = "Automatiske og tidligere backups";
+
+/* Settings hierarchy */
+"settings_personalization" = "Tilpasning";
+"appearance_home_settings" = "Hjem og baggrund";
+"settings_data" = "Data";
+"about_feedback_settings" = "Om og feedback";
+"browsing_startup_tabs" = "Opstart og faner";
+"browsing_interface" = "Grænseflade";
+"browsing_web_display" = "Websider";
+"manual_backups_empty" = "Ingen manuelle backups endnu";
+"browsing_display_settings_legacy" = "Browservisning";

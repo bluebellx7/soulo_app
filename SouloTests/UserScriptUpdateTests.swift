@@ -29,6 +29,63 @@ import SwiftUI
         try service.saveUserScript(id: nil, fallbackName: "Fixture", source: script("1.9", extra: extra),
             explicitPatterns: nil, injectionTime: nil, sourceURL: URL(string: "https://scripts.example/test.user.js"))
     }
+    func testAutomaticMetadataChecksAreThrottledPersistTheirBadgeAndNeverInstallCode() async throws {
+        guard !ProcessInfo.processInfo.isLowPowerModeEnabled else { throw XCTSkip("Automatic probes pause in Low Power Mode") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("auto-updates-" + UUID().uuidString)
+        let suite = "AutomaticScriptUpdates." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [UpdateFixtureProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { defaults.removePersistentDomain(forName:suite); session.invalidateAndCancel(); try? FileManager.default.removeItem(at:root) }
+        let service = BrowserExtensionService(extensionRoot:root,requirementSession:session,updateDefaults:defaults)
+        let old = try installed(service,extra:"// @updateURL https://scripts.example/test.meta.js")
+        UpdateFixtureProtocol.set(["/test.meta.js":script("2.0",extra:"// @downloadURL https://scripts.example/never-auto-download.user.js")])
+        let now = Date(timeIntervalSince1970:1_000_000)
+        await service.checkAutomaticUserScriptUpdates(now:now)
+        XCTAssertEqual(service.availableUserScriptUpdateVersions[old.id],"2.0")
+        XCTAssertEqual(service.userScript(id:old.id)?.source,old.source)
+        XCTAssertEqual(UpdateFixtureProtocol.requestedPaths(),["/test.meta.js"])
+        await service.checkAutomaticUserScriptUpdates(now:now.addingTimeInterval(3600))
+        let restarted = BrowserExtensionService(extensionRoot:root,requirementSession:session,updateDefaults:defaults)
+        XCTAssertEqual(restarted.availableUserScriptUpdateVersions[old.id],"2.0")
+        await restarted.checkAutomaticUserScriptUpdates(now:now.addingTimeInterval(3600))
+        XCTAssertEqual(UpdateFixtureProtocol.requestedPaths().count,1)
+        await restarted.checkAutomaticUserScriptUpdates(now:now.addingTimeInterval(86401))
+        XCTAssertEqual(UpdateFixtureProtocol.requestedPaths(),["/test.meta.js","/test.meta.js"])
+        XCTAssertEqual(restarted.userScript(id:old.id)?.source,old.source)
+    }
+
+    func testAutomaticChecksHaveABoundedBatchAndSkipPrivateBrowsing() async throws {
+        guard !ProcessInfo.processInfo.isLowPowerModeEnabled else { throw XCTSkip("Automatic probes pause in Low Power Mode") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("auto-batch-" + UUID().uuidString)
+        let suite = "AutomaticScriptBatch." + UUID().uuidString
+        let defaults = UserDefaults(suiteName:suite)!
+        let configuration = URLSessionConfiguration.ephemeral; configuration.protocolClasses = [UpdateFixtureProtocol.self]
+        let session = URLSession(configuration:configuration)
+        defer { defaults.removePersistentDomain(forName:suite); session.invalidateAndCancel(); try? FileManager.default.removeItem(at:root) }
+        let service = BrowserExtensionService(extensionRoot:root,requirementSession:session,updateDefaults:defaults)
+        var sources:[String:String]=[:]
+        for index in 0..<6 {
+            let path="/batch-\(index).user.js"
+            let old=script("1.0").replacingOccurrences(of:"soulo.tests.updates",with:"soulo.tests.batch.\(index)")
+            _ = try service.saveUserScript(id:nil,fallbackName:"Batch",source:old,explicitPatterns:nil,injectionTime:nil,sourceURL:URL(string:"https://scripts.example"+path))
+            sources[path]=old.replacingOccurrences(of:"@version 1.0",with:"@version 2.0")
+        }
+        UpdateFixtureProtocol.set(sources)
+        let now=Date(timeIntervalSince1970:1_000_000)
+        defaults.set(true,forKey:"is_incognito")
+        await service.checkAutomaticUserScriptUpdates(now:now,limit:99)
+        XCTAssertTrue(UpdateFixtureProtocol.requestedPaths().isEmpty)
+        defaults.set(false,forKey:"is_incognito")
+        await service.checkAutomaticUserScriptUpdates(now:now,limit:99)
+        XCTAssertEqual(UpdateFixtureProtocol.requestedPaths().count,4)
+        await service.checkAutomaticUserScriptUpdates(now:now.addingTimeInterval(1),limit:99)
+        XCTAssertEqual(UpdateFixtureProtocol.requestedPaths().count,6)
+        XCTAssertEqual(Set(UpdateFixtureProtocol.requestedPaths()).count,6)
+        XCTAssertEqual(service.availableUserScriptUpdateVersions.count,6)
+    }
+
     func testVersionsCompareNumericallyAndTreatPrereleasesAndBuildMetadataCorrectly() {
         for (a,b,newer) in [("1.10","1.9",true),("2.0","1.999",true),("1.0.0","1",false),
                             ("1.0-beta.2","1.0-beta.1",true),("1.0","1.0-beta",true),
@@ -119,11 +176,13 @@ import SwiftUI
 private final class UpdateFixtureProtocol: URLProtocol {
     private static let lock = NSLock()
     private static var sources: [String: String] = [:]
-    static func set(_ value: [String: String]) { lock.lock(); sources = value; lock.unlock() }
+    private static var paths: [String] = []
+    static func requestedPaths() -> [String] { lock.lock(); defer { lock.unlock() }; return paths }
+    static func set(_ value: [String: String]) { lock.lock(); sources = value; paths = []; lock.unlock() }
     override class func canInit(with request: URLRequest) -> Bool { request.url?.host == "scripts.example" }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
-        Self.lock.lock(); let text = Self.sources[request.url!.path]; Self.lock.unlock()
+        Self.lock.lock(); let text = Self.sources[request.url!.path]; Self.paths.append(request.url!.path); Self.lock.unlock()
         let data = Data((text ?? "Missing").utf8)
         let response = HTTPURLResponse(url: request.url!, statusCode: text == nil ? 404 : 200, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "application/javascript", "Content-Length": String(data.count)])!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)

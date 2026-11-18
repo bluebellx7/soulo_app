@@ -1,1 +1,4 @@
-iPad pencereleri, sesli giriş, yerel özetler ve erişilebilirlik iyileştirildi. Arka planda medya dışa aktarma, Kestirmeler ve uzantı uyumluluğu geliştirildi. Bazı özellikler aygıta, sistem sürümüne ve dile bağlıdır.
+• Ayarlar yeniden düzenlendi. Ana sayfa araç çubuğunu önizlerken stilini değiştirebilir, düğmeleri sıralayabilir veya çubuğu istediğiniz yere sürükleyebilirsiniz.
+• Yeniden başlatmada geri yükleme açıksa Soulo, ana sayfayı veya en son görüntülediğiniz web sayfasını açar.
+• Tarayıcı menüleri daha okunaklı. Gizlenen araç çubuğunu Daha Fazla menüsünden yeniden gösterebilirsiniz.
+• Kullanıcı betiklerinin ağ istekleri ve güncelleme denetimleri iyileştirildi.

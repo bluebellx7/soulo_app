@@ -1,1 +1,4 @@
-Penambahbaikan tetingkap iPad, input suara, ringkasan setempat dan kebolehcapaian. Eksport media di latar belakang, Pintasan dan keserasian sambungan dipertingkatkan. Sesetengah ciri bergantung pada peranti, versi sistem dan bahasa.
+• Tetapan telah disusun semula. Pratonton bar alat halaman utama sambil menukar gaya, menyusun semula butang atau menyeretnya ke tempat yang dikehendaki.
+• Apabila pemulihan ketika mula semula dihidupkan, Soulo membuka halaman utama atau halaman web yang terakhir dilihat.
+• Menu pelayar lebih mudah dibaca. Anda boleh memaparkan semula bar alat yang tersembunyi daripada menu Lagi.
+• Permintaan rangkaian dan semakan kemas kini untuk skrip pengguna telah diperbaik.

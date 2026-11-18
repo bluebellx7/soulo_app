@@ -308,7 +308,12 @@ enum BrowserExtensionError: LocalizedError {
 
 @MainActor
 final class BrowserExtensionService: ObservableObject {
-    static let shared = BrowserExtensionService()
+    private(set) static weak var existingShared: BrowserExtensionService?
+    static let shared: BrowserExtensionService = {
+        let service = BrowserExtensionService()
+        existingShared = service
+        return service
+    }()
     static let maximumUserScriptSize = 2 * 1_024 * 1_024
     static let maximumStoredValueSize = 256 * 1_024
     static let maximumStoredValuesSize = 1 * 1_024 * 1_024
@@ -319,6 +324,7 @@ final class BrowserExtensionService: ObservableObject {
     @Published private(set) var loadingUserScripts: Set<UUID> = []
     @Published private(set) var userScriptErrors: [UUID: String] = [:]
     @Published private(set) var userScriptRuntimeErrors: [UUID: String] = [:]
+    @Published private(set) var availableUserScriptUpdateVersions: [UUID: String] = [:]
     private var preparedExtensions: [UUID: WebExtensionInstallPreview] = [:]
     private var installingExtensionIDs: Set<UUID> = []
     private var storageRevisions: [UUID: Int] = [:]
@@ -326,14 +332,26 @@ final class BrowserExtensionService: ObservableObject {
     private var requirementTasks: [UUID: Task<Void, Never>] = [:]
     private var requirementRevisions: [UUID: UUID] = [:]
     private let requirementSession: URLSession
+    private let updateDefaults: UserDefaults
+    private var automaticUpdateCheckInProgress = false
+    static let updateCheckDatesKey = "userscript_update_checked_at"
+    static let availableUpdateVersionsKey = "userscript_update_available_versions"
     private let customExtensionRoot: URL?
 
     private let fileManager = FileManager.default
 
-    init(extensionRoot: URL? = nil, requirementSession: URLSession = UserScriptRequirementLoader.makeSession()) {
+    init(extensionRoot: URL? = nil, requirementSession: URLSession = UserScriptRequirementLoader.makeSession(),
+         updateDefaults: UserDefaults = .standard) {
         self.customExtensionRoot = extensionRoot
         self.requirementSession = requirementSession
+        self.updateDefaults = updateDefaults
         loadStore()
+        let installedIDs = Set(userScripts.map { $0.id.uuidString })
+        let savedVersions = updateDefaults.dictionary(forKey: Self.availableUpdateVersionsKey) as? [String: String] ?? [:]
+        availableUserScriptUpdateVersions = Dictionary(uniqueKeysWithValues: savedVersions.compactMap { key, version in
+            guard installedIDs.contains(key), let id = UUID(uuidString: key), version.count <= 128 else { return nil }
+            return (id, version)
+        })
         installBuiltInExamplesIfNeeded()
         for script in userScripts where script.isEnabled && !script.hasResolvedRequirements {
             resolveUserScriptRequirements(script.id)
@@ -365,7 +383,53 @@ final class BrowserExtensionService: ObservableObject {
         try Task.checkCancellation()
         guard let current = userScript(id: id), current.source == script.source,
               current.updatedAt == script.updatedAt else { throw CancellationError() }
+        availableUserScriptUpdateVersions[id] = preview?.metadata.version
+        persistAvailableUserScriptUpdates()
         return preview
+    }
+
+    private func persistAvailableUserScriptUpdates() {
+        updateDefaults.set(Dictionary(uniqueKeysWithValues: availableUserScriptUpdateVersions.map { ($0.key.uuidString, $0.value) }),
+                           forKey: Self.availableUpdateVersionsKey)
+    }
+
+    /// Run only from the visible extension manager. Keep each visit bounded,
+    /// throttle each script for 24 hours, and leave applying updates to review.
+    func checkAutomaticUserScriptUpdates(now: Date = Date(), limit: Int = 4) async {
+        guard !automaticUpdateCheckInProgress, !Task.isCancelled,
+              !updateDefaults.bool(forKey: "is_incognito"), !ProcessInfo.processInfo.isLowPowerModeEnabled,
+              ProcessInfo.processInfo.thermalState != .serious, ProcessInfo.processInfo.thermalState != .critical else { return }
+        var dates = updateDefaults.dictionary(forKey: Self.updateCheckDatesKey) as? [String: Double] ?? [:]
+        let timestamp = now.timeIntervalSince1970
+        guard timestamp.isFinite else { return }
+        let candidates = userScripts.filter { script in
+            guard script.isEnabled, script.isBuiltIn != true, UserScriptUpdateLoader.checkURL(for: script) != nil else { return false }
+            guard let last = dates[script.id.uuidString], last.isFinite else { return true }
+            return last > timestamp || timestamp - last >= 24 * 60 * 60
+        }.sorted { (dates[$0.id.uuidString] ?? 0) < (dates[$1.id.uuidString] ?? 0) }
+            .prefix(min(max(limit, 1), 4))
+        guard !candidates.isEmpty else { return }
+        automaticUpdateCheckInProgress = true
+        defer { automaticUpdateCheckInProgress = false }
+        for script in candidates {
+            guard !Task.isCancelled else { return }
+            do {
+                let version = try await UserScriptUpdateLoader.availableVersion(script, session: requirementSession)
+                try Task.checkCancellation()
+                guard let current = userScript(id: script.id), current.isEnabled,
+                      current.updatedAt == script.updatedAt else { continue }
+                availableUserScriptUpdateVersions[script.id] = version
+                persistAvailableUserScriptUpdates()
+            } catch {
+                if Task.isCancelled { return }
+                // Failed servers receive the same backoff; reopening a page
+                // must not create a tight network retry loop.
+            }
+            dates[script.id.uuidString] = timestamp
+            let installed = Set(userScripts.map { $0.id.uuidString })
+            dates = dates.filter { installed.contains($0.key) }
+            updateDefaults.set(dates, forKey: Self.updateCheckDatesKey)
+        }
     }
 
     @discardableResult
@@ -532,6 +596,7 @@ final class BrowserExtensionService: ObservableObject {
         cancelRequirementResolution(record.id)
         userScriptErrors[record.id] = nil
         userScriptRuntimeErrors[record.id] = nil
+        if availableUserScriptUpdateVersions.removeValue(forKey: record.id) != nil { persistAvailableUserScriptUpdates() }
         NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
         return record
     }
@@ -561,6 +626,7 @@ final class BrowserExtensionService: ObservableObject {
         cancelRequirementResolution(id)
         userScriptErrors[id] = nil
         userScriptRuntimeErrors[id] = nil
+        if availableUserScriptUpdateVersions.removeValue(forKey: id) != nil { persistAvailableUserScriptUpdates() }
         UserScriptTabStore.shared.remove(scriptID: id)
         NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
     }
@@ -1300,6 +1366,14 @@ enum UserScriptRuntime {
         guard let data = try? JSONSerialization.data(withJSONObject: payload), let json = String(data: data, encoding: .utf8) else { return nil }
         return "window.__souloReceiveUserScriptStorage?.(\(json));"
     }
+    static func networkProgressScript(_ progress: UserScriptHTTPBridge.Progress, scriptID: UUID,
+                                      requestID: String, bridgeToken: String) -> String? {
+        let key = scriptID.uuidString + ":" + bridgeToken + ":" + requestID
+        let value: [String: Any] = ["key": key, "event": progress.payload]
+        guard let data = try? JSONSerialization.data(withJSONObject: value),
+              let json = String(data: data, encoding: .utf8) else { return nil }
+        return "(()=>{const p=\(json), f=window.__souloUserScriptNetworkReceivers?.[p.key]; if(typeof f==='function')f(p.event); return true;})()"
+    }
     static let supportedGrantNames: Set<String> = [
         "none", "unsafewindow", "gm_info", "gm.info",
         "gm_xmlhttprequest", "gm.xmlhttprequest",
@@ -1782,47 +1856,54 @@ enum UserScriptRuntime {
             return new Blob([bytes], { type: mimeType || 'application/octet-stream' });
         }
 
+        var __souloPendingHTTP = Object.create(null);
+        var __souloNetworkReceivers = window.__souloUserScriptNetworkReceivers;
+        if (!__souloNetworkReceivers) {
+            __souloNetworkReceivers = Object.create(null);
+            Object.defineProperty(window, '__souloUserScriptNetworkReceivers', {value:__souloNetworkReceivers,configurable:true});
+        }
+        if (typeof window.addEventListener === 'function') window.addEventListener('pagehide', function() {
+            Object.keys(__souloPendingHTTP).forEach(function(key) { __souloPendingHTTP[key](); });
+        }, {once:true});
         function __souloXMLHTTP(details, modern) {
             details = details || {};
-            var finished = false;
+            var finished = false, uploadStarted = false, uploadFinished = false, readyState = 1;
             var resolveRequest, rejectRequest;
             var promise = new Promise(function(resolve, reject) { resolveRequest = resolve; rejectRequest = reject; });
             if (!modern) promise.catch(function() {});
             var bridge = window.webkit && window.webkit.messageHandlers
                 && window.webkit.messageHandlers.souloUserScriptXHR;
             var requestID = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
-            function callback(name, event) {
-                try { if (typeof details[name] === 'function') details[name](event); }
+            var receiverKey = '\#(script.id.uuidString):\#(bridgeToken.escapedForJS):' + requestID;
+            function callback(name, event, target) {
+                event.context = details.context;
+                try { var owner = target || details; if (typeof owner[name] === 'function') owner[name](event); }
                 catch (error) { console.error(error); }
             }
+            function cleanup() { delete __souloNetworkReceivers[receiverKey]; delete __souloPendingHTTP[requestID]; }
             function fail(error, type) {
                 if (finished) return;
-                finished = true;
-                var event = { readyState: 4, status: 0, error: String(error), type: type || 'error' };
-                callback('onreadystatechange', event);
-                callback(type === 'abort' ? 'onabort' : 'onerror', event);
-                callback('onloadend', event);
+                finished = true; cleanup();
+                var event = { readyState: 4, status: 0, loaded: 0, total: 0, lengthComputable: false, error: String(error), type: type || 'error' };
+                var handler = type === 'abort' ? 'onabort' : type === 'timeout' ? 'ontimeout' : 'onerror';
+                if (details.upload && uploadStarted && !uploadFinished) {
+                    uploadFinished = true; callback(handler, event, details.upload); callback('onloadend', event, details.upload);
+                }
+                callback('onreadystatechange', event); callback(handler, event); callback('onloadend', event);
                 rejectRequest(event);
             }
             var payload = {
-                __souloToken: '\#(bridgeToken.escapedForJS)',
-                __souloScriptID: '\#(script.id.uuidString)',
-                __souloRequestID: requestID,
-                url: String(details.url || ''),
-                method: String(details.method || 'GET'),
-                headers: details.headers || {},
-                data: details.data == null ? null : String(details.data),
-                timeout: Number(details.timeout || 30_000),
-                responseType: String(details.responseType || '').toLowerCase()
+                __souloToken: '\#(bridgeToken.escapedForJS)', __souloScriptID: '\#(script.id.uuidString)', __souloRequestID: requestID,
+                url: String(details.url || ''), method: String(details.method || 'GET'), headers: Object.assign({}, details.headers || {}),
+                data: null, timeout: Number(details.timeout || 30_000), responseType: String(details.responseType || '').toLowerCase(),
+                anonymous: details.anonymous === true, cookie: typeof details.cookie === 'string' ? details.cookie : null
             };
             function abort() {
                 if (finished) return;
                 fail('Request aborted', 'abort');
                 if (bridge && typeof bridge.postMessage === 'function') {
-                    bridge.postMessage({
-                        __souloToken: payload.__souloToken, __souloScriptID: payload.__souloScriptID,
-                        __souloRequestID: requestID, action: 'abort'
-                    }).catch(console.error);
+                    bridge.postMessage({__souloToken: payload.__souloToken, __souloScriptID: payload.__souloScriptID,
+                        __souloRequestID: requestID, action: 'abort'}).catch(console.error);
                 }
             }
             promise.abort = abort;
@@ -1830,37 +1911,98 @@ enum UserScriptRuntime {
                 fail('Soulo UserScript network bridge is unavailable');
                 return modern ? promise : { abort: abort };
             }
-            callback('onloadstart', { readyState: 1 });
-            try {
+            if (Object.keys(__souloPendingHTTP).length >= \#(UserScriptHTTPBridge.maximumConcurrentRequests)) {
+                fail('Too many concurrent UserScript requests'); return modern ? promise : {abort:abort};
+            }
+            __souloPendingHTTP[requestID] = abort;
+            __souloNetworkReceivers[receiverKey] = function(event) {
+                if (finished || !event) return;
+                if (event.kind === 'upload') {
+                    if (!details.upload) return;
+                    if (!uploadStarted) { uploadStarted = true; callback('onloadstart', event, details.upload); }
+                    callback('onprogress', event, details.upload);
+                    if (!uploadFinished && event.lengthComputable && event.loaded >= event.total) {
+                        uploadFinished = true; callback('onload', event, details.upload); callback('onloadend', event, details.upload);
+                    }
+                } else {
+                    if (readyState !== event.readyState) { readyState = event.readyState; callback('onreadystatechange', event); }
+                    if (event.kind === 'download') callback('onprogress', event);
+                }
+            };
+            function binaryBody(buffer) {
+                var bytes = new Uint8Array(buffer);
+                if (bytes.byteLength > \#(UserScriptHTTPBridge.maximumUploadSize)) throw new Error('UserScript upload exceeds 8 MiB');
+                var parts = [];
+                for (var at = 0; at < bytes.length; at += 8192) parts.push(String.fromCharCode.apply(null, bytes.subarray(at, at + 8192)));
+                payload.dataBase64 = btoa(parts.join(''));
+            }
+            function prepareBody() {
+                var data = details.data;
+                if (data == null || /^(GET|HEAD)$/i.test(payload.method)) return null;
+                if (typeof FormData !== 'undefined' && data instanceof FormData) {
+                    var estimated = 0, fields = 0;
+                    data.forEach(function(value, name) {
+                        estimated += (typeof Blob !== 'undefined' && value instanceof Blob) ? value.size : new Blob([String(value)]).size;
+                        estimated += String(name).length * 3 + 512;
+                        if (++fields > 1024 || estimated > \#(UserScriptHTTPBridge.maximumUploadSize)) throw new Error('UserScript upload exceeds 8 MiB');
+                    });
+                    var response = new Response(data);
+                    if (!Object.keys(payload.headers).some(function(k) { return k.toLowerCase() === 'content-type'; }))
+                        payload.headers['Content-Type'] = response.headers.get('Content-Type');
+                    return response.arrayBuffer().then(binaryBody);
+                }
+                if (typeof Blob !== 'undefined' && data instanceof Blob) {
+                    if (data.size > \#(UserScriptHTTPBridge.maximumUploadSize)) throw new Error('UserScript upload exceeds 8 MiB');
+                    if (data.type && !Object.keys(payload.headers).some(function(k) { return k.toLowerCase() === 'content-type'; })) payload.headers['Content-Type'] = data.type;
+                    return data.arrayBuffer().then(binaryBody);
+                }
+                if (typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer) { binaryBody(data); return null; }
+                if (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(data)) {
+                    if (data.byteLength > \#(UserScriptHTTPBridge.maximumUploadSize)) throw new Error('UserScript upload exceeds 8 MiB');
+                    binaryBody(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)); return null;
+                }
+                if (details.binary) {
+                    var text = String(data);
+                    if (text.length > \#(UserScriptHTTPBridge.maximumUploadSize)) throw new Error('UserScript upload exceeds 8 MiB');
+                    var bytes = new Uint8Array(text.length);
+                    for (var i = 0; i < text.length; i++) bytes[i] = text.charCodeAt(i) & 255;
+                    binaryBody(bytes.buffer); return null;
+                }
+                payload.data = String(data);
+                if (payload.data.length > \#(UserScriptHTTPBridge.maximumUploadSize)) throw new Error('UserScript upload exceeds 8 MiB');
+                return null;
+            }
+            function send() {
+                if (finished) return;
                 bridge.postMessage(payload).then(function(result) {
                     if (finished) return;
-                    var responseText = result.responseText || '';
-                    var response = responseText;
-                    if (payload.responseType === 'blob') {
-                        response = __souloBase64Blob(result.base64, result.mimeType);
-                    } else if (payload.responseType === 'arraybuffer') {
-                        var binary = atob(result.base64 || '');
-                        var bytes = new Uint8Array(binary.length);
+                    if (result.__souloErrorType) { fail(result.message || result.__souloErrorType, result.__souloErrorType); return; }
+                    var responseText = result.responseText || '', response = responseText;
+                    if (payload.responseType === 'blob') response = __souloBase64Blob(result.base64, result.mimeType);
+                    else if (payload.responseType === 'arraybuffer') {
+                        var binary = atob(result.base64 || ''), bytes = new Uint8Array(binary.length);
                         for (var index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
                         response = bytes.buffer;
                     } else if (payload.responseType === 'json') {
                         try { response = JSON.parse(responseText); } catch (_) { response = null; }
                     }
-                    var event = {
-                        readyState: 4, status: result.status || 0, statusText: result.statusText || '',
-                        finalUrl: result.finalURL || payload.url, responseHeaders: result.responseHeaders || '',
-                        responseText: responseText, response: response
-                    };
-                    finished = true;
-                    callback('onreadystatechange', event);
-                    callback('onload', event);
-                    callback('onloadend', event);
-                    resolveRequest(event);
+                    var event = {readyState:4, status:result.status || 0, statusText:result.statusText || '',
+                        finalUrl:result.finalURL || payload.url, responseHeaders:result.responseHeaders || '', responseText:responseText, response:response};
+                    if (details.upload && !uploadFinished && result.uploadedBytes > 0) {
+                        var sent = {loaded:result.uploadedBytes,total:result.uploadTotal || result.uploadedBytes,lengthComputable:true};
+                        if (!uploadStarted) { uploadStarted = true; callback('onloadstart', sent, details.upload); }
+                        callback('onprogress', sent, details.upload);
+                        if (sent.loaded >= sent.total) { uploadFinished = true; callback('onload', sent, details.upload); callback('onloadend', sent, details.upload); }
+                    }
+                    finished = true; cleanup();
+                    callback('onreadystatechange', event); callback('onload', event); callback('onloadend', event); resolveRequest(event);
                 }).catch(function(error) { fail(error); });
-            } catch (error) { fail(error); }
-            return modern ? promise : { abort: abort };
+            }
+            callback('onloadstart', {readyState:1});
+            try { var prepared = prepareBody(); if (prepared && typeof prepared.then === 'function') prepared.then(send).catch(function(e) { fail(e); }); else send(); }
+            catch (error) { fail(error); }
+            return modern ? promise : {abort:abort};
         }
-
         \#(allowsXHR ? "var GM_xmlhttpRequest = function(details) { return __souloXMLHTTP(details, false); }; __souloGM.xmlHttpRequest = function(details) { return __souloXMLHTTP(details, true); };" : "")
         var GM = Object.freeze(__souloGM);
         \#((allowsGetValue || allowsGetValues || allowsListValues || allowsAddValueListener) ? "__souloBridge('getStorageSnapshot').then(__souloReceiveStorage).catch(console.error);" : "")
@@ -2081,6 +2223,22 @@ final class UserScriptDownloadRequests {
 
 enum UserScriptHTTPBridge {
     static let maximumResponseSize = 20 * 1_024 * 1_024
+    static let maximumUploadSize = 8 * 1_024 * 1_024
+    static let maximumConcurrentRequests = 8
+    struct Progress: Sendable {
+        enum Kind: String, Sendable { case headers, download, upload }
+        let kind: Kind
+        let loaded: Int64
+        let total: Int64
+        var status = 0
+        var finalURL = ""
+        var responseHeaders = ""
+        var payload: [String: Any] {
+            ["kind": kind.rawValue, "loaded": loaded, "total": max(total, 0),
+             "lengthComputable": total >= 0, "status": status, "finalUrl": finalURL,
+             "responseHeaders": responseHeaders, "readyState": kind == .headers ? 2 : 3]
+        }
+    }
     private static let allowedMethods = Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])
     private static let forbiddenHeaders = Set(["cookie", "host", "content-length", "origin"])
 
@@ -2088,7 +2246,9 @@ enum UserScriptHTTPBridge {
         for body: [String: Any],
         script: UserScriptRecord,
         pageURL: URL?,
-        configuration: URLSessionConfiguration = .ephemeral
+        configuration: URLSessionConfiguration = .ephemeral,
+        includesBinaryResponseText: Bool = false,
+        onProgress: (@Sendable (Progress) async -> Void)? = nil
     ) async throws -> [String: Any] {
         guard let rawURL = body["url"] as? String,
               let url = URL(string: rawURL, relativeTo: pageURL)?.absoluteURL,
@@ -2104,7 +2264,7 @@ enum UserScriptHTTPBridge {
         var request = URLRequest(url: url)
         request.httpMethod = method
         let requestedTimeout = (body["timeout"] as? NSNumber)?.doubleValue ?? 30_000
-        request.timeoutInterval = min(max(requestedTimeout / 1_000, 1), 60)
+        request.timeoutInterval = requestedTimeout.isFinite ? min(max(requestedTimeout / 1_000, 1), 60) : 30
         request.cachePolicy = .reloadIgnoringLocalCacheData
 
         if let headers = body["headers"] as? [String: Any] {
@@ -2113,13 +2273,33 @@ enum UserScriptHTTPBridge {
                 request.setValue(String(describing: value), forHTTPHeaderField: name)
             }
         }
-        if let data = body["data"] as? String, method != "GET", method != "HEAD" {
-            request.httpBody = Data(data.utf8)
+        if method != "GET", method != "HEAD" {
+            if let encoded = body["dataBase64"] as? String {
+                guard encoded.utf8.count <= ((maximumUploadSize + 2) / 3) * 4,
+                      let data = Data(base64Encoded: encoded), data.count <= maximumUploadSize else {
+                    throw URLError(.dataLengthExceedsMaximum)
+                }
+                request.httpBody = data
+            } else if let text = body["data"] as? String {
+                guard text.utf8.count <= maximumUploadSize else { throw URLError(.dataLengthExceedsMaximum) }
+                request.httpBody = Data(text.utf8)
+            }
+        }
+        let explicitCookie = body["cookie"] as? String
+        if let cookie = explicitCookie, !cookie.isEmpty, body["anonymous"] as? Bool != true {
+            guard script.hasGrant("GM_cookie", "GM.cookie"), cookie.utf8.count <= 16 * 1_024,
+                  cookie.rangeOfCharacter(from: .controlCharacters) == nil else { throw URLError(.noPermissionsToReadFile) }
+            request.setValue(cookie, forHTTPHeaderField: "Cookie")
         }
 
         configuration.httpShouldSetCookies = false
+        configuration.httpCookieStorage = nil
         configuration.httpCookieAcceptPolicy = .never
-        let redirectDelegate = UserScriptURLSessionDelegate(script: script, pageURL: pageURL)
+        // A slowly trickling server must not retain a request slot forever.
+        // URLRequest's timeout alone can reset whenever more bytes arrive.
+        configuration.timeoutIntervalForResource = request.timeoutInterval
+        let redirectDelegate = UserScriptURLSessionDelegate(script: script, pageURL: pageURL,
+            cookieOrigin: url, cookie: request.value(forHTTPHeaderField: "Cookie"), onProgress: onProgress)
         let session = URLSession(
             configuration: configuration,
             delegate: redirectDelegate,
@@ -2132,36 +2312,50 @@ enum UserScriptHTTPBridge {
                 || response.expectedContentLength == NSURLSessionTransferSizeUnknown else {
             throw URLError(.dataLengthExceedsMaximum)
         }
+        guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        let responseHeaders = http.allHeaderFields.map { "\($0.key): \($0.value)" }.sorted().joined(separator: "\r\n")
+        await onProgress?(Progress(kind: .headers, loaded: 0, total: response.expectedContentLength,
+            status: http.statusCode, finalURL: http.url?.absoluteString ?? rawURL, responseHeaders: responseHeaders))
         var data = Data()
         if response.expectedContentLength > 0 {
             data.reserveCapacity(Int(response.expectedContentLength))
         }
+        var lastProgress = ProcessInfo.processInfo.systemUptime
+        var reportedBytes = 0
         for try await byte in bytes {
             guard data.count < maximumResponseSize else {
                 throw URLError(.dataLengthExceedsMaximum)
             }
             data.append(byte)
+            if onProgress != nil, data.count & 0x3fff == 0 {
+                let now = ProcessInfo.processInfo.systemUptime
+                if now - lastProgress >= 0.2 {
+                    await onProgress?(Progress(kind: .download, loaded: Int64(data.count), total: response.expectedContentLength,
+                        status: http.statusCode, finalURL: http.url?.absoluteString ?? rawURL))
+                    lastProgress = now; reportedBytes = data.count
+                }
+            }
         }
-        guard let http = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
+        if reportedBytes != data.count {
+            await onProgress?(Progress(kind: .download, loaded: Int64(data.count), total: response.expectedContentLength,
+                status: http.statusCode, finalURL: http.url?.absoluteString ?? rawURL))
         }
 
-        let responseText = String(data: data, encoding: .utf8)
+        let binary = ["blob", "arraybuffer"].contains((body["responseType"] as? String)?.lowercased() ?? "")
+        let responseText = binary && !includesBinaryResponseText ? "" : String(data: data, encoding: .utf8)
             ?? String(data: data, encoding: .isoLatin1)
             ?? ""
-        let responseHeaders = http.allHeaderFields
-            .map { "\($0.key): \($0.value)" }
-            .sorted()
-            .joined(separator: "\r\n")
         var result: [String: Any] = [
             "status": http.statusCode,
             "statusText": HTTPURLResponse.localizedString(forStatusCode: http.statusCode),
             "finalURL": http.url?.absoluteString ?? rawURL,
             "responseHeaders": responseHeaders,
+            "uploadedBytes": bytes.task.countOfBytesSent,
+            "uploadTotal": max(bytes.task.countOfBytesExpectedToSend, bytes.task.countOfBytesSent),
             "responseText": responseText,
             "mimeType": http.mimeType ?? "application/octet-stream"
         ]
-        if ["blob", "arraybuffer"].contains((body["responseType"] as? String)?.lowercased() ?? "") {
+        if binary {
             result["base64"] = data.base64EncodedString()
         }
         return result
@@ -2176,7 +2370,7 @@ enum UserScriptHTTPBridge {
               url.scheme != nil else { throw URLError(.unsupportedURL) }
         let result = try await response(
             for: ["url": url.absoluteString, "method": "GET", "timeout": 30_000, "responseType": "arraybuffer"],
-            script: script, pageURL: pageURL, configuration: configuration
+            script: script, pageURL: pageURL, configuration: configuration, includesBinaryResponseText: true
         )
         guard let status = result["status"] as? Int, (200..<300).contains(status) else {
             throw URLError(.badServerResponse)
@@ -2225,15 +2419,29 @@ enum UserScriptHTTPBridge {
             || (first == 172 && (16...31).contains(second)) || (first == 100 && (64...127).contains(second))
     }
 
+    static func cookieForRedirect(_ cookie: String?, from origin: URL, to destination: URL) -> String? {
+        func port(_ url: URL) -> Int { url.port ?? (url.scheme?.lowercased() == "https" ? 443 : 80) }
+        guard origin.scheme?.lowercased() == destination.scheme?.lowercased(),
+              origin.host?.lowercased() == destination.host?.lowercased(), port(origin) == port(destination) else { return nil }
+        return cookie
+    }
+
 }
 
 private final class UserScriptURLSessionDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
     private let script: UserScriptRecord
     private let pageURL: URL?
+    private let cookieOrigin: URL
+    private let cookie: String?
+    private let onProgress: (@Sendable (UserScriptHTTPBridge.Progress) async -> Void)?
+    private let progressLock = NSLock()
+    private var lastUploadProgress: TimeInterval = 0
 
-    init(script: UserScriptRecord, pageURL: URL?) {
+    init(script: UserScriptRecord, pageURL: URL?, cookieOrigin: URL, cookie: String?,
+         onProgress: (@Sendable (UserScriptHTTPBridge.Progress) async -> Void)?) {
         self.script = script
         self.pageURL = pageURL
+        self.cookieOrigin = cookieOrigin; self.cookie = cookie; self.onProgress = onProgress
     }
 
     func urlSession(
@@ -2252,7 +2460,22 @@ private final class UserScriptURLSessionDelegate: NSObject, URLSessionTaskDelega
             completionHandler(nil)
             return
         }
-        completionHandler(request)
+        var next = request
+        next.setValue(UserScriptHTTPBridge.cookieForRedirect(cookie, from: cookieOrigin, to: redirectURL), forHTTPHeaderField: "Cookie")
+        completionHandler(next)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64,
+                    totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
+        guard let onProgress else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        progressLock.lock()
+        let report = now - lastUploadProgress >= 0.2 || totalBytesSent == totalBytesExpectedToSend
+        if report { lastUploadProgress = now }
+        progressLock.unlock()
+        if report {
+            Task { await onProgress(.init(kind: .upload, loaded: totalBytesSent, total: totalBytesExpectedToSend)) }
+        }
     }
 }
 
@@ -2407,7 +2630,12 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         }
     }
 
-    static let shared = NativeWebExtensionRuntime()
+    private(set) static weak var existingShared: NativeWebExtensionRuntime?
+    static let shared: NativeWebExtensionRuntime = {
+        let runtime = NativeWebExtensionRuntime()
+        existingShared = runtime
+        return runtime
+    }()
 
     let controller: WKWebExtensionController
     private let browserWindow = NativeExtensionWindow()
@@ -2432,6 +2660,10 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
     func apply(to configuration: WKWebViewConfiguration) {
         configuration.webExtensionController = controller
     }
+
+    // Includes extension backgrounds/popups/offscreen documents, not only
+    // browser tabs. Their stores must not be erased by ordinary site cleanup.
+    var hasLoadedExtensionContexts: Bool { !contexts.isEmpty || !pendingLoads.isEmpty }
 
     func clearTemporaryCaches(identifiers requested: Set<UUID>? = nil) async throws {
         let installed = Set(contexts.keys).union(BrowserExtensionService.shared.webExtensions.map(\.id))
@@ -2995,7 +3227,7 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         guard let id = nativeTab.browserTabID,
               let index = tabManager?.tabs.firstIndex(where: { $0.id == id }),
               let tabManager else { throw NativeWebExtensionHostError.tabUnavailable }
-        tabManager.switchToTab(at: index)
+        tabManager.switchToTab(at: index, userInitiated: false)
         activate(nativeTab)
     }
 

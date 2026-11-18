@@ -3,6 +3,24 @@ import XCTest
 
 @MainActor
 final class HomeToolbarConfigurationTests: XCTestCase {
+    func testCustomLayoutPersistsAndClampsUnderWindowResize() throws {
+        let name = "HomeToolbarLayout." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let service = HomeToolbarConfigurationService(defaults: defaults, slotLimit: 5)
+        var layout = service.layout
+        layout.style = .capsule
+        layout.placement = .free
+        let strip = CGSize(width: 168, height: 60)
+        layout.move(by: CGSize(width: -1000, height: -1000), in: CGSize(width: 360, height: 570), strip: strip)
+        service.save([.settings, .files, .tabs], layout: layout)
+        let reopened = HomeToolbarConfigurationService(defaults: defaults, slotLimit: 8)
+        XCTAssertEqual(reopened.layout, layout)
+        XCTAssertEqual(reopened.layout.center(in: CGSize(width: 230, height: 160), strip: strip), CGPoint(x: 84, y: 30))
+        let decoded = try CloudSettingsSyncEngine.flattened(CloudSettingsSyncEngine.snapshot(defaults))
+        XCTAssertNotNil(decoded["setting." + HomeToolbarConfigurationService.layoutKey])
+    }
+
     func testHiddenByDefaultAndFiveSlotsPersistAcrossReload() {
         let name = "HomeToolbarTests." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!

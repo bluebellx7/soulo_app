@@ -1,12 +1,33 @@
 import SwiftUI
 
 struct BrowserToolbarSettingsView: View {
+    enum Section: Int, CaseIterable {
+        case home, browsing, more
+        @MainActor var title: String {
+            switch self {
+            case .home: ToolText.text("toolbar_section_home")
+            case .browsing: LanguageManager.shared.localizedString("browsing")
+            case .more: LanguageManager.shared.localizedString("show_more")
+            }
+        }
+    }
+    @ObservedObject private var homeService = HomeToolbarConfigurationService.shared
+    @State private var draftHomeActions = Array(repeating: HomeToolbarAction.none, count: HomeToolbarConfigurationService.slotCount)
+    @State private var draftHomeLayout = HomeToolbarLayout()
+    @State private var selection: Section
+    @State private var search = ""
+    @State private var hasLoadedDrafts = false
+    private var editsMore: Bool { selection == .more }
+
+    init(initialSection: Section = .browsing) {
+        _selection = State(initialValue: initialSection)
+    }
+
     @ObservedObject private var service = BrowserToolbarConfigurationService.shared
     @State private var draftActions = BrowserToolbarConfigurationService.defaultActions
     @State private var draftLeadingAction = BrowserToolbarConfigurationService.defaultLeadingAction
     @State private var draftAddressAction = BrowserToolbarConfigurationService.defaultAddressAction
     @State private var draftMoreActions = BrowserToolbarConfigurationService.defaultMoreActions
-    @State private var editsMore = false
     @State private var selectedToolbarSlot = 0
     @State private var selectedMoreSlot = 0
     @State private var showSaved = false
@@ -15,17 +36,19 @@ struct BrowserToolbarSettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker(ToolText.text("home_toolbar_browser_tools"), selection: $editsMore) {
-                Text(ToolText.text("home_toolbar_browser_tools")).tag(false)
-                Text(ToolText.text("toolbar_more_panel")).tag(true)
+            Picker(ToolText.text("toolbar_settings"), selection: $selection) {
+                ForEach(Section.allCases, id: \.self) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 20).padding(.vertical, 12)
             .accessibilityIdentifier("browser-toolbar.section")
 
-            TabView(selection: $editsMore) {
-                editorPage(isMore: false).tag(false)
-                editorPage(isMore: true).tag(true)
+            // Only editing controls live inside the pager. Navigation destinations
+            // remain with the owning settings stack, above this lazy boundary.
+            TabView(selection: $selection) {
+                HomeToolbarEditor(draft: $draftHomeActions, layout: $draftHomeLayout).tag(Section.home)
+                editorPage(isMore: false).tag(Section.browsing)
+                editorPage(isMore: true).tag(Section.more)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
         }
@@ -33,9 +56,13 @@ struct BrowserToolbarSettingsView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             bottomActionBar
         }
-        .navigationTitle(LanguageManager.shared.localizedString("toolbar_customize"))
+        .navigationTitle(ToolText.text("toolbar_settings"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            guard !hasLoadedDrafts else { return }
+            hasLoadedDrafts = true
+            draftHomeActions = homeService.actions
+            draftHomeLayout = homeService.layout
             draftActions = service.actions
             draftAddressAction = service.addressAction
             draftLeadingAction = service.leadingAction
@@ -47,7 +74,7 @@ struct BrowserToolbarSettingsView: View {
             Button(LanguageManager.shared.localizedString("done"), role: .cancel) {}
         }
         .alert(
-            editsMore ? ToolText.text("toolbar_restore") : LanguageManager.shared.localizedString("toolbar_restore_confirm_title"),
+            selection == .home ? ToolText.text("home_toolbar_reset") : editsMore ? ToolText.text("toolbar_restore") : LanguageManager.shared.localizedString("toolbar_restore_confirm_title"),
             isPresented: $showRestoreConfirmation
         ) {
             Button(
@@ -58,7 +85,8 @@ struct BrowserToolbarSettingsView: View {
             }
             Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
         } message: {
-            if !editsMore { Text(LanguageManager.shared.localizedString("toolbar_restore_confirm_message")) }
+            if selection == .home { Text(ToolText.text("home_toolbar_default_hint")) }
+            else if selection == .browsing { Text(LanguageManager.shared.localizedString("toolbar_restore_confirm_message")) }
         }
     }
 
@@ -98,6 +126,7 @@ struct BrowserToolbarSettingsView: View {
                         Text(selectedAction(isMore: isMore).localizedTitle)
                             .font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
                     }
+                    actionSearchField
                     LazyVGrid(columns: ToolbarActionPickerLayout.columns, spacing: 10) {
                         ForEach(availableActions(isMore: isMore)) { action in
                             actionChoice(action, isMore: isMore)
@@ -108,6 +137,23 @@ struct BrowserToolbarSettingsView: View {
         }
     }
 
+    private var actionSearchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary).accessibilityHidden(true)
+            TextField(LanguageManager.shared.localizedString("search"), text: $search)
+                .accessibilityIdentifier("browser-toolbar.action-search")
+            if !search.isEmpty {
+                Button { search = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
+            }
+        }
+        .font(.subheadline)
+        .padding(.horizontal, 12)
+        .frame(minHeight: 44)
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+    }
+
     private var bottomActionBar: some View {
         AdaptiveActionRow(spacing: 12) {
             Button {
@@ -116,16 +162,22 @@ struct BrowserToolbarSettingsView: View {
                 Label(ToolText.text("toolbar_restore"), systemImage: "arrow.counterclockwise")
             }
             .buttonStyle(CompactActionButtonStyle(fillsHeight: true))
+            .accessibilityIdentifier("toolbar.restore")
 
             Button {
-                service.save(actions: draftActions, addressAction: draftAddressAction, moreActions: draftMoreActions, leadingAction: draftLeadingAction)
+                // Saving one section must not persist pending edits in another.
+                switch selection {
+                case .home: homeService.save(draftHomeActions, layout: draftHomeLayout)
+                case .browsing: service.save(actions: draftActions, addressAction: draftAddressAction, leadingAction: draftLeadingAction)
+                case .more: service.saveMoreActions(draftMoreActions)
+                }
                 showSaved = true
                 HapticsManager.success()
             } label: {
                 Label(LanguageManager.shared.localizedString("save"), systemImage: "checkmark")
             }
             .buttonStyle(CompactActionButtonStyle(prominent: true, fillsHeight: true))
-            .accessibilityIdentifier("browser-toolbar.save")
+            .accessibilityIdentifier(selection == .home ? "home-toolbar.save" : "browser-toolbar.save")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -139,12 +191,22 @@ struct BrowserToolbarSettingsView: View {
     }
 
     private func restoreDefaults() {
-        if editsMore {
-            service.resetMoreActions(); draftMoreActions = service.moreActions
-        } else {
-            service.reset(); draftActions = service.actions; draftAddressAction = service.addressAction; draftLeadingAction = service.leadingAction
+        switch selection {
+        case .home:
+            draftHomeActions = Array(repeating: .none, count: HomeToolbarConfigurationService.slotCount)
+            draftHomeLayout = HomeToolbarLayout()
+            homeService.save(draftHomeActions, layout: draftHomeLayout)
+        case .browsing:
+            service.reset()
+            draftActions = service.actions
+            draftAddressAction = service.addressAction
+            draftLeadingAction = service.leadingAction
+            selectedToolbarSlot = 0
+        case .more:
+            service.resetMoreActions()
+            draftMoreActions = service.moreActions
+            selectedMoreSlot = 0
         }
-        if editsMore { selectedMoreSlot = 0 } else { selectedToolbarSlot = 0 }
         HapticsManager.selection()
     }
 
@@ -288,6 +350,7 @@ struct BrowserToolbarSettingsView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(action.localizedTitle)
+        .accessibilityIdentifier("browser-toolbar.preview-slot.\(slot)")
     }
 
     private func actionChoice(_ action: BrowserToolbarAction, isMore: Bool) -> some View {
@@ -310,7 +373,7 @@ struct BrowserToolbarSettingsView: View {
                 tabCount: action == .tabs ? 2 : nil)
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier(isMore == editsMore ? "browser-toolbar.action.\(action.rawValue)" : "browser-toolbar.inactive-action.\(action.rawValue)")
+        .accessibilityIdentifier(selection == (isMore ? .more : .browsing) ? "browser-toolbar.action.\(action.rawValue)" : "browser-toolbar.inactive-action.\(action.rawValue)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -330,6 +393,7 @@ struct BrowserToolbarSettingsView: View {
     private func availableActions(isMore: Bool) -> [BrowserToolbarAction] {
         let visibleActions = BrowserToolbarAction.allCases.filter {
             !BrowserToolbarConfigurationService.temporarilyUnavailableActions.contains($0)
+                && (search.isEmpty || $0.localizedTitle.localizedCaseInsensitiveContains(search))
         }
         if isMore { return visibleActions.filter { $0 != .more } }
         if selectedToolbarSlot == 4 || selectedToolbarSlot == 5 {

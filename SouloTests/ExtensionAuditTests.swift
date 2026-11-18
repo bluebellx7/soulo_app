@@ -1082,3 +1082,119 @@ extension ExtensionAuditTests {
         XCTAssertEqual((reply?["reply"] as? [String: Any])?["pong"] as? String, "native-roundtrip", String(describing: reply))
     }
 }
+
+private actor ScriptProgressRecorder {
+    var events: [UserScriptHTTPBridge.Progress] = []
+    func add(_ event: UserScriptHTTPBridge.Progress) { events.append(event) }
+}
+
+private final class ScriptTransportFixture: URLProtocol {
+    private static let lock = NSLock()
+    private static var captured: [URLRequest] = []
+    static func reset() { lock.lock(); captured = []; lock.unlock() }
+    static func requests() -> [URLRequest] { lock.lock(); defer { lock.unlock() }; return captured }
+    override class func canInit(with request: URLRequest) -> Bool { request.url?.host == "transport.example" }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        Self.lock.lock(); Self.captured.append(request); Self.lock.unlock()
+        let data = Data(repeating: 0x7f, count: 64 * 1_024)
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Type": "application/octet-stream", "Content-Length": String(data.count)])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}
+
+extension ExtensionAuditTests {
+    func testNetworkProgressAndBinaryResponsesKeepExactByteCountsWithoutATextCopy() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ScriptTransportFixture.self]
+        let script = UserScriptRecord(name: "Network", source: "", grants: ["GM_xmlhttpRequest", "GM_cookie"], connectDomains: ["transport.example"])
+        let progress = ScriptProgressRecorder()
+        ScriptTransportFixture.reset()
+        let result = try await UserScriptHTTPBridge.response(for: ["url":"https://transport.example/file", "method":"POST",
+            "dataBase64":Data([1,2,3]).base64EncodedString(), "cookie":"fixture=1", "timeout":Double.nan, "responseType":"arraybuffer"],
+            script: script, pageURL: URL(string:"https://page.example/"), configuration: configuration,
+            onProgress: { await progress.add($0) })
+        XCTAssertEqual(result["responseText"] as? String, "", "Binary replies must not allocate an extra decoded text copy")
+        XCTAssertEqual(Data(base64Encoded: result["base64"] as! String)?.count, 64 * 1_024)
+        let events = await progress.events
+        XCTAssertEqual(events.first?.kind, .headers)
+        XCTAssertEqual(events.last?.kind, .download)
+        XCTAssertEqual(events.last?.loaded, 64 * 1_024)
+        XCTAssertEqual(events.last?.total, 64 * 1_024)
+        XCTAssertEqual(ScriptTransportFixture.requests().first?.value(forHTTPHeaderField: "Cookie"), "fixture=1")
+        XCTAssertEqual(ScriptTransportFixture.requests().first?.timeoutInterval, 30)
+    }
+
+    func testExplicitCookieRequiresItsGrantAndAnonymousOverridesIt() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ScriptTransportFixture.self]
+        let script = UserScriptRecord(name: "Network", source: "", grants: ["GM_xmlhttpRequest"], connectDomains: ["transport.example"])
+        ScriptTransportFixture.reset()
+        do {
+            _ = try await UserScriptHTTPBridge.response(for:["url":"https://transport.example/file","cookie":"fixture=1"],
+                script:script,pageURL:nil,configuration:configuration)
+            XCTFail("Explicit cookies need the GM_cookie grant")
+        } catch { XCTAssertEqual((error as? URLError)?.code, .noPermissionsToReadFile) }
+        XCTAssertTrue(ScriptTransportFixture.requests().isEmpty)
+        _ = try await UserScriptHTTPBridge.response(for:["url":"https://transport.example/file","cookie":"fixture=1","anonymous":true],
+            script:script,pageURL:nil,configuration:configuration)
+        XCTAssertNil(ScriptTransportFixture.requests().first?.value(forHTTPHeaderField:"Cookie"))
+    }
+
+    func testUploadLimitAndRedirectsDoNotLeakCookieCredentials() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ScriptTransportFixture.self]
+        let script = UserScriptRecord(name:"Network",source:"",connectDomains:["transport.example"])
+        ScriptTransportFixture.reset()
+        do {
+            _ = try await UserScriptHTTPBridge.response(for:["url":"https://transport.example/file","method":"POST",
+                "dataBase64":Data(repeating:0,count:UserScriptHTTPBridge.maximumUploadSize+1).base64EncodedString()],
+                script:script,pageURL:nil,configuration:configuration)
+            XCTFail("Oversized uploads must stop before transport")
+        } catch { XCTAssertEqual((error as? URLError)?.code,.dataLengthExceedsMaximum) }
+        XCTAssertTrue(ScriptTransportFixture.requests().isEmpty)
+        let origin = URL(string:"https://transport.example/")!
+        XCTAssertEqual(UserScriptHTTPBridge.cookieForRedirect("fixture=1",from:origin,to:URL(string:"https://transport.example:443/next")!),"fixture=1")
+        for url in ["http://transport.example/next","https://elsewhere.example/next","https://transport.example:444/next"] {
+            XCTAssertNil(UserScriptHTTPBridge.cookieForRedirect("fixture=1",from:origin,to:URL(string:url)!))
+        }
+    }
+
+    func testXHRProgressDispatchAndTimeoutSettleOnlyOnceAndCleanTheirReceivers() throws {
+        let js = try context(grants:["GM.xmlHttpRequest"])
+        js.evaluateScript("""
+        var packet,finishHTTP,events=[],states=[],sent=[];
+        webkit.messageHandlers.souloUserScriptXHR.postMessage=function(p){packet=p;return new Promise(function(resolve){finishHTTP=resolve;});};
+        var pendingHTTP=GM.xmlHttpRequest({url:'https://transport.example/file',context:{tag:42},
+          onprogress:function(e){events.push([e.loaded,e.total,e.context.tag]);},
+          onreadystatechange:function(e){states.push(e.readyState);},
+          upload:{onprogress:function(e){sent.push(e.loaded);}}});
+        """)
+        let id = try XCTUnwrap(UUID(uuidString:js.evaluateScript("packet.__souloScriptID")!.toString()))
+        let requestID = try XCTUnwrap(js.evaluateScript("packet.__souloRequestID")?.toString())
+        for progress in [UserScriptHTTPBridge.Progress(kind:.upload,loaded:3,total:3), .init(kind:.headers,loaded:0,total:7), .init(kind:.download,loaded:7,total:7)] {
+            js.evaluateScript(try XCTUnwrap(UserScriptRuntime.networkProgressScript(progress,scriptID:id,requestID:requestID,bridgeToken:"test")))
+            XCTAssertNil(js.exception)
+        }
+        js.evaluateScript("finishHTTP({status:200,responseText:'done'});")
+        XCTAssertEqual(js.evaluateScript("JSON.stringify(events)")?.toString(),"[[7,7,42]]")
+        XCTAssertEqual(js.evaluateScript("JSON.stringify(states)")?.toString(),"[2,3,4]")
+        XCTAssertEqual(js.evaluateScript("JSON.stringify(sent)")?.toString(),"[3]")
+        XCTAssertEqual(js.evaluateScript("Object.keys(window.__souloUserScriptNetworkReceivers).length")?.toInt32(),0)
+        js.evaluateScript("""
+        var timeoutCalls=0,errorCalls=0,endCalls=0,failedType;
+        webkit.messageHandlers.souloUserScriptXHR.postMessage=function(){return Promise.resolve({__souloErrorType:'timeout',message:'fixture'});};
+        GM.xmlHttpRequest({url:'https://transport.example/timeout',ontimeout:function(){timeoutCalls++;},
+          onerror:function(){errorCalls++;},onloadend:function(){endCalls++;}}).catch(function(e){failedType=e.type;});
+        """)
+        XCTAssertEqual(js.evaluateScript("timeoutCalls")?.toInt32(),1)
+        XCTAssertEqual(js.evaluateScript("errorCalls")?.toInt32(),0)
+        XCTAssertEqual(js.evaluateScript("endCalls")?.toInt32(),1)
+        XCTAssertEqual(js.evaluateScript("failedType")?.toString(),"timeout")
+        XCTAssertEqual(js.evaluateScript("Object.keys(window.__souloUserScriptNetworkReceivers).length")?.toInt32(),0)
+    }
+}

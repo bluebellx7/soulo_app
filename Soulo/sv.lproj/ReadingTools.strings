@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Position %d";
 "home_toolbar_reset" = "Göm alla";
 "home_toolbar_default_hint" = "Hemgenvägar är dolda som standard.";
+"home_toolbar_position" = "Placering";
+"home_toolbar_buttons" = "Knappar";
+"home_toolbar_tiles" = "Separata";
+"home_toolbar_capsule" = "Kapsel";
+"home_toolbar_icons" = "Bara ikoner";
+"home_toolbar_bottom" = "Längst ned";
+"home_toolbar_belowSearch" = "Under sökning";
+"home_toolbar_free" = "Fri placering";
+"home_toolbar_leading" = "Justera till början";
+"home_toolbar_center" = "Centrera";
+"home_toolbar_trailing" = "Justera till slutet";
+"home_toolbar_drag_position" = "Dra verktygsfältet dit du vill ha det.";
+"home_toolbar_drag_buttons" = "Tryck för att byta en knapp. Dra för att ändra ordningen.";
 "home_toolbar_search" = "Hitta en sida";
 "group_default_search" = "Standardsökning";
 "group_search_settings" = "Gruppinställningar";
 "group_engine_name" = "Sökmotornamn";
-"group_search_url" = "Sök URL med %@";
-"group_default_search_hint" = "Används när denna grupp inte har några aktiverade plattformar. Inkludera %@ i URL för söktermerna. Funktionshindrade plattformar förblir inaktiverade.";
-"group_search_url_invalid" = "Ange ett namn och en giltig HTTP eller HTTPS sökning URL som innehåller %@.";
+"group_search_url" = "Sökadress eller startsida (sökord: %@)";
+"group_default_search_hint" = "Används när gruppen inte har några aktiverade plattformar. Du kan välja vilken plattform som helst i gruppen. %@ ersätts med sökorden; utan platshållare öppnas sidan direkt. Avstängda plattformar aktiveras inte igen.";
+"group_search_url_invalid" = "Ange ett namn och en giltig HTTP- eller HTTPS-adress. Sökmallar kan använda %@.";
 "batch_import_new_group" = "Importerad grupp";
 "image_resources" = "Resurser";
 "screen_keep_awake" = "Håll skärmen på";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Detta format kan inte skickas direkt med systemspelaren. Öppna Control Center, välj Skärmspegling och välj sedan din TV eller Mac.";
 "userscript_check_updates" = "Kontrollera uppdateringar";
 "userscript_update_no_url" = "Ingen uppdateringsadress anges. Importera en nyare skriptfil för att uppdatera den.";
-"userscript_update_manual_hint" = "Kontroller körs endast när så begärs. Granska den nya versionen innan du uppdaterar. Inbyggda skript uppdateras med appen.";
+"userscript_update_manual_hint" = "När Installerade öppnas kontrolleras upp till 4 skript per besök, vart och ett en gång per 24 timmar. Pausar vid privat surfning, strömsparläge eller hög värme. Uppdateringar måste granskas.";
 "userscript_update_latest" = "Uppdaterad";
 "userscript_update_invalid" = "Uppdateringen är ogiltig, tillhör ett annat skript eller har en inkonsekvent version.";
 "userscript_update_changed" = "Detta skript ändrades efter kontrollen. Sök efter uppdateringar igen.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Frostat glas";
 "wallpaper_blur_amount" = "Oskärpans styrka";
 
-"auto_hide_platform_bar_hint" = "Plattformsfältet döljs först när du trycker på sidans innehåll. Automatiska omdirigeringar och rullning döljer det inte. Gå tillbaka till sökresultaten eller starta en ny sökning för att visa det igen.";
+"auto_hide_platform_bar_hint" = "När detta är på döljs fältet bara efter att du trycker på sidans innehåll och sidans domän inte matchar någon plattform i det aktuella fältet. Om någon plattform matchar förblir fältet synligt eller visas igen. Rullning och automatiska omdirigeringar döljer det inte.";
 
 "ad_subscription_add" = "Lägg till filterlista";
 "ad_subscription_name" = "Namn";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Styr vibration och gränssnittsljud i hela appen. Uppspelning på webbsidor samt video och ljud påverkas inte.";
 
 "home_display_settings" = "Startsidesvisning";
-"browsing_display_settings" = "Webbläsarvisning";
+"browsing_display_settings" = "Webbläsarinställningar";
 
 "web_video_download" = "Webbvideohämtning";
 "web_video_download_description" = "Visa kontroller för videohämtning på webbsidor, avsnittslistor och spelare. Uppspelning och befintliga hämtningar ändras inte.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "Rensar offlineartiklar, bokbiblioteket och läsförloppet.";
 
 "storage_cleanup_offline_desc" = "Tar bort rester av offlinevideor utan hämtningsposter.";
+
+"storage_website_shared" = "Delade och ej tilldelade data";
+"storage_website_shared_desc" = "Omfattar delade nätverkscacher, kakor och data som inte kan kopplas till en enskild webbplats.";
+"storage_website_clear_scope" = "Rensar data från vanliga webbplatser och delade nätverkscacher. Använd ”Tillfällig tilläggscache” för tilläggsmedier; tilläggsinställningar behålls.";
+
+"storage_quick_clear" = "Snabbrensning";
+"storage_quick_clear_done" = "Cache rensad";
+
+"storage_website_cleanup_pending" = "Webbplatsdata rensas fortfarande. Du kan gå tillbaka och fortsätta surfa. Starta inte en ny rensning.";
+
+"storage_auto_cleanup" = "Automatisk rensning";
+
+"storage_auto_cleanup_desc" = "Försöker högst en gång per 24 timmar när appen är inaktiv i bakgrunden. Tar bara bort oanvända tillfälliga import-, export- och förhandsvisningsfiler som är äldre än 24 timmar. Varje körning tar cirka 1 sekund eller granskar 2000 objekt och stannar när du återgår till appen. Hoppas över vid uppspelning, hämtning, export, aktiverat strömsparläge eller tydlig värme. Bokmärken, sparade hämtningar, inloggningar och webbplatsdata raderas aldrig automatiskt.";
+
+"restore_last_page_on_launch" = "Återställ senaste sidan";
+"restore_last_page_on_launch_desc" = "Öppna den senaste webbsidan när appen startar. Privata flikar återställs inte.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Gester och genvägar";
+"app_icon_shortcuts" = "Genvägar på appikonen";
+"settings_sync_backup" = "Synkronisering och backup";
+"icloud_bookmark_sync" = "Bokmärken via iCloud";
+"manual_settings_backups" = "Manuella backups";
+"create_settings_backup" = "Skapa";
+"toolbar_settings" = "Verktygsfält";
+"toolbar_section_home" = "Hem";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Rensa manuella backups";
+"clear_manual_backups_message" = "Raderar bara manuellt skapade eller importerade backups. Automatiska och äldre återställningskopior, nuvarande inställningar och iCloud-synkronisering bevaras.";
+"recovery_settings_backups" = "Automatiska och tidigare backups";
+
+/* Settings hierarchy */
+"settings_personalization" = "Anpassning";
+"appearance_home_settings" = "Hem och bakgrund";
+"settings_data" = "Data";
+"about_feedback_settings" = "Om och feedback";
+"browsing_startup_tabs" = "Start och flikar";
+"browsing_interface" = "Gränssnitt";
+"browsing_web_display" = "Webbsidor";
+"manual_backups_empty" = "Inga manuella backups ännu";
+"browsing_display_settings_legacy" = "Webbläsarvisning";

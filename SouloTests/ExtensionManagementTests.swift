@@ -6,6 +6,44 @@ import SwiftUI
 
 @MainActor
 final class ExtensionManagementTests: XCTestCase {
+    func testOrdinaryWebsiteClearKeepsLiveExtensionDatabasesAndSettingsWithoutAMaintenancePage() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Native extensions") }
+        let root = try temporaryRoot(), service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let record = try await service.installWebExtension(from: package(root))
+        defer { service.deleteWebExtension(record.id) }
+        let page = try await extensionPage(context(record.id))
+        _ = try await page.callAsyncJavaScript(#"""
+        localStorage.setItem('fixture-pref','keep');
+        await chrome.storage.local.set({fixtureSetting:'keep'});
+        await new Promise((resolve,reject)=>{const r=indexedDB.open('faststream-temp-123-456',1);
+        r.onupgradeneeded=()=>r.result.createObjectStore('files');
+        r.onerror=()=>reject(r.error);r.onsuccess=()=>{globalThis.busyDB=r.result;resolve(true);};});
+        const cache=await caches.open('fixture-active-extension');await cache.put('https://fixture.soulo.test/active',new Response('playing'));
+        return true;
+        """#, arguments: [:], in: nil, contentWorld: .page)
+        let server=try DownloadPlaybackHTTPFixture(files:["/site.html":Data("<body id='ready'>Website clear fixture</body>".utf8)])
+        let base=try await server.start();server.releaseDownloads();defer{server.stop()}
+        let web=WKWebView();defer{web.stopLoading()}
+        web.load(URLRequest(url:base.appendingPathComponent("site.html")))
+        try await eventually { (try? await web.evaluateJavaScript("!!document.getElementById('ready')")) as? Bool == true }
+        _ = try await web.evaluateJavaScript("localStorage.setItem('fixture-pref','remove');true")
+        let start=ProcessInfo.processInfo.systemUptime
+        let report=await StorageUsageService.clearWebsiteData()
+        XCTAssertLessThan(ProcessInfo.processInfo.systemUptime-start, 8, "A blocked extension database must not be probed during ordinary website cleanup")
+        XCTAssertTrue(report.retainedCategories.contains(.extensions))
+        let state=try await page.callAsyncJavaScript(#"""
+        const writable=await new Promise((resolve,reject)=>{const t=busyDB.transaction('files','readwrite');t.objectStore('files').put('still playing','media');t.oncomplete=()=>resolve(true);t.onerror=()=>reject(t.error);});
+        return {writable,local:localStorage.getItem('fixture-pref'),setting:(await chrome.storage.local.get('fixtureSetting')).fixtureSetting,caches:await caches.keys()};
+        """#, arguments: [:], in: nil, contentWorld: .page) as? [String:Any]
+        XCTAssertEqual(state?["writable"] as? Bool, true)
+        XCTAssertEqual(state?["local"] as? String, "keep")
+        XCTAssertEqual(state?["setting"] as? String, "keep")
+        XCTAssertTrue((state?["caches"] as? [String] ?? []).contains("fixture-active-extension"))
+        let cleared=try await web.evaluateJavaScript("localStorage.getItem('fixture-pref')")
+        XCTAssertTrue(cleared is NSNull)
+        _ = try await page.evaluateJavaScript("busyDB.close();busyDB=null;true")
+    }
+
     func testMediaStartupCoverEndsForReadyMediaAndNeverKeepsRealNoSourceErrorsHidden() async throws {
         guard #available(iOS 18.4, *) else { throw XCTSkip("Native WebExtensions") }
         let root = try temporaryRoot(), service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))

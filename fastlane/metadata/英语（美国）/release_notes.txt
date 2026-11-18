@@ -1,1 +1,4 @@
-Improved iPad windows, voice input, local summaries and accessibility. Improved background media export, Shortcuts and extension compatibility. Some features depend on your device, OS version and language.
+• Settings have been reorganized. Preview the Home toolbar as you change its style, reorder buttons, or drag it into place.
+• With restart restoration enabled, Soulo returns to Home or the last web page you were viewing.
+• Browser menus are easier to read. You can show a hidden toolbar again from the More menu.
+• Improved userscript network requests and update checks.

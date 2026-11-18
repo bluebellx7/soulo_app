@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Pozíció %d";
 "home_toolbar_reset" = "Összes elrejtése";
 "home_toolbar_default_hint" = "A kezdőlap parancsikonok alapértelmezés szerint el vannak rejtve.";
+"home_toolbar_position" = "Elhelyezés";
+"home_toolbar_buttons" = "Gombok";
+"home_toolbar_tiles" = "Különálló";
+"home_toolbar_capsule" = "Kapszula";
+"home_toolbar_icons" = "Csak ikonok";
+"home_toolbar_bottom" = "Alul";
+"home_toolbar_belowSearch" = "A kereső alatt";
+"home_toolbar_free" = "Szabad elhelyezés";
+"home_toolbar_leading" = "Igazítás az elejére";
+"home_toolbar_center" = "Középre";
+"home_toolbar_trailing" = "Igazítás a végére";
+"home_toolbar_drag_position" = "Húzd az eszköztárat a kívánt helyre.";
+"home_toolbar_drag_buttons" = "Koppints a gomb cseréjéhez, húzd az átrendezéshez.";
 "home_toolbar_search" = "Keressen egy oldalt";
 "group_default_search" = "Alapértelmezett keresés";
 "group_search_settings" = "Csoportbeállítások";
 "group_engine_name" = "Keresőmotor neve";
-"group_search_url" = "Keresés a következővel: URL a következővel: %@";
-"group_default_search_hint" = "Akkor használatos, ha ez a csoport nem rendelkezik engedélyezett platformokkal. A keresési kifejezések URL mezőjében szerepeljen az %@. A letiltott platformok letiltva maradnak.";
-"group_search_url_invalid" = "Adjon meg egy nevet és egy érvényes HTTP vagy HTTPS keresést URL, amely tartalmazza a következőt: %@.";
+"group_search_url" = "Keresési vagy kezdőlap-URL (keresőkifejezések: %@)";
+"group_default_search_hint" = "Akkor használatos, ha a csoportban nincs bekapcsolt platform. A csoport bármely platformja kiválasztható. A %@ helyére a keresőkifejezések kerülnek; helyőrző nélkül az oldal közvetlenül megnyílik. A kikapcsolt platformok kikapcsolva maradnak.";
+"group_search_url_invalid" = "Adj meg egy nevet és egy érvényes HTTP- vagy HTTPS-URL-t. A keresési sablonokban használható a %@.";
 "batch_import_new_group" = "Importált csoport";
 "image_resources" = "Erőforrások";
 "screen_keep_awake" = "Tartsa bekapcsolva a képernyőt";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Ez a formátum nem küldhető közvetlenül a rendszerlejátszóval. Nyissa meg a Control Center alkalmazást, válassza a Képernyőtükrözés lehetőséget, majd válassza ki TV-jét vagy Mac-jét.";
 "userscript_check_updates" = "Ellenőrizze a Frissítéseket";
 "userscript_update_no_url" = "Nincs megadva frissítési cím. A frissítéshez importáljon egy újabb szkriptfájlt.";
-"userscript_update_manual_hint" = "Az ellenőrzések csak kérésre futnak le. Frissítés előtt tekintse át az új verziót. A beépített szkriptek az alkalmazással frissülnek.";
+"userscript_update_manual_hint" = "A Telepítettek megnyitása látogatásonként legfeljebb 4 szkriptet ellenőriz, mindet 24 óránként egyszer. Privát böngészés, energiatakarékosság vagy nagy hő esetén szünetel. A frissítéseket át kell nézni.";
 "userscript_update_latest" = "Naprakész";
 "userscript_update_invalid" = "A frissítés érvénytelen, egy másik szkripthez tartozik, vagy inkonzisztens verziója van.";
 "userscript_update_changed" = "Ez a szkript megváltozott az ellenőrzés után. Ellenőrizze újra a frissítéseket.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Matt üveg";
 "wallpaper_blur_amount" = "Elmosás erőssége";
 
-"auto_hide_platform_bar_hint" = "A platformsáv csak a weboldal tartalmának megérintése után rejtőzik el. Az automatikus átirányítás és a görgetés nem rejti el. Visszatérés a találatokhoz vagy új keresés ismét megjeleníti.";
+"auto_hide_platform_bar_hint" = "Bekapcsolva a sáv csak a weboldal tartalmának megérintése után rejtőzik el, és csak akkor, ha az oldal domainje a jelenlegi sáv egyik platformjával sem egyezik. Egyezéskor a sáv látható marad vagy újra megjelenik. Görgetés és automatikus átirányítás nem rejti el.";
 
 "ad_subscription_add" = "Szűrőlista hozzáadása";
 "ad_subscription_name" = "Név";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "A rezgés és a kezelőfelület hangjainak vezérlése az egész alkalmazásban. A weboldalak, videók és hanganyagok lejátszását nem érinti.";
 
 "home_display_settings" = "Kezdőlap megjelenítése";
-"browsing_display_settings" = "Böngészési megjelenítés";
+"browsing_display_settings" = "Böngészési beállítások";
 
 "web_video_download" = "Webvideók letöltése";
 "web_video_download_description" = "Videóletöltési vezérlők megjelenítése weboldalakon, epizódlistákban és lejátszókban. A lejátszás és a meglévő letöltések nem változnak.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "Törli az offline cikkeket, a könyvtárat és az olvasási előrehaladást.";
 
 "storage_cleanup_offline_desc" = "Törli a letöltési bejegyzés nélküli offline videómaradványokat.";
+
+"storage_website_shared" = "Megosztott és nem hozzárendelt adatok";
+"storage_website_shared_desc" = "Megosztott hálózati gyorsítótárakat, sütiket és egyetlen webhelyhez nem rendelhető adatokat tartalmaz.";
+"storage_website_clear_scope" = "Törli a szokásos webhelyadatokat és a megosztott hálózati gyorsítótárakat. A bővítmények médiájához használja ezt: „Bővítmények ideiglenes gyorsítótára”; a bővítménybeállítások megmaradnak.";
+
+"storage_quick_clear" = "Gyors tisztítás";
+"storage_quick_clear_done" = "Gyorsítótár törölve";
+
+"storage_website_cleanup_pending" = "A webhelyadatok törlése még folyamatban van. Visszaléphet és folytathatja a böngészést. Ne indítson újabb tisztítást.";
+
+"storage_auto_cleanup" = "Automatikus tisztítás";
+
+"storage_auto_cleanup_desc" = "Legfeljebb 24 óránként próbálkozik, amikor az app tétlen a háttérben. Csak a 24 óránál régebbi, nem használt ideiglenes import-, export- és előnézeti fájlokat törli. Egy kör kb. 1 másodpercig vagy 2000 elem ellenőrzéséig tart, és az appba visszatérve leáll. Lejátszás, letöltés, exportálás, bekapcsolt alacsony töltöttségű mód vagy jelentős melegedés esetén kimarad. A könyvjelzőket, mentett letöltéseket, bejelentkezéseket és webhelyadatokat nem törli automatikusan.";
+
+"restore_last_page_on_launch" = "Utolsó oldal visszaállítása";
+"restore_last_page_on_launch_desc" = "Az alkalmazás indításakor megnyitja az utolsó weboldalt. A privát lapok nem állnak vissza.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Gesztusok és parancsok";
+"app_icon_shortcuts" = "Appikon gyorsműveletei";
+"settings_sync_backup" = "Szinkron és biztonsági mentés";
+"icloud_bookmark_sync" = "iCloud-könyvjelzők";
+"manual_settings_backups" = "Kézi mentések";
+"create_settings_backup" = "Létrehozás";
+"toolbar_settings" = "Eszköztárak";
+"toolbar_section_home" = "Kezdőlap";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Kézi mentések törlése";
+"clear_manual_backups_message" = "Csak a kézzel létrehozott vagy importált mentéseket törli. Az automatikus és korábbi helyreállítási másolatok, a jelenlegi beállítások és az iCloud-szinkron megmaradnak.";
+"recovery_settings_backups" = "Automatikus és korábbi mentések";
+
+/* Settings hierarchy */
+"settings_personalization" = "Személyre szabás";
+"appearance_home_settings" = "Kezdőlap és háttérkép";
+"settings_data" = "Adatok";
+"about_feedback_settings" = "Névjegy és visszajelzés";
+"browsing_startup_tabs" = "Indítás és lapok";
+"browsing_interface" = "Felület";
+"browsing_web_display" = "Weboldalak";
+"manual_backups_empty" = "Még nincs kézi mentés";
+"browsing_display_settings_legacy" = "Böngészési megjelenítés";

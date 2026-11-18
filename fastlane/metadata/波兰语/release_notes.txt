@@ -1,1 +1,4 @@
-Ulepszono okna na iPadzie, wprowadzanie głosowe, lokalne podsumowania i dostępność. Ulepszono eksport multimediów w tle, Skróty i zgodność rozszerzeń. Niektóre funkcje zależą od urządzenia, wersji systemu i języka.
+• Zmieniliśmy układ ustawień. Podgląd na żywo pozwala zmieniać styl paska narzędzi strony głównej, przestawiać przyciski i przeciągać pasek w wybrane miejsce.
+• Po włączeniu przywracania przy ponownym uruchomieniu Soulo otwiera stronę główną lub ostatnio wyświetlaną stronę internetową.
+• Menu przeglądarki są bardziej czytelne. Ukryty pasek narzędzi możesz ponownie pokazać z menu Więcej.
+• Ulepszyliśmy żądania sieciowe i sprawdzanie aktualizacji skryptów użytkownika.

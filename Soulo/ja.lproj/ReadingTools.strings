@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "位置 %d";
 "home_toolbar_reset" = "すべて隠す";
 "home_toolbar_default_hint" = "ホームショートカットはデフォルトでは非表示になっています。";
+"home_toolbar_position" = "位置";
+"home_toolbar_buttons" = "ボタン";
+"home_toolbar_tiles" = "個別";
+"home_toolbar_capsule" = "カプセル";
+"home_toolbar_icons" = "アイコンのみ";
+"home_toolbar_bottom" = "画面下部";
+"home_toolbar_belowSearch" = "検索欄の下";
+"home_toolbar_free" = "自由に配置";
+"home_toolbar_leading" = "先頭に揃える";
+"home_toolbar_center" = "中央に揃える";
+"home_toolbar_trailing" = "末尾に揃える";
+"home_toolbar_drag_position" = "ツールバーをドラッグして配置します。";
+"home_toolbar_drag_buttons" = "タップで変更、ドラッグで並べ替え。";
 "home_toolbar_search" = "ページを探す";
 "group_default_search" = "デフォルトの検索";
 "group_search_settings" = "グループ設定";
 "group_engine_name" = "検索エンジン名";
-"group_search_url" = "%@ で URL を検索します";
-"group_default_search_hint" = "このグループに有効なプラットフォームがない場合に使用されます。検索語の URL に %@ を含めます。無効なプラットフォームは無効のままです。";
-"group_search_url_invalid" = "名前と有効な HTTP または HTTPS を入力して、%@ を含む URL を検索します。";
+"group_search_url" = "検索またはホームページのURL（検索語：%@）";
+"group_default_search_hint" = "このグループに有効なプラットフォームがない場合に使用します。グループ内の任意のプラットフォームを選択できます。%@ は検索語に置き換えられ、プレースホルダーがなければページを直接開きます。無効にしたプラットフォームは再び有効になりません。";
+"group_search_url_invalid" = "名前と有効な HTTP または HTTPS のURLを入力してください。検索テンプレートには %@ を使用できます。";
 "batch_import_new_group" = "インポートされたグループ";
 "image_resources" = "リソース";
 "screen_keep_awake" = "画面をオンのままにする";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "この形式はシステム プレーヤーでは直接送信できません。 Control Center を開き、[画面ミラーリング] を選択して、TV または Mac を選択します。";
 "userscript_check_updates" = "アップデートを確認する";
 "userscript_update_no_url" = "更新アドレスは提供されません。新しいスクリプト ファイルをインポートして更新します。";
-"userscript_update_manual_hint" = "チェックは要求された場合にのみ実行されます。更新する前に新しいバージョンを確認してください。組み込みスクリプトはアプリとともに更新されます。";
+"userscript_update_manual_hint" = "インストール済みを開くと、1 回につき最大 4 本、各スクリプトを 24 時間に 1 回確認します。プライベートブラウズ、低電力、高温時は停止します。更新前の確認は必要です。";
 "userscript_update_latest" = "最新の状態";
 "userscript_update_invalid" = "更新が無効であるか、別のスクリプトに属しているか、バージョンが一貫していません。";
 "userscript_update_changed" = "このスクリプトはチェック後に変更されました。アップデートを再度確認してください。";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "すりガラス";
 "wallpaper_blur_amount" = "ぼかしの強さ";
 
-"auto_hide_platform_bar_hint" = "ウェブページの内容をタップした後にのみプラットフォームバーを非表示にします。自動リダイレクトやスクロールでは非表示になりません。検索結果に戻るか、新しい検索を始めると再表示します。";
+"auto_hide_platform_bar_hint" = "オンにすると、ウェブページの内容を手動でタップし、そのページのドメインが現在のバー内のどのプラットフォームにも一致しない場合にのみバーを隠します。一致するものがあれば、表示を維持または復元します。スクロールや自動リダイレクトでは隠れません。";
 
 "ad_subscription_add" = "フィルタを追加";
 "ad_subscription_name" = "名前";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "アプリ全体の振動と操作音を設定します。ウェブページ、動画、音声の再生には影響しません。";
 
 "home_display_settings" = "ホーム画面の表示";
-"browsing_display_settings" = "ブラウズ画面の表示";
+"browsing_display_settings" = "ブラウズ設定";
 
 "web_video_download" = "ウェブ動画のダウンロード";
 "web_video_download_description" = "ウェブページ、エピソード一覧、プレーヤーに動画のダウンロード操作を表示します。再生や既存のダウンロードには影響しません。";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "オフライン記事、本棚、読書の進み具合を消去します。";
 
 "storage_cleanup_offline_desc" = "ダウンロード記録のないオフライン動画の残りを削除します。";
+
+"storage_website_shared" = "共有データと帰属先不明のデータ";
+"storage_website_shared_desc" = "共有ネットワークキャッシュ、Cookie、単一のサイトに帰属できないデータを含みます。";
+"storage_website_clear_scope" = "通常のサイトデータと共有ネットワークキャッシュを消去します。拡張機能のメディアは「拡張機能の一時キャッシュ」で消去してください。拡張機能の設定は保持されます。";
+
+"storage_quick_clear" = "クイック消去";
+"storage_quick_clear_done" = "キャッシュを消去しました";
+
+"storage_website_cleanup_pending" = "ウェブサイトデータを削除中です。戻ってブラウジングを続けられます。再度の削除は開始しないでください。";
+
+"storage_auto_cleanup" = "自動クリーンアップ";
+
+"storage_auto_cleanup_desc" = "Appがバックグラウンドで待機中に、最大24時間に1回試行します。24時間以上前の、使用中でない読み込み・書き出し・プレビュー用の一時ファイルのみ削除します。1回につき約1秒または2000項目まで確認し、Appに戻ると停止します。再生・ダウンロード・書き出し中、低電力モードがオンの場合や本体が明らかに熱い場合はスキップします。ブックマーク、保存済みダウンロード、ログイン情報、Webサイトデータは自動削除しません。";
+
+"restore_last_page_on_launch" = "前回のページを復元";
+"restore_last_page_on_launch_desc" = "アプリの起動時に前回のウェブページを開きます。プライベートタブは復元しません。";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "ジェスチャとショートカット";
+"app_icon_shortcuts" = "アプリアイコンのショートカット";
+"settings_sync_backup" = "同期とバックアップ";
+"icloud_bookmark_sync" = "iCloud ブックマーク同期";
+"manual_settings_backups" = "手動バックアップ";
+"create_settings_backup" = "作成";
+"toolbar_settings" = "ツールバー";
+"toolbar_section_home" = "ホーム";
+
+/* Manual backup controls */
+"clear_manual_backups" = "手動バックアップを削除";
+"clear_manual_backups_message" = "手動で作成または読み込んだバックアップのみ削除します。自動・過去の復元用コピー、現在の設定、iCloud 同期は維持されます。";
+"recovery_settings_backups" = "自動・過去のバックアップ";
+
+/* Settings hierarchy */
+"settings_personalization" = "カスタマイズ";
+"appearance_home_settings" = "ホームと壁紙";
+"settings_data" = "データ";
+"about_feedback_settings" = "情報とフィードバック";
+"browsing_startup_tabs" = "起動とタブ";
+"browsing_interface" = "インターフェイス";
+"browsing_web_display" = "ウェブページ";
+"manual_backups_empty" = "手動バックアップはありません";
+"browsing_display_settings_legacy" = "ブラウズ画面の表示";

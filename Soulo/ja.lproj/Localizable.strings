@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "サポートされています";
 "userscript_docs_supported_desc" = "コアのマッチング、ドキュメントの開始/終了、スタイル/要素、単一および一括ストレージ、ローカル値リスナー、クリップボード、メニュー、ページ内通知、タブ、ダウンロード、タブ データ、Cookie、リソース、URL 変更、および権限スコープのリクエスト。";
 "userscript_docs_partial_title" = "部分的にサポートされています";
-"userscript_docs_partial_desc" = "ネットワーク リクエストでは、アップロード/進行状況と Cookie の転送が省略されます。通知はページ内で行われ、リソース API は非同期で、値変更リスナーは現在のページで行われた変更を報告します。更新チェックは手動です。";
+"userscript_docs_partial_desc" = "通知はページ内に表示され、リソース API は Promise を返します。cookie オプションには GM_cookie 権限が必要で、Cookie は自動送信しません。";
 "userscript_docs_unsupported_title" = "現在サポートされていません";
-"userscript_docs_unsupported_desc" = "GM_webRequest インターセプト、GM_audio、サンドボックス/ランイン分離、自動更新チェック、および WKWebView では提供できない厳密なデスクトップのみの動作。";
+"userscript_docs_unsupported_desc" = "GM_webRequest、GM_audio、sandbox/run-in 分離、および WKWebView が提供しないデスクトップ機能。";
 "userscript_docs_metadata_title" = "メタデータ";
 "userscript_docs_metadata_identity" = "インストール前およびスクリプトの詳細に人間が判読できるスクリプト名とオプションの説明が表示されます。";
 "userscript_docs_metadata_version" = "安定した一意の名前空間を使用し、バンドルされたスクリプトが変更されるたびにバージョンを増やします。";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "このスクリプトの永続値を 1 つ削除します。";
 "userscript_docs_api_list" = "このスクリプトが所有するすべての永続ストレージ キーを返します。";
 "userscript_docs_api_bulk" = "1 回の操作で複数の JSON 値の読み取り、書き込み、または削除を行います。書き込みはネイティブ ストアによってアトミックに検証されます。";
-"userscript_docs_api_listener" = "現在の Web ページのスクリプトによって行われたストレージの変更を監視します。クロス集計のリモート通知は発行されません。";
+"userscript_docs_api_listener" = "同じページと別タブの保存値の変化を監視します。別タブの変更は remote=true で通知します。";
 "userscript_docs_api_element" = "ドキュメントの開始時も含めて、属性を持つ要素を作成して追加します。";
 "userscript_docs_api_clipboard" = "Soulo のネイティブ ブリッジを介してテキストをシステム クリップボードにコピーします。";
 "userscript_docs_extended_title" = "メニュー、タブ、ファイル、ページの統合";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "ネットワークリクエスト";
 "userscript_docs_network_legacy" = "特権リクエストを開始し、中止ハンドルを返します。一致する許可と @connect ホストを宣言します。";
 "userscript_docs_network_modern" = "同じ詳細オブジェクトとコールバック動作を持つ特権リクエスト API の最新のエイリアス。";
-"userscript_docs_network_details" = "URL、メソッド、ヘッダー、データ、タイムアウト、responseType、onloadstart、onreadystatechange、onload、onerror、onloadend をサポートします。";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "json、blob、arraybuffer を使用するか、テキストを空のままにしてください。応答には、ステータス、finalUrl、ヘッダー、responseText、および応答が含まれます。";
 "userscript_docs_network_connect" = "ページ ホストには self、ページ ホストとそのサブドメインのドメイン、ワイルドカード ドメイン、または本当に必要な場合にのみ * を使用します。";
 "userscript_docs_limits_title" = "行動と制限";
 "userscript_docs_limits_web" = "標準 DOM、イベント、MutationObserver、フェッチ、タイマー、およびその他の WKWebView API が利用可能です。通常のフェッチは引き続き CORS に従います。";
 "userscript_docs_limits_storage" = "保存される値は JSON シリアル化可能である必要があります。値ごとに最大 256 KB、スクリプトごとに合計 1 MB までです。";
-"userscript_docs_limits_network" = "特権応答は 20 MB に制限され、タイムアウトは 1 ～ 60 秒に制限され、Cookie/ホスト/オリジン ヘッダーは受け入れられません。";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScript はプライベート ブラウズでは実行されません。";
 "userscript_docs_limits_require" = "HTTPS の @require ファイルはインストール時や保存時にダウンロードしてキャッシュされ、スクリプト本体より先に宣言順で実行されます。";
 "userscript_docs_template_title" = "最小限のテンプレート";

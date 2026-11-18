@@ -174,8 +174,101 @@ final class GroupDefaultSearchTests: XCTestCase {
         engine.template = "javascript:alert('%@')"
         XCTAssertThrowsError(try service.save(engine, for: scope))
         engine.template = "https://example.com/search"
-        XCTAssertThrowsError(try service.save(engine, for: scope))
+        try service.save(engine, for: scope)
+        XCTAssertEqual(GroupDefaultSearchService(defaults: defaults).engine(for: scope).template, engine.template)
         XCTAssertEqual(service.engine(for: scope).name, "Local search")
+    }
+
+    func testCurrentGroupChoicesIncludeHiddenPlatformsAndRespectOnlyTheirOwnOrder() throws {
+        var first = try XCTUnwrap(PlatformDataStore.defaultPlatforms().first)
+        first.sortOrder = 8
+        first.isVisible = false
+        let second = SearchPlatform(id: UUID(), name: "Second", iconName: "second-icon",
+            searchURLTemplate: "https://second.example/search?q=%@", homeURL: "https://second.example/start",
+            region: first.region, isBuiltIn: false, isVisible: true, sortOrder: 2, usageCount: 0, isCustom: true)
+        let other = SearchPlatform(id: UUID(), name: "Other region", iconName: "other-icon",
+            searchURLTemplate: "https://other.example/", homeURL: "https://other.example/",
+            region: .japan, isBuiltIn: false, isVisible: true, sortOrder: 0, usageCount: 0, isCustom: true)
+        let group = CustomGroup(name: "Current", platformIDs: [first.id, second.id, first.id])
+        let unrelated = CustomGroup(name: "Elsewhere", platformIDs: [other.id])
+        let platforms = [first, other, second]
+        let regional = GroupDefaultSearchEngine.groupOptions(for: .region(first.region), platforms: platforms, customGroups: [group, unrelated])
+        XCTAssertEqual(regional.map(\.id), [second.id, first.id])
+        let custom = GroupDefaultSearchEngine.groupOptions(for: .custom(group.id), platforms: platforms, customGroups: [group, unrelated])
+        XCTAssertEqual(custom.map(\.id), [first.id, second.id], "Custom group order wins over regional sort order; duplicate membership is one menu choice")
+        XCTAssertEqual(custom.first?.name, first.name)
+        XCTAssertEqual(custom.first?.template, first.searchURLTemplate)
+        XCTAssertEqual(custom.first?.homeURL, first.homeURL)
+        XCTAssertEqual(custom.first?.icon, first.iconName)
+        XCTAssertTrue(GroupDefaultSearchEngine.groupOptions(for: .custom(UUID()), platforms: platforms, customGroups: [group]).isEmpty)
+    }
+
+    func testHomeOnlyPlatformSnapshotPersistsAfterSourceChangesOrRemoval() throws {
+        let suite = "HomeOnlyGroupSearch." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var source = SearchPlatform(id: UUID(), name: "Home only", iconName: "home-icon",
+            searchURLTemplate: "https://home.example/chat", homeURL: "https://home.example/account/start",
+            region: .international, isBuiltIn: false, isVisible: false, sortOrder: 0, usageCount: 0, isCustom: true)
+        let group = CustomGroup(name: "Mine", platformIDs: [source.id])
+        let snapshot = try XCTUnwrap(GroupDefaultSearchEngine.groupOptions(for: .custom(group.id), platforms: [source], customGroups: [group]).first)
+        let scope = SearchGroupScope.custom(group.id)
+        try GroupDefaultSearchService(defaults: defaults).save(snapshot, for: scope)
+        source.name = "Changed"; source.homeURL = "https://changed.example/"; source.iconName = "changed"
+        XCTAssertTrue(GroupDefaultSearchEngine.groupOptions(for: scope, platforms: [], customGroups: [group]).isEmpty)
+        let saved = GroupDefaultSearchService(defaults: defaults).engine(for: scope)
+        XCTAssertEqual(saved, snapshot)
+        XCTAssertEqual(saved.platform(region: source.region).searchURL(for: "ignored keyword")?.absoluteString, "https://home.example/chat")
+        XCTAssertEqual(saved.platform(region: source.region).homeURL, "https://home.example/account/start")
+        XCTAssertEqual(saved.platform(region: source.region).iconName, "home-icon")
+    }
+
+    func testHomeOnlyDefaultsStillRejectUnsafeSchemesCredentialsAndControlCharacters() throws {
+        for value in ["https://example.com/", "http://example.com/path", "https://example.com/?q=%@"] {
+            XCTAssertTrue(GroupDefaultSearchEngine.validTemplate(value), value)
+        }
+        for value in ["file:///tmp/video", "javascript:alert(1)", "data:text/html,test", "https://user:secret@example.com/",
+                      "https://user@example.com/?q=%@", "https://example.com/a b", "https://example.com/\u{0}"] {
+            XCTAssertFalse(GroupDefaultSearchEngine.validTemplate(value), value)
+        }
+        let suite = "UnsafeGroupSearch." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var engine = GroupDefaultSearchEngine.presets[0]
+        engine.homeURL = "javascript:alert(1)"
+        XCTAssertThrowsError(try GroupDefaultSearchService(defaults: defaults).save(engine, for: .region(.china)))
+    }
+
+    func testAIPlatformSnapshotPersistsItsInteractionAndLoginRequirements() throws {
+        let suite = "AIGroupSearch." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let source = SearchPlatform(id: UUID(), name: "Chat", iconName: "chat-icon",
+            searchURLTemplate: "https://chat.example/", homeURL: "https://chat.example/account",
+            region: .international, isBuiltIn: true, isVisible: false, sortOrder: 0, usageCount: 0,
+            isCustom: false, requiresLogin: true, interactionType: .aiChat)
+        let scope = SearchGroupScope.region(.international)
+        let snapshot = try XCTUnwrap(GroupDefaultSearchEngine.groupOptions(for: scope, platforms: [source], customGroups: []).first)
+        try GroupDefaultSearchService(defaults: defaults).save(snapshot, for: scope)
+        let restored = GroupDefaultSearchService(defaults: defaults).platform(for: scope)
+        XCTAssertEqual(restored.interactionType, .aiChat)
+        XCTAssertTrue(restored.requiresLogin)
+        XCTAssertEqual(restored.searchURLTemplate, source.searchURLTemplate)
+        XCTAssertEqual(restored.homeURL, source.homeURL)
+    }
+
+    func testLegacyDefaultSearchJSONDecodesWithoutInteractionFields() throws {
+        let preset = GroupDefaultSearchEngine.presets[0]
+        let data = try JSONSerialization.data(withJSONObject: [
+            "id": preset.id.uuidString, "name": preset.name, "template": preset.template,
+            "homeURL": preset.homeURL, "icon": preset.icon
+        ])
+        let legacy = try JSONDecoder().decode(GroupDefaultSearchEngine.self, from: data)
+        XCTAssertNil(legacy.interactionType)
+        XCTAssertNil(legacy.requiresLogin)
+        XCTAssertEqual(legacy.platform(region: .china).interactionType, .urlSearch)
+        XCTAssertFalse(legacy.platform(region: .china).requiresLogin)
+        XCTAssertEqual(legacy, preset)
     }
     func testAllDisabledPlatformsKeepBookmarkAndHomeSearchTargetsAvailable() {
         let store = PlatformDataStore.shared

@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "ஆதரிக்கப்பட்டது";
 "userscript_docs_supported_desc" = "மையப் பொருத்தம், ஆவணம்-தொடக்கம்/முடிவு, பாணிகள்/உறுப்புகள், ஒற்றை மற்றும் மொத்த சேமிப்பு, உள்ளூர் மதிப்பு கேட்போர், கிளிப்போர்டு, மெனுக்கள், இன்-பேஜ் அறிவிப்புகள், தாவல்கள், பதிவிறக்கங்கள், தாவல் தரவு, குக்கீகள், ஆதாரங்கள், URL மாற்றங்கள் மற்றும் அனுமதி நோக்கமுள்ள கோரிக்கைகள்.";
 "userscript_docs_partial_title" = "ஓரளவு ஆதரிக்கப்பட்டது";
-"userscript_docs_partial_desc" = "நெட்வொர்க் கோரிக்கைகள் பதிவேற்றம்/முன்னேற்றம் மற்றும் குக்கீ போக்குவரத்து ஆகியவற்றைத் தவிர்க்கின்றன. அறிவிப்புகள் பக்கத்தில் உள்ளன, ஆதார APIகள் ஒத்திசைவற்றவை மற்றும் தற்போதைய பக்கத்தால் செய்யப்பட்ட மாற்றங்களைக் கேட்போர் மதிப்பு மாற்றத்தைப் புகாரளிக்கின்றனர். புதுப்பிப்பு காசோலைகள் கைமுறையாக இருக்கும்.";
+"userscript_docs_partial_desc" = "அறிவிப்புகள் பக்கத்தில் காட்டப்படும்; வள APIகள் Promise தரும். cookie விருப்பத்திற்கு GM_cookie அனுமதி தேவை; குக்கிகள் தானாக அனுப்பப்படாது.";
 "userscript_docs_unsupported_title" = "தற்போது ஆதரிக்கப்படவில்லை";
-"userscript_docs_unsupported_desc" = "GM_webRequest இடைமறிப்பு, GM_audio, சாண்ட்பாக்ஸ்/ரன்-இன் தனிமைப்படுத்தல், தானியங்கி புதுப்பிப்பு சோதனைகள் மற்றும் WKWebView வழங்க முடியாத சரியான டெஸ்க்டாப்-மட்டும் நடத்தைகள்.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in தனிமைப்படுத்தல் மற்றும் WKWebView வழங்காத கணினி அம்சங்கள்.";
 "userscript_docs_metadata_title" = "மெட்டாடேட்டா";
 "userscript_docs_metadata_identity" = "மனிதர்கள் படிக்கக்கூடிய ஸ்கிரிப்ட் பெயர் மற்றும் விருப்ப விவரம் நிறுவலுக்கு முன் மற்றும் ஸ்கிரிப்ட் விவரங்களில் காட்டப்பட்டுள்ளது.";
 "userscript_docs_metadata_version" = "தொகுக்கப்பட்ட ஸ்கிரிப்ட் மாறும்போதெல்லாம், நிலையான, தனித்துவமான பெயர்வெளியைப் பயன்படுத்தவும் மற்றும் பதிப்பை அதிகரிக்கவும்.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "இந்த ஸ்கிரிப்ட்டுக்கான ஒரு நிலையான மதிப்பை நீக்குகிறது.";
 "userscript_docs_api_list" = "இந்த ஸ்கிரிப்ட்டிற்குச் சொந்தமான அனைத்து நிலையான சேமிப்பக விசைகளையும் வழங்கும்.";
 "userscript_docs_api_bulk" = "ஒரு செயல்பாட்டில் பல JSON மதிப்புகளைப் படிக்கிறது, எழுதுகிறது அல்லது நீக்குகிறது; எழுத்துகள் பூர்வீகக் கடை மூலம் அணுமதிப்பீடு செய்யப்படுகின்றன.";
-"userscript_docs_api_listener" = "தற்போதைய வலைப்பக்கத்தில் ஸ்கிரிப்ட் செய்த சேமிப்பக மாற்றங்களைக் கவனிக்கிறது. குறுக்கு தாவல் ரிமோட் அறிவிப்புகள் வெளியிடப்படவில்லை.";
+"userscript_docs_api_listener" = "உள்ளூர் மற்றும் மற்ற தாவல்களின் சேமிப்பு மாற்றங்களைக் கண்காணிக்கும். மற்ற தாவலின் மாற்றத்தில் remote=true இருக்கும்.";
 "userscript_docs_api_element" = "ஆவணம்-தொடக்கத்தின் போது பாதுகாப்பாக உட்பட பண்புக்கூறுகளுடன் ஒரு உறுப்பை உருவாக்குகிறது மற்றும் சேர்க்கிறது.";
 "userscript_docs_api_clipboard" = "Souloன் நேட்டிவ் பிரிட்ஜ் மூலம் கணினி கிளிப்போர்டுக்கு உரையை நகலெடுக்கிறது.";
 "userscript_docs_extended_title" = "மெனுக்கள், தாவல்கள், கோப்புகள் மற்றும் பக்க ஒருங்கிணைப்பு";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "நெட்வொர்க் கோரிக்கைகள்";
 "userscript_docs_network_legacy" = "சலுகை பெற்ற கோரிக்கையைத் தொடங்கி, நிறுத்த கைப்பிடியை வழங்கும். பொருந்தும் மானியத்தையும் @connect ஹோஸ்ட்களையும் அறிவிக்கவும்.";
 "userscript_docs_network_modern" = "சலுகை பெற்ற கோரிக்கை API இன் நவீன மாற்றுப்பெயர் அதே விவரங்கள் பொருள் மற்றும் திரும்ப அழைக்கும் நடத்தை.";
-"userscript_docs_network_details" = "url, method, headers, data, timeout, responseType, onloadstart, onreadystatechange, onload, onerror மற்றும் onloadend ஆகியவற்றை ஆதரிக்கிறது.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "json, blob, arraybuffer ஐப் பயன்படுத்தவும் அல்லது உரைக்கு காலியாக விடவும். பதில்களில் நிலை, finalUrl, தலைப்புகள், பதில் உரை மற்றும் பதில் ஆகியவை அடங்கும்.";
 "userscript_docs_network_connect" = "பக்கம் ஹோஸ்ட், அதற்கான டொமைன் மற்றும் அதன் துணை டொமைன்கள், வைல்டு கார்டு டொமைன் அல்லது * உண்மையிலேயே தேவைப்படும்போது மட்டும் பயன்படுத்தவும்.";
 "userscript_docs_limits_title" = "நடத்தை மற்றும் வரம்புகள்";
 "userscript_docs_limits_web" = "நிலையான DOM, நிகழ்வுகள், MutationObserver, பெறுதல், டைமர்கள் மற்றும் பிற WKWebView APIகள் உள்ளன. இயல்பான பெறுதல் இன்னும் CORS ஐப் பின்பற்றுகிறது.";
 "userscript_docs_limits_storage" = "சேமிக்கப்பட்ட மதிப்புகள் JSON-வரிசைப்படுத்தக்கூடியதாக இருக்க வேண்டும்: ஒரு மதிப்புக்கு 256 KB மற்றும் ஒரு ஸ்கிரிப்ட்டுக்கு மொத்தம் 1 MB.";
-"userscript_docs_limits_network" = "சலுகையளிக்கப்பட்ட பதில்கள் 20 எம்பி வரை வரையறுக்கப்பட்டுள்ளன, காலக்கெடு 1-60 வினாடிகள் வரை கட்டுப்படுத்தப்படும், மேலும் குக்கீ/ஹோஸ்ட்/ஆரிஜின் தலைப்புகள் ஏற்கப்படாது.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScriptகள் தனிப்பட்ட உலாவலில் இயங்காது.";
 "userscript_docs_limits_require" = "HTTPS @require கோப்புகள் நிறுவும்போது அல்லது சேமிக்கும்போது பதிவிறக்கப்பட்டுத் தற்காலிகமாகச் சேமிக்கப்படும்; பின்னர் ஸ்கிரிப்ட்டுக்கு முன் வரிசையாக இயங்கும்.";
 "userscript_docs_template_title" = "குறைந்தபட்ச டெம்ப்ளேட்";

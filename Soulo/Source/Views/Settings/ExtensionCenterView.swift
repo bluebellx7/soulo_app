@@ -62,8 +62,16 @@ struct ExtensionCenterView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 if selectedTab == .installed {
-                    Button { showScriptUpdates = true } label: { Image(systemName: "arrow.triangle.2.circlepath") }
+                    Button { showScriptUpdates = true } label: {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .overlay(alignment: .topTrailing) {
+                                if !service.availableUserScriptUpdateVersions.isEmpty {
+                                    Circle().fill(Color.themePrimary).frame(width: 7, height: 7).offset(x: 4, y: -3)
+                                }
+                            }
+                    }
                         .accessibilityLabel(ToolText.text("userscript_check_updates"))
+                        .accessibilityValue(String(service.availableUserScriptUpdateVersions.count))
                         .accessibilityIdentifier("userscripts.updates")
                 }
             }
@@ -145,6 +153,11 @@ struct ExtensionCenterView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .browserExtensionActionsChanged)) { _ in
             extensionActionRevision &+= 1
+        }
+        .task(id: selectedTab, priority: .utility) {
+            guard selectedTab == .installed else { return }
+            do { try await Task.sleep(for: .milliseconds(800)) } catch { return }
+            await service.checkAutomaticUserScriptUpdates()
         }
         .confirmationDialog(LanguageManager.shared.localizedString("delete"), isPresented: Binding(
             get: { extensionPendingDeletion != nil }, set: { if !$0 { extensionPendingDeletion = nil } }

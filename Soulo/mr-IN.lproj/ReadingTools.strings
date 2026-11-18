@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "स्थिती %d";
 "home_toolbar_reset" = "सर्व लपवा";
 "home_toolbar_default_hint" = "होम शॉर्टकट बाय डीफॉल्ट लपलेले असतात.";
+"home_toolbar_position" = "स्थान";
+"home_toolbar_buttons" = "बटणे";
+"home_toolbar_tiles" = "स्वतंत्र";
+"home_toolbar_capsule" = "कॅप्सूल";
+"home_toolbar_icons" = "फक्त चिन्हे";
+"home_toolbar_bottom" = "खाली";
+"home_toolbar_belowSearch" = "शोधाखाली";
+"home_toolbar_free" = "हवे ते स्थान";
+"home_toolbar_leading" = "सुरुवातीला";
+"home_toolbar_center" = "मध्यभागी";
+"home_toolbar_trailing" = "शेवटी";
+"home_toolbar_drag_position" = "टूलबार हव्या त्या ठिकाणी ओढा.";
+"home_toolbar_drag_buttons" = "बटण बदलण्यासाठी टॅप करा. क्रम बदलण्यासाठी ओढा.";
 "home_toolbar_search" = "एक पृष्ठ शोधा";
 "group_default_search" = "डीफॉल्ट शोध";
 "group_search_settings" = "गट सेटिंग्ज";
 "group_engine_name" = "शोध इंजिन नाव";
-"group_search_url" = "%@ सह URL शोधा";
-"group_default_search_hint" = "या गटाला सक्षम केलेले प्लॅटफॉर्म नसताना वापरले जाते. शोध संज्ञांसाठी URL मध्ये %@ समाविष्ट करा. अक्षम प्लॅटफॉर्म अक्षम राहतात.";
-"group_search_url_invalid" = "नाव प्रविष्ट करा आणि वैध HTTP किंवा HTTPS शोध URL ज्यामध्ये %@ आहे.";
+"group_search_url" = "शोध URL किंवा मुख्यपृष्ठाचा पत्ता (शोधशब्दांसाठी %@)";
+"group_default_search_hint" = "या गटात सुरू असलेला कोणताही प्लॅटफॉर्म नसल्यास वापरले जाते. गटातील कोणताही प्लॅटफॉर्म निवडता येतो. %@ च्या जागी शोधशब्द येतात; प्लेसहोल्डर नसल्यास पृष्ठ थेट उघडते. बंद केलेले प्लॅटफॉर्म पुन्हा सुरू होत नाहीत.";
+"group_search_url_invalid" = "नाव आणि वैध HTTP किंवा HTTPS पत्ता द्या; शोध टेम्प्लेटमध्ये %@ वापरता येते.";
 "batch_import_new_group" = "आयातित गट";
 "image_resources" = "संसाधने";
 "screen_keep_awake" = "स्क्रीन चालू ठेवा";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "हे स्वरूप सिस्टम प्लेअरसह थेट पाठविले जाऊ शकत नाही. Control Center उघडा, स्क्रीन मिररिंग निवडा, नंतर तुमचा टीव्ही किंवा Mac निवडा.";
 "userscript_check_updates" = "अद्यतने तपासा";
 "userscript_update_no_url" = "कोणताही अपडेट पत्ता दिलेला नाही. ती अपडेट करण्यासाठी नवीन स्क्रिप्ट फाइल आयात करा.";
-"userscript_update_manual_hint" = "जेव्हा विनंती केली जाते तेव्हाच चेक चालतात. अपडेट करण्यापूर्वी नवीन आवृत्तीचे पुनरावलोकन करा. अंगभूत स्क्रिप्ट ॲपसह अपडेट होतात.";
+"userscript_update_manual_hint" = "स्थापित यादी उघडल्यावर प्रत्येक भेटीत जास्तीत जास्त 4 स्क्रिप्ट, प्रत्येक 24 तासांत एकदा तपासली जाते. खाजगी ब्राउझिंग, कमी ऊर्जा किंवा जास्त तापात थांबते. अद्यतनाची समीक्षा आवश्यक आहे.";
 "userscript_update_latest" = "अद्ययावत";
 "userscript_update_invalid" = "अद्यतन अवैध आहे, भिन्न स्क्रिप्टचे आहे किंवा विसंगत आवृत्ती आहे.";
 "userscript_update_changed" = "तपासणीनंतर ही स्क्रिप्ट बदलली. अद्यतनांसाठी पुन्हा तपासा.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "धूसर काच";
 "wallpaper_blur_amount" = "धूसरपणाची तीव्रता";
 
-"auto_hide_platform_bar_hint" = "वेबपृष्ठातील मजकुरावर टॅप केल्यानंतरच प्लॅटफॉर्म बार लपेल. आपोआप पुनर्निर्देशन किंवा स्क्रोल केल्याने तो लपणार नाही. पुन्हा दाखवण्यासाठी शोध निकालांवर परत जा किंवा नवीन शोध सुरू करा.";
+"auto_hide_platform_bar_hint" = "सुरू केल्यावर, पृष्ठातील मजकुरावर स्वतः टॅप केल्यावर आणि पृष्ठाचे डोमेन सध्याच्या बारमधील कोणत्याही प्लॅटफॉर्मशी जुळत नसल्यावरच बार लपतो. कोणत्याही प्लॅटफॉर्मशी जुळल्यास बार दिसत राहतो किंवा पुन्हा दिसतो. स्क्रोल आणि आपोआप पुनर्निर्देशन बार लपवत नाहीत.";
 
 "ad_subscription_add" = "फिल्टर यादी जोडा";
 "ad_subscription_name" = "नाव";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "संपूर्ण ॲपमधील कंपन आणि इंटरफेसचे ध्वनी नियंत्रित करा. वेबपेज, व्हिडिओ आणि ऑडिओ प्लेबॅकवर परिणाम होत नाही.";
 
 "home_display_settings" = "होमचे प्रदर्शन";
-"browsing_display_settings" = "ब्राउझिंगचे प्रदर्शन";
+"browsing_display_settings" = "ब्राउझिंग सेटिंग्ज";
 
 "web_video_download" = "वेब व्हिडिओ डाउनलोड";
 "web_video_download_description" = "वेबपेज, भागांच्या याद्या आणि प्लेयरमध्ये व्हिडिओ डाउनलोड नियंत्रणे दाखवा. प्लेबॅक आणि विद्यमान डाउनलोड बदलत नाहीत.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "ऑफलाइन लेख, पुस्तक संग्रह आणि वाचनाची प्रगती साफ करते.";
 
 "storage_cleanup_offline_desc" = "डाउनलोड नोंदी नसलेले ऑफलाइन व्हिडिओ अवशेष हटवते.";
+
+"storage_website_shared" = "सामायिक आणि न जोडलेला डेटा";
+"storage_website_shared_desc" = "सामायिक नेटवर्क कॅशे, कुकीज आणि एका साइटशी जोडता न येणारा डेटा समाविष्ट आहे.";
+"storage_website_clear_scope" = "सामान्य वेबसाइटचा डेटा आणि सामायिक नेटवर्क कॅशे साफ करते. एक्स्टेंशन मीडियासाठी «विस्तारांची तात्पुरती कॅशे» वापरा; एक्स्टेंशन सेटिंग्ज जतन केल्या जातात.";
+
+"storage_quick_clear" = "झटपट साफ करा";
+"storage_quick_clear_done" = "कॅशे साफ केला";
+
+"storage_website_cleanup_pending" = "वेबसाइट डेटा अजून साफ केला जात आहे. तुम्ही मागे जाऊन ब्राउझिंग सुरू ठेवू शकता. कृपया पुन्हा साफ करणे सुरू करू नका.";
+
+"storage_auto_cleanup" = "आपोआप साफसफाई";
+
+"storage_auto_cleanup_desc" = "ॲप बॅकग्राउंडमध्ये निष्क्रिय असताना दर 24 तासांत जास्तीत जास्त एकदा प्रयत्न करते. फक्त 24 तासांपेक्षा जुन्या, वापरात नसलेल्या आयात, निर्यात आणि पूर्वावलोकनाच्या तात्पुरत्या फाइल काढते. प्रत्येक फेरी सुमारे 1 सेकंद किंवा 2000 आयटम तपासेपर्यंत चालते; ॲपमध्ये परतल्यावर थांबते. प्लेबॅक, डाउनलोड, निर्यात, ऊर्जाबचत मोड सुरू किंवा जास्त गरम असल्यास वगळते. बुकमार्क, जतन केलेले डाउनलोड, लॉगिन आणि वेबसाइट डेटा आपोआप काढत नाही.";
+
+"restore_last_page_on_launch" = "मागील पृष्ठ पुनर्संचयित करा";
+"restore_last_page_on_launch_desc" = "अॅप सुरू होताना मागील वेबपृष्ठ उघडा. खाजगी टॅब पुनर्संचयित केले जात नाहीत.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "जेश्चर आणि शॉर्टकट";
+"app_icon_shortcuts" = "अॅप आयकॉन शॉर्टकट";
+"settings_sync_backup" = "सिंक आणि बॅकअप";
+"icloud_bookmark_sync" = "iCloud बुकमार्क सिंक";
+"manual_settings_backups" = "मॅन्युअल बॅकअप";
+"create_settings_backup" = "तयार करा";
+"toolbar_settings" = "टूलबार";
+"toolbar_section_home" = "होम";
+
+/* Manual backup controls */
+"clear_manual_backups" = "मॅन्युअल बॅकअप मिटवा";
+"clear_manual_backups_message" = "फक्त हाताने तयार केलेले किंवा आयात केलेले बॅकअप मिटवते. स्वयंचलित आणि जुने पुनर्प्राप्ती स्नॅपशॉट, सध्याची सेटिंग्ज आणि iCloud सिंक जतन केले जातात.";
+"recovery_settings_backups" = "स्वयंचलित आणि मागील बॅकअप";
+
+/* Settings hierarchy */
+"settings_personalization" = "वैयक्तिकीकरण";
+"appearance_home_settings" = "होम आणि वॉलपेपर";
+"settings_data" = "डेटा";
+"about_feedback_settings" = "माहिती आणि अभिप्राय";
+"browsing_startup_tabs" = "सुरुवात आणि टॅब";
+"browsing_interface" = "इंटरफेस";
+"browsing_web_display" = "वेबपृष्ठे";
+"manual_backups_empty" = "अद्याप मॅन्युअल बॅकअप नाही";
+"browsing_display_settings_legacy" = "ब्राउझिंगचे प्रदर्शन";

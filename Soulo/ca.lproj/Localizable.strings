@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Admet";
 "userscript_docs_supported_desc" = "Concordança bàsica, inici/finalització de documents, estils/elements, emmagatzematge únic i massiu, oients de valors locals, porta-retalls, menús, notificacions a la pàgina, pestanyes, descàrregues, dades de pestanyes, galetes, recursos, canvis d'URL i sol·licituds d'abast de permisos.";
 "userscript_docs_partial_title" = "Suport parcialment";
-"userscript_docs_partial_desc" = "Les sol·licituds de xarxa ometen la càrrega/progrés i el transport de galetes. Les notificacions són a la pàgina, les API de recursos són asíncrones i els oients de canvi de valor informen dels canvis fets per la pàgina actual. Les comprovacions d'actualització són manuals.";
+"userscript_docs_partial_desc" = "Les notificacions són dins la pàgina; les API de recursos retornen Promise. L’opció cookie requereix GM_cookie; no s’envien galetes automàticament.";
 "userscript_docs_unsupported_title" = "Actualment no s'admet";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in aïllament, comprovacions automàtiques d'actualització i comportaments exactes només per a escriptori que WKWebView no pot proporcionar.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, l’aïllament sandbox/run-in i funcions d’escriptori no disponibles a WKWebView.";
 "userscript_docs_metadata_title" = "Metadades";
 "userscript_docs_metadata_identity" = "El nom de l'script llegible per l'home i la descripció opcional es mostren abans de la instal·lació i als detalls de l'script.";
 "userscript_docs_metadata_version" = "Utilitzeu un espai de noms únic i estable i incrementeu la versió sempre que canviï l'script inclòs.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Suprimeix un valor persistent per a aquest script.";
 "userscript_docs_api_list" = "Retorna totes les claus d'emmagatzematge persistents propietat d'aquest script.";
 "userscript_docs_api_bulk" = "Llegeix, escriu o suprimeix diversos valors JSON en una operació; les escriptures són validades atòmicament per la botiga nativa.";
-"userscript_docs_api_listener" = "Observa els canvis d'emmagatzematge fets per l'script a la pàgina web actual. No s'emeten notificacions remotes de tabulacions creuades.";
+"userscript_docs_api_listener" = "Observa canvis locals i entre pestanyes. Els d’una altra pestanya indiquen remote=true.";
 "userscript_docs_api_element" = "Crea i afegeix un element amb atributs, inclòs de manera segura durant l'inici del document.";
 "userscript_docs_api_clipboard" = "Copia el text al porta-retalls del sistema mitjançant el pont natiu de Soulo.";
 "userscript_docs_extended_title" = "Integració de menús, pestanyes, fitxers i pàgines";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Sol·licituds de xarxa";
 "userscript_docs_network_legacy" = "Inicia una sol·licitud amb privilegis i retorna un identificador d'avortament. Declara la subvenció coincident i els amfitrions @connect.";
 "userscript_docs_network_modern" = "Àlies modern de l'API de sol·licitud privilegiada amb el mateix objecte de detalls i comportament de devolució de trucada.";
-"userscript_docs_network_details" = "Admet URL, mètode, capçaleres, dades, temps d'espera, responseType, onloadstart, onreadystatechange, onload, onerror i onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Utilitzeu json, blob, arraybuffer o deixeu el text buit. Les respostes inclouen status, finalUrl, capçaleres, responseText i resposta.";
 "userscript_docs_network_connect" = "Utilitzeu self per a l'amfitrió de la pàgina, un domini per a aquesta i els seus subdominis, un domini comodí o * només quan sigui realment necessari.";
 "userscript_docs_limits_title" = "Comportament i límits";
 "userscript_docs_limits_web" = "Hi ha disponibles DOM estàndard, esdeveniments, MutationObserver, fetch, temporitzadors i altres API de WKWebView. La recuperació normal segueix CORS.";
 "userscript_docs_limits_storage" = "Els valors emmagatzemats han de ser serialitzables amb JSON: fins a 256 KB per valor i 1 MB total per script.";
-"userscript_docs_limits_network" = "Les respostes privilegiades estan limitades a 20 MB, el temps d'espera es limita a 1-60 segons i no s'accepten capçaleres de galetes/amfitrió/origen.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts no s'executen a la navegació privada.";
 "userscript_docs_limits_require" = "Els fitxers @require HTTPS es descarreguen i es desen en instal·lar o desar, i s’executen en ordre abans de l’script.";
 "userscript_docs_template_title" = "Plantilla mínima";

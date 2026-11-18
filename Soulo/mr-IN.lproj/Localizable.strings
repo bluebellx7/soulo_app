@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "समर्थित";
 "userscript_docs_supported_desc" = "कोर जुळणी, दस्तऐवज-प्रारंभ/एंड, शैली/घटक, एकल आणि मोठ्या प्रमाणात संचयन, स्थानिक मूल्य श्रोते, क्लिपबोर्ड, मेनू, पृष्ठातील सूचना, टॅब, डाउनलोड, टॅब डेटा, कुकीज, संसाधने, URL बदल आणि परवानगी-व्याप्ती विनंत्या.";
 "userscript_docs_partial_title" = "अंशतः समर्थित";
-"userscript_docs_partial_desc" = "नेटवर्क विनंत्या अपलोड/प्रगती आणि कुकी वाहतूक वगळतात. सूचना पृष्ठामध्ये आहेत, संसाधन API एसिंक्रोनस आहेत आणि मूल्य-बदल श्रोते वर्तमान पृष्ठाद्वारे केलेल्या बदलांची तक्रार करतात. अपडेट चेक मॅन्युअल आहेत.";
+"userscript_docs_partial_desc" = "सूचना पृष्ठात दिसतात; रिसोर्स API Promise देतात. cookie साठी GM_cookie परवानगी लागते; कुकी आपोआप पाठवल्या जात नाहीत.";
 "userscript_docs_unsupported_title" = "सध्या समर्थित नाही";
-"userscript_docs_unsupported_desc" = "GM_webRequest इंटरसेप्शन, GM_audio, सँडबॉक्स/रन-इन आयसोलेशन, ऑटोमॅटिक अपडेट चेक आणि अचूक डेस्कटॉप फक्त वर्तन जे WKWebView प्रदान करू शकत नाही.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in विभाजन आणि WKWebView मध्ये उपलब्ध नसलेली डेस्कटॉप वैशिष्ट्ये.";
 "userscript_docs_metadata_title" = "मेटाडेटा";
 "userscript_docs_metadata_identity" = "मानवी-वाचनीय स्क्रिप्टचे नाव आणि पर्यायी वर्णन इंस्टॉलेशनपूर्वी आणि स्क्रिप्ट तपशीलांमध्ये दर्शविले आहे.";
 "userscript_docs_metadata_version" = "एक स्थिर, अनन्य नेमस्पेस वापरा आणि बंडल स्क्रिप्ट बदलल्यावर आवृत्ती वाढवा.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "या स्क्रिप्टसाठी एक सक्तीचे मूल्य हटवते.";
 "userscript_docs_api_list" = "या स्क्रिप्टच्या मालकीच्या सर्व पर्सिस्टंट स्टोरेज की परत करते.";
 "userscript_docs_api_bulk" = "एका ऑपरेशनमध्ये एकाधिक JSON मूल्ये वाचते, लिहिते किंवा हटवते; राइट्स नेटिव्ह स्टोअरद्वारे अणुरीत्या प्रमाणित केले जातात.";
-"userscript_docs_api_listener" = "वर्तमान वेबपृष्ठामध्ये स्क्रिप्टद्वारे केलेल्या स्टोरेज बदलांचे निरीक्षण करते. क्रॉस-टॅब रिमोट सूचना उत्सर्जित होत नाहीत.";
+"userscript_docs_api_listener" = "स्थानिक आणि इतर टॅबमधील साठवण बदल पाहते. इतर टॅबचे बदल remote=true सह कळतात.";
 "userscript_docs_api_element" = "दस्तऐवज-प्रारंभ दरम्यान सुरक्षितपणे यासह गुणधर्मांसह एक घटक तयार करते आणि जोडते.";
 "userscript_docs_api_clipboard" = "Soulo च्या मूळ ब्रिजद्वारे सिस्टम क्लिपबोर्डवर मजकूर कॉपी करते.";
 "userscript_docs_extended_title" = "मेनू, टॅब, फाइल्स आणि पृष्ठ एकत्रीकरण";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "नेटवर्क विनंत्या";
 "userscript_docs_network_legacy" = "एक विशेषाधिकार प्राप्त विनंती सुरू करते आणि गर्भपात हँडल परत करते. जुळणारे अनुदान आणि @कनेक्ट होस्ट घोषित करा.";
 "userscript_docs_network_modern" = "समान तपशील ऑब्जेक्ट आणि कॉलबॅक वर्तनासह विशेषाधिकार विनंती API चे आधुनिक उपनाव.";
-"userscript_docs_network_details" = "url, पद्धत, शीर्षलेख, डेटा, कालबाह्य, प्रतिसाद प्रकार, onloadstart, onreadystatechange, onload, onerror आणि onloadend चे समर्थन करते.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "json, blob, arraybuffer वापरा किंवा मजकूरासाठी रिकामे ठेवा. प्रतिसादांमध्ये स्थिती, finalUrl, शीर्षलेख, प्रतिसाद मजकूर आणि प्रतिसाद यांचा समावेश होतो.";
 "userscript_docs_network_connect" = "पेज होस्टसाठी स्वत:चा वापर करा, त्याच्यासाठी डोमेन आणि त्याचे सबडोमेन, वाइल्डकार्ड डोमेन किंवा * जेव्हा खरोखर आवश्यक असेल तेव्हाच वापरा.";
 "userscript_docs_limits_title" = "वर्तन आणि मर्यादा";
 "userscript_docs_limits_web" = "मानक DOM, इव्हेंट्स, म्युटेशन ऑब्झर्व्हर, फेच, टाइमर आणि इतर WKWebView API उपलब्ध आहेत. सामान्य आणणे अद्याप CORS चे अनुसरण करते.";
 "userscript_docs_limits_storage" = "संचयित मूल्ये JSON-सिरीलायझ करण्यायोग्य असणे आवश्यक आहे: प्रति मूल्य 256 KB पर्यंत आणि प्रति स्क्रिप्ट एकूण 1 MB.";
-"userscript_docs_limits_network" = "विशेषाधिकार प्राप्त प्रतिसाद 20 MB पर्यंत मर्यादित आहेत, कालबाह्य 1-60 सेकंदांपर्यंत क्लॅम्प केलेले आहेत आणि कुकी/होस्ट/ओरिजिन शीर्षलेख स्वीकारले जात नाहीत.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts खाजगी ब्राउझिंगमध्ये चालत नाहीत.";
 "userscript_docs_limits_require" = "HTTPS @require फायली इंस्टॉल किंवा जतन करताना डाउनलोड करून कॅशेमध्ये ठेवल्या जातात, नंतर स्क्रिप्टच्या आधी क्रमाने चालतात.";
 "userscript_docs_template_title" = "किमान टेम्पलेट";

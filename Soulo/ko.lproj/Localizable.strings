@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "지원됨";
 "userscript_docs_supported_desc" = "핵심 일치, 문서 시작/끝, 스타일/요소, 단일 및 대량 저장소, 로컬 값 리스너, 클립보드, 메뉴, 페이지 내 알림, 탭, 다운로드, 탭 데이터, 쿠키, 리소스, URL 변경 및 권한 범위 요청.";
 "userscript_docs_partial_title" = "부분적으로 지원됨";
-"userscript_docs_partial_desc" = "네트워크 요청에는 업로드/진행 및 쿠키 전송이 생략됩니다. 알림은 페이지 내에서 이루어지며, 리소스 API는 비동기식이며, 값 변경 리스너는 현재 페이지에서 발생한 변경 사항을 보고합니다. 업데이트 확인은 수동입니다.";
+"userscript_docs_partial_desc" = "알림은 페이지 안에 표시되며 리소스 API는 Promise를 반환합니다. cookie 옵션에는 GM_cookie 권한이 필요하며 쿠키는 자동 전송하지 않습니다.";
 "userscript_docs_unsupported_title" = "현재 지원되지 않음";
-"userscript_docs_unsupported_desc" = "GM_webRequest 차단, GM_audio, 샌드박스/런인 격리, 자동 업데이트 확인 및 WKWebView가 제공할 수 없는 정확한 데스크톱 전용 동작.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in 격리 및 WKWebView가 제공하지 않는 데스크톱 기능.";
 "userscript_docs_metadata_title" = "메타데이터";
 "userscript_docs_metadata_identity" = "사람이 읽을 수 있는 스크립트 이름과 설치 전 및 스크립트 세부 정보에 표시되는 선택적 설명입니다.";
 "userscript_docs_metadata_version" = "안정적이고 고유한 네임스페이스를 사용하고 번들 스크립트가 변경될 때마다 버전을 증가시킵니다.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "이 스크립트에 대한 하나의 영구 값을 삭제합니다.";
 "userscript_docs_api_list" = "이 스크립트가 소유한 모든 영구 저장소 키를 반환합니다.";
 "userscript_docs_api_bulk" = "한 번의 작업으로 여러 JSON 값을 읽거나 쓰거나 삭제합니다. 쓰기는 기본 저장소에 의해 원자적으로 검증됩니다.";
-"userscript_docs_api_listener" = "현재 웹페이지의 스크립트에 의해 변경된 저장 공간을 관찰합니다. 크로스탭 원격 알림은 내보내지지 않습니다.";
+"userscript_docs_api_listener" = "로컬 및 다른 탭의 저장 값 변경을 감시합니다. 다른 탭의 변경은 remote=true로 알립니다.";
 "userscript_docs_api_element" = "문서 시작 시 안전하게 포함하여 속성이 있는 요소를 생성하고 추가합니다.";
 "userscript_docs_api_clipboard" = "Soulo의 네이티브 브리지를 통해 시스템 클립보드에 텍스트를 복사합니다.";
 "userscript_docs_extended_title" = "메뉴, 탭, 파일 및 페이지 통합";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "네트워크 요청";
 "userscript_docs_network_legacy" = "권한 있는 요청을 시작하고 중단 핸들을 반환합니다. 일치하는 승인 및 @connect 호스트를 선언합니다.";
 "userscript_docs_network_modern" = "동일한 세부 정보 개체 및 콜백 동작을 갖춘 권한 있는 요청 API의 최신 별칭입니다.";
-"userscript_docs_network_details" = "URL, 메소드, 헤더, 데이터, 시간 초과, responseType, onloadstart, onreadystatechange, onload, onerror 및 onloadend를 지원합니다.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "json, blob, arraybuffer를 사용하거나 텍스트를 위해 비워 두세요. 응답에는 상태, finalUrl, 헤더, responseText 및 응답이 포함됩니다.";
 "userscript_docs_network_connect" = "페이지 호스트에는 self를, 호스트와 하위 도메인에는 도메인, 와일드카드 도메인을 사용하거나 꼭 필요한 경우에만 *를 사용하세요.";
 "userscript_docs_limits_title" = "행동과 한계";
 "userscript_docs_limits_web" = "표준 DOM, 이벤트, MutationObserver, 가져오기, 타이머 및 기타 WKWebView API를 사용할 수 있습니다. 일반 가져오기는 여전히 CORS를 따릅니다.";
 "userscript_docs_limits_storage" = "저장된 값은 JSON 직렬화 가능해야 합니다. 값당 최대 256KB, 스크립트당 총 1MB입니다.";
-"userscript_docs_limits_network" = "권한 있는 응답은 20MB로 제한되고, 시간 제한은 1~60초로 고정되며, 쿠키/호스트/원본 헤더는 허용되지 않습니다.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScript은 개인정보 보호 브라우징에서 실행되지 않습니다.";
 "userscript_docs_limits_require" = "HTTPS @require 파일은 설치하거나 저장할 때 다운로드하여 캐시하고, 스크립트 본문보다 먼저 선언 순서대로 실행합니다.";
 "userscript_docs_template_title" = "최소한의 템플릿";

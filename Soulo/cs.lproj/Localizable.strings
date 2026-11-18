@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Podporováno";
 "userscript_docs_supported_desc" = "Shoda jádra, začátek/konec dokumentu, styly/prvky, jednoduché a hromadné úložiště, posluchače místních hodnot, schránka, nabídky, oznámení na stránce, karty, stahování, data karet, soubory cookie, zdroje, změny adres URL a požadavky v rozsahu oprávnění.";
 "userscript_docs_partial_title" = "Částečně podporováno";
-"userscript_docs_partial_desc" = "Síťové požadavky vynechávají nahrávání/průběh a přenos souborů cookie. Oznámení jsou na stránce, rozhraní API prostředků jsou asynchronní a posluchači změn hodnoty hlásí změny provedené aktuální stránkou. Kontroly aktualizací jsou ruční.";
+"userscript_docs_partial_desc" = "Oznámení jsou uvnitř stránky; API zdrojů vracejí Promise. Volba cookie vyžaduje GM_cookie; cookies se automaticky neposílají.";
 "userscript_docs_unsupported_title" = "Aktuálně není podporováno";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolace sandbox/run-in, automatické kontroly aktualizací a přesné chování pouze na ploše, které WKWebView nemůže poskytnout.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolace sandbox/run-in a desktopové funkce nedostupné ve WKWebView.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Lidsky čitelný název skriptu a volitelný popis zobrazený před instalací a v podrobnostech skriptu.";
 "userscript_docs_metadata_version" = "Používejte stabilní, jedinečný jmenný prostor a zvyšujte verzi, kdykoli se změní dodávaný skript.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Odstraní jednu trvalou hodnotu pro tento skript.";
 "userscript_docs_api_list" = "Vrátí všechny klíče trvalého úložiště vlastněné tímto skriptem.";
 "userscript_docs_api_bulk" = "Čte, zapisuje nebo odstraňuje více hodnot JSON v jedné operaci; zápisy jsou atomicky ověřeny nativním úložištěm.";
-"userscript_docs_api_listener" = "Sleduje změny úložiště provedené skriptem na aktuální webové stránce. Vzdálená upozornění napříč kartami se nevysílají.";
+"userscript_docs_api_listener" = "Sleduje místní změny úložiště i změny z jiných panelů, které mají remote=true.";
 "userscript_docs_api_element" = "Vytvoří a připojí prvek s atributy, včetně bezpečného při spouštění dokumentu.";
 "userscript_docs_api_clipboard" = "Zkopíruje text do systémové schránky přes nativní most Soulo.";
 "userscript_docs_extended_title" = "Nabídky, karty, soubory a integrace stránek";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Síťové požadavky";
 "userscript_docs_network_legacy" = "Spustí privilegovaný požadavek a vrátí popisovač přerušení. Deklarujte odpovídající hostitele grantu a @connect.";
 "userscript_docs_network_modern" = "Moderní alias privilegovaného požadavku API se stejným objektem podrobností a chováním zpětného volání.";
-"userscript_docs_network_details" = "Podporuje adresu URL, metodu, záhlaví, data, časový limit, responseType, onloadstart, onreadystatechange, onload, onerror a onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Použijte json, blob, arraybuffer nebo ponechte prázdné pro text. Mezi odpovědi patří stav, konečná adresa URL, záhlaví, text odpovědi a odpověď.";
 "userscript_docs_network_connect" = "Použijte self pro hostitele stránky, doménu pro něj a jeho subdomény, doménu zástupných znaků nebo * pouze v případě, že je to skutečně nutné.";
 "userscript_docs_limits_title" = "Chování a limity";
 "userscript_docs_limits_web" = "K dispozici jsou standardní DOM, události, MutationObserver, načítání, časovače a další rozhraní WKWebView API. Normální aport stále následuje po CORS.";
 "userscript_docs_limits_storage" = "Uložené hodnoty musí být možné serializovat pomocí JSON: až 256 kB na hodnotu a celkem 1 MB na skript.";
-"userscript_docs_limits_network" = "Privilegované odpovědi jsou omezeny na 20 MB, časový limit je omezen na 1–60 sekund a hlavičky Cookie/Host/Origin nejsou akceptovány.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts neběží v anonymním prohlížení.";
 "userscript_docs_limits_require" = "Soubory @require přes HTTPS se při instalaci nebo uložení stáhnou a uloží do mezipaměti a spustí se v pořadí před skriptem.";
 "userscript_docs_template_title" = "Minimální šablona";

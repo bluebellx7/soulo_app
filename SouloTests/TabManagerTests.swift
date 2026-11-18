@@ -4,15 +4,96 @@ import WebKit
 @testable import Soulo
 
 final class TabManagerTests: XCTestCase {
+    @MainActor
+    func testRestartRestoreIsOptInPreservesDestinationAndSkipsPrivateBrowsing() throws {
+        let suite = "RestartRestore." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let key = "restart-tabs-" + UUID().uuidString
+        let previousPrivacy = UserDefaults.standard.object(forKey: "is_incognito")
+        UserDefaults.standard.set(false, forKey: "is_incognito")
+        defer {
+            defaults.removePersistentDomain(forName: suite)
+            UserDefaults.standard.removeObject(forKey: key)
+            UserDefaults.standard.removeObject(forKey: "\(key).last_visible_screen")
+            if let previousPrivacy { UserDefaults.standard.set(previousPrivacy, forKey: "is_incognito") }
+            else { UserDefaults.standard.removeObject(forKey: "is_incognito") }
+        }
+        let manager = TabManager(storageKey: key)
+        let destination = try XCTUnwrap(URL(string: "https://example.com/article/last"))
+        manager.tabs[manager.activeTabIndex].keyword = "original query"
+        manager.activeWebViewModel?.loadCachedURL(destination)
+        manager.saveToDisk()
+        let restored = TabManager(storageKey: key)
+        let search = SearchViewModel()
+        defaults.set(true, forKey: BrowserInitialPreferences.restoreLastPageKey)
+        XCTAssertFalse(search.restoreLastPageIfEnabled(tabManager: restored, defaults: defaults), "A saved tab alone doesn't indicate that the browser was visible")
+        manager.rememberVisibleScreen(isBrowsing: true)
+        defaults.set(false, forKey: BrowserInitialPreferences.restoreLastPageKey)
+        XCTAssertFalse(search.restoreLastPageIfEnabled(tabManager: restored, defaults: defaults))
+        XCTAssertFalse(search.isSearching)
+        XCTAssertEqual(restored.activeWebViewModel?.currentURL, destination)
+        defaults.set(true, forKey: BrowserInitialPreferences.restoreLastPageKey)
+        XCTAssertTrue(search.restoreLastPageIfEnabled(tabManager: restored, defaults: defaults))
+        XCTAssertTrue(search.isSearching)
+        XCTAssertEqual(search.currentKeyword, "original query")
+        XCTAssertEqual(restored.activeWebViewModel?.currentURL, destination)
+        XCTAssertEqual(restored.tabCount, 1)
+        XCTAssertNil(restored.activeWebViewModel?.webView, "Restoration must keep WebKit lazy until the page mounts")
+        search.clearSearch()
+        restored.rememberVisibleScreen(isBrowsing: false)
+        let reopened = TabManager(storageKey: key)
+        XCTAssertFalse(search.restoreLastPageIfEnabled(tabManager: reopened, defaults: defaults))
+        XCTAssertEqual(reopened.activeWebViewModel?.currentURL, destination, "Returning to Home keeps existing tabs")
+        reopened.rememberVisibleScreen(isBrowsing: true)
+        search.isIncognito = true
+        XCTAssertFalse(search.restoreLastPageIfEnabled(tabManager: reopened, defaults: defaults))
+        XCTAssertFalse(search.isSearching)
+        XCTAssertEqual(CloudSettingsSyncEngine.snapshot(defaults)[BrowserInitialPreferences.restoreLastPageKey] as? Bool, true)
+    }
+
+    @MainActor
+    func testJavaScriptBridgePreservesUndefinedNullValuesAndErrors() async throws {
+        let web = WKWebView()
+        web.loadHTMLString("<html><body>JavaScript bridge</body></html>", baseURL: nil)
+        for _ in 0..<300 where web.isLoading { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertFalse(web.isLoading)
+        defer { web.stopLoading() }
+
+        let undefined = try await web.evaluateCompatibleJavaScript("void 0")
+        XCTAssertNil(undefined)
+        let isolatedUndefined = try await web.evaluateCompatibleJavaScript("void 0", contentWorld: .defaultClient)
+        XCTAssertNil(isolatedUndefined)
+        let null = try await web.evaluateCompatibleJavaScript("null")
+        XCTAssertTrue(null is NSNull)
+        let object = try await web.evaluateCompatibleJavaScript("({value: 7})", contentWorld: .defaultClient)
+        XCTAssertEqual((object as? [String: Int])?["value"], 7)
+        do {
+            _ = try await web.evaluateCompatibleJavaScript("throw new Error('bridge regression')", contentWorld: .defaultClient)
+            XCTFail("JavaScript errors must propagate through the optional-result bridge")
+        } catch {
+            XCTAssertEqual((error as NSError).domain, WKError.errorDomain)
+        }
+        let callback: Result<Any, Error> = await withCheckedContinuation { continuation in
+            web.evaluateCompatibleJavaScript("void 0", in: nil, in: .page) { continuation.resume(returning: $0) }
+        }
+        switch callback {
+        case .success(let value): XCTAssertTrue(value is NSNull)
+        case .failure(let error): XCTFail("Undefined is a valid result: \(error)")
+        }
+    }
+
     private let storageKey = "soulo_saved_tabs"
 
     @MainActor
     func testSavedShenmaTabKeepsItsPlatformWhenRestoredAsQuark() throws {
         let key = "quark-tab-migration-\(UUID())"
+        let platforms = PlatformDataStore.shared.platforms
+        PlatformDataStore.shared.platforms = PlatformDataStore.defaultPlatforms()
         let privacy = UserDefaults.standard.object(forKey: "is_incognito")
         UserDefaults.standard.set(false, forKey: "is_incognito")
         UserDefaults.standard.set(Data(#"{"tabs":[],"activeIndex":0}"#.utf8), forKey: key)
         defer {
+            PlatformDataStore.shared.platforms = platforms
             UserDefaults.standard.removeObject(forKey: key)
             UserDefaults.standard.set(privacy, forKey: "is_incognito")
         }
@@ -154,8 +235,12 @@ final class TabManagerTests: XCTestCase {
         let marker = try await web.evaluateJavaScript("window.pageMarker")
         XCTAssertEqual(marker as? Int, 42)
         manager.createTab()
-        try await Task.sleep(for: .milliseconds(250))
-        XCTAssertFalse(interaction.isFindNavigatorVisible)
+        for _ in 0..<100 {
+            if !interaction.isFindNavigatorVisible { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        XCTAssertFalse(web.isFindInteractionEnabled)
+        XCTAssertFalse(web.findInteraction?.isFindNavigatorVisible == true)
     }
 
     @MainActor
@@ -617,6 +702,27 @@ final class TabManagerTests: XCTestCase {
 
 @MainActor
 final class PlatformDataStoreTests: XCTestCase {
+    private let fixtureKeys = ["platform_config", "platform_config_version", "custom_groups", "region_name_overrides"]
+    private var savedValues: [Any?] = []
+
+    override func setUp() {
+        super.setUp()
+        let defaults = UserDefaults.standard
+        savedValues = fixtureKeys.map { defaults.object(forKey: $0) }
+        defaults.set(try? JSONEncoder().encode(PlatformDataStore.defaultPlatforms()), forKey: "platform_config")
+        defaults.removeObject(forKey: "platform_config_version")
+        defaults.removeObject(forKey: "custom_groups")
+        defaults.removeObject(forKey: "region_name_overrides")
+        PlatformDataStore.shared.reloadFromDefaults()
+    }
+
+    override func tearDown() {
+        for (key, value) in zip(fixtureKeys, savedValues) { UserDefaults.standard.set(value, forKey: key) }
+        PlatformDataStore.shared.reloadFromDefaults()
+        savedValues = []
+        super.tearDown()
+    }
+
     func testSavedShenmaIsReplacedInPlaceWithoutChangingVisibilityOrOrder() throws {
         let defaults = UserDefaults.standard, store = PlatformDataStore.shared
         let data = defaults.data(forKey: "platform_config"), version = defaults.object(forKey: "platform_config_version")

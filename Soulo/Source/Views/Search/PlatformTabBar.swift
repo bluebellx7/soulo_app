@@ -16,6 +16,7 @@ enum PlatformAccessibilityNavigation {
 struct PlatformTabBar: View {
     let platforms: [SearchPlatform]
     @Binding var selectedPlatform: SearchPlatform?
+    let highlightedPlatformID: UUID?
     var usesContrastingControlSurface: Bool = false
     var onSelection: ((SearchPlatform) -> Void)? = nil
     @EnvironmentObject var languageManager: LanguageManager
@@ -29,7 +30,7 @@ struct PlatformTabBar: View {
                         let index = platforms.firstIndex(where: { $0.id == platform.id }) ?? 0
                         PlatformTab(
                             platform: platform,
-                            isSelected: selectedPlatform?.id == platform.id,
+                            isSelected: highlightedPlatformID == platform.id,
                             namespace: platformNamespace,
                             position: index + 1,
                             total: platforms.count,
@@ -49,8 +50,11 @@ struct PlatformTabBar: View {
                 .padding(.trailing, 12)
                 .padding(.vertical, 6)
             }
-            .onCompatibleChange(of: selectedPlatform) { _, newValue in
-                if let id = newValue?.id {
+            .onAppear {
+                if let id = highlightedPlatformID { proxy.scrollTo(id, anchor: .center) }
+            }
+            .onCompatibleChange(of: highlightedPlatformID) { _, newValue in
+                if let id = newValue {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         proxy.scrollTo(id, anchor: .center)
                     }
@@ -63,8 +67,8 @@ struct PlatformTabBar: View {
     private func selectAdjacentPlatform(
         _ direction: AccessibilityPlatformPagingDirection
     ) -> Bool {
-        guard let selectedPlatform,
-              let currentIndex = platforms.firstIndex(where: { $0.id == selectedPlatform.id }),
+        guard let currentID = highlightedPlatformID ?? selectedPlatform?.id,
+              let currentIndex = platforms.firstIndex(where: { $0.id == currentID }),
               let targetIndex = PlatformAccessibilityNavigation.adjacentIndex(
                 currentIndex: currentIndex,
                 count: platforms.count,

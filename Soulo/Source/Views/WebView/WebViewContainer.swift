@@ -217,6 +217,8 @@ struct WebViewContainer: View {
     @EnvironmentObject private var searchVM: SearchViewModel
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var appColorScheme
+    @Environment(\.browserChromeColorScheme) private var browserChromeColorScheme
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @AppStorage(AppConstants.StorageKeys.keepPageAboveToolbar) private var keepPageAboveToolbar = false
     @StateObject private var safariCompatibilityPresenter = SafariCompatibilityPresenter()
@@ -377,6 +379,7 @@ struct WebViewContainer: View {
 
             if showsBottomToolbar {
                 browserToolbarChrome
+                    .environment(\.colorScheme, browserChromeColorScheme ?? appColorScheme)
                     .frame(height: bottomToolbarHeight, alignment: .top)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .animation(.spring(response: 0.35, dampingFraction: 0.8), value: toolbarMinimized)

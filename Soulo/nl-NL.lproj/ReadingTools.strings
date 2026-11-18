@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Positie %d";
 "home_toolbar_reset" = "Alles verbergen";
 "home_toolbar_default_hint" = "Snelkoppelingen naar het startscherm zijn standaard verborgen.";
+"home_toolbar_position" = "Positie";
+"home_toolbar_buttons" = "Knoppen";
+"home_toolbar_tiles" = "Los";
+"home_toolbar_capsule" = "Capsule";
+"home_toolbar_icons" = "Alleen symbolen";
+"home_toolbar_bottom" = "Onderaan";
+"home_toolbar_belowSearch" = "Onder zoeken";
+"home_toolbar_free" = "Vrij plaatsen";
+"home_toolbar_leading" = "Uitlijnen aan begin";
+"home_toolbar_center" = "Centreren";
+"home_toolbar_trailing" = "Uitlijnen aan eind";
+"home_toolbar_drag_position" = "Sleep de werkbalk naar de gewenste plek.";
+"home_toolbar_drag_buttons" = "Tik om een knop te wijzigen. Sleep om te ordenen.";
 "home_toolbar_search" = "Zoek een pagina";
 "group_default_search" = "Standaardzoekopdracht";
 "group_search_settings" = "Groepsinstellingen";
 "group_engine_name" = "Naam van zoekmachine";
-"group_search_url" = "Zoek URL met %@";
-"group_default_search_hint" = "Wordt gebruikt wanneer deze groep geen ingeschakelde platforms heeft. Neem %@ op in de URL voor de zoektermen. Platforms met een handicap blijven uitgeschakeld.";
-"group_search_url_invalid" = "Voer een naam in en een geldige HTTP of HTTPS zoek URL met daarin %@.";
+"group_search_url" = "Zoek- of homepage-URL (zoektermen: %@)";
+"group_default_search_hint" = "Wordt gebruikt als deze groep geen ingeschakelde platforms heeft. Je kunt elk platform in de groep kiezen. %@ wordt vervangen door de zoektermen; zonder tijdelijke aanduiding opent de pagina direct. Uitgeschakelde platforms blijven uitgeschakeld.";
+"group_search_url_invalid" = "Voer een naam en een geldige HTTP- of HTTPS-URL in. Zoeksjablonen kunnen %@ gebruiken.";
 "batch_import_new_group" = "Geïmporteerde groep";
 "image_resources" = "Hulpbronnen";
 "screen_keep_awake" = "Houd het scherm ingeschakeld";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Dit formaat kan niet rechtstreeks met de systeemspeler worden verzonden. Open Control Center, kies Screen Mirroring en selecteer vervolgens uw tv of Mac.";
 "userscript_check_updates" = "Controleer Updates";
 "userscript_update_no_url" = "Er is geen updateadres opgegeven. Importeer een nieuwer scriptbestand om het bij te werken.";
-"userscript_update_manual_hint" = "Controles worden alleen uitgevoerd als daarom wordt gevraagd. Controleer de nieuwe versie voordat u deze bijwerkt. Ingebouwde scripts worden bijgewerkt met de app.";
+"userscript_update_manual_hint" = "Geïnstalleerd openen controleert maximaal 4 scripts per bezoek, elk eens per 24 uur. Pauzeert bij privébrowsen, energiebesparing of hoge temperatuur. Updates moeten worden beoordeeld.";
 "userscript_update_latest" = "Up-to-date";
 "userscript_update_invalid" = "De update is ongeldig, behoort tot een ander script of heeft een inconsistente versie.";
 "userscript_update_changed" = "Dit script is na de controle gewijzigd. Controleer opnieuw op updates.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Matglas";
 "wallpaper_blur_amount" = "Vervagingssterkte";
 
-"auto_hide_platform_bar_hint" = "De platformbalk verdwijnt pas als je op de webinhoud tikt. Automatische omleidingen en scrollen verbergen de balk niet. Ga terug naar de zoekresultaten of start een nieuwe zoekopdracht om deze weer te tonen.";
+"auto_hide_platform_bar_hint" = "Als dit is ingeschakeld, verbergt de balk pas nadat je op webpagina-inhoud tikt en het domein met geen enkel platform in de huidige balk overeenkomt. Bij een overeenkomst blijft de balk zichtbaar of verschijnt deze opnieuw. Scrollen en automatische omleidingen verbergen de balk niet.";
 
 "ad_subscription_add" = "Filterlijst toevoegen";
 "ad_subscription_name" = "Naam";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Beheer trillingen en interfacegeluiden in de hele app. Het afspelen van webpagina’s, video en audio wordt niet beïnvloed.";
 
 "home_display_settings" = "Startpaginaweergave";
-"browsing_display_settings" = "Browserweergave";
+"browsing_display_settings" = "Browserinstellingen";
 
 "web_video_download" = "Webvideodownloads";
 "web_video_download_description" = "Toon videodownloadknoppen op webpagina’s, afleveringslijsten en spelers. Afspelen en bestaande downloads blijven ongewijzigd.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "Wist offlineartikelen, de boekbibliotheek en leesvoortgang.";
 
 "storage_cleanup_offline_desc" = "Verwijdert offlinevideoresten zonder downloadvermeldingen.";
+
+"storage_website_shared" = "Gedeelde en niet-toegewezen gegevens";
+"storage_website_shared_desc" = "Bevat gedeelde netwerkcaches, cookies en gegevens die niet aan één site kunnen worden toegewezen.";
+"storage_website_clear_scope" = "Wist gegevens van gewone websites en gedeelde netwerkcaches. Gebruik ‘Tijdelijke extensiecache’ voor media van extensies; extensie-instellingen blijven behouden.";
+
+"storage_quick_clear" = "Snel opschonen";
+"storage_quick_clear_done" = "Cache gewist";
+
+"storage_website_cleanup_pending" = "Websitegegevens worden nog gewist. Je kunt teruggaan en verder browsen. Start geen nieuwe opruimactie.";
+
+"storage_auto_cleanup" = "Automatisch opruimen";
+
+"storage_auto_cleanup_desc" = "Probeert het maximaal één keer per 24 uur wanneer de app inactief is op de achtergrond. Verwijdert alleen ongebruikte tijdelijke import-, export- en voorbeeldbestanden ouder dan 24 uur. Elke ronde duurt ongeveer 1 seconde of controleert 2000 items en stopt bij terugkeer naar de app. Wordt overgeslagen bij afspelen, downloaden, exporteren, ingeschakelde energiebesparingsmodus of duidelijke warmte. Bladwijzers, bewaarde downloads, logins en websitegegevens worden nooit automatisch gewist.";
+
+"restore_last_page_on_launch" = "Laatste pagina herstellen";
+"restore_last_page_on_launch_desc" = "Open de laatste webpagina bij het starten van de app. Privétabbladen worden niet hersteld.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Gebaren en snelkoppelingen";
+"app_icon_shortcuts" = "Appicoon-snelkoppelingen";
+"settings_sync_backup" = "Synchronisatie en backups";
+"icloud_bookmark_sync" = "iCloud-bladwijzers";
+"manual_settings_backups" = "Handmatige backups";
+"create_settings_backup" = "Maak";
+"toolbar_settings" = "Werkbalken";
+"toolbar_section_home" = "Start";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Handmatige backups wissen";
+"clear_manual_backups_message" = "Verwijdert alleen handmatig gemaakte of geïmporteerde backups. Automatische en oudere herstelkopieën, huidige instellingen en iCloud-synchronisatie blijven behouden.";
+"recovery_settings_backups" = "Automatische en eerdere backups";
+
+/* Settings hierarchy */
+"settings_personalization" = "Personalisatie";
+"appearance_home_settings" = "Start en achtergrond";
+"settings_data" = "Gegevens";
+"about_feedback_settings" = "Info en feedback";
+"browsing_startup_tabs" = "Opstarten en tabbladen";
+"browsing_interface" = "Interface";
+"browsing_web_display" = "Webpagina’s";
+"manual_backups_empty" = "Nog geen handmatige backups";
+"browsing_display_settings_legacy" = "Browserweergave";

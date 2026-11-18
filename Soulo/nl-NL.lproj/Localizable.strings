@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Ondersteund";
 "userscript_docs_supported_desc" = "Kernmatching, begin/einde van document, stijlen/elementen, enkelvoudige en bulkopslag, lokale waarde-listeners, klembord, menu's, meldingen op de pagina, tabbladen, downloads, tabbladgegevens, cookies, bronnen, URL-wijzigingen en op toestemming gerichte verzoeken.";
 "userscript_docs_partial_title" = "Gedeeltelijk ondersteund";
-"userscript_docs_partial_desc" = "Netwerkverzoeken laten upload/voortgang en cookietransport achterwege. Meldingen staan ​​op de pagina, resource-API's zijn asynchroon en luisteraars voor waardewijzigingen rapporteren wijzigingen die door de huidige pagina zijn aangebracht. Updatecontroles zijn handmatig.";
+"userscript_docs_partial_desc" = "Meldingen verschijnen op de pagina; bron-API’s geven Promise terug. cookie vereist GM_cookie; cookies worden niet automatisch verstuurd.";
 "userscript_docs_unsupported_title" = "Momenteel niet ondersteund";
-"userscript_docs_unsupported_desc" = "GM_webRequest-onderschepping, GM_audio, sandbox/run-in-isolatie, automatische updatecontroles en exact desktopgedrag dat WKWebView niet kan bieden.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in-isolatie en desktopfuncties die WKWebView niet biedt.";
 "userscript_docs_metadata_title" = "Metagegevens";
 "userscript_docs_metadata_identity" = "Voor mensen leesbare scriptnaam en optionele beschrijving weergegeven vóór de installatie en in scriptdetails.";
 "userscript_docs_metadata_version" = "Gebruik een stabiele, unieke naamruimte en verhoog de versie wanneer het gebundelde script verandert.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Verwijdert één persistente waarde voor dit script.";
 "userscript_docs_api_list" = "Retourneert alle permanente opslagsleutels die eigendom zijn van dit script.";
 "userscript_docs_api_bulk" = "Leest, schrijft of verwijdert meerdere JSON-waarden in één bewerking; schrijfbewerkingen worden atomair gevalideerd door de native store.";
-"userscript_docs_api_listener" = "Observeert opslagwijzigingen die door het script op de huidige webpagina zijn aangebracht. Er worden geen externe meldingen via kruistabellen verzonden.";
+"userscript_docs_api_listener" = "Volgt lokale opslagwijzigingen en wijzigingen uit andere tabbladen met remote=true.";
 "userscript_docs_api_element" = "Creëert en voegt een element met attributen toe, ook veilig tijdens het starten van het document.";
 "userscript_docs_api_clipboard" = "Kopieert tekst naar het systeemklembord via de eigen bridge van Soulo.";
 "userscript_docs_extended_title" = "Menu's, tabbladen, bestanden en pagina-integratie";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Netwerkverzoeken";
 "userscript_docs_network_legacy" = "Start een bevoorrecht verzoek en retourneert een afbreekhandgreep. Declareer de overeenkomende subsidie- en @connect-hosts.";
 "userscript_docs_network_modern" = "Moderne alias van de bevoorrechte aanvraag-API met hetzelfde detailsobject en callback-gedrag.";
-"userscript_docs_network_details" = "Ondersteunt URL, methode, headers, gegevens, time-out, responseType, onloadstart, onreadystatechange, onload, onerror en onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Gebruik json, blob, arraybuffer of laat leeg voor tekst. Reacties omvatten status, finalUrl, headers, responseText en response.";
 "userscript_docs_network_connect" = "Gebruik 'self' voor de paginahost, een domein ervoor en de subdomeinen ervan, een wildcard-domein, of * alleen wanneer dit echt nodig is.";
 "userscript_docs_limits_title" = "Gedrag en grenzen";
 "userscript_docs_limits_web" = "Standaard DOM, evenementen, MutationObserver, fetch, timers en andere WKWebView API's zijn beschikbaar. Normaal ophalen volgt nog steeds CORS.";
 "userscript_docs_limits_storage" = "Opgeslagen waarden moeten JSON-serialiseerbaar zijn: maximaal 256 KB per waarde en 1 MB totaal per script.";
-"userscript_docs_limits_network" = "Bevoorrechte reacties zijn beperkt tot 20 MB, de time-out is beperkt tot 1-60 seconden en Cookie/Host/Origin-headers worden niet geaccepteerd.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts worden niet uitgevoerd in Privénavigatie.";
 "userscript_docs_limits_require" = "HTTPS @require-bestanden worden bij installatie of opslaan gedownload en gecachet en vóór het script in de opgegeven volgorde uitgevoerd.";
 "userscript_docs_template_title" = "Minimale sjabloon";

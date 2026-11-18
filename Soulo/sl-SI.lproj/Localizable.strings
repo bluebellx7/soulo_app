@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Podprto";
 "userscript_docs_supported_desc" = "Osnovno ujemanje, začetek/konec dokumenta, slogi/elementi, enojno in množično shranjevanje, poslušalci lokalnih vrednosti, odložišče, meniji, obvestila na strani, zavihki, prenosi, podatki zavihkov, piškotki, viri, spremembe URL-jev in zahteve v obsegu dovoljenj.";
 "userscript_docs_partial_title" = "Delno podprto";
-"userscript_docs_partial_desc" = "Omrežne zahteve izpustijo nalaganje/napredek in prenos piškotkov. Obvestila so na strani, API-ji virov so asinhroni, poslušalci sprememb vrednosti pa poročajo o spremembah, ki jih je naredila trenutna stran. Preverjanja posodobitev so ročna.";
+"userscript_docs_partial_desc" = "Obvestila so na strani; API-ji virov vrnejo Promise. cookie zahteva GM_cookie; piškotki se ne pošiljajo samodejno.";
 "userscript_docs_unsupported_title" = "Trenutno ni podprto";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolacija peskovnika/zagona, samodejna preverjanja posodobitev in natančno vedenje samo za namizje, ki ga WKWebView ne more zagotoviti.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, ločevanje sandbox/run-in in namizne funkcije, ki jih WKWebView ne ponuja.";
 "userscript_docs_metadata_title" = "Metapodatki";
 "userscript_docs_metadata_identity" = "Človeku berljivo ime skripta in izbirni opis, prikazan pred namestitvijo in v podrobnostih skripta.";
 "userscript_docs_metadata_version" = "Uporabite stabilen, edinstven imenski prostor in povečajte različico vsakič, ko se skript v paketu spremeni.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Izbriše eno trajno vrednost za ta skript.";
 "userscript_docs_api_list" = "Vrne vse trajne pomnilniške ključe v lasti tega skripta.";
 "userscript_docs_api_bulk" = "Prebere, zapiše ali izbriše več vrednosti JSON v eni operaciji; zapisi so atomsko potrjeni z domačo shrambo.";
-"userscript_docs_api_listener" = "Opazuje spremembe shranjevanja, ki jih je naredil skript na trenutni spletni strani. Navzkrižna oddaljena obvestila se ne oddajajo.";
+"userscript_docs_api_listener" = "Spremlja lokalne spremembe shrambe in spremembe drugih zavihkov z remote=true.";
 "userscript_docs_api_element" = "Ustvari in doda element z atributi, tudi varno med zagonom dokumenta.";
 "userscript_docs_api_clipboard" = "Kopira besedilo v sistemsko odložišče prek izvornega mostu Soulo.";
 "userscript_docs_extended_title" = "Meniji, zavihki, datoteke in integracija strani";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Omrežne zahteve";
 "userscript_docs_network_legacy" = "Zažene privilegirano zahtevo in vrne ročico za prekinitev. Deklarirajte ujemajoče se dodelitve in gostitelje @connect.";
 "userscript_docs_network_modern" = "Sodobni vzdevek API-ja za privilegirane zahteve z enakim predmetom podrobnosti in obnašanjem povratnega klica.";
-"userscript_docs_network_details" = "Podpira url, metodo, glave, podatke, časovno omejitev, responseType, onloadstart, onreadystatechange, onload, onerror in onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Uporabite json, blob, arraybuffer ali pustite prazno za besedilo. Odzivi vključujejo stanje, končni URL, glave, besedilo odziva in odgovor.";
 "userscript_docs_network_connect" = "Uporabite self za gostitelja strani, domeno zanj in njegove poddomene, domeno z nadomestnimi znaki ali * le, kadar je to res potrebno.";
 "userscript_docs_limits_title" = "Vedenje in meje";
 "userscript_docs_limits_web" = "Na voljo so standardni DOM, dogodki, MutationObserver, pridobivanje, časovniki in drugi API-ji WKWebView. Običajno pridobivanje še vedno sledi CORS-u.";
 "userscript_docs_limits_storage" = "Shranjene vrednosti morajo imeti možnost serializacije JSON: do 256 KB na vrednost in skupno 1 MB na skript.";
-"userscript_docs_limits_network" = "Privilegirani odgovori so omejeni na 20 MB, časovna omejitev je omejena na 1–60 sekund in glave Cookie/Host/Origin niso sprejete.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScript se ne izvajajo v zasebnem brskanju.";
 "userscript_docs_limits_require" = "Datoteke @require prek HTTPS se ob namestitvi ali shranjevanju prenesejo in predpomnijo ter se izvedejo po vrsti pred skriptom.";
 "userscript_docs_template_title" = "Minimalna predloga";

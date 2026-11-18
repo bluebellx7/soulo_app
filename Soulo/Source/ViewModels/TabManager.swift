@@ -94,6 +94,7 @@ final class TabManager: ObservableObject {
     @Published var activeTabIndex: Int = 0
     @Published var showTabOverview: Bool = false
     @Published private(set) var lastTabClosedRevision = 0
+    @Published private(set) var platformBarTabActivationRevision = 0
     @Published var recentlyClosed: [RecentlyClosedTab] = []
     @Published private(set) var overviewGroupNames: [String: String] = [:]
     @Published private(set) var pinnedOverviewGroupIDs: Set<String> = []
@@ -117,6 +118,7 @@ final class TabManager: ObservableObject {
     private var persistenceObservers: [UUID: AnyCancellable] = [:]
 
     private let storageKey: String
+    private var lastVisibleScreenStorageKey: String { "\(storageKey).last_visible_screen" }
     private let desktopModeStorageKey: String
     private let overviewGroupPreferencesStorageKey: String
     private var isPrivateSession = UserDefaults.standard.bool(forKey: "is_incognito")
@@ -486,6 +488,7 @@ final class TabManager: ObservableObject {
         recentlyClosed.removeAll()
         WebViewModel.deleteAllPersistedSnapshots()
         UserDefaults.standard.removeObject(forKey: storageKey)
+        UserDefaults.standard.removeObject(forKey: lastVisibleScreenStorageKey)
         scheduleSaveToDisk()
     }
 
@@ -565,9 +568,10 @@ final class TabManager: ObservableObject {
 
     // MARK: - Tab Switching
 
-    func switchToTab(at index: Int) {
+    func switchToTab(at index: Int, userInitiated: Bool = true) {
         guard tabs.indices.contains(index) else { return }
         guard index != activeTabIndex else {
+            if userInitiated { recordPlatformBarTabActivation() }
             showTabOverview = false
             return
         }
@@ -575,6 +579,7 @@ final class TabManager: ObservableObject {
         activeWebViewModel?.takeSnapshot()
         dismissFindInPage()
         activeTabIndex = index
+        if userInitiated { recordPlatformBarTabActivation() }
         showTabOverview = false
         manageTabLifecycles(recordAccess: true)
         scheduleSaveToDisk()
@@ -585,6 +590,7 @@ final class TabManager: ObservableObject {
         activeWebViewModel?.takeSnapshot()
         dismissFindInPage()
         activeTabIndex = index
+        recordPlatformBarTabActivation()
         manageTabLifecycles(recordAccess: true)
         scheduleSaveToDisk()
     }
@@ -592,6 +598,11 @@ final class TabManager: ObservableObject {
     func switchToTab(id: UUID) {
         guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }
         switchToTab(at: index)
+    }
+
+    private func recordPlatformBarTabActivation() {
+        activeWebViewModel?.requestPlatformBarTabActivation()
+        platformBarTabActivationRevision &+= 1
     }
 
     func switchToNextTab() {
@@ -713,7 +724,13 @@ final class TabManager: ObservableObject {
     }
 
     func dismissFindInPage() {
-        findWebView?.findInteraction?.dismissFindNavigator()
+        if let webView = findWebView {
+            webView.findInteraction?.dismissFindNavigator()
+            // iOS 17 can retain a visible navigator after dismissing it. A
+            // subsequent explicit Find action re-enables this interaction.
+            webView.isFindInteractionEnabled = false
+            webView.endEditing(true)
+        }
         findWebView = nil
     }
 
@@ -787,6 +804,20 @@ final class TabManager: ObservableObject {
         }
     }
 
+    // An active tab can stay open while the window shows Home. Keep the
+    // visible screen separate so changing it doesn't serialize all the tabs.
+    var didLeaveBrowserVisible: Bool {
+        UserDefaults.standard.bool(forKey: lastVisibleScreenStorageKey)
+    }
+
+    func rememberVisibleScreen(isBrowsing: Bool) {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: "is_incognito") else { return }
+        if didLeaveBrowserVisible != isBrowsing {
+            defaults.set(isBrowsing, forKey: lastVisibleScreenStorageKey)
+        }
+    }
+
     /// Flush immediately when the app backgrounds or a caller needs a checkpoint.
     func saveToDisk() {
         saveTask?.cancel()
@@ -856,6 +887,7 @@ final class TabManager: ObservableObject {
     private func restoreFromDisk() {
         guard !UserDefaults.standard.bool(forKey: "is_incognito") else {
             UserDefaults.standard.removeObject(forKey: storageKey)
+            UserDefaults.standard.removeObject(forKey: lastVisibleScreenStorageKey)
             return
         }
 

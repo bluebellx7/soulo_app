@@ -864,6 +864,8 @@ extension IncrementalFeatureTests {
     @MainActor func testPlatformReorderingKeepsRegionAndCustomGroupIndependent() throws {
         let store = PlatformDataStore.shared, original = store.platforms, groups = store.customGroups
         defer { store.platforms = original; store.customGroups = groups; store.savePlatforms(); store.saveGroups() }
+        store.platforms = PlatformDataStore.defaultPlatforms()
+        store.customGroups = []
         let china = store.platforms(for: .china), other = store.platforms(for: .international)
         XCTAssertGreaterThan(china.count, 2)
         let group = CustomGroup(name: "Drag QA", platformIDs: Array(china.prefix(3)).map(\.id))

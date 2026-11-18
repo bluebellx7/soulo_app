@@ -175,8 +175,11 @@ final class ResourceEfficiencyTests: XCTestCase {
         defaults.set(name, forKey: "wallpaper_current_cache_id")
         let manager = WallpaperManager()
         defer { manager.suspendAutomaticRefresh() }
-        XCTAssertNil(manager.currentImage, "Constructing home state must return before disk decoding")
-        try await wait { manager.currentImage != nil }
+        if let preview = manager.currentImage?.cgImage {
+            XCTAssertLessThanOrEqual(max(preview.width, preview.height), 512,
+                                     "Construction may show a bounded preview; full-size decoding must stay deferred")
+        }
+        try await wait { (manager.currentImage?.cgImage?.width ?? 0) > 512 }
         XCTAssertEqual(manager.currentImageID, name)
 
         let switched = WallpaperManager()

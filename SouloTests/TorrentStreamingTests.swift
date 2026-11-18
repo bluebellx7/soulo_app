@@ -267,11 +267,11 @@ final class TorrentStreamingTests: XCTestCase {
             return view.subviews.lazy.compactMap { surface($0) }.first
         }
         for _ in 0..<120 {
-            if let playback = surface(try XCTUnwrap(window.rootViewController?.view))?.playback,
+            if let playback = surface(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window)?.playback,
                playback.elapsed > 0.5, (playback.player?.media?.statistics.displayedPictures ?? 0) > 2 { break }
             try await Task.sleep(for: .milliseconds(100))
         }
-        let foundPlayback = surface(try XCTUnwrap(window.rootViewController?.view))?.playback
+        let foundPlayback = surface(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window)?.playback
         if foundPlayback == nil {
             print("HLS_VIEW_DIAGNOSTIC window=\(window.bounds) root=\(String(describing: window.rootViewController?.view.frame)) shared=\(String(describing: MediaSession.shared.soulo?.sourceURL))")
             let shot = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
@@ -330,7 +330,7 @@ final class TorrentStreamingTests: XCTestCase {
                 window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
             }
             for _ in 0..<120 {
-                playback = window.rootViewController.flatMap { find($0.view) }
+                playback = find(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window)
                 if (playback?.player?.media?.statistics.displayedPictures ?? 0) > 2 { break }
                 try await Task.sleep(for: .milliseconds(100))
             }
@@ -347,15 +347,16 @@ final class TorrentStreamingTests: XCTestCase {
                 if let slider = view as? UISlider, slider.accessibilityIdentifier == "media.mkv.timeline" { return slider }
                 return view.subviews.lazy.compactMap { findSlider($0) }.first
             }
-            let slider = try XCTUnwrap(findSlider(try XCTUnwrap(window.rootViewController?.view)))
+            let slider = try XCTUnwrap(findSlider(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window))
             // The parent control owns physical dragging; the child slider
             // supplies the native appearance and adjustable accessibility.
             let touchOwner = (slider.superview as? UIControl) ?? slider
             var hit: UIView?
             for _ in 0..<30 {
-                window.layoutIfNeeded()
-                let point = slider.convert(CGPoint(x: slider.bounds.midX, y: slider.bounds.midY), to: window)
-                hit = window.hitTest(point, with: nil)
+                let playerWindow = try XCTUnwrap(slider.window)
+                playerWindow.layoutIfNeeded()
+                let point = slider.convert(CGPoint(x: slider.bounds.midX, y: slider.bounds.midY), to: playerWindow)
+                hit = playerWindow.hitTest(point, with: nil)
                 if hit === touchOwner || hit?.isDescendant(of: touchOwner) == true { break }
                 try await Task.sleep(for: .milliseconds(100))
             }
@@ -433,7 +434,7 @@ final class TorrentStreamingTests: XCTestCase {
             defaults.set(saved, forKey: key); try? FileManager.default.removeItem(at: url)
         }
         for _ in 0..<80 {
-            playback = find(host.view)
+            playback = find(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window)
             if (playback?.elapsed ?? 0) > 0.4 { break }
             try await Task.sleep(for: .milliseconds(50))
         }
@@ -445,7 +446,7 @@ final class TorrentStreamingTests: XCTestCase {
     }
 
     @MainActor
-    func testCompletedHEVCFilePreviewShowsVideoAndEntersFullscreen() async throws {
+    func testCompletedHEVCFileOpensFullscreenDecodesAndClosesPlayback() async throws {
         let defaults = UserDefaults.standard, key = VideoPlaybackPreferences.defaultPlayerKey
         let savedPlayer = defaults.object(forKey: key)
         defaults.set("soulo", forKey: key)
@@ -485,7 +486,7 @@ final class TorrentStreamingTests: XCTestCase {
             return nil
         }
         for _ in 0..<160 {
-            playback = find(controller.view, MatroskaVideoSurface.self)?.playback
+            playback = find(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window, MatroskaVideoSurface.self)?.playback
             if (playback?.player?.media?.statistics.displayedPictures ?? 0) > 3 { break }
             try await Task.sleep(for: .milliseconds(100))
         }
@@ -507,15 +508,11 @@ final class TorrentStreamingTests: XCTestCase {
         }
         let drawable = try XCTUnwrap(decoder.player?.drawable as? UIView)
         let previewFrames = decoder.player?.media?.statistics.displayedPictures ?? 0
-        let expand = try XCTUnwrap(button("media.mkv.fullscreen", in: controller.view))
-        expand.sendActions(for: .touchUpInside)
-        for _ in 0..<100 {
-            if controller.presentedViewController?.view.accessibilityIdentifier == "media.mkv.fullscreen.player" { break }
-            try await Task.sleep(for: .milliseconds(50))
-        }
-        let fullscreen = try XCTUnwrap(controller.presentedViewController)
+        let activeHost = try XCTUnwrap(SharedVideoFullscreenHost.current(in: window))
+        let fullscreen = try XCTUnwrap(activeHost.screen, "Files must open directly in fullscreen without a preview page")
         XCTAssertEqual(fullscreen.modalPresentationStyle, .overFullScreen)
         XCTAssertEqual(fullscreen.view.accessibilityIdentifier, "media.mkv.fullscreen.player")
+        activeHost.setLandscape(true)
         for _ in 0..<100 {
             if drawable.isDescendant(of: fullscreen.view),
                (decoder.player?.media?.statistics.displayedPictures ?? 0) > previewFrames { break }
@@ -551,16 +548,12 @@ final class TorrentStreamingTests: XCTestCase {
         let close = try XCTUnwrap(button("media.mkv.fullscreen.close", in: fullscreen.view))
         close.sendActions(for: .touchUpInside)
         for _ in 0..<100 {
-            if controller.presentedViewController == nil, drawable.isDescendant(of: controller.view),
-               (decoder.player?.media?.statistics.displayedPictures ?? 0) > fullscreenFrames { break }
+            if SharedVideoFullscreenHost.current(in: window) == nil, !decoder.playing { break }
             try await Task.sleep(for: .milliseconds(50))
         }
-        XCTAssertNil(controller.presentedViewController)
-        XCTAssertTrue((decoder.player?.drawable as? UIView) === drawable)
-        XCTAssertTrue(drawable.isDescendant(of: controller.view), "Closing fullscreen must restore the video surface")
-        XCTAssertGreaterThan(decoder.player?.media?.statistics.displayedPictures ?? 0, fullscreenFrames, "Video must keep playing after fullscreen")
-        capture("Connected phone after exiting fullscreen")
-        print("FILE_HEVC_VIDEO_QA|size=\(decoder.player?.videoSize ?? .zero)|displayed=\(decoder.player?.media?.statistics.displayedPictures ?? 0)|fullscreen=entered-and-exited")
+        XCTAssertNil(SharedVideoFullscreenHost.current(in: window))
+        XCTAssertFalse(decoder.playing, "Closing fullscreen must stop playback without returning to a preview player")
+
     }
 
     func testByteRangesSupportSeekingAndRejectMalformedRequests() throws {

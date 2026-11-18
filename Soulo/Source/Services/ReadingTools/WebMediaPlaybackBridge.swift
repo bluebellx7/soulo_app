@@ -22,6 +22,10 @@ enum WebVideoOrientationRuntime {
       let bottomControls = {needed:false}, episodesAvailable = false, prefersSoulo = false, downloadControlsVisible = window.__souloVideoDownloadControlsVisible !== false;
       let reportedViewportScale = null;
       let fallback = null, inlineControlsSeen = false;
+      // Document-only placement. Nothing is written to page/native storage.
+      let temporaryPlacements = new WeakMap();
+      const floatingVideos = new Set();
+      let controlDrag = null, controlDragFrame = 0;
       // Website/extension fullscreen APIs keep their original behavior. Only
       // the visible Soulo tool buttons send an explicit player request.
       const expandedWidth = () => ((episodesAvailable ? 6 : 5) - (downloadControlsVisible ? 0 : 1)) * controlSize;
@@ -189,7 +193,7 @@ enum WebVideoOrientationRuntime {
       }
       function prune() {
         for (const video of videos) if (!video.isConnected) {
-          intersection.unobserve(video); visibleVideos.delete(video); videos.delete(video);
+          intersection.unobserve(video); visibleVideos.delete(video); floatingVideos.delete(video); videos.delete(video);
         }
         for (const [video, button] of controls) {
           if (!video.isConnected) { if (expandedGroup === button) collapse(); if (active?.video === video) finish(); send('inlineVideoUnavailable',video.getAttribute('data-soulo-media-id')||''); button.remove(); resize.unobserve(video); controls.delete(video); }
@@ -209,12 +213,15 @@ enum WebVideoOrientationRuntime {
         let needsClearance = false;
         // Read all geometry first. Interleaving a floating control's writes with
         // the next video's reads forces repeated layout on result-heavy pages.
-        for (const video of visibleVideos) {
+        const layoutVideos = new Set(visibleVideos);
+        floatingVideos.forEach(video => layoutVideos.add(video));
+        for (const video of layoutVideos) {
           const button = controls.get(video);
           if (!button) continue;
           const r = video.getBoundingClientRect();
-          const videoVisible = !active?.began && r.width >= 100 && r.height >= 70 && r.right > 44 && r.bottom > 44
-            && r.left < innerWidth - 44 && r.top < innerHeight - 44 && isVisible(video, styles);
+          const inViewport = r.right > 44 && r.bottom > 44 && r.left < innerWidth - 44 && r.top < innerHeight - 44;
+          const videoVisible = !active?.began && r.width >= 100 && r.height >= 70
+            && (inViewport || floatingVideos.has(video)) && isVisible(video, styles);
           if (videoVisible) needsClearance ||= needsBottomClearance(video, r, styles);
           const visible = toolsEnabled && videoVisible;
           if (visible && !button.__souloAvailabilityReported) {
@@ -224,25 +231,103 @@ enum WebVideoOrientationRuntime {
             send('inlineVideoAvailable', video.getAttribute('data-soulo-media-id') || '');
           }
           const width = (button === expandedGroup ? expandedWidth() : controlSize) * viewport.unit;
-          updates.push({button, visible,
+          updates.push({button, visible, width,
             left:Math.max(viewport.left+viewport.gap,Math.min(r.right-viewport.gap,viewport.left+viewport.width-viewport.gap)-width),
             top:Math.max(viewport.top+viewport.gap,Math.min(r.top+viewport.gap,viewport.top+viewport.height-controlSize*viewport.unit-viewport.gap))});
         }
         reportBottomControls(needsClearance);
         layoutFallback(viewport, styles);
-        for (const {button,visible,left,top} of updates) {
+        for (const {button,visible,left,top,width} of updates) {
           if (!visible && expandedGroup === button) collapse();
+          if (!visible && controlDrag?.group === button) finishControlDrag();
           setStyleIfChanged(button,'display',visible ? 'flex' : 'none');
           if (!visible) continue;
           overlay.apply(button,viewport);
           setStyleIfChanged(button,'max-width',Math.max(controlSize,viewport.width/viewport.unit-16)+'px');
-          setStyleIfChanged(button,'left',left+'px');
-          setStyleIfChanged(button,'top',top+'px');
+          placeControl(button,viewport,left,top,width);
         }
       }
       function setStyleIfChanged(element,property,value) {
         if(element.style.getPropertyValue(property)!==value)element.style.setProperty(property,value,'important');
       }
+      function boundedControlPosition(viewport,left,top,width) {
+        const x=viewport.left+viewport.gap,y=viewport.top+viewport.gap;
+        return {left:Math.max(x,Math.min(left,Math.max(x,viewport.left+viewport.width-width-viewport.gap))),
+          top:Math.max(y,Math.min(top,Math.max(y,viewport.top+viewport.height-controlSize*viewport.unit-viewport.gap)))};
+      }
+      function placeControl(group,viewport,left,top,width) {
+        const position=temporaryPlacements.get(group)||{};
+        temporaryPlacements.set(group,position);
+        // A deliberate drag detaches the control from the video box. Anchor
+        // its trailing edge to the viewport so expanding keeps the toggle in
+        // place, and scrolling the source video away does not pull it back.
+        const pinned=position.pinned;
+        const bounded=boundedControlPosition(viewport,
+          pinned ? viewport.left+pinned.right*viewport.unit-width : left,
+          pinned ? viewport.top+pinned.top*viewport.unit : top,width);
+        setStyleIfChanged(group,'left',bounded.left+'px');setStyleIfChanged(group,'top',bounded.top+'px');
+      }
+      function moveControl(drag) {
+        const viewport=overlay.metrics(),position=temporaryPlacements.get(drag.group);
+        if(!position||!drag.group.isConnected)return;
+        const width=controlSize*viewport.unit;
+        const point=boundedControlPosition(viewport,drag.left+drag.dx,drag.top+drag.dy,width);
+        if(!position.pinned && Math.hypot(drag.dx,drag.dy)<=4*viewport.unit)return;
+        position.pinned={right:(point.left+width-viewport.left)/viewport.unit,top:(point.top-viewport.top)/viewport.unit};
+        if(drag.video)floatingVideos.add(drag.video);
+        overlay.apply(drag.group,viewport);
+        setStyleIfChanged(drag.group,'left',point.left+'px');setStyleIfChanged(drag.group,'top',point.top+'px');
+      }
+      function finishControlDrag(event) {
+        const drag=controlDrag;
+        if(!drag||(event&&event.pointerId!==drag.id))return;
+        controlDrag=null;clearTimeout(drag.timer);
+        if(controlDragFrame)cancelAnimationFrame(controlDragFrame);controlDragFrame=0;
+        if(drag.held) {
+          moveControl(drag);
+          drag.handle.__souloSuppressClickUntil=performance.now()+700;
+          drag.group.removeAttribute('data-soulo-video-dragging');
+          drag.handle.style.removeProperty('cursor');
+          drag.handle.style.setProperty('background','transparent','important');
+          try{drag.handle.releasePointerCapture(drag.id);}catch(_){}
+          if(event){event.preventDefault();event.stopImmediatePropagation();}
+        }
+      }
+      function installTemporaryDrag(group,handle,video=null) {
+        handle.style.setProperty('touch-action','none','important');
+        handle.addEventListener('contextmenu',event=>{event.preventDefault();event.stopImmediatePropagation();});
+        handle.addEventListener('pointerdown',event=>{
+          if(!event.isTrusted||event.button!==0||event.isPrimary===false||controlDrag)return;
+          handle.__souloSuppressClickUntil=0;
+          if(!temporaryPlacements.has(group))return;
+          const rect=handle.getBoundingClientRect();
+          const drag={group,handle,video,id:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top,dx:0,dy:0,held:false,timer:0};
+          controlDrag=drag;
+          drag.timer=setTimeout(()=>{
+            if(controlDrag!==drag||!group.isConnected||!toolsEnabled){finishControlDrag();return;}
+            drag.held=true;collapse();
+            group.setAttribute('data-soulo-video-dragging','');handle.style.setProperty('cursor','grabbing','important');
+            try{handle.setPointerCapture(drag.id);}catch(_){}
+            moveControl(drag);
+          },450);
+        });
+        handle.addEventListener('lostpointercapture',finishControlDrag);
+      }
+      window.addEventListener('pointermove',event=>{
+        const drag=controlDrag;if(!drag||event.pointerId!==drag.id)return;
+        drag.dx=event.clientX-drag.x;drag.dy=event.clientY-drag.y;
+        if(!drag.held) {
+          if(Math.hypot(drag.dx,drag.dy)>8*overlay.metrics().unit) {
+            drag.handle.__souloSuppressClickUntil=performance.now()+700;finishControlDrag();
+          }
+          return;
+        }
+        event.preventDefault();event.stopImmediatePropagation();
+        if(!controlDragFrame)controlDragFrame=requestAnimationFrame(()=>{controlDragFrame=0;if(controlDrag===drag)moveControl(drag);});
+      },{capture:true,passive:false});
+      for(const name of ['pointerup','pointercancel'])window.addEventListener(name,finishControlDrag,{capture:true,passive:false});
+      window.addEventListener('blur',()=>finishControlDrag());
+      document.addEventListener('visibilitychange',()=>{if(document.hidden)finishControlDrag();});
       function schedule() { if(toolsEnabled && !frame)frame=requestAnimationFrame(layout); }
       function collapse() {
         if (!expandedGroup) return;
@@ -267,7 +352,9 @@ enum WebVideoOrientationRuntime {
       window.addEventListener('click',event => {
         const button=(event.composedPath?.() || []).find(node => node instanceof Element && typeof node.__souloVideoAction === 'function');
         if(!button)return;
-        event.preventDefault();event.stopImmediatePropagation();button.__souloVideoAction(event);
+        event.preventDefault();event.stopImmediatePropagation();
+        if(performance.now()<(button.__souloSuppressClickUntil||0)){button.__souloSuppressClickUntil=0;return;}
+        button.__souloVideoAction(event);
       },true);
       const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
       function configureMotion(group) {
@@ -297,8 +384,10 @@ enum WebVideoOrientationRuntime {
           else {
             visibleVideos.delete(video);
             const button = controls.get(video);
-            if (expandedGroup === button) collapse();
-            if (button) setStyleIfChanged(button,'display','none');
+            if (!floatingVideos.has(video)) {
+              if (expandedGroup === button) collapse();
+              if (button) setStyleIfChanged(button,'display','none');
+            }
           }
         }
         schedule();
@@ -366,23 +455,23 @@ enum WebVideoOrientationRuntime {
             event.preventDefault();event.stopImmediatePropagation();
             if(event.isTrusted && fallback && !inlineControlsSeen)send('fallbackPlayer',fallback.token,{placementID:fallback.placementID});
           };
-          group.append(play);configureMotion(group);document.documentElement.append(group);fallback.group=group;
+          group.append(play);installTemporaryDrag(group,play);configureMotion(group);document.documentElement.append(group);fallback.group=group;
         }
         const rect=anchor===document.documentElement
           ? {left:0,top:0,right:innerWidth,bottom:innerHeight,width:innerWidth,height:innerHeight}
           : anchor.getBoundingClientRect();
         const size=controlSize*viewport.unit, gap=viewport.gap;
-        // Hide with the box; never pin this control over unrelated page content.
+        // Follow the box until a deliberate drag detaches this document's
+        // control; a removed/hidden source still retires it above.
         const left=Math.min(rect.right-gap-size,viewport.left+viewport.width-gap-size);
         const top=Math.max(rect.top+gap,viewport.top+gap);
-        const visible=rect.right>viewport.left+size+gap && rect.left<viewport.left+viewport.width-size
-          && rect.top<viewport.top+viewport.height-size-gap && rect.bottom>top+size+gap;
         const group=fallback.group;
+        const visible=!!temporaryPlacements.get(group)?.pinned || (rect.right>viewport.left+size+gap && rect.left<viewport.left+viewport.width-size
+          && rect.top<viewport.top+viewport.height-size-gap && rect.bottom>top+size+gap);
         setStyleIfChanged(group,'display',visible?'flex':'none');
         if(visible) {
           overlay.apply(group,viewport);
-          setStyleIfChanged(group,'left',Math.max(rect.left+gap,viewport.left+gap,left)+'px');
-          setStyleIfChanged(group,'top',top+'px');
+          placeControl(group,viewport,Math.max(rect.left+gap,viewport.left+gap,left),top,size);
         }
       }
       function createControl(video) {
@@ -455,6 +544,7 @@ enum WebVideoOrientationRuntime {
           setToggleState(toggle,true); schedule();
         };
         button.append(download, speed, fullscreen, episodes, settings, toggle);
+        installTemporaryDrag(button,toggle,video);
         configureMotion(button);
         document.documentElement.append(button);
         controls.set(video, button); resize.observe(video);
@@ -518,8 +608,9 @@ enum WebVideoOrientationRuntime {
         toolsEnabled = value === true;
         observer.disconnect();roots.forEach(root=>observer.observe(root,observationOptions()));
         if (!toolsEnabled) {
+          finishControlDrag();
           if(fallback?.group)setStyleIfChanged(fallback.group,'display','none');
-          collapse(); controls.forEach(button=>{resize.unobserve(button);button.remove()});controls.clear();
+          collapse(); controls.forEach(button=>{resize.unobserve(button);button.remove()});controls.clear();floatingVideos.clear();
           if(frame)cancelAnimationFrame(frame);frame=0;reportBottomControls(false);
         } else { scan();visibleVideos.forEach(createControl);schedule(); }
       },setDownloadControlsVisible(value) {
@@ -593,7 +684,7 @@ enum WebVideoOrientationRuntime {
         return false;
       }};
       document.addEventListener('fullscreenchange', fullscreenChanged);
-      window.addEventListener('pagehide', () => { reportBottomControls(false); collapse(); finish(); });
+      window.addEventListener('pagehide', () => { finishControlDrag();reportBottomControls(false); collapse(); finish(); });
       window.addEventListener('pageshow', () => { schedule(); send('ready',''); });
       const collapseOutside = event => {
         if (expandedGroup && !event.composedPath().includes(expandedGroup)) collapse();
@@ -603,9 +694,9 @@ enum WebVideoOrientationRuntime {
       for (const event of ['pointerdown', 'touchstart']) {
         window.addEventListener(event, collapseOutside, {capture:true, passive:true});
       }
-      const scrollLayout = () => { if (visibleVideos.size || fallback) schedule(); };
+      const scrollLayout = () => { if (visibleVideos.size || floatingVideos.size || fallback) schedule(); };
       window.addEventListener('scroll', scrollLayout, {capture:true,passive:true});
-      const viewportChanged = () => { schedule(); reportViewportScale(); };
+      const viewportChanged = () => { finishControlDrag();schedule(); reportViewportScale(); };
       window.addEventListener('resize', viewportChanged, {passive:true});
       // Report only an actual scale change. Height-only changes and ordinary
       // scrolling keep their local layout without messages to native frames.
@@ -932,7 +1023,8 @@ struct WebMediaPlaybackHandoff {
         // Suspend only inactive tabs. WebKit owns foreground page navigation.
         suspensionApplied = suspended
         BrowserStartupTrace.mark("media_suspension", detail: "suspended=\(suspended) active=\(isActive) navigation=\(navigationPending)")
-        webView.setAllMediaPlaybackSuspended(suspended, completionHandler: nil)
+        // Older WebKit builds can invoke the optional block unconditionally.
+        webView.setAllMediaPlaybackSuspended(suspended, completionHandler: {})
     }
 
     static func replacesDocument(from source: URL?, to destination: URL, navigationType: WKNavigationType) -> Bool {

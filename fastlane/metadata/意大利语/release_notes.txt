@@ -1,1 +1,4 @@
-Migliorati le finestre su iPad, l’input vocale, i riepiloghi locali e l’accessibilità. Migliorati l’esportazione multimediale in background, i Comandi Rapidi e la compatibilità delle estensioni. Alcune funzioni dipendono dal dispositivo, dal sistema e dalla lingua.
+• Abbiamo riorganizzato le impostazioni. Visualizza in anteprima la barra degli strumenti della home mentre cambi stile, riordini i pulsanti o la trascini nella posizione desiderata.
+• Con il ripristino al riavvio attivo, Soulo torna alla home o all’ultima pagina web che stavi visualizzando.
+• I menu del browser sono più leggibili. Puoi mostrare di nuovo la barra degli strumenti nascosta dal menu Altro.
+• Abbiamo migliorato le richieste di rete e la verifica degli aggiornamenti degli script utente.

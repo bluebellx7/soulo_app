@@ -45,6 +45,7 @@ struct SouloApp: App {
 
     init() {
         StorageUsageService.prepareSession()
+        StorageAutomaticMaintenance.shared.start()
         do { libraryStore = try LibraryStore() }
         catch { fatalError("Could not open the Soulo library: \(error)") }
         historyExitPolicy = BrowsingHistoryExitPolicy(container:libraryStore.container)
@@ -86,6 +87,7 @@ struct SouloApp: App {
 
 private struct SouloWindowRoot: View {
     private let windowID: UUID
+    @Environment(\.colorScheme) private var appColorScheme
     @EnvironmentObject private var languageManager: LanguageManager
     @EnvironmentObject private var themeManager: ThemeManager
     @EnvironmentObject private var wallpaperManager: WallpaperManager
@@ -93,6 +95,7 @@ private struct SouloWindowRoot: View {
     @StateObject private var searchVM: SearchViewModel
     @StateObject private var tabManager: TabManager
     @State private var activationTask: Task<Void, Never>?
+    @State private var didHandleStartup = false
     @AppStorage("is_incognito") private var isIncognito = false
 
     init(windowID: UUID) {
@@ -106,12 +109,20 @@ private struct SouloWindowRoot: View {
 
     var body: some View {
         HomeView()
+            .environment(\.appPresentationColorScheme, appColorScheme)
             .dismissKeyboardOnBackgroundTap()
             .environmentObject(searchVM)
             .environmentObject(tabManager)
             .task {
-                if BrowserWindowTransferService.shared.claim(windowID: windowID, into: tabManager) {
-                    searchVM.isSearching = true
+                StorageAutomaticMaintenance.shared.register(tabManager)
+                if !didHandleStartup {
+                    didHandleStartup = true
+                    if BrowserWindowTransferService.shared.claim(windowID: windowID, into: tabManager) {
+                        searchVM.isSearching = true
+                    } else {
+                        searchVM.restoreLastPageIfEnabled(tabManager: tabManager)
+                    }
+                    tabManager.rememberVisibleScreen(isBrowsing: searchVM.isSearching)
                 }
                 VideoScreenAwakeService.shared.reloadUserPreference()
                 CloudSyncService.shared.startIfEnabled()
@@ -129,8 +140,12 @@ private struct SouloWindowRoot: View {
                 } else if newPhase == .background {
                     activationTask?.cancel()
                     LiveActivityService.shared.end()
+                    tabManager.rememberVisibleScreen(isBrowsing: searchVM.isSearching)
                     tabManager.saveToDisk()
                 }
+            }
+            .onCompatibleChange(of: searchVM.isSearching) { _, isBrowsing in
+                tabManager.rememberVisibleScreen(isBrowsing: isBrowsing)
             }
             .onCompatibleChange(of: isIncognito) { _, _ in
                 if scenePhase == .active, NSClassFromString("XCTestCase") == nil {

@@ -1,1 +1,4 @@
-Förbättrade iPad-fönster, röstinmatning, lokala sammanfattningar och hjälpmedel. Förbättrad medieexport i bakgrunden, Genvägar och kompatibilitet med tillägg. Vissa funktioner beror på enhet, systemversion och språk.
+• Inställningarna har ordnats om. Förhandsvisa verktygsfältet på startsidan när du byter stil, ändrar ordningen på knapparna eller drar fältet på plats.
+• När återställning vid omstart är aktiverad öppnar Soulo startsidan eller webbsidan du senast tittade på.
+• Webbläsarens menyer är lättare att läsa. Du kan visa ett dolt verktygsfält igen via menyn Mer.
+• Nätverksförfrågningar och uppdateringskontroller för användarskript har förbättrats.

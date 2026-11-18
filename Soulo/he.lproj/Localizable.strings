@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "נתמך";
 "userscript_docs_supported_desc" = "התאמת ליבה, התחלה/סיום של מסמכים, סגנונות/אלמנטים, אחסון יחיד ובכמות גדולה, מאזיני ערך מקומי, לוח, תפריטים, התראות בתוך הדף, כרטיסיות, הורדות, נתוני כרטיסיות, קובצי Cookie, משאבים, שינויים בכתובות אתרים ובקשות בהיקף הרשאות.";
 "userscript_docs_partial_title" = "נתמך חלקית";
-"userscript_docs_partial_desc" = "בקשות רשת משמיטות העלאה/התקדמות והובלת עוגיות. ההתראות נמצאות בתוך הדף, ממשקי API של משאבים הם אסינכרוניים, ומאזינים עם שינוי ערך מדווחים על שינויים שבוצעו על ידי הדף הנוכחי. בדיקות העדכון הן ידניות.";
+"userscript_docs_partial_desc" = "ההתראות מוצגות בעמוד וממשקי משאבים מחזירים Promise. האפשרות cookie דורשת GM_cookie; קובצי Cookie אינם נשלחים אוטומטית.";
 "userscript_docs_unsupported_title" = "לא נתמך כרגע";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, בידוד ארגז חול/ריצה, בדיקות עדכונים אוטומטיות והתנהגויות מדויקות לשולחן העבודה בלבד ש-WKWebView לא יכול לספק.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, בידוד sandbox/run-in והתנהגות מחשב שולחני שאינה זמינה ב-WKWebView.";
 "userscript_docs_metadata_title" = "מטא נתונים";
 "userscript_docs_metadata_identity" = "שם סקריפט קריא לאדם ותיאור אופציונלי מוצג לפני ההתקנה ובפרטי הסקריפט.";
 "userscript_docs_metadata_version" = "השתמש במרחב שמות יציב וייחודי והגדל את הגרסה בכל פעם שהסקריפט המצורף משתנה.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "מוחק ערך קבוע אחד עבור סקריפט זה.";
 "userscript_docs_api_list" = "מחזירה את כל מפתחות האחסון הקבועים בבעלות הסקריפט הזה.";
 "userscript_docs_api_bulk" = "קורא, כותב או מוחק ערכי JSON מרובים בפעולה אחת; כותבים מאומתים אטומית על ידי החנות המקומית.";
-"userscript_docs_api_listener" = "מתבונן בשינויי אחסון שנעשו על ידי הסקריפט בדף האינטרנט הנוכחי. הודעות מרחוק מוצלבות אינן נפלטות.";
+"userscript_docs_api_listener" = "עוקב אחר שינויי אחסון מקומיים ובין כרטיסיות. שינויים מכרטיסייה אחרת מסומנים remote=true.";
 "userscript_docs_api_element" = "יוצר ומוסיף אלמנט עם תכונות, כולל בבטחה במהלך התחלת המסמך.";
 "userscript_docs_api_clipboard" = "מעתיק טקסט ללוח המערכת דרך הגשר המקורי של Soulo.";
 "userscript_docs_extended_title" = "תפריטים, כרטיסיות, קבצים ושילוב עמודים";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "בקשות רשת";
 "userscript_docs_network_legacy" = "מפעיל בקשה מיוחסת ומחזיר טיפול לביטול. הכריז על המענק התואם ו-@connect hosts.";
 "userscript_docs_network_modern" = "כינוי מודרני של ממשק API של בקשה מורשות עם אותו אובייקט פרטים והתנהגות התקשרות חוזרת.";
-"userscript_docs_network_details" = "תומך בכתובת אתר, שיטה, כותרות, נתונים, זמן קצוב, responseType, onloadstart, onreadystatechange, onload, onerror ו-onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "השתמש ב-json, blob, arraybuffer, או השאר ריק עבור טקסט. התגובות כוללות סטטוס, URL סופית, כותרות, טקסט תגובה ותגובה.";
 "userscript_docs_network_connect" = "השתמש בעצמי עבור מארח העמוד, דומיין עבורו ותת-הדומיינים שלו, דומיין עם תווים כלליים לחיפוש, או * רק כאשר באמת נחוץ.";
 "userscript_docs_limits_title" = "התנהגות וגבולות";
 "userscript_docs_limits_web" = "DOM סטנדרטי, אירועים, MutationObserver, אחזור, טיימרים וממשקי API אחרים של WKWebView זמינים. אחזור רגיל עדיין עוקב אחרי CORS.";
 "userscript_docs_limits_storage" = "הערכים המאוחסנים חייבים להיות ניתנים להסדרה של JSON: עד 256 KB לכל ערך ו-1 MB בסך הכל לסקריפט.";
-"userscript_docs_limits_network" = "תגובות מועדפות מוגבלות ל-20 מגה-בייט, פסק הזמן קצוב ל-1-60 שניות, וכותרות Cookie/Host/Origin אינן מתקבלות.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScriptים אינם פועלים בגלישה פרטית.";
 "userscript_docs_limits_require" = "קובצי @require ב־HTTPS מורדים ונשמרים במטמון בעת התקנה או שמירה, ומופעלים לפי הסדר לפני הסקריפט.";
 "userscript_docs_template_title" = "תבנית מינימלית";

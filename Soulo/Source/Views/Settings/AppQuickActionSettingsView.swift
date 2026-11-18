@@ -65,7 +65,7 @@ struct AppQuickActionSettingsView: View {
             }
         }
         .environment(\.editMode, .constant(.active))
-        .navigationTitle(ToolText.text("quick_actions_title"))
+        .navigationTitle(ToolText.text("app_icon_shortcuts"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

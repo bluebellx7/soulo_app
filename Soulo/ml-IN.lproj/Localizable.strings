@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "പിന്തുണച്ചു";
 "userscript_docs_supported_desc" = "പ്രധാന പൊരുത്തപ്പെടുത്തൽ, പ്രമാണം-ആരംഭിക്കുക/അവസാനം, ശൈലികൾ/ഘടകങ്ങൾ, സിംഗിൾ, ബൾക്ക് സ്റ്റോറേജ്, പ്രാദേശിക മൂല്യ ശ്രോതാക്കൾ, ക്ലിപ്പ്ബോർഡ്, മെനുകൾ, ഇൻ-പേജ് അറിയിപ്പുകൾ, ടാബുകൾ, ഡൗൺലോഡുകൾ, ടാബ് ഡാറ്റ, കുക്കികൾ, ഉറവിടങ്ങൾ, URL മാറ്റങ്ങൾ, അനുമതി-സ്കോപ്പ് അഭ്യർത്ഥനകൾ.";
 "userscript_docs_partial_title" = "ഭാഗികമായി പിന്തുണച്ചു";
-"userscript_docs_partial_desc" = "നെറ്റ്‌വർക്ക് അഭ്യർത്ഥനകൾ അപ്‌ലോഡ്/പുരോഗതി, കുക്കി ഗതാഗതം എന്നിവ ഒഴിവാക്കുന്നു. അറിയിപ്പുകൾ ഇൻ-പേജ് ആണ്, റിസോഴ്സ് API-കൾ അസമന്വിതമാണ്, കൂടാതെ നിലവിലെ പേജ് വരുത്തിയ മാറ്റങ്ങൾ ശ്രോതാക്കൾ റിപ്പോർട്ട് ചെയ്യുന്നു. അപ്‌ഡേറ്റ് ചെക്കുകൾ മാനുവൽ ആണ്.";
+"userscript_docs_partial_desc" = "അറിയിപ്പുകൾ പേജിലാണ്; റിസോഴ്‌സ് APIകൾ Promise നൽകുന്നു. cookie ഓപ്ഷന് GM_cookie അനുമതി വേണം; കുക്കികൾ സ്വയം അയയ്ക്കില്ല.";
 "userscript_docs_unsupported_title" = "നിലവിൽ പിന്തുണയ്ക്കുന്നില്ല";
-"userscript_docs_unsupported_desc" = "GM_webRequest ഇൻ്റർസെപ്ഷൻ, GM_audio, സാൻഡ്‌ബോക്‌സ്/റൺ-ഇൻ ഐസൊലേഷൻ, ഓട്ടോമാറ്റിക് അപ്‌ഡേറ്റ് ചെക്കുകൾ, കൂടാതെ WKWebView-ന് നൽകാൻ കഴിയാത്ത കൃത്യമായ ഡെസ്‌ക്‌ടോപ്പ് മാത്രം പെരുമാറ്റങ്ങൾ.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in ഒറ്റപ്പെടുത്തൽ, WKWebView നൽകാത്ത ഡെസ്‌ക്‌ടോപ്പ് പ്രവർത്തനങ്ങൾ.";
 "userscript_docs_metadata_title" = "മെറ്റാഡാറ്റ";
 "userscript_docs_metadata_identity" = "മനുഷ്യർക്ക് വായിക്കാനാകുന്ന സ്ക്രിപ്റ്റ് നാമവും ഓപ്ഷണൽ വിവരണവും ഇൻസ്റ്റാളേഷന് മുമ്പും സ്ക്രിപ്റ്റ് വിശദാംശങ്ങളിലും കാണിച്ചിരിക്കുന്നു.";
 "userscript_docs_metadata_version" = "ബണ്ടിൽ ചെയ്‌ത സ്‌ക്രിപ്‌റ്റ് മാറുമ്പോഴെല്ലാം സ്ഥിരവും അതുല്യവുമായ നെയിംസ്‌പെയ്‌സ് ഉപയോഗിക്കുകയും പതിപ്പ് വർദ്ധിപ്പിക്കുകയും ചെയ്യുക.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "ഈ സ്ക്രിപ്റ്റിനായി ഒരു സ്ഥിരമായ മൂല്യം ഇല്ലാതാക്കുന്നു.";
 "userscript_docs_api_list" = "ഈ സ്ക്രിപ്റ്റിൻ്റെ ഉടമസ്ഥതയിലുള്ള എല്ലാ സ്ഥിരമായ സംഭരണ കീകളും നൽകുന്നു.";
 "userscript_docs_api_bulk" = "ഒരു ഓപ്പറേഷനിൽ ഒന്നിലധികം JSON മൂല്യങ്ങൾ വായിക്കുകയോ എഴുതുകയോ ഇല്ലാതാക്കുകയോ ചെയ്യുന്നു; എഴുത്തുകൾ നേറ്റീവ് സ്റ്റോർ ആറ്റോമിക് സാധൂകരിക്കുന്നു.";
-"userscript_docs_api_listener" = "നിലവിലെ വെബ്‌പേജിൽ സ്‌ക്രിപ്റ്റ് വരുത്തിയ സംഭരണ മാറ്റങ്ങൾ നിരീക്ഷിക്കുന്നു. ക്രോസ്-ടാബ് റിമോട്ട് അറിയിപ്പുകൾ പുറപ്പെടുവിക്കുന്നില്ല.";
+"userscript_docs_api_listener" = "പ്രാദേശികവും മറ്റു ടാബുകളിലേതുമായ സംഭരണ മാറ്റങ്ങൾ നിരീക്ഷിക്കുന്നു. മറ്റു ടാബുകളിലെ മാറ്റങ്ങൾക്ക് remote=true നൽകുന്നു.";
 "userscript_docs_api_element" = "പ്രമാണം-ആരംഭിക്കുന്ന സമയത്ത് സുരക്ഷിതമായി ഉൾപ്പെടെ, ആട്രിബ്യൂട്ടുകളുള്ള ഒരു ഘടകം സൃഷ്ടിക്കുകയും കൂട്ടിച്ചേർക്കുകയും ചെയ്യുന്നു.";
 "userscript_docs_api_clipboard" = "Souloൻ്റെ നേറ്റീവ് ബ്രിഡ്ജ് വഴി സിസ്റ്റം ക്ലിപ്പ്ബോർഡിലേക്ക് ടെക്സ്റ്റ് പകർത്തുന്നു.";
 "userscript_docs_extended_title" = "മെനുകൾ, ടാബുകൾ, ഫയലുകൾ, പേജ് ഏകീകരണം";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "നെറ്റ്‌വർക്ക് അഭ്യർത്ഥനകൾ";
 "userscript_docs_network_legacy" = "ഒരു പ്രത്യേക അഭ്യർത്ഥന ആരംഭിക്കുകയും ഒരു അബോർട്ട് ഹാൻഡിൽ തിരികെ നൽകുകയും ചെയ്യുന്നു. പൊരുത്തപ്പെടുന്ന ഗ്രാൻ്റും @കണക്റ്റ് ഹോസ്റ്റുകളും പ്രഖ്യാപിക്കുക.";
 "userscript_docs_network_modern" = "ഒരേ വിശദാംശങ്ങളുള്ള ഒബ്‌ജക്‌റ്റും കോൾബാക്ക് പെരുമാറ്റവും ഉള്ള പ്രത്യേക അഭ്യർത്ഥന API യുടെ ആധുനിക അപരനാമം.";
-"userscript_docs_network_details" = "url, രീതി, തലക്കെട്ടുകൾ, ഡാറ്റ, കാലഹരണപ്പെടൽ, പ്രതികരണ തരം, onloadstart, onreadystatechange, onload, onerror, onloadend എന്നിവ പിന്തുണയ്ക്കുന്നു.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "json, blob, arraybuffer ഉപയോഗിക്കുക അല്ലെങ്കിൽ ടെക്‌സ്‌റ്റിനായി ശൂന്യമായി വിടുക. പ്രതികരണങ്ങളിൽ സ്റ്റാറ്റസ്, ഫൈനൽ യുആർഎൽ, തലക്കെട്ടുകൾ, പ്രതികരണ വാചകം, പ്രതികരണം എന്നിവ ഉൾപ്പെടുന്നു.";
 "userscript_docs_network_connect" = "പേജ് ഹോസ്റ്റിനായി സ്വയം ഉപയോഗിക്കുക, അതിനായി ഒരു ഡൊമെയ്‌നും അതിൻ്റെ ഉപഡൊമെയ്‌നുകളും, ഒരു വൈൽഡ്‌കാർഡ് ഡൊമെയ്ൻ, അല്ലെങ്കിൽ * ശരിക്കും ആവശ്യമുള്ളപ്പോൾ മാത്രം.";
 "userscript_docs_limits_title" = "പെരുമാറ്റവും പരിധികളും";
 "userscript_docs_limits_web" = "സ്റ്റാൻഡേർഡ് DOM, ഇവൻ്റുകൾ, MutationObserver, fetch, ടൈമറുകൾ, മറ്റ് WKWebView API-കൾ എന്നിവ ലഭ്യമാണ്. സാധാരണ ലഭ്യമാക്കൽ ഇപ്പോഴും CORS-നെ പിന്തുടരുന്നു.";
 "userscript_docs_limits_storage" = "സംഭരിച്ച മൂല്യങ്ങൾ JSON-സീരിയലൈസ് ചെയ്യാവുന്നതായിരിക്കണം: ഓരോ മൂല്യത്തിനും 256 KB വരെയും സ്ക്രിപ്റ്റിന് ആകെ 1 MB വരെയും.";
-"userscript_docs_limits_network" = "പ്രത്യേക പ്രതികരണങ്ങൾ 20 MB ആയി പരിമിതപ്പെടുത്തിയിരിക്കുന്നു, കാലഹരണപ്പെടൽ 1-60 സെക്കൻഡിലേക്ക് പരിമിതപ്പെടുത്തിയിരിക്കുന്നു, കൂടാതെ കുക്കി/ഹോസ്റ്റ്/ഒറിജിൻ തലക്കെട്ടുകൾ സ്വീകരിക്കപ്പെടുന്നില്ല.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "സ്വകാര്യ ബ്രൗസിംഗിൽ UserScriptകൾ പ്രവർത്തിക്കില്ല.";
 "userscript_docs_limits_require" = "HTTPS @require ഫയലുകൾ ഇൻസ്റ്റാൾ ചെയ്യുമ്പോഴോ സംരക്ഷിക്കുമ്പോഴോ ഡൗൺലോഡ് ചെയ്ത് കാഷെ ചെയ്യുന്നു, തുടർന്ന് സ്ക്രിപ്റ്റിനു മുമ്പ് ക്രമത്തിൽ പ്രവർത്തിക്കുന്നു.";
 "userscript_docs_template_title" = "മിനിമൽ ടെംപ്ലേറ്റ്";

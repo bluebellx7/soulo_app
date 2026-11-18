@@ -8,11 +8,26 @@ import CoreData
 final class ManualAdBlockTests: XCTestCase {
     private var savedBuiltInOverrides: Data?
     private var savedBuiltInRevision: String?
+    private var savedFiltering: Any?
+    private var savedAllowlist: Any?
+    private var savedPrivacy: Any?
+    private var savedTemporaryHosts: [String] = []
     override func setUp() {
         super.setUp()
         let defaults = UserDefaults.standard
         savedBuiltInOverrides = defaults.data(forKey: BuiltInAdRuleStore.storageKey)
         savedBuiltInRevision = defaults.string(forKey: BuiltInAdRuleStore.versionKey)
+        savedFiltering = defaults.object(forKey: "ad_block_enabled")
+        savedAllowlist = defaults.object(forKey: "soulo_ad_block_allowlisted_hosts")
+        savedPrivacy = defaults.object(forKey: "is_incognito")
+        savedTemporaryHosts = AdBlockSettingsService.shared.temporaryAllowlistedHosts
+        defaults.set(true, forKey: "ad_block_enabled")
+        defaults.set([], forKey: "soulo_ad_block_allowlisted_hosts")
+        // Match the nonpersistent store used by fixture(), so mounting the
+        // production container does not replace it for a privacy-mode change.
+        defaults.set(true, forKey: "is_incognito")
+        AdBlockSettingsService.shared.clearTemporaryExceptions()
+        AdBlockSettingsService.shared.reloadFromDefaults()
         defaults.removeObject(forKey: BuiltInAdRuleStore.storageKey)
         defaults.removeObject(forKey: BuiltInAdRuleStore.versionKey)
     }
@@ -20,6 +35,12 @@ final class ManualAdBlockTests: XCTestCase {
         let defaults = UserDefaults.standard
         defaults.set(savedBuiltInOverrides, forKey: BuiltInAdRuleStore.storageKey)
         defaults.set(savedBuiltInRevision, forKey: BuiltInAdRuleStore.versionKey)
+        defaults.set(savedFiltering, forKey: "ad_block_enabled")
+        defaults.set(savedAllowlist, forKey: "soulo_ad_block_allowlisted_hosts")
+        defaults.set(savedPrivacy, forKey: "is_incognito")
+        AdBlockSettingsService.shared.clearTemporaryExceptions()
+        AdBlockSettingsService.shared.reloadFromDefaults()
+        savedTemporaryHosts.forEach { AdBlockSettingsService.shared.temporarilyDisableFiltering(for: $0) }
         super.tearDown()
     }
 
@@ -226,6 +247,14 @@ final class ManualAdBlockTests: XCTestCase {
         }
         XCTAssertNotNil(model.manualAdSelection)
         try await Task.sleep(for: .milliseconds(300))
+        host.view.frame = window.bounds
+        host.view.setNeedsLayout()
+        host.view.layoutIfNeeded()
+        for _ in 0..<100 {
+            if let height = try await js("innerHeight", web) as? Double,
+               abs(height - web.bounds.height) < 2 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
         let initialHeight = try await js("innerHeight", web) as? Double
         for selected in [false, true] {
             if selected { _ = try await pick("#bottom-promotion", in: web) }
@@ -238,7 +267,11 @@ final class ManualAdBlockTests: XCTestCase {
             let point = web.convert(CGPoint(x: coordinates[0], y: coordinates[1]), to: window)
             let hit = window.hitTest(point, with: nil)
             XCTAssertTrue(hit === web || hit?.isDescendant(of: web) == true,
-                "The picker must not cover a fixed bottom advertisement, selected=\(selected)")
+                "Picker hit: \(String(describing: hit)); point=\(point), webFrame=\(web.frame), webBounds=\(web.bounds), attached=\(web.window === window), selection=\(selected)")
+            if hit !== web && hit?.isDescendant(of: web) != true {
+                let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+                let attachment = XCTAttachment(image: image); attachment.name = "manual-ad-hit-layout"; attachment.lifetime = .keepAlways; add(attachment)
+            }
         }
         XCTAssertTrue(model.manualAdSelection?.hasSelection == true)
     }

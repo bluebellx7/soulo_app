@@ -1,1 +1,4 @@
-Amélioration des fenêtres sur iPad, de la saisie vocale, des résumés locaux et de l’accessibilité. Amélioration de l’exportation multimédia en arrière-plan, des Raccourcis et de la compatibilité des extensions. Certaines fonctions dépendent de l’appareil, du système et de la langue.
+• Les réglages ont été réorganisés. Prévisualisez la barre d’outils de l’accueil, changez son style, réordonnez ses boutons et placez-la où vous voulez.
+• Si la restauration au redémarrage est activée, Soulo revient à l’accueil ou à la dernière page consultée.
+• Le contraste des menus du navigateur a été amélioré. Le menu Plus permet de réafficher la barre d’outils masquée.
+• Les requêtes réseau et la recherche de mises à jour des scripts utilisateur ont été améliorées.

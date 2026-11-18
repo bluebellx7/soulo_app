@@ -22,7 +22,11 @@ class WallpaperManager: ObservableObject {
             if source == .photo {
                 if customImage == nil { loadCustomImage() }
             } else { customImage = nil }
-            if source == .gradient || source == .solid { currentImage = nil }
+            if source == .gradient || source == .solid {
+                currentImage = nil
+                currentImageID = ""
+                currentImageURLString = nil
+            }
             if source.isRemote && currentImage == nil { loadPersistedRemoteWallpaper() }
             if source.isRemote != oldValue.isRemote {
                 setupAutoRefreshTimer(startPreloadImmediately: false)

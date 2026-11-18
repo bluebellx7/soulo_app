@@ -17,12 +17,24 @@ struct SettingsBackupsView: View {
     @State private var clearNotice = false
     @State private var restoring = false
 
+    private var manualBackups: [CloudSettingsBackup] { backups.filter { $0.isManual == true } }
+    private var recoveryBackups: [CloudSettingsBackup] { backups.filter { $0.isManual != true } }
+
     var body: some View {
         List {
             Section {
-                IllustratedFeatureIntro(scene: .files,
-                    message: FeatureText.text("Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list."),
-                    accessibilityID: "settings.backups.explanation")
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "info.circle")
+                        .font(.body).foregroundStyle(Color.themePrimary)
+                        .accessibilityHidden(true)
+                    Text(FeatureText.text("Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list."))
+                        .font(.footnote).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("settings.backups.explanation")
+                }
+                .padding(.vertical, 4)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
             Section {
                 Toggle(isOn: $iCloudSyncEnabled) {
@@ -50,7 +62,7 @@ struct SettingsBackupsView: View {
             Section {
                 Toggle(isOn: $bookmarkSyncEnabled) {
                     SettingsDescriptionLabel(icon: "bookmark.fill", color: bookmarkSyncEnabled ? .themePrimary : Color(uiColor: .systemGray3),
-                        title: "iCloud · " + LanguageManager.shared.localizedString("bookmarks"),
+                        title: ToolText.text("icloud_bookmark_sync"),
                         description: FeatureText.text("Bookmarks merge across devices. Only explicit deletions remove items."))
                 }
                 .tint(.themePrimary)
@@ -63,78 +75,110 @@ struct SettingsBackupsView: View {
                 if bookmarkSync.isSynchronizing { ProgressView().accessibilityLabel("iCloud") }
             }
             Section {
-                Button {
-                    do { try sync.saveBackup(); load() }
-                    catch { showError = true }
-                } label: {
-                    Label(LanguageManager.shared.localizedString("save"), systemImage: "plus.circle")
+                HStack(spacing: 4) {
+                    Button {
+                        do { try sync.saveBackup(); load() }
+                        catch { showError = true }
+                    } label: {
+                        backupActionFace(ToolText.text("create_settings_backup"), symbol: "plus", primary: true)
+                    }.accessibilityIdentifier("settings.backups.save")
+                    Button { importing = true } label: {
+                        backupActionFace(ToolText.text("favorites_import"), symbol: "square.and.arrow.down")
+                    }.accessibilityIdentifier("settings.backups.import")
+                    Menu {
+                        if !manualBackups.isEmpty {
+                            Section(ToolText.text("manual_settings_backups")) {
+                                ForEach(manualBackups) { backup in exportChoice(backup) }
+                            }
+                        }
+                        if !recoveryBackups.isEmpty {
+                            Section(ToolText.text("recovery_settings_backups")) {
+                                ForEach(recoveryBackups) { backup in exportChoice(backup) }
+                            }
+                        }
+                    } label: {
+                        backupActionFace(ToolText.text("favorites_export"), symbol: "square.and.arrow.up")
+                    }
+                    .disabled(backups.isEmpty)
+                    .accessibilityIdentifier("settings.backups.export")
                 }
-                .accessibilityIdentifier("settings.backups.save")
-                ForEach(backups) { backup in
-                    Button { selectedBackup = backup } label: {
-                        HStack {
-                            Text(backup.createdAt, format: .dateTime.year().month().day().hour().minute().second())
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            Text(LanguageManager.shared.localizedString("restore"))
-                        }
-                    }
-                    .accessibilityIdentifier("settings.backups.restore.\(backup.id.uuidString)")
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button(role: .destructive) { deletingBackup = backup } label: {
-                            Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
-                        }
-                    }
-                    .contextMenu {
-                        Button {
-                            do { exportDocument = SettingsBackupDocument(data: try sync.exportBackup(backup)); exporting = true }
-                            catch { showError = true }
-                        } label: { Label(FeatureText.text("Export backup"), systemImage: "square.and.arrow.up") }
-                        Button(role: .destructive) { deletingBackup = backup } label: {
-                            Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
-                        }
-                    }
+                .buttonStyle(.plain)
+                .padding(4)
+                .background(Color.themePrimary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18))
+                .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
+                .listRowSeparator(.hidden)
+                if manualBackups.isEmpty {
+                    Text(ToolText.text("manual_backups_empty"))
+                        .font(.footnote).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity).padding(.vertical, 16)
+                        .accessibilityIdentifier("settings.backups.empty")
                 }
+                ForEach(manualBackups) { backup in backupRow(backup) }
+            } header: {
+                HStack {
+                    Text(ToolText.text("manual_settings_backups"))
+                    Spacer()
+                    Menu {
+                        Button(role: .destructive) { clearNotice = true } label: {
+                            Label(ToolText.text("clear_manual_backups"), systemImage: "trash")
+                        }.accessibilityIdentifier("settings.backups.clear")
+                    } label: {
+                        Image(systemName: "ellipsis.circle").font(.body)
+                            .frame(minWidth: 44, minHeight: 44)
+                    }
+                    .accessibilityLabel(LanguageManager.shared.localizedString("extension_manage"))
+                    .accessibilityIdentifier("settings.backups.manage")
+                    .disabled(manualBackups.isEmpty)
+                    .confirmationDialog(ToolText.text("clear_manual_backups"), isPresented: $clearNotice, titleVisibility: .visible) {
+                        Button(ToolText.text("clear_manual_backups"), role: .destructive) {
+                            do { try sync.clearManualBackups(); load() }
+                            catch { load(); showError = true }
+                        }.accessibilityIdentifier("settings.backups.confirm-clear")
+                        Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
+                    } message: { Text(ToolText.text("clear_manual_backups_message")) }
+                }
+                .textCase(nil)
             } footer: {
-                VStack(alignment: .leading, spacing: 8) {
+                Text(ToolText.text("clear_manual_backups_message"))
+            }
+            if !recoveryBackups.isEmpty {
+                Section {
+                    ForEach(recoveryBackups) { backup in backupRow(backup) }
+                } header: {
+                    Text(ToolText.text("recovery_settings_backups"))
+                } footer: {
                     Text(String(format: FeatureText.text("iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy."), Int64(CloudSettingsBackupStore.maximumRecentBackups)))
                         .accessibilityIdentifier("settings.backups.retention")
-                    Text(ToolText.text("settings_backup_manage_hint"))
                 }
             }
         }
-        .navigationTitle(LanguageManager.shared.localizedString("settings_backups"))
+        .navigationTitle(ToolText.text("settings_sync_backup"))
+        .navigationBarTitleDisplayMode(.inline)
         .disabled(restoring)
         .overlay { if restoring { ProgressView().accessibilityIdentifier("settings.backups.restoring") } }
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                Button { importing = true } label: { Label(FeatureText.text("Import backup"), systemImage: "square.and.arrow.down") }
-                Button(role: .destructive) { clearNotice = true } label: {
-                    Label(FeatureText.text("Clear backups"), systemImage: "trash")
-                }
-                .disabled(backups.isEmpty)
-                .accessibilityIdentifier("settings.backups.clear")
-            }
-        }
-        .confirmationDialog(FeatureText.text("Clear backups"), isPresented: $clearNotice, titleVisibility: .visible) {
-            Button(FeatureText.text("Clear backups"), role: .destructive) {
-                do { try sync.clearBackups(); load() }
-                catch { load(); showError = true }
-            }
-            .accessibilityIdentifier("settings.backups.confirm-clear")
-            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
-        } message: {
-            Text(FeatureText.text("All local settings backups will be deleted. Your current settings will stay the same."))
-        }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             do {
                 let url = try result.get()
-                let access = url.startAccessingSecurityScopedResource()
-                defer { if access { url.stopAccessingSecurityScopedResource() } }
-                let values = try url.resourceValues(forKeys: [.fileSizeKey])
-                guard (values.fileSize ?? Int.max) <= 16 * 1_024 * 1_024 else { throw ReadingToolError.limit }
-                _ = try sync.importBackup(Data(contentsOf: url))
-                load(); importNotice = true
+                let limit = CloudSettingsBackupStore.maximumPortableBackupSize
+                restoring = true
+                Task { @MainActor in
+                    defer { restoring = false }
+                    do {
+                        // Files providers may download before returning bytes.
+                        // Keep that wait and the bounded read off the UI thread.
+                        let data = try await Task.detached(priority: .userInitiated) {
+                            let access = url.startAccessingSecurityScopedResource()
+                            defer { if access { url.stopAccessingSecurityScopedResource() } }
+                            let file = try FileHandle(forReadingFrom: url)
+                            defer { try? file.close() }
+                            let data = try file.read(upToCount: limit + 1) ?? Data()
+                            guard data.count <= limit else { throw ReadingToolError.limit }
+                            return data
+                        }.value
+                        _ = try sync.importBackup(data)
+                        load(); importNotice = true
+                    } catch { showError = true }
+                }
             } catch { showError = true }
         }
         .fileExporter(isPresented: $exporting, document: exportDocument, contentType: .json, defaultFilename: "Soulo-Settings") { result in
@@ -177,6 +221,79 @@ struct SettingsBackupsView: View {
             Button(LanguageManager.shared.localizedString("done"), role: .cancel) {}
         } message: {
             Text(LanguageManager.shared.localizedString("settings_backup_error"))
+        }
+    }
+
+    private func export(_ backup: CloudSettingsBackup) {
+        do { exportDocument = SettingsBackupDocument(data: try sync.exportBackup(backup)); exporting = true }
+        catch { showError = true }
+    }
+
+    private func exportChoice(_ backup: CloudSettingsBackup) -> some View {
+        Button { export(backup) } label: {
+            Text(backup.createdAt, format: .dateTime.year().month().day().hour().minute().second())
+        }
+        .accessibilityIdentifier("settings.backups.export.\(backup.id.uuidString)")
+    }
+
+    private func backupActionFace(_ title: String, symbol: String, primary: Bool = false) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: symbol).font(.system(size: 20, weight: .medium)).frame(height: 24)
+            Text(title).font(.subheadline.weight(.medium))
+        }
+        .foregroundStyle(primary ? Color.white : Color.themePrimary)
+        .frame(maxWidth: .infinity, minHeight: 76)
+        .background(primary ? Color.themePrimary : .clear, in: RoundedRectangle(cornerRadius: 14))
+        .contentShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func backupRow(_ backup: CloudSettingsBackup) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "doc.text")
+                .font(.system(size: 19, weight: .regular)).foregroundStyle(.secondary)
+                .frame(width: 36, height: 44)
+                .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(backup.createdAt, format: .dateTime.year().month().day())
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(Color(uiColor: .label))
+                Text(backup.createdAt, format: .dateTime.hour().minute().second())
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 4)
+            Button { selectedBackup = backup } label: {
+                Text(LanguageManager.shared.localizedString("restore"))
+                    .font(.caption.weight(.semibold)).foregroundStyle(Color.themePrimary)
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .background(Color.themePrimary.opacity(0.09), in: Capsule())
+                    .frame(minHeight: 44)
+            }
+            .accessibilityIdentifier("settings.backups.restore.\(backup.id.uuidString)")
+            Menu { backupActions(backup) } label: {
+                Image(systemName: "ellipsis").foregroundStyle(.secondary)
+                    .frame(minWidth: 32, minHeight: 44)
+            }
+            .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 4)
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 48 }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if backup.isManual == true {
+                Button(role: .destructive) { deletingBackup = backup } label: {
+                    Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+                }
+            }
+        }
+        .contextMenu { backupActions(backup) }
+    }
+
+    @ViewBuilder private func backupActions(_ backup: CloudSettingsBackup) -> some View {
+        Button { export(backup) } label: { Label(FeatureText.text("Export backup"), systemImage: "square.and.arrow.up") }
+        if backup.isManual == true {
+            Button(role: .destructive) { deletingBackup = backup } label: {
+                Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+            }
         }
     }
 

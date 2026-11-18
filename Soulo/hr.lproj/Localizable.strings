@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Podržano";
 "userscript_docs_supported_desc" = "Podudaranje jezgre, početak/kraj dokumenta, stilovi/elementi, pojedinačna i skupna pohrana, slušatelji lokalnih vrijednosti, međuspremnik, izbornici, obavijesti unutar stranice, kartice, preuzimanja, podaci kartica, kolačići, resursi, promjene URL-a i zahtjevi s opsegom dopuštenja.";
 "userscript_docs_partial_title" = "Djelomično podržano";
-"userscript_docs_partial_desc" = "Mrežni zahtjevi izostavljaju prijenos/napredak i prijenos kolačića. Obavijesti su unutar stranice, API-ji resursa su asinkroni, a slušatelji promjene vrijednosti izvješćuju o promjenama koje je napravila trenutna stranica. Provjere ažuriranja su ručne.";
+"userscript_docs_partial_desc" = "Obavijesti su na stranici; API-ji resursa vraćaju Promise. cookie zahtijeva GM_cookie; kolačići se ne šalju automatski.";
 "userscript_docs_unsupported_title" = "Trenutno nije podržano";
-"userscript_docs_unsupported_desc" = "GM_webRequest presretanje, GM_audio, sandbox/run-in izolacija, automatske provjere ažuriranja i točno ponašanje samo na radnoj površini koje WKWebView ne može pružiti.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolacija sandbox/run-in i stolne funkcije nedostupne u WKWebViewu.";
 "userscript_docs_metadata_title" = "Metapodaci";
 "userscript_docs_metadata_identity" = "Čovjeku čitljiv naziv skripte i izborni opis prikazan prije instalacije i u detaljima skripte.";
 "userscript_docs_metadata_version" = "Upotrijebite stabilan, jedinstveni imenski prostor i povećavajte verziju svaki put kada se skripta u paketu promijeni.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Briše jednu trajnu vrijednost za ovu skriptu.";
 "userscript_docs_api_list" = "Vraća sve ključeve trajne pohrane u vlasništvu ove skripte.";
 "userscript_docs_api_bulk" = "Čita, piše ili briše više JSON vrijednosti u jednoj operaciji; pisanje se atomski provjerava izvornom pohranom.";
-"userscript_docs_api_listener" = "Promatra promjene pohrane koje je izvršila skripta na trenutnoj web stranici. Ne emitiraju se udaljene obavijesti na različitim karticama.";
+"userscript_docs_api_listener" = "Prati lokalne promjene pohrane i promjene drugih kartica s remote=true.";
 "userscript_docs_api_element" = "Stvara i dodaje element s atributima, uključujući sigurno tijekom pokretanja dokumenta.";
 "userscript_docs_api_clipboard" = "Kopira tekst u međuspremnik sustava putem izvornog mosta Soulo.";
 "userscript_docs_extended_title" = "Izbornici, kartice, datoteke i integracija stranica";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Mrežni zahtjevi";
 "userscript_docs_network_legacy" = "Pokreće privilegirani zahtjev i vraća oznaku prekida. Deklarirajte odgovarajuću dodjelu i @connect hostove.";
 "userscript_docs_network_modern" = "Moderni alias API-ja povlaštenog zahtjeva s istim objektom detalja i ponašanjem povratnog poziva.";
-"userscript_docs_network_details" = "Podržava url, metodu, zaglavlja, podatke, vrijeme čekanja, responseType, onloadstart, onreadystatechange, onload, onerror i onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Koristite json, blob, arraybuffer ili ostavite prazno za tekst. Odgovori uključuju status, finalUrl, zaglavlja, responseText i odgovor.";
 "userscript_docs_network_connect" = "Koristite self za host stranice, domenu za njega i njegove poddomene, domenu sa zamjenskim znakovima ili * samo kada je to zaista potrebno.";
 "userscript_docs_limits_title" = "Ponašanje i ograničenja";
 "userscript_docs_limits_web" = "Dostupni su standardni DOM, događaji, MutationObserver, dohvaćanje, mjerači vremena i drugi WKWebView API-ji. Normalno dohvaćanje i dalje slijedi CORS.";
 "userscript_docs_limits_storage" = "Pohranjene vrijednosti moraju biti JSON-serializable: do 256 KB po vrijednosti i 1 MB ukupno po skripti.";
-"userscript_docs_limits_network" = "Privilegirani odgovori ograničeni su na 20 MB, vremensko ograničenje ograničeno je na 1–60 sekundi, a zaglavlja Cookie/Host/Origin nisu prihvaćena.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScript se ne pokreću u privatnom pregledavanju.";
 "userscript_docs_limits_require" = "Datoteke @require putem HTTPS preuzimaju se i spremaju pri instalaciji ili spremanju te se pokreću redom prije skripte.";
 "userscript_docs_template_title" = "Minimalni predložak";

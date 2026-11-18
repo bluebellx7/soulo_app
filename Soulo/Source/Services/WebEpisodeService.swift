@@ -146,7 +146,7 @@ enum WebEpisodeRuntime {
     @MainActor static func resolveActionMedia(_ episode: WebEpisode, in webView: WKWebView,
                                              timeout: TimeInterval, excluding previousResourceURL: URL? = nil) async throws -> WebMediaResource {
         func current() async -> WebMediaResource? {
-            let token = (try? await webView.evaluateJavaScript("Array.from(document.querySelectorAll('video[data-soulo-media-id]')).sort((a,b)=>b.getBoundingClientRect().width*b.getBoundingClientRect().height-a.getBoundingClientRect().width*a.getBoundingClientRect().height)[0]?.getAttribute('data-soulo-media-id')??'__soulo_configured'")) as? String ?? "__soulo_configured"
+            let token = (try? await webView.evaluateCompatibleJavaScript("Array.from(document.querySelectorAll('video[data-soulo-media-id]')).sort((a,b)=>b.getBoundingClientRect().width*b.getBoundingClientRect().height-a.getBoundingClientRect().width*a.getBoundingClientRect().height)[0]?.getAttribute('data-soulo-media-id')??'__soulo_configured'")) as? String ?? "__soulo_configured"
             return await WebResourceInspectionService.currentVideoResource(webView:webView,frame:nil,token:token)
         }
         let before = await current()
@@ -158,7 +158,7 @@ enum WebEpisodeRuntime {
             if let media = await current(), media.delivery != .dash, media.url != previousResourceURL,
                media.url != before?.url || episode.action?.isCurrent == true {
                 if previous == media.url {
-                    _ = try? await webView.evaluateJavaScript("document.querySelectorAll('video').forEach(v=>v.pause());true")
+                    _ = try? await webView.evaluateCompatibleJavaScript("document.querySelectorAll('video').forEach(v=>v.pause());true")
                     return WebMediaResource(kind:.video,url:media.url,title:episode.title,posterURL:media.posterURL,
                         delivery:media.delivery,companionAudioURL:media.companionAudioURL,
                         sourcePageURL:media.sourcePageURL ?? webView.url)

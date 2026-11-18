@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "מיקום %d";
 "home_toolbar_reset" = "הסתר הכל";
 "home_toolbar_default_hint" = "קיצורי דרך לבית מוסתרים כברירת מחדל.";
+"home_toolbar_position" = "מיקום";
+"home_toolbar_buttons" = "כפתורים";
+"home_toolbar_tiles" = "נפרדים";
+"home_toolbar_capsule" = "קפסולה";
+"home_toolbar_icons" = "סמלים בלבד";
+"home_toolbar_bottom" = "בתחתית";
+"home_toolbar_belowSearch" = "מתחת לחיפוש";
+"home_toolbar_free" = "מיקום חופשי";
+"home_toolbar_leading" = "יישור להתחלה";
+"home_toolbar_center" = "מרכוז";
+"home_toolbar_trailing" = "יישור לסוף";
+"home_toolbar_drag_position" = "גררו את סרגל הכלים למקום הרצוי.";
+"home_toolbar_drag_buttons" = "הקישו להחלפת כפתור וגררו לשינוי הסדר.";
 "home_toolbar_search" = "מצא דף";
 "group_default_search" = "חיפוש ברירת מחדל";
 "group_search_settings" = "הגדרות קבוצה";
 "group_engine_name" = "שם מנוע חיפוש";
-"group_search_url" = "חפש ב-URL עם %@";
-"group_default_search_hint" = "משמש כאשר לקבוצה זו אין פלטפורמות מופעלות. כלול %@ ב-URL עבור מונחי החיפוש. פלטפורמות מושבתות נשארות מושבתות.";
-"group_search_url_invalid" = "הזן שם וחיפוש חוקי HTTP או HTTPS URL המכיל %@.";
+"group_search_url" = "כתובת חיפוש או דף בית (מילות חיפוש: %@)";
+"group_default_search_hint" = "משמש כשאין בקבוצה פלטפורמות פעילות. ניתן לבחור כל פלטפורמה בקבוצה. %@ יוחלף במילות החיפוש; ללא מציין מיקום, הדף ייפתח ישירות. פלטפורמות מושבתות יישארו מושבתות.";
+"group_search_url_invalid" = "יש להזין שם וכתובת HTTP או HTTPS תקינה. תבניות חיפוש יכולות להשתמש ב־%@.";
 "batch_import_new_group" = "קבוצה מיובאת";
 "image_resources" = "משאבים";
 "screen_keep_awake" = "השאר את המסך דולק";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "לא ניתן לשלוח פורמט זה ישירות עם נגן המערכת. פתח את Control Center, בחר בשיקוף מסך ולאחר מכן בחר בטלוויזיה או ב-Mac שלך.";
 "userscript_check_updates" = "בדוק עדכונים";
 "userscript_update_no_url" = "לא מסופקת כתובת לעדכון. ייבא קובץ סקריפט חדש יותר כדי לעדכן אותו.";
-"userscript_update_manual_hint" = "המחאות פועלות רק כאשר מתבקשים. עיין בגרסה החדשה לפני העדכון. סקריפטים מובנים מתעדכנים עם האפליקציה.";
+"userscript_update_manual_hint" = "פתיחת מותקנים בודקת עד 4 סקריפטים בכל ביקור, כל אחד פעם ב-24 שעות. הבדיקות מושהות בגלישה פרטית, חיסכון בסוללה או חום גבוה. עדכונים דורשים בדיקה.";
 "userscript_update_latest" = "מעודכן";
 "userscript_update_invalid" = "העדכון אינו חוקי, שייך לסקריפט אחר או בעל גרסה לא עקבית.";
 "userscript_update_changed" = "סקריפט זה השתנה לאחר הבדיקה. בדוק שוב אם יש עדכונים.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "זכוכית חלבית";
 "wallpaper_blur_amount" = "עוצמת הטשטוש";
 
-"auto_hide_platform_bar_hint" = "סרגל הפלטפורמות יוסתר רק לאחר הקשה על תוכן הדף. הפניות אוטומטיות וגלילה לא יסתירו אותו. חזרו לתוצאות החיפוש או התחילו חיפוש חדש כדי להציגו שוב.";
+"auto_hide_platform_bar_hint" = "כשהאפשרות מופעלת, הסרגל מוסתר רק לאחר הקשה על תוכן הדף ורק אם דומיין הדף אינו תואם לשום פלטפורמה בסרגל הנוכחי. התאמה משאירה את הסרגל גלוי או מציגה אותו מחדש. גלילה והפניות אוטומטיות אינן מסתירות אותו.";
 
 "ad_subscription_add" = "הוספת רשימת סינון";
 "ad_subscription_name" = "שם";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "שליטה ברטט ובצלילי הממשק בכל האפליקציה. ניגון דפי אינטרנט, וידאו ושמע אינו מושפע.";
 
 "home_display_settings" = "תצוגת דף הבית";
-"browsing_display_settings" = "תצוגת גלישה";
+"browsing_display_settings" = "הגדרות גלישה";
 
 "web_video_download" = "הורדת סרטונים מהאינטרנט";
 "web_video_download_description" = "הצגת פקדי הורדת וידאו בדפי אינטרנט, ברשימות פרקים ובנגנים. הניגון וההורדות הקיימות אינם משתנים.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "מנקה מאמרים לא מקוונים, את ספריית הספרים ואת התקדמות הקריאה.";
 
 "storage_cleanup_offline_desc" = "מוחק שאריות סרטונים לא מקוונים ללא רישומי הורדה.";
+
+"storage_website_shared" = "נתונים משותפים ולא משויכים";
+"storage_website_shared_desc" = "כולל מטמוני רשת משותפים, עוגיות ונתונים שלא ניתן לשייך לאתר יחיד.";
+"storage_website_clear_scope" = "מנקה נתוני אתרים רגילים ומטמוני רשת משותפים. למדיה של הרחבות יש להשתמש ב־„מטמון זמני של הרחבות”; הגדרות ההרחבות נשמרות.";
+
+"storage_quick_clear" = "ניקוי מהיר";
+"storage_quick_clear_done" = "המטמון נוקה";
+
+"storage_website_cleanup_pending" = "נתוני האתרים עדיין נמחקים. אפשר לחזור ולהמשיך לגלוש. אין להתחיל ניקוי נוסף.";
+
+"storage_auto_cleanup" = "ניקוי אוטומטי";
+
+"storage_auto_cleanup_desc" = "מתבצע ניסיון לכל היותר פעם ב־24 שעות כשהיישום לא פעיל ברקע. נמחקים רק קובצי ייבוא, ייצוא ותצוגה מקדימה זמניים שאינם בשימוש ושגילם מעל 24 שעות. כל סבב נמשך כשנייה או בודק 2000 פריטים ונעצר בחזרה ליישום. מדלג בזמן ניגון, הורדה או ייצוא, או כשמצב סוללה חלשה מופעל או המכשיר חם באופן ניכר. סימניות, הורדות שמורות, פרטי התחברות ונתוני אתרים לעולם אינם נמחקים אוטומטית.";
+
+"restore_last_page_on_launch" = "שחזור העמוד האחרון";
+"restore_last_page_on_launch_desc" = "פתיחת עמוד האינטרנט האחרון בעת הפעלת האפליקציה. כרטיסיות פרטיות לא ישוחזרו.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "מחוות וקיצורים";
+"app_icon_shortcuts" = "קיצורי סמל האפליקציה";
+"settings_sync_backup" = "סנכרון וגיבויים";
+"icloud_bookmark_sync" = "סנכרון סימניות iCloud";
+"manual_settings_backups" = "גיבויים ידניים";
+"create_settings_backup" = "יצירה";
+"toolbar_settings" = "סרגלי כלים";
+"toolbar_section_home" = "בית";
+
+/* Manual backup controls */
+"clear_manual_backups" = "מחיקת גיבויים ידניים";
+"clear_manual_backups_message" = "מוחק רק גיבויים שנוצרו ידנית או יובאו. עותקי שחזור אוטומטיים וישנים, ההגדרות הנוכחיות וסנכרון iCloud נשמרים.";
+"recovery_settings_backups" = "גיבויים אוטומטיים וקודמים";
+
+/* Settings hierarchy */
+"settings_personalization" = "התאמה אישית";
+"appearance_home_settings" = "בית וטפט";
+"settings_data" = "נתונים";
+"about_feedback_settings" = "אודות ומשוב";
+"browsing_startup_tabs" = "הפעלה וכרטיסיות";
+"browsing_interface" = "ממשק";
+"browsing_web_display" = "דפי אינטרנט";
+"manual_backups_empty" = "עדיין אין גיבויים ידניים";
+"browsing_display_settings_legacy" = "תצוגת גלישה";

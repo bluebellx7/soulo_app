@@ -1,1 +1,4 @@
-Vylepšena okna na iPadu, hlasové zadávání, místní souhrny a zpřístupnění. Vylepšen export médií na pozadí, Zkratky a kompatibilita rozšíření. Některé funkce závisejí na zařízení, verzi systému a jazyce.
+• Přeuspořádali jsme nastavení. Panel nástrojů na domovské stránce má živý náhled, volbu stylu, změnu pořadí tlačítek a volné umístění přetažením.
+• Po zapnutí obnovy při spuštění se Soulo vrátí na domovskou nebo naposledy prohlíženou stránku.
+• Zlepšili jsme kontrast nabídek prohlížeče. Skrytý panel nástrojů můžete znovu zobrazit z nabídky Další.
+• Vylepšili jsme síťové požadavky a kontrolu aktualizací uživatelských skriptů.

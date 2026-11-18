@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Støttes";
 "userscript_docs_supported_desc" = "Kjernematching, dokumentstart/slutt, stiler/elementer, enkelt- og bulklagring, lokale verdilyttere, utklippstavle, menyer, varslinger på siden, faner, nedlastinger, fanedata, informasjonskapsler, ressurser, URL-endringer og forespørsler med tillatelsesomfang.";
 "userscript_docs_partial_title" = "Delvis støttet";
-"userscript_docs_partial_desc" = "Nettverksforespørsler utelater opplasting/fremdrift og informasjonskapseltransport. Varslinger er på siden, ressurs-API-er er asynkrone, og verdiendringslyttere rapporterer endringer gjort av gjeldende side. Oppdateringssjekker er manuelle.";
+"userscript_docs_partial_desc" = "Varsler vises på siden; ressurs-API-er returnerer Promise. cookie krever GM_cookie; informasjonskapsler sendes ikke automatisk.";
 "userscript_docs_unsupported_title" = "Støttes ikke for øyeblikket";
-"userscript_docs_unsupported_desc" = "GM_webRequest-avskjæring, GM_audio, sandkasse/innkjøringsisolasjon, automatiske oppdateringskontroller og eksakt kun skrivebordsatferd som WKWebView ikke kan tilby.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in-isolering og skrivebordsfunksjoner som WKWebView ikke tilbyr.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Menneskelest skriptnavn og valgfri beskrivelse vist før installasjon og i skriptdetaljer.";
 "userscript_docs_metadata_version" = "Bruk et stabilt, unikt navneområde og øk versjonen hver gang det medfølgende skriptet endres.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Sletter én vedvarende verdi for dette skriptet.";
 "userscript_docs_api_list" = "Returnerer alle vedvarende lagringsnøkler som eies av dette skriptet.";
 "userscript_docs_api_bulk" = "Leser, skriver eller sletter flere JSON-verdier i én operasjon; skriver valideres atomisk av den opprinnelige butikken.";
-"userscript_docs_api_listener" = "Observerer lagringsendringer gjort av skriptet på gjeldende nettside. Kryssfane-fjernvarsler sendes ikke ut.";
+"userscript_docs_api_listener" = "Overvåker lokale lagringsendringer og endringer fra andre faner med remote=true.";
 "userscript_docs_api_element" = "Oppretter og legger til et element med attributter, inkludert trygt under dokumentstart.";
 "userscript_docs_api_clipboard" = "Kopierer tekst til systemets utklippstavle gjennom Soulo sin opprinnelige bro.";
 "userscript_docs_extended_title" = "Menyer, faner, filer og sideintegrasjon";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Nettverksforespørsler";
 "userscript_docs_network_legacy" = "Starter en privilegert forespørsel og returnerer et avbruddshåndtak. Erklær det samsvarende tilskuddet og @connect-vertene.";
 "userscript_docs_network_modern" = "Moderne alias for privilegert forespørsel API med samme detaljobjekt og tilbakeringingsadferd.";
-"userscript_docs_network_details" = "Støtter url, metode, overskrifter, data, timeout, responseType, onloadstart, onreadystatechange, onload, onerror og onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Bruk json, blob, arraybuffer, eller la det stå tomt for tekst. Svarene inkluderer status, finalUrl, headers, responseText og response.";
 "userscript_docs_network_connect" = "Bruk selv for sideverten, et domene for den og dens underdomener, et jokertegndomene eller * bare når det virkelig er nødvendig.";
 "userscript_docs_limits_title" = "Atferd og grenser";
 "userscript_docs_limits_web" = "Standard DOM, hendelser, MutationObserver, henting, tidtakere og andre WKWebView APIer er tilgjengelige. Normal apport følger fortsatt CORS.";
 "userscript_docs_limits_storage" = "Lagrede verdier må være JSON-serialiserbare: opptil 256 KB per verdi og 1 MB totalt per skript.";
-"userscript_docs_limits_network" = "Privilegerte svar er begrenset til 20 MB, tidsavbrudd er begrenset til 1–60 sekunder, og informasjonskapsel/vert/opprinnelse er ikke akseptert.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripter kjører ikke i privat nettlesing.";
 "userscript_docs_limits_require" = "HTTPS @require-filer lastes ned og mellomlagres ved installasjon eller lagring og kjøres i rekkefølge før skriptet.";
 "userscript_docs_template_title" = "Minimal mal";

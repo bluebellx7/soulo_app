@@ -79,6 +79,7 @@ struct StorageUsageView: View {
                         Button { cleanupGroup = nil; bulkCleanup = true } label: { Image(systemName: "trash").frame(width: 44, height: 44) }
                             .buttonStyle(.borderless).accessibilityLabel(LanguageManager.shared.localizedString("privacy_clear_action"))
                             .accessibilityIdentifier("storage.cleanup")
+                            .disabled(clearing != nil)
                     }
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
@@ -110,9 +111,19 @@ struct StorageUsageView: View {
                         .accessibilityIdentifier("privacy.clear-browsing-on-exit")
                 } header: { Text(LanguageManager.shared.localizedString("privacy_section_data")) }
             }
-            Section {
-                Text(FeatureText.text("Manage saved content in its own list. Active temporary files and system cache databases are released when safe."))
-                    .font(.footnote).foregroundStyle(.secondary)
+            if group == nil {
+                Section {
+                    Text(ToolText.text("storage_auto_cleanup_desc"))
+                        .font(.footnote).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("storage.autoCleanup.rules")
+                } header: {
+                    Text(ToolText.text("storage_auto_cleanup"))
+                }
+            } else {
+                Section {
+                    Text(FeatureText.text("Manage saved content in its own list. Active temporary files and system cache databases are released when safe."))
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
             }
         }
         .navigationTitle(group?.title ?? FeatureText.text("Storage"))
@@ -122,7 +133,6 @@ struct StorageUsageView: View {
                 .id(cleanupGroup?.rawValue ?? "all")
         }
         .overlay { if loading || clearing != nil { ProgressView().allowsHitTesting(false) } }
-        .disabled(clearing != nil)
         .onAppear { Task { await refresh() } }
         .refreshable { await refresh() }
         .alert(ToolText.text("done"), isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
@@ -149,19 +159,21 @@ struct StorageUsageView: View {
             .accessibilityValue(loading ? "" : String(bytes))
             if group == .websites {
                 StorageCacheClearButton(title: group.title, identifier: "storage.clear.websites",
-                    enabled: !loading, confirmationTitle: LanguageManager.shared.localizedString("clear_all_data"),
-                    confirmationMessage: FeatureText.text("Deleting website data can sign you out and remove offline content.")) {
+                    enabled: !loading && clearing == nil, confirmationTitle: LanguageManager.shared.localizedString("clear_all_data"),
+                    confirmationMessage: FeatureText.text("Deleting website data can sign you out and remove offline content.") + "\n\n" + ToolText.text("storage_website_clear_scope")) {
                         clearWebsites()
                     }
             } else if !group.cleanupChoices.isEmpty {
                 Button { cleanupGroup = group; bulkCleanup = true } label: { Image(systemName: "trash").frame(width: 44, height: 44) }
                     .buttonStyle(.borderless).accessibilityLabel(LanguageManager.shared.localizedString("privacy_clear_action") + " " + group.title)
                     .accessibilityIdentifier("storage.group.clear." + group.rawValue)
+                    .disabled(clearing != nil)
             }
         }
     }
     private func clearWebsites() {
         guard clearing == nil else { return }
+        refreshID = UUID()
         clearing = .websiteStorage
         Task {
             notice = await StorageUsageService.clearWebsiteData().notice
@@ -471,6 +483,8 @@ private struct AdditionalStorageView: View {
 private struct WebsiteStorageView: View {
     var onOpenInBrowser: ((URL) -> Void)?
     @State private var entries: [WebsiteStorageEntry] = []
+    @State private var totalBytes: Int64?
+    @State private var unattributedBytes: Int64?
     @State private var loading = true
     @State private var clearingExtensions = false
     @State private var refreshID = UUID()
@@ -479,23 +493,33 @@ private struct WebsiteStorageView: View {
     var body: some View {
         List {
             Section {
+                HStack {
+                    Text(FeatureText.text("Website data")); Spacer()
+                    Text(storageSize(totalBytes)).foregroundStyle(.secondary).monospacedDigit()
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(FeatureText.text("Website data"))
+                .accessibilityValue(totalBytes.map(String.init) ?? "")
+                .accessibilityIdentifier("storage.websites.total")
                 StorageCacheClearButton(title: FeatureText.text("Website data"), identifier: "storage.websites.clear-all",
                     textLabel: LanguageManager.shared.localizedString("clear_all_data"), enabled: !loading && !clearingExtensions,
                     confirmationTitle: LanguageManager.shared.localizedString("clear_all_data"),
-                    confirmationMessage: FeatureText.text("Deleting website data can sign you out and remove offline content.")) {
+                    confirmationMessage: FeatureText.text("Deleting website data can sign you out and remove offline content.") + "\n\n" + ToolText.text("storage_website_clear_scope")) {
+                        refreshID = UUID()
                         clearingExtensions = true
                         Task {
                             notice = await StorageUsageService.clearWebsiteData().notice
-                            await refresh(); clearingExtensions = false
+                            await refresh(afterCleanup: true); clearingExtensions = false
                         }
                     }
-            } footer: { Text(FeatureText.text("Deleting website data can sign you out and remove offline content.")) }
+            } footer: { Text(ToolText.text("storage_website_clear_scope")) }
             if #available(iOS 18.4, *) {
                 Section {
                     StorageCacheClearButton(title: FeatureText.text("Extension temporary cache"),
                         identifier: "storage.extension-cache",
                         textLabel: FeatureText.text("Extension temporary cache"),
                         enabled: !clearingExtensions) {
+                            refreshID = UUID()
                             clearingExtensions = true
                             Task {
                                 if #available(iOS 18.4, *) {
@@ -516,14 +540,28 @@ private struct WebsiteStorageView: View {
 
                     }
                 }.accessibilityIdentifier("storage.site." + entry.domain)
+                    .accessibilityValue(entry.bytes.map { String($0.total) } ?? "")
+                    .disabled(clearingExtensions)
             }
-            if entries.isEmpty && !loading {
+            if let unattributedBytes, unattributedBytes > 0 {
+                Section {
+                    HStack {
+                        Text(ToolText.text("storage_website_shared")); Spacer()
+                        Text(storageSize(unattributedBytes)).foregroundStyle(.secondary).monospacedDigit()
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(ToolText.text("storage_website_shared"))
+                    .accessibilityValue(String(unattributedBytes))
+                    .accessibilityIdentifier("storage.websites.shared")
+                } footer: { Text(ToolText.text("storage_website_shared_desc")) }
+            }
+            if entries.isEmpty && !loading && unattributedBytes == 0 {
                 CompatibleUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "externaldrive")
             }
         }
         .navigationTitle(FeatureText.text("Website data"))
         .overlay { if loading || clearingExtensions { ProgressView().allowsHitTesting(false) } }
-        .onAppear { Task { await refresh() } }.refreshable { await refresh() }
+        .task { await refresh() }.refreshable { await refresh() }
         .alert(ToolText.text("done"), isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
             Button(ToolText.text("done")) { notice = nil }
         } message: { Text(notice ?? "") }
@@ -531,14 +569,16 @@ private struct WebsiteStorageView: View {
             Button(ToolText.text("done")) { error = nil }
         } message: { Text(error ?? "") }
     }
-    private func refresh() async {
+    private func refresh(afterCleanup: Bool = false) async {
+        guard !clearingExtensions || afterCleanup else { return }
         let id = UUID(); refreshID = id
-        let updated = await WebsiteStorageService.entries { list in
+        let updated = await WebsiteStorageService.snapshot { list in
             guard refreshID == id, !list.isEmpty else { return }
             entries = list; loading = false
         }
         guard refreshID == id, !Task.isCancelled else { return }
-        entries = updated; loading = false
+        entries = updated.entries; totalBytes = updated.totalBytes
+        unattributedBytes = updated.unattributedBytes; loading = false
     }
 }
 
@@ -596,7 +636,7 @@ private func storageSize(_ bytes: Int64?) -> String {
 }
 
 @MainActor private func siteTitle(_ entry: WebsiteStorageEntry) -> String {
-    if let id = UUID(uuidString: entry.domain), let record = BrowserExtensionService.shared.webExtensions.first(where: { $0.id == id }) { return record.name }
+    if let id = UUID(uuidString: entry.domain), let record = BrowserExtensionService.existingShared?.webExtensions.first(where: { $0.id == id }) { return record.name }
     return entry.domain
 }
 
@@ -605,7 +645,10 @@ private func storageSize(_ bytes: Int64?) -> String {
 enum StorageCleanupChoice: Hashable, Identifiable, Sendable {
     case cache(StorageUsageCategory)
     case websiteData, downloadedFiles, wallpapers, reading, backups, history, bookmarks, systemCaches, offlineMedia
-    static var safeDefaults: Set<Self> { Set(StorageUsageCategory.allCases.filter(\.canClear).map(Self.cache)).union([.systemCaches]) }
+    static var safeDefaults: Set<Self> {
+        Set(StorageUsageCategory.allCases.filter { $0.canClear && ![.tabSnapshots, .favicons].contains($0) }.map(Self.cache))
+            .union([.systemCaches])
+    }
     static let saved: [Self] = [.history, .offlineMedia, .websiteData, .downloadedFiles, .wallpapers, .reading, .backups, .bookmarks]
     var id: String {
         if case let .cache(category) = self { return category.rawValue }
@@ -648,7 +691,8 @@ private struct StorageCleanupView: View {
     @FocusState private var confirmationFocused: Bool
     init(records: [StorageUsageRecord], choices: [StorageCleanupChoice]? = nil, onFinished: @escaping () async -> Void) {
         self.records = records; self.choices = choices; self.onFinished = onFinished
-        _selected = State(initialValue: Set(choices?.filter { !$0.isSavedData } ?? Array(StorageCleanupChoice.safeDefaults)))
+        let defaults = StorageCleanupChoice.safeDefaults
+        _selected = State(initialValue: choices.map { Set($0).intersection(defaults) } ?? defaults)
     }
     private var cacheRecords: [StorageUsageRecord] {
         records.filter { $0.canClear && (choices == nil || choices!.contains(.cache($0.category))) }
@@ -792,8 +836,8 @@ private struct StorageCleanupView: View {
     }
 }
 
-/// The source control owns its confirmation anchor, including on iPhone and
-/// iOS 16. A List-wide dialog otherwise points at the middle of the whole list.
+/// Keep destructive confirmation outside popover layout/lifecycle callbacks.
+/// Starting cleanup from onDisappear can overlap a List presentation update.
 private struct StorageCacheClearButton: View {
     let title: String
     let identifier: String
@@ -803,7 +847,6 @@ private struct StorageCacheClearButton: View {
     var confirmationMessage: String? = nil
     let onConfirm: () -> Void
     @State private var confirming = false
-    @State private var pending = false
 
     var body: some View {
         Button { confirming = true } label: {
@@ -813,28 +856,12 @@ private struct StorageCacheClearButton: View {
         .buttonStyle(.borderless).disabled(!enabled)
         .accessibilityLabel(LanguageManager.shared.localizedString("delete") + " " + title)
         .accessibilityIdentifier(identifier)
-        .compatiblePopover(isPresented: $confirming, attachmentAnchor: .rect(.bounds), arrowEdge: textLabel == nil ? .trailing : .top) {
-            VStack(alignment: .leading, spacing: 14) {
-                Text(confirmationTitle ?? FeatureText.text("Clear this cache?")).font(.headline)
-                Text(confirmationMessage ?? title).font(.subheadline).foregroundStyle(.secondary)
-                HStack(spacing: 12) {
-                    Button(LanguageManager.shared.localizedString("cancel")) { confirming = false }
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                    Button(LanguageManager.shared.localizedString("delete"), role: .destructive) {
-                        pending = true; confirming = false
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .accessibilityIdentifier("storage.confirm.delete")
-                }
-                .buttonStyle(.bordered)
+        .alert(confirmationTitle ?? FeatureText.text("Clear this cache?"), isPresented: $confirming) {
+            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) { }
+            Button(LanguageManager.shared.localizedString("delete"), role: .destructive) {
+                onConfirm()
             }
-            .padding(16).frame(width: 270)
-            .compatiblePopoverAdaptation()
-            .compatiblePresentationBackground(.regularMaterial)
-            .compatiblePresentationCornerRadius(22)
-            .onDisappear {
-                if pending { pending = false; DispatchQueue.main.async(execute: onConfirm) }
-            }
-        }
+            .accessibilityIdentifier("storage.confirm.delete")
+        } message: { Text(confirmationMessage ?? title) }
     }
 }

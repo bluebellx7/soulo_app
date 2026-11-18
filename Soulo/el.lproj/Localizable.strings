@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Υποστηρίζεται";
 "userscript_docs_supported_desc" = "Αντιστοίχιση πυρήνων, αρχή/τέλος εγγράφου, στυλ/στοιχεία, μεμονωμένος και μαζικός χώρος αποθήκευσης, προγράμματα ακρόασης τοπικών τιμών, πρόχειρο, μενού, ειδοποιήσεις στη σελίδα, καρτέλες, λήψεις, δεδομένα καρτελών, cookie, πόροι, αλλαγές διευθύνσεων URL και αιτήματα με εύρος αδειών.";
 "userscript_docs_partial_title" = "Υποστηρίζεται εν μέρει";
-"userscript_docs_partial_desc" = "Τα αιτήματα δικτύου παραλείπουν τη μεταφόρτωση/πρόοδο και τη μεταφορά cookie. Οι ειδοποιήσεις είναι στη σελίδα, τα API πόρων είναι ασύγχρονα και οι ακροατές που αλλάζουν αξία αναφέρουν αλλαγές που έγιναν από την τρέχουσα σελίδα. Οι έλεγχοι ενημέρωσης είναι χειροκίνητοι.";
+"userscript_docs_partial_desc" = "Οι ειδοποιήσεις μένουν στη σελίδα και τα API πόρων επιστρέφουν Promise. Το cookie απαιτεί GM_cookie· τα cookies δεν στέλνονται αυτόματα.";
 "userscript_docs_unsupported_title" = "Δεν υποστηρίζεται αυτήν τη στιγμή";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, απομόνωση sandbox/run-in, αυτόματοι έλεγχοι ενημέρωσης και ακριβείς συμπεριφορές μόνο στην επιφάνεια εργασίας που δεν μπορεί να παρέχει το WKWebView.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, απομόνωση sandbox/run-in και λειτουργίες υπολογιστή που δεν παρέχει το WKWebView.";
 "userscript_docs_metadata_title" = "Μεταδεδομένα";
 "userscript_docs_metadata_identity" = "Το όνομα του σεναρίου αναγνώσιμο από τον άνθρωπο και η προαιρετική περιγραφή εμφανίζονται πριν από την εγκατάσταση και στις λεπτομέρειες του σεναρίου.";
 "userscript_docs_metadata_version" = "Χρησιμοποιήστε έναν σταθερό, μοναδικό χώρο ονομάτων και αυξήστε την έκδοση κάθε φορά που αλλάζει η δέσμη ενεργειών.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Διαγράφει μία μόνιμη τιμή για αυτό το σενάριο.";
 "userscript_docs_api_list" = "Επιστρέφει όλα τα μόνιμα κλειδιά αποθήκευσης που ανήκουν σε αυτό το σενάριο.";
 "userscript_docs_api_bulk" = "Διαβάζει, γράφει ή διαγράφει πολλαπλές τιμές JSON σε μία λειτουργία. Οι εγγραφές επικυρώνονται ατομικά από το εγγενές κατάστημα.";
-"userscript_docs_api_listener" = "Παρατηρεί τις αλλαγές αποθήκευσης που έγιναν από το σενάριο στην τρέχουσα ιστοσελίδα. Οι απομακρυσμένες ειδοποιήσεις μεταξύ καρτελών δεν εκπέμπονται.";
+"userscript_docs_api_listener" = "Παρακολουθεί τοπικές αλλαγές και αλλαγές άλλων καρτελών με remote=true.";
 "userscript_docs_api_element" = "Δημιουργεί και προσαρτά ένα στοιχείο με χαρακτηριστικά, συμπεριλαμβανομένης της ασφάλειας κατά την εκκίνηση του εγγράφου.";
 "userscript_docs_api_clipboard" = "Αντιγράφει κείμενο στο πρόχειρο του συστήματος μέσω της εγγενούς γέφυρας του Soulo.";
 "userscript_docs_extended_title" = "Ενοποίηση μενού, καρτελών, αρχείων και σελίδων";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Αιτήματα δικτύου";
 "userscript_docs_network_legacy" = "Ξεκινά ένα προνομιακό αίτημα και επιστρέφει μια λαβή ματαίωσης. Δηλώστε την αντίστοιχη επιχορήγηση και @connect hosts.";
 "userscript_docs_network_modern" = "Σύγχρονο ψευδώνυμο του προνομιούχου αιτήματος API με το ίδιο αντικείμενο λεπτομερειών και συμπεριφορά επανάκλησης.";
-"userscript_docs_network_details" = "Υποστηρίζει url, μέθοδο, κεφαλίδες, δεδομένα, timeout, answerType, onloadstart, onreadystatechange, onload, onerror και onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Χρησιμοποιήστε json, blob, arraybuffer ή αφήστε κενό για κείμενο. Οι απαντήσεις περιλαμβάνουν την κατάσταση, το τελικό URL, τις κεφαλίδες, το answerText και την απάντηση.";
 "userscript_docs_network_connect" = "Χρησιμοποιήστε τον εαυτό για τον κεντρικό υπολογιστή της σελίδας, έναν τομέα για αυτόν και τους υποτομείς του, έναν τομέα μπαλαντέρ ή * μόνο όταν είναι πραγματικά απαραίτητο.";
 "userscript_docs_limits_title" = "Συμπεριφορά και όρια";
 "userscript_docs_limits_web" = "Διατίθενται τυπικά DOM, συμβάντα, MutationObserver, ανάκτηση, χρονόμετρα και άλλα WKWebView API. Η κανονική λήψη εξακολουθεί να ακολουθεί το CORS.";
 "userscript_docs_limits_storage" = "Οι αποθηκευμένες τιμές πρέπει να είναι σειριοποιήσιμες σε JSON: έως 256 KB ανά τιμή και 1 MB συνολικά ανά σενάριο.";
-"userscript_docs_limits_network" = "Οι προνομιακές αποκρίσεις περιορίζονται στα 20 MB, το χρονικό όριο λήξης περιορίζεται σε 1–60 δευτερόλεπτα και οι κεφαλίδες Cookie/Host/Origin δεν γίνονται δεκτές.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "Τα UserScript δεν εκτελούνται στην Ιδιωτική περιήγηση.";
 "userscript_docs_limits_require" = "Τα αρχεία @require HTTPS λαμβάνονται και αποθηκεύονται κατά την εγκατάσταση ή αποθήκευση και εκτελούνται με τη σειρά πριν από το σενάριο.";
 "userscript_docs_template_title" = "Ελάχιστο πρότυπο";

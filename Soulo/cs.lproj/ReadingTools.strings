@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Pozice %d";
 "home_toolbar_reset" = "Skrýt vše";
 "home_toolbar_default_hint" = "Zástupci domovské stránky jsou ve výchozím nastavení skryti.";
+"home_toolbar_position" = "Umístění";
+"home_toolbar_buttons" = "Tlačítka";
+"home_toolbar_tiles" = "Samostatná";
+"home_toolbar_capsule" = "Kapsle";
+"home_toolbar_icons" = "Jen ikony";
+"home_toolbar_bottom" = "Dole";
+"home_toolbar_belowSearch" = "Pod hledáním";
+"home_toolbar_free" = "Volné umístění";
+"home_toolbar_leading" = "Zarovnat na začátek";
+"home_toolbar_center" = "Na střed";
+"home_toolbar_trailing" = "Zarovnat na konec";
+"home_toolbar_drag_position" = "Přetažením panelu změníte jeho umístění.";
+"home_toolbar_drag_buttons" = "Klepnutím tlačítko změníte, přetažením přesunete.";
 "home_toolbar_search" = "Najděte stránku";
 "group_default_search" = "Výchozí vyhledávání";
 "group_search_settings" = "Nastavení skupiny";
 "group_engine_name" = "Název vyhledávače";
-"group_search_url" = "Hledat URL pomocí %@";
-"group_default_search_hint" = "Používá se, když tato skupina nemá žádné povolené platformy. Zahrňte %@ do URL pro hledané výrazy. Deaktivované platformy zůstanou zakázány.";
-"group_search_url_invalid" = "Zadejte název a platné vyhledávání HTTP nebo HTTPS URL obsahující %@.";
+"group_search_url" = "URL vyhledávání nebo domovské stránky (výrazy: %@)";
+"group_default_search_hint" = "Použije se, když skupina nemá žádné zapnuté platformy. Lze vybrat kteroukoli platformu ve skupině. %@ se nahradí hledanými výrazy; bez zástupného symbolu se stránka otevře přímo. Vypnuté platformy zůstanou vypnuté.";
+"group_search_url_invalid" = "Zadejte název a platnou adresu HTTP nebo HTTPS. Šablony vyhledávání mohou používat %@.";
 "batch_import_new_group" = "Importovaná skupina";
 "image_resources" = "Zdroje";
 "screen_keep_awake" = "Nechte obrazovku zapnutou";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Tento formát nelze odeslat přímo pomocí systémového přehrávače. Otevřete Control Center, vyberte Zrcadlení obrazovky a poté vyberte svůj televizor nebo Mac.";
 "userscript_check_updates" = "Zkontrolujte aktualizace";
 "userscript_update_no_url" = "Není uvedena žádná adresa pro aktualizaci. Importujte novější soubor skriptu a aktualizujte jej.";
-"userscript_update_manual_hint" = "Kontroly probíhají pouze na vyžádání. Před aktualizací zkontrolujte novou verzi. Vestavěné skripty se aktualizují pomocí aplikace.";
+"userscript_update_manual_hint" = "Otevření Nainstalovaných zkontroluje až 4 skripty, každý jednou za 24 hodin. Kontroly se pozastaví v anonymním režimu, při nízké spotřebě nebo vysoké teplotě. Aktualizace vyžadují kontrolu.";
 "userscript_update_latest" = "Aktuální";
 "userscript_update_invalid" = "Aktualizace je neplatná, patří k jinému skriptu nebo má nekonzistentní verzi.";
 "userscript_update_changed" = "Tento skript se po kontrole změnil. Znovu zkontrolujte aktualizace.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Matné sklo";
 "wallpaper_blur_amount" = "Intenzita rozostření";
 
-"auto_hide_platform_bar_hint" = "Lišta platforem se skryje až po klepnutí na obsah stránky. Automatické přesměrování ani posouvání ji neskryjí. Znovu se zobrazí po návratu k výsledkům nebo při novém hledání.";
+"auto_hide_platform_bar_hint" = "Po zapnutí se lišta skryje až po klepnutí na obsah stránky, a to jen pokud doména stránky neodpovídá žádné platformě na aktuální liště. Při shodě zůstane viditelná nebo se znovu zobrazí. Posouvání ani automatická přesměrování ji neskryjí.";
 
 "ad_subscription_add" = "Přidat seznam filtrů";
 "ad_subscription_name" = "Název";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Ovládá vibrace a zvuky rozhraní v celé aplikaci. Neovlivňuje přehrávání webových stránek, videa ani zvuku.";
 
 "home_display_settings" = "Zobrazení úvodní stránky";
-"browsing_display_settings" = "Zobrazení prohlížení";
+"browsing_display_settings" = "Nastavení prohlížení";
 
 "web_video_download" = "Stahování webového videa";
 "web_video_download_description" = "Zobrazí ovládací prvky stahování videa na webových stránkách, v seznamech epizod a přehrávačích. Přehrávání ani stávající stahování se nemění.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "Vymaže offline články, knihovnu a postup čtení.";
 
 "storage_cleanup_offline_desc" = "Smaže zbytky offline videí bez záznamů o stažení.";
+
+"storage_website_shared" = "Sdílená a nepřiřazená data";
+"storage_website_shared_desc" = "Zahrnuje sdílenou síťovou mezipaměť, cookies a data, která nelze přiřadit jednomu webu.";
+"storage_website_clear_scope" = "Vymaže data běžných webů a sdílenou síťovou mezipaměť. Pro média rozšíření použijte „Dočasná mezipaměť rozšíření“; nastavení rozšíření zůstane zachováno.";
+
+"storage_quick_clear" = "Rychlé vyčištění";
+"storage_quick_clear_done" = "Mezipaměť vymazána";
+
+"storage_website_cleanup_pending" = "Data webů se stále mažou. Můžete se vrátit a pokračovat v prohlížení. Nespouštějte další čištění.";
+
+"storage_auto_cleanup" = "Automatický úklid";
+
+"storage_auto_cleanup_desc" = "Probíhá nejvýše jednou za 24 hodin, když je aplikace nečinná na pozadí. Odstraňuje jen nepoužívané dočasné soubory importu, exportu a náhledů starší než 24 hodin. Jeden průchod trvá asi 1 sekundu nebo zkontroluje 2000 položek a po návratu do aplikace se zastaví. Přeskočí se při přehrávání, stahování, exportu, zapnutém režimu nízké spotřeby nebo výrazném zahřívání. Záložky, uložená stažení, přihlášení a data webů se automaticky nemažou.";
+
+"restore_last_page_on_launch" = "Obnovit poslední stránku";
+"restore_last_page_on_launch_desc" = "Při spuštění aplikace otevřít poslední webovou stránku. Anonymní panely se neobnovují.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Gesta a zkratky";
+"app_icon_shortcuts" = "Zkratky ikony aplikace";
+"settings_sync_backup" = "Synchronizace a zálohy";
+"icloud_bookmark_sync" = "Záložky na iCloudu";
+"manual_settings_backups" = "Ruční zálohy";
+"create_settings_backup" = "Vytvořit";
+"toolbar_settings" = "Panely nástrojů";
+"toolbar_section_home" = "Domů";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Smazat ruční zálohy";
+"clear_manual_backups_message" = "Smaže pouze ručně vytvořené nebo importované zálohy. Automatické a starší kopie pro obnovu, aktuální nastavení a synchronizace iCloud zůstanou zachovány.";
+"recovery_settings_backups" = "Automatické a předchozí zálohy";
+
+/* Settings hierarchy */
+"settings_personalization" = "Přizpůsobení";
+"appearance_home_settings" = "Domov a tapeta";
+"settings_data" = "Data";
+"about_feedback_settings" = "Informace a zpětná vazba";
+"browsing_startup_tabs" = "Spuštění a panely";
+"browsing_interface" = "Rozhraní";
+"browsing_web_display" = "Webové stránky";
+"manual_backups_empty" = "Zatím žádné ruční zálohy";
+"browsing_display_settings_legacy" = "Zobrazení prohlížení";

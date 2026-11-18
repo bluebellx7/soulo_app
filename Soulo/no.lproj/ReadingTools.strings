@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Posisjon %d";
 "home_toolbar_reset" = "Skjul alle";
 "home_toolbar_default_hint" = "Hjemsnarveier er skjult som standard.";
+"home_toolbar_position" = "Plassering";
+"home_toolbar_buttons" = "Knapper";
+"home_toolbar_tiles" = "Separate";
+"home_toolbar_capsule" = "Kapsel";
+"home_toolbar_icons" = "Bare ikoner";
+"home_toolbar_bottom" = "Nederst";
+"home_toolbar_belowSearch" = "Under søk";
+"home_toolbar_free" = "Fri plassering";
+"home_toolbar_leading" = "Juster til start";
+"home_toolbar_center" = "Sentrer";
+"home_toolbar_trailing" = "Juster til slutt";
+"home_toolbar_drag_position" = "Dra verktøylinjen dit du vil ha den.";
+"home_toolbar_drag_buttons" = "Trykk for å bytte knapp. Dra for å endre rekkefølgen.";
 "home_toolbar_search" = "Finn en side";
 "group_default_search" = "Standardsøk";
 "group_search_settings" = "Gruppeinnstillinger";
 "group_engine_name" = "Søkemotornavn";
-"group_search_url" = "Søk URL med %@";
-"group_default_search_hint" = "Brukes når denne gruppen ikke har noen aktiverte plattformer. Ta med %@ i URL for søkeordene. Deaktiverte plattformer forblir deaktivert.";
-"group_search_url_invalid" = "Skriv inn et navn og et gyldig HTTP eller HTTPS søk URL som inneholder %@.";
+"group_search_url" = "Søkeadresse eller hjemmeside (bruk %@ for søkeord)";
+"group_default_search_hint" = "Brukes når gruppen ikke har noen aktiverte plattformer. Du kan velge hvilken som helst plattform i gruppen. %@ erstattes med søkeord; uten plassholder åpnes siden direkte. Avslåtte plattformer aktiveres ikke igjen.";
+"group_search_url_invalid" = "Skriv inn et navn og en gyldig HTTP- eller HTTPS-adresse. Søkemaler kan bruke %@.";
 "batch_import_new_group" = "Importert gruppe";
 "image_resources" = "Ressurser";
 "screen_keep_awake" = "Hold skjermen på";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Dette formatet kan ikke sendes direkte med systemspilleren. Åpne Control Center, velg Skjermspeiling, og velg deretter TV-en eller Mac-en.";
 "userscript_check_updates" = "Sjekk oppdateringer";
 "userscript_update_no_url" = "Ingen oppdateringsadresse er oppgitt. Importer en nyere skriptfil for å oppdatere den.";
-"userscript_update_manual_hint" = "Sjekker kjøres bare når det blir bedt om det. Se gjennom den nye versjonen før du oppdaterer. Innebygde skript oppdateres med appen.";
+"userscript_update_manual_hint" = "Åpning av Installert sjekker opptil 4 skript per besøk, hvert én gang i døgnet. Pauser ved privat nettlesing, lav strøm eller høy varme. Oppdateringer må gjennomgås.";
 "userscript_update_latest" = "Oppdatert";
 "userscript_update_invalid" = "Oppdateringen er ugyldig, tilhører et annet skript eller har en inkonsekvent versjon.";
 "userscript_update_changed" = "Dette skriptet ble endret etter kontrollen. Se etter oppdateringer igjen.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Frostet glass";
 "wallpaper_blur_amount" = "Uskarphetsstyrke";
 
-"auto_hide_platform_bar_hint" = "Plattformlinjen skjules først når du trykker på innholdet på siden. Automatiske omdirigeringer og rulling skjuler den ikke. Gå tilbake til søkeresultatene eller start et nytt søk for å vise den igjen.";
+"auto_hide_platform_bar_hint" = "Når dette er på, skjules linjen bare etter at du trykker på sideinnholdet og sidens domene ikke samsvarer med noen plattform i den gjeldende linjen. Ved treff på en plattform beholdes eller gjenopprettes linjen. Rulling og automatiske omdirigeringer skjuler den ikke.";
 
 "ad_subscription_add" = "Legg til filterliste";
 "ad_subscription_name" = "Navn";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Styr vibrasjon og grensesnittlyder i hele appen. Avspilling på nettsider samt video og lyd påvirkes ikke.";
 
 "home_display_settings" = "Startsidevisning";
-"browsing_display_settings" = "Nettleservisning";
+"browsing_display_settings" = "Nettleserinnstillinger";
 
 "web_video_download" = "Nedlasting av nettvideo";
 "web_video_download_description" = "Vis kontroller for videonedlasting på nettsider, episodelister og avspillere. Avspilling og eksisterende nedlastinger endres ikke.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "Tømmer frakoblede artikler, bokbiblioteket og lesefremdrift.";
 
 "storage_cleanup_offline_desc" = "Sletter rester av frakoblede videoer uten nedlastingsoppføringer.";
+
+"storage_website_shared" = "Delte og ikke-tilordnede data";
+"storage_website_shared_desc" = "Omfatter delte nettverksbuffere, informasjonskapsler og data som ikke kan knyttes til ett nettsted.";
+"storage_website_clear_scope" = "Sletter data fra vanlige nettsteder og delte nettverksbuffere. Bruk «Midlertidig utvidelsesbuffer» for utvidelsesmedier; utvidelsesinnstillinger beholdes.";
+
+"storage_quick_clear" = "Hurtigopprydding";
+"storage_quick_clear_done" = "Buffer tømt";
+
+"storage_website_cleanup_pending" = "Nettstedsdata slettes fortsatt. Du kan gå tilbake og fortsette å surfe. Ikke start en ny opprydding.";
+
+"storage_auto_cleanup" = "Automatisk opprydding";
+
+"storage_auto_cleanup_desc" = "Forsøker høyst én gang hver 24. time når appen er inaktiv i bakgrunnen. Fjerner bare ubrukte midlertidige import-, eksport- og forhåndsvisningsfiler som er over 24 timer gamle. Hver runde varer ca. 1 sekund eller sjekker 2000 elementer og stopper når du går tilbake til appen. Hoppes over ved avspilling, nedlasting, eksport, aktivert spareblussmodus eller tydelig varme. Bokmerker, lagrede nedlastinger, pålogginger og nettstedsdata slettes aldri automatisk.";
+
+"restore_last_page_on_launch" = "Gjenopprett siste side";
+"restore_last_page_on_launch_desc" = "Åpne den siste nettsiden når appen starter. Private faner gjenopprettes ikke.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Bevegelser og snarveier";
+"app_icon_shortcuts" = "Snarveier på appikonet";
+"settings_sync_backup" = "Synkronisering og backup";
+"icloud_bookmark_sync" = "Bokmerker via iCloud";
+"manual_settings_backups" = "Manuelle backups";
+"create_settings_backup" = "Opprett";
+"toolbar_settings" = "Verktøylinjer";
+"toolbar_section_home" = "Hjem";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Slett manuelle backups";
+"clear_manual_backups_message" = "Sletter bare manuelt opprettede eller importerte backups. Automatiske og eldre gjenopprettingskopier, gjeldende innstillinger og iCloud-synkronisering beholdes.";
+"recovery_settings_backups" = "Automatiske og tidligere backups";
+
+/* Settings hierarchy */
+"settings_personalization" = "Tilpasning";
+"appearance_home_settings" = "Hjem og bakgrunn";
+"settings_data" = "Data";
+"about_feedback_settings" = "Om og tilbakemelding";
+"browsing_startup_tabs" = "Oppstart og faner";
+"browsing_interface" = "Grensesnitt";
+"browsing_web_display" = "Nettsider";
+"manual_backups_empty" = "Ingen manuelle backups ennå";
+"browsing_display_settings_legacy" = "Nettleservisning";

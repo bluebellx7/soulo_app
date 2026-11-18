@@ -3,6 +3,96 @@ import WebKit
 @testable import Soulo
 
 final class StorageUsageServiceTests: XCTestCase {
+    @MainActor func testWebsiteCleanupTimeoutReturnsWithoutUnlockingOrRepeatingTheNativeWork() async {
+        let coordinator = WebsiteDataCleanupCoordinator()
+        var resume: CheckedContinuation<Void, Never>?
+        var calls = 0
+        let report = await coordinator.clearAll(timeoutNanoseconds: 10_000_000) {
+            calls += 1
+            await withCheckedContinuation { resume = $0 }
+            return .init()
+        }
+        XCTAssertNotNil(resume)
+        XCTAssertTrue(report.retainedCategories.contains(.websiteStorage))
+        XCTAssertFalse(report.failures.isEmpty, "A timeout must not be displayed as successful cleanup")
+        let repeated = await coordinator.clearAll { calls += 1; return .init() }
+        XCTAssertFalse(repeated.failures.isEmpty)
+        XCTAssertEqual(calls, 1, "A pending WebKit callback must not allow another removal")
+        let queued = Task { @MainActor in await coordinator.perform { calls += 10 } }
+        for _ in 0..<20 { await Task.yield() }
+        XCTAssertEqual(calls, 1, "The native worker must keep ownership after the UI deadline")
+        resume?.resume(); resume = nil
+        await queued.value
+        _ = await coordinator.clearAll { calls += 1; return .init() }
+        XCTAssertEqual(calls, 12, "The real callback must release the lock for future cleanup")
+    }
+
+    @MainActor func testWebsiteCleanupCoalescesRepeatedRequestsAndSerializesOtherMutations() async throws {
+        let coordinator = WebsiteDataCleanupCoordinator()
+        var calls = 0, ticks = 0
+        let heartbeat = Task { @MainActor in
+            while !Task.isCancelled {
+                ticks += 1
+                do { try await Task.sleep(for: .milliseconds(10)) } catch { break }
+            }
+        }
+        defer { heartbeat.cancel() }
+        let requests = (0..<32).map { _ in Task { @MainActor in
+            await coordinator.clearAll {
+                calls += 1
+                try? await Task.sleep(for: .milliseconds(200))
+                return StorageCleanupReport()
+            }
+        } }
+        for request in requests { _ = await request.value }
+        XCTAssertEqual(calls, 1, "Repeated taps must not launch concurrent WebKit clear operations")
+        XCTAssertGreaterThan(ticks, 5, "Waiting on WebKit must leave the UI actor responsive")
+        var order: [String] = []
+        let first = Task { @MainActor in await coordinator.perform {
+            order.append("begin"); try? await Task.sleep(for: .milliseconds(80)); order.append("end")
+        } }
+        while order.isEmpty { await Task.yield() }
+        let second = Task { @MainActor in await coordinator.perform { order.append("next") } }
+        await first.value; await second.value
+        XCTAssertEqual(order, ["begin", "end", "next"])
+        do { try await coordinator.perform { throw CocoaError(.fileReadUnknown) }; XCTFail("Expected fixture error") }
+        catch { }
+        _ = await coordinator.clearAll { calls += 1; return .init() }
+        XCTAssertEqual(calls, 2, "A completed or failed operation must release its coordination state")
+    }
+
+    @MainActor func testSeedLargeWebsiteCacheForStorageCleanupAcceptance() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_WEBSITE_LARGE_FIXTURE"] == "1" else {
+            throw XCTSkip("Opt-in 512 MiB fixture in the disposable acceptance app")
+        }
+        executionTimeAllowance = 180
+        let server = try DownloadPlaybackHTTPFixture(files: ["/index.html": Data("<body id='ready'>Large cache fixture</body>".utf8)])
+        let base = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let web = WKWebView()
+        defer { web.stopLoading() }
+        web.load(URLRequest(url: base.appendingPathComponent("index.html")))
+        for _ in 0..<200 {
+            if (try? await web.evaluateJavaScript("!!document.getElementById('ready')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(30))
+        }
+        let count = try await web.callAsyncJavaScript(#"""
+        const cache=await caches.open('soulo-large-storage-acceptance');
+        const data=new Uint8Array(4*1024*1024);
+        for(let i=0;i<data.length;i+=65536)crypto.getRandomValues(data.subarray(i,i+65536));
+        for(let i=0;i<128;i++)await cache.put('/soulo-cache-fixture-'+i,new Response(data));
+        localStorage.setItem('soulo-storage-acceptance','clear me');
+        return (await cache.keys()).length;
+        """#, arguments: [:], in: nil, contentWorld: .page) as? Int
+        XCTAssertEqual(count, 128)
+        let snapshot = await WebsiteStorageService.snapshot()
+        XCTAssertGreaterThanOrEqual(snapshot.totalBytes, 512 * 1024 * 1024)
+        XCTAssertEqual(snapshot.entries.reduce(snapshot.unattributedBytes) { $0 + ($1.bytes?.total ?? 0) }, snapshot.totalBytes)
+        let report = XCTAttachment(string: "total=\(snapshot.totalBytes);shared=\(snapshot.unattributedBytes);sites=\(snapshot.entries.map { ($0.domain,$0.bytes?.total) })")
+        report.name = "large-website-cache-seeded"; report.lifetime = .keepAlways; add(report)
+        // Deliberately keep this test-only store for the following real UI
+        // clear action. No synthetic bytes are added to reported sizes.
+    }
+
     @MainActor func testRealWebsitesExposeIndexedDBBytesAndClearOnlyTheChosenSitesDatabase() async throws {
         let server=try DownloadPlaybackHTTPFixture(files:["/index.html":Data("<body id='ready'>Storage fixture</body>".utf8)])
         let base=try await server.start();server.releaseDownloads();defer{server.stop()}
@@ -99,6 +189,103 @@ final class StorageUsageServiceTests: XCTestCase {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data(repeating: 0xAB, count: 8192).write(to: url)
         return url
+    }
+
+    private func websiteOrigin(_ host: String, scheme: String = "https") -> Data {
+        var origin = Data()
+        for value in [scheme, host] {
+            var length = UInt32(value.utf8.count).littleEndian
+            withUnsafeBytes(of: &length) { origin.append(contentsOf: $0) }
+            origin.append(1); origin.append(Data(value.utf8))
+        }
+        origin.append(0)
+        return origin + origin
+    }
+
+    private func allocatedWebsiteBytes(_ files: [URL]) throws -> Int64 {
+        try files.reduce(Int64(0)) { sum, file in
+            let values = try file.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .fileSizeKey])
+            return sum + Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? values.fileSize ?? 0)
+        }
+    }
+
+    func testWebsiteSnapshotKeepsGlobalCachesAndCookiesAsUnattributedBytes() throws {
+        var places = try XCTUnwrap(locations)
+        places.library = root.appendingPathComponent("Library")
+        let webkit = places.library!.appendingPathComponent("WebKit")
+        let site = webkit.appendingPathComponent("WebsiteData/Default/top/site")
+        let origin = try write("origin", under: site)
+        try websiteOrigin("video.example").write(to: origin)
+        // Mirror a large video cache across the real directory shapes using
+        // small allocated fixtures rather than writing hundreds of megabytes.
+        let owned = try ["IndexedDB/video.blob", "CacheStorage/fragment", "NetworkCache/owned-response",
+            "ServiceWorkers/script", "ApplicationCache/response", "LocalStorage/localstorage.sqlite3",
+            "FileSystem/media", "BackgroundFetch/part", "SessionStorage/session", ".hidden-index"].map { try write($0, under: site) }
+        let shared = try [
+            write("NetworkCache/Blobs/shared-video", under: webkit),
+            write("UnknownLayout/orphan.bin", under: webkit),
+            write("Cookies/Cookies.binarycookies", under: places.library!),
+            write("HTTPStorages/com.example.browser/httpstorages.sqlite", under: places.library!),
+            write("WebKit/NetworkCache/Blobs/global-video", under: places.caches),
+            write("com.example.browser/fsCachedData/url-response", under: places.caches)]
+        try write("ContentRuleLists/compiled-rule", under: webkit)
+        let measured = WebsiteStorageService.measure(root: webkit, domains: ["video.example"])
+        let bytes = try XCTUnwrap(measured["video.example"])
+        XCTAssertEqual(bytes.total, try allocatedWebsiteBytes(owned + [origin]))
+        XCTAssertEqual(bytes.cache, try allocatedWebsiteBytes(Array(owned[1...4])))
+        let inventory = StorageUsageService.measureInventory(locations: places)
+        let total = inventory.records.filter { [.webData, .websiteStorage].contains($0.category) }.reduce(Int64(0)) { $0 + $1.bytes }
+        let snapshot = WebsiteStorageSnapshot(entries: [.init(domain: "video.example", dataTypes: [], bytes: bytes)], totalBytes: total)
+        XCTAssertEqual(snapshot.unattributedBytes, try allocatedWebsiteBytes(shared))
+        XCTAssertEqual(snapshot.entries.reduce(Int64(0)) { $0 + ($1.bytes?.total ?? 0) } + snapshot.unattributedBytes, total)
+        XCTAssertEqual(inventory.records.first { $0.category == .ruleCache }?.bytes, 8192)
+    }
+
+    func testWebsiteMeasurementUsesNearestNestedOriginWithoutCountingItTwice() throws {
+        let webkit = root.appendingPathComponent("WebKit")
+        let outer = webkit.appendingPathComponent("WebsiteData/Default/outer")
+        let outerOrigin = try write("origin", under: outer)
+        try websiteOrigin("parent.example").write(to: outerOrigin)
+        let parentFile = try write("LocalStorage/parent.sqlite3", under: outer)
+        let nested = outer.appendingPathComponent("Embedded/inner")
+        let nestedOrigin = try write("origin", under: nested)
+        try websiteOrigin("video.example").write(to: nestedOrigin)
+        let video = try write("IndexedDB/video.blob", under: nested)
+        let opaque = outer.appendingPathComponent("Embedded/unknown")
+        let opaqueOrigin = try write("origin", under: opaque)
+        try Data([255, 0, 1]).write(to: opaqueOrigin)
+        try write("IndexedDB/foreign.blob", under: opaque)
+        let outside = try write("external.bin", under: root)
+        try FileManager.default.createSymbolicLink(at: nested.appendingPathComponent("external-link"), withDestinationURL: outside)
+        let measured = WebsiteStorageService.measure(root: webkit, domains: ["parent.example", "video.example"])
+        XCTAssertEqual(measured["parent.example"]?.total, try allocatedWebsiteBytes([outerOrigin, parentFile]))
+        XCTAssertEqual(measured["video.example"]?.total, try allocatedWebsiteBytes([nestedOrigin, video]))
+        XCTAssertEqual(measured["parent.example"]?.indexedDB, 0, "A child site's video must not also be charged to the parent")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outside.path))
+    }
+
+    func testWebsiteMeasurementIncludesLegacyLocalStorageSidecarsAndHiddenBlobs() throws {
+        let webkit = root.appendingPathComponent("WebKit")
+        let local = try ["LocalStorage/https_legacy.example_0.localstorage",
+            "LocalStorage/https_legacy.example_0.localstorage-wal", "LocalStorage/https_legacy.example_0.localstorage-shm"].map { try write($0, under: webkit) }
+        let database = try write("IndexedDB/v1/https_legacy.example_0/database.sqlite3", under: webkit)
+        let hidden = try write("IndexedDB/v1/https_legacy.example_0/.hidden/video.blob", under: webkit)
+        let measured = try XCTUnwrap(WebsiteStorageService.measure(root: webkit, domains: ["legacy.example"])["legacy.example"])
+        XCTAssertEqual(measured.localStorage, try allocatedWebsiteBytes(local))
+        XCTAssertEqual(measured.indexedDB, try allocatedWebsiteBytes([database, hidden]))
+    }
+
+    func testWebsiteSnapshotKeepsUnknownAndConcurrentDeletionSizesHonest() {
+        let unknown = WebsiteStorageEntry(domain: "cookies.example", dataTypes: [WKWebsiteDataTypeCookies], bytes: nil)
+        let stable = WebsiteStorageSnapshot(entries: [unknown], totalBytes: 512)
+        XCTAssertNil(stable.entries.first?.bytes)
+        XCTAssertEqual(stable.unattributedBytes, 512)
+        let stale = WebsiteStorageEntry(domain: "video.example", dataTypes: [WKWebsiteDataTypeIndexedDBDatabases], bytes: .init(indexedDB: 2048))
+        let afterDeletion = WebsiteStorageSnapshot(entries: [stale, unknown], totalBytes: 256)
+        XCTAssertTrue(afterDeletion.entries.allSatisfy { $0.bytes == nil })
+        XCTAssertEqual(afterDeletion.entries.first?.dataTypes, stale.dataTypes)
+        XCTAssertEqual(afterDeletion.totalBytes, 256)
+        XCTAssertEqual(afterDeletion.unattributedBytes, 256)
     }
 
     func testPhysicalDevicePrivateVarAliasesKeepUserFilesOutOfOtherData() throws {

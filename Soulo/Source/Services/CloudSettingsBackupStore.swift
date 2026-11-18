@@ -7,6 +7,9 @@ struct CloudSettingsBackup: Codable, Identifiable {
     let propertyList: Data
     let isInitial: Bool
     var version = 1
+    // Missing in older files: preserve them as recovery snapshots rather than
+    // guessing they were manual and including them in a bulk manual deletion.
+    var isManual: Bool? = nil
 }
 
 @MainActor
@@ -42,20 +45,22 @@ final class CloudSettingsBackupStore {
     }
 
     @discardableResult
-    func save(_ values: CloudSettingsSyncEngine.Values, initial: Bool = false,
+    func save(_ values: CloudSettingsSyncEngine.Values, initial: Bool = false, manual: Bool = false,
               date: Date = Date()) throws -> CloudSettingsBackup {
         _ = try CloudSettingsSyncEngine.flattened(values)
         let existing = try list()
         if initial, let pinned = existing.first(where: \.isInitial) { return pinned }
-        if !initial, let latest = existing.first,
+        if !initial, let latest = existing.first(where: { ($0.isManual == true) == manual }),
            CloudSettingsSyncEngine.equal(try CloudSettingsSyncEngine.values(latest.propertyList), values) { return latest }
         let backup = CloudSettingsBackup(id: UUID(), createdAt: date,
-                                         propertyList: try CloudSettingsSyncEngine.propertyList(values), isInitial: initial)
+                                         propertyList: try CloudSettingsSyncEngine.propertyList(values), isInitial: initial,
+                                         isManual: manual && !initial)
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         try JSONEncoder().encode(backup).write(to: url(for: backup), options: .atomic)
-        // Pin the pre-migration copy indefinitely. Retain the 20 most recent
-        // additional copies, so repeated sync traffic cannot rotate it away.
-        for old in existing.filter({ !$0.isInitial }).dropFirst(Self.maximumRecentBackups - 1) {
+        // Keep manual copies until explicitly deleted. Automatic sync traffic
+        // rotates only recovery snapshots, retaining the initial copy as well.
+        let retainedExisting = Self.maximumRecentBackups - (!initial && !manual ? 1 : 0)
+        for old in existing.filter({ !$0.isInitial && $0.isManual != true }).dropFirst(retainedExisting) {
             try? fileManager.removeItem(at: url(for: old))
         }
         return backup
@@ -109,7 +114,7 @@ final class CloudSettingsBackupStore {
         try validatePortableValues(restored)
         // Full validation precedes the first write. A corrupt or newer format
         // cannot replace an existing local backup or partially change settings.
-        return try save(restored, date: date)
+        return try save(restored, manual: true, date: date)
     }
 
     func delete(_ backup: CloudSettingsBackup) throws {
@@ -120,6 +125,10 @@ final class CloudSettingsBackupStore {
 
     func deleteAll() throws {
         for backup in try list() { try delete(backup) }
+    }
+
+    func deleteManualBackups() throws {
+        for backup in try list() where backup.isManual == true { try delete(backup) }
     }
 
     private func validatePortableValues(_ values: CloudSettingsSyncEngine.Values) throws {

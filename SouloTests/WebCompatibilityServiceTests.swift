@@ -125,7 +125,8 @@ final class WebCompatibilityServiceTests: XCTestCase {
         let web = WKWebView()
         web.load(URLRequest(url: root.appendingPathComponent("article").appending(queryItems: [URLQueryItem(name: "__cf_chl_rt_tk", value: "token")])))
         for _ in 0..<100 {
-            if (try? await web.evaluateJavaScript("document.readyState")) as? String == "complete" { break }
+            if web.url?.path == "/article",
+               (try? await web.evaluateJavaScript("document.readyState==='complete' && document.querySelector('h1')?.textContent==='Page'")) as? Bool == true { break }
             try await Task.sleep(for: .milliseconds(20))
         }
         let detector = WebCompatibilityService.sensitiveChallengeDetectionScript + "\nisSensitiveChallengePage();"

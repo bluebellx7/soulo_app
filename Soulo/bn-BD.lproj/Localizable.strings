@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "সমর্থিত";
 "userscript_docs_supported_desc" = "মূল মিল, নথি-শুরু/শেষ, শৈলী/উপাদান, একক এবং বাল্ক স্টোরেজ, স্থানীয় মান শ্রোতা, ক্লিপবোর্ড, মেনু, ইন-পেজ বিজ্ঞপ্তি, ট্যাব, ডাউনলোড, ট্যাব ডেটা, কুকি, সংস্থান, URL পরিবর্তন এবং অনুমতির সুযোগযুক্ত অনুরোধ।";
 "userscript_docs_partial_title" = "আংশিক সমর্থিত";
-"userscript_docs_partial_desc" = "নেটওয়ার্ক অনুরোধ আপলোড/প্রগতি এবং কুকি পরিবহন বাদ দেয়। বিজ্ঞপ্তিগুলি ইন-পেজ, রিসোর্স APIগুলি অ্যাসিঙ্ক্রোনাস, এবং মান পরিবর্তন শ্রোতারা বর্তমান পৃষ্ঠার দ্বারা করা পরিবর্তনগুলি রিপোর্ট করে৷ আপডেট চেক ম্যানুয়াল হয়.";
+"userscript_docs_partial_desc" = "বিজ্ঞপ্তি পৃষ্ঠার ভিতরেই থাকে; রিসোর্স API Promise ফেরত দেয়। cookie বিকল্পে GM_cookie অনুমতি লাগে; স্বয়ংক্রিয়ভাবে কুকি পাঠানো হয় না।";
 "userscript_docs_unsupported_title" = "বর্তমানে সমর্থিত নয়";
-"userscript_docs_unsupported_desc" = "GM_webRequest ইন্টারসেপশন, GM_audio, স্যান্ডবক্স/রান-ইন আইসোলেশন, স্বয়ংক্রিয় আপডেট চেক, এবং শুধুমাত্র ডেস্কটপ-এর জন্য সঠিক আচরণ যা WKWebView প্রদান করতে পারে না।";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in বিচ্ছিন্নতা এবং WKWebView-এ অনুপলব্ধ ডেস্কটপ আচরণ।";
 "userscript_docs_metadata_title" = "মেটাডেটা";
 "userscript_docs_metadata_identity" = "মানব-পাঠযোগ্য স্ক্রিপ্টের নাম এবং ঐচ্ছিক বিবরণ ইনস্টলেশনের আগে এবং স্ক্রিপ্টের বিবরণে দেখানো হয়েছে।";
 "userscript_docs_metadata_version" = "একটি স্থিতিশীল, অনন্য নামস্থান ব্যবহার করুন এবং যখনই বান্ডিল স্ক্রিপ্ট পরিবর্তন হয় তখন সংস্করণটি বৃদ্ধি করুন।";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "এই স্ক্রিপ্টের জন্য একটি স্থায়ী মান মুছে দেয়।";
 "userscript_docs_api_list" = "এই স্ক্রিপ্টের মালিকানাধীন সমস্ত স্থায়ী স্টোরেজ কী ফেরত দেয়।";
 "userscript_docs_api_bulk" = "একটি অপারেশনে একাধিক JSON মান পড়ে, লেখে বা মুছে দেয়; রাইটগুলি নেটিভ স্টোর দ্বারা পারমাণবিকভাবে যাচাই করা হয়।";
-"userscript_docs_api_listener" = "বর্তমান ওয়েবপেজে স্ক্রিপ্ট দ্বারা করা সঞ্চয়স্থান পরিবর্তনগুলি পর্যবেক্ষণ করে৷ ক্রস-ট্যাব দূরবর্তী বিজ্ঞপ্তি নির্গত হয় না.";
+"userscript_docs_api_listener" = "স্থানীয় ও অন্য ট্যাবের স্টোরেজ পরিবর্তন দেখে। অন্য ট্যাবের পরিবর্তনে remote=true থাকে।";
 "userscript_docs_api_element" = "ডকুমেন্ট-স্টার্টের সময় নিরাপদে সহ বৈশিষ্ট্য সহ একটি উপাদান তৈরি করে এবং যুক্ত করে।";
 "userscript_docs_api_clipboard" = "Soulo-এর নেটিভ ব্রিজের মাধ্যমে সিস্টেম ক্লিপবোর্ডে টেক্সট কপি করে।";
 "userscript_docs_extended_title" = "মেনু, ট্যাব, ফাইল এবং পৃষ্ঠা ইন্টিগ্রেশন";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "নেটওয়ার্ক অনুরোধ";
 "userscript_docs_network_legacy" = "একটি বিশেষাধিকারপ্রাপ্ত অনুরোধ শুরু করে এবং একটি বাতিল হ্যান্ডেল ফেরত দেয়। ম্যাচিং অনুদান এবং @ সংযোগ হোস্ট ঘোষণা করুন।";
 "userscript_docs_network_modern" = "একই বিবরণ অবজেক্ট এবং কলব্যাক আচরণ সহ সুবিধাপ্রাপ্ত অনুরোধ API-এর আধুনিক উপনাম।";
-"userscript_docs_network_details" = "ইউআরএল, মেথড, হেডার, ডেটা, টাইমআউট, রেসপন্স টাইপ, অনলোডস্টার্ট, অনরেডিস্টেটচেঞ্জ, অনলোড, অনরর এবং অনলোডেন্ড সমর্থন করে।";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "json, blob, arraybuffer ব্যবহার করুন বা টেক্সটের জন্য খালি রাখুন। প্রতিক্রিয়াগুলির মধ্যে রয়েছে স্থিতি, ফাইনাল ইউআরএল, শিরোনাম, প্রতিক্রিয়া পাঠ্য এবং প্রতিক্রিয়া।";
 "userscript_docs_network_connect" = "পৃষ্ঠা হোস্টের জন্য স্বয়ং ব্যবহার করুন, এটির জন্য একটি ডোমেন এবং এর সাবডোমেন, একটি ওয়াইল্ডকার্ড ডোমেন, অথবা * শুধুমাত্র যখন সত্যিকারের প্রয়োজন হয়।";
 "userscript_docs_limits_title" = "আচরণ এবং সীমা";
 "userscript_docs_limits_web" = "স্ট্যান্ডার্ড DOM, ইভেন্ট, MutationObserver, fetch, টাইমার এবং অন্যান্য WKWebView API পাওয়া যায়। সাধারণ আনা এখনও CORS অনুসরণ করে।";
 "userscript_docs_limits_storage" = "সঞ্চিত মান অবশ্যই JSON-ক্রমিক হতে হবে: প্রতি মান 256 KB পর্যন্ত এবং স্ক্রিপ্ট প্রতি মোট 1 MB।";
-"userscript_docs_limits_network" = "বিশেষাধিকারপ্রাপ্ত প্রতিক্রিয়া 20 এমবি-তে সীমাবদ্ধ, টাইমআউট 1-60 সেকেন্ডে আটকানো হয় এবং কুকি/হোস্ট/অরিজিন হেডার গ্রহণ করা হয় না।";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScriptগুলি ব্যক্তিগত ব্রাউজিংয়ে চলে না৷";
 "userscript_docs_limits_require" = "HTTPS @require ফাইল ইনস্টল বা সংরক্ষণের সময় ডাউনলোড ও ক্যাশ করা হয়, তারপর স্ক্রিপ্টের আগে ক্রমানুসারে চলে।";
 "userscript_docs_template_title" = "ন্যূনতম টেমপ্লেট";

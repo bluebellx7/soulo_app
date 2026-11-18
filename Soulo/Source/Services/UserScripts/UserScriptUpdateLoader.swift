@@ -8,7 +8,8 @@ struct UserScriptUpdatePreview: Identifiable {
     let metadata: UserScriptMetadata
 }
 
-/// Explicit update checks only. Nothing is fetched when a webpage loads.
+/// Checks never run while a webpage loads. The extension manager may probe
+/// bounded metadata; downloading and applying a new script requires review.
 @MainActor enum UserScriptUpdateLoader {
     static func checkURL(for script: UserScriptRecord) -> URL? {
         guard script.isBuiltIn != true,
@@ -20,7 +21,7 @@ struct UserScriptUpdatePreview: Identifiable {
 
     static func check(_ script: UserScriptRecord, session: URLSession) async throws -> UserScriptUpdatePreview? {
         guard let checkURL = checkURL(for: script) else { throw Failure("userscript_update_no_url") }
-        let probe = try await fetch(checkURL, session: session)
+        let probe = try await fetch(checkURL, session: session, maximumSize: BrowserExtensionService.maximumUserScriptSize)
         let advertised = try metadata(in: probe.source)
         guard let version = advertised.version, !version.isEmpty else { throw Failure("userscript_update_invalid") }
         if let old = script.version, !isNewer(version, than: old) { return nil }
@@ -32,7 +33,7 @@ struct UserScriptUpdatePreview: Identifiable {
                   url.path.lowercased().hasSuffix(".user.js") else { throw Failure("userscript_update_no_url") }
             downloadURL = try UserScriptRequirementLoader.resolvedURL(original, baseURL: nil)
         } else { downloadURL = probe.url }
-        let downloaded = downloadURL == probe.url ? probe : try await fetch(downloadURL, session: session)
+        let downloaded = downloadURL == probe.url ? probe : try await fetch(downloadURL, session: session, maximumSize: BrowserExtensionService.maximumUserScriptSize)
         let next = try metadata(in: downloaded.source)
         guard let nextVersion = next.version, !nextVersion.isEmpty,
               !isNewer(version, than: nextVersion),
@@ -40,6 +41,15 @@ struct UserScriptUpdatePreview: Identifiable {
         if let namespace = script.namespace, next.namespace != namespace { throw Failure("userscript_update_invalid") }
         guard downloaded.source != script.source else { return nil }
         return UserScriptUpdatePreview(installed: script, source: downloaded.source, sourceURL: downloaded.url, metadata: next)
+    }
+
+    static func availableVersion(_ script: UserScriptRecord, session: URLSession) async throws -> String? {
+        guard let url = checkURL(for: script) else { return nil }
+        let probe = try await fetch(url, session: session, maximumSize: BrowserExtensionService.maximumUserScriptSize, metadataOnly: true)
+        let next = try metadata(in: probe.source)
+        guard let version = next.version, !version.isEmpty,
+              script.namespace.map({ next.namespace == $0 }) ?? true else { throw Failure("userscript_update_invalid") }
+        return script.version.map { isNewer(version, than: $0) } ?? true ? version : nil
     }
 
     private static func metadata(in source: String) throws -> UserScriptMetadata {
@@ -50,7 +60,8 @@ struct UserScriptUpdatePreview: Identifiable {
         return result
     }
 
-    private static func fetch(_ url: URL, session: URLSession) async throws -> (source: String, url: URL) {
+    nonisolated private static func fetch(_ url: URL, session: URLSession, maximumSize: Int,
+                                         metadataOnly: Bool = false) async throws -> (source: String, url: URL) {
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 25)
         request.setValue("application/javascript, text/javascript, text/plain;q=0.9", forHTTPHeaderField: "Accept")
         let (bytes, response) = try await session.bytes(for: request)
@@ -58,11 +69,16 @@ struct UserScriptUpdatePreview: Identifiable {
         guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode),
               let final = response.url, final.scheme?.lowercased() == "https", final.user == nil, final.password == nil,
               !["text/html", "application/xhtml+xml"].contains(response.mimeType?.lowercased() ?? "") else { throw URLError(.badServerResponse) }
-        guard response.expectedContentLength <= BrowserExtensionService.maximumUserScriptSize else { throw BrowserExtensionError.scriptTooLarge }
+        guard response.expectedContentLength <= maximumSize else { throw BrowserExtensionError.scriptTooLarge }
         var data = Data()
+        let closing = Data("==/UserScript==".utf8)
         for try await byte in bytes {
-            guard data.count < BrowserExtensionService.maximumUserScriptSize else { throw BrowserExtensionError.scriptTooLarge }
+            guard data.count < maximumSize, !metadataOnly || data.count < 128 * 1_024 else { throw BrowserExtensionError.scriptTooLarge }
             data.append(byte)
+            if metadataOnly, data.count & 0x3ff == 0, let end = data.range(of: closing) {
+                data = data.prefix(end.upperBound)
+                break
+            }
         }
         guard let text = String(data: data, encoding: .utf8) else { throw BrowserExtensionError.unreadableScript }
         return (text.hasPrefix("\u{FEFF}") ? String(text.dropFirst()) : text, final)

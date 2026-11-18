@@ -167,7 +167,9 @@ import Combine
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
         let chrome = ZoomChromeState()
-        window.rootViewController = UIHostingController(rootView: ZoomPage(chrome: chrome, model: model))
+        let library = try LibraryStore(inMemory: true)
+        window.rootViewController = UIHostingController(rootView: ZoomPage(chrome: chrome, model: model)
+            .environment(\.managedObjectContext, library.mainContext))
         window.makeKeyAndVisible(); defer { close(model, window, previous) }
         model.loadURL(root.appendingPathComponent("chapter"))
         try await wait(model, for: "document.querySelectorAll('p').length === 100")
@@ -336,10 +338,11 @@ import Combine
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
+        let library = try LibraryStore(inMemory: true)
         window.rootViewController = UIHostingController(rootView:
             WebViewContainer(webViewModel: model, bookmarkViewModel: BookmarkViewModel(),
                              isFullscreen: .constant(false))
-                .environmentObject(SearchViewModel()))
+                .environmentObject(SearchViewModel()).environment(\.managedObjectContext, library.mainContext))
         window.makeKeyAndVisible()
         defer { close(model, window, previous) }
         try await wait(model, for: "true")
@@ -591,7 +594,9 @@ import Combine
     private var saved: [String: Any] = [:]
     private let keys = ["privacy_gpc_enabled", "privacy_gpc_header_enabled_sites", "privacy_cookie_banner_enabled", "soulo_privacy_disabled_hosts",
                         "privacy_https_upgrade_enabled", "privacy_strip_tracking_parameters", "is_incognito", "ad_block_enabled",
-                        "soulo_ad_block_subscription_rules", BuiltInAdRuleStore.storageKey, BuiltInAdRuleStore.versionKey]
+                        "soulo_ad_block_subscription_rules", "soulo_ad_block_allowlisted_hosts", BrowserDomainNavigationPolicy.preferenceKey,
+                        BuiltInAdRuleStore.storageKey, BuiltInAdRuleStore.versionKey]
+    private var savedTemporaryHosts: [String] = []
 
     override func setUp() {
         super.setUp()
@@ -606,6 +611,11 @@ import Combine
         defaults.set(false, forKey: "privacy_strip_tracking_parameters")
         defaults.set(true, forKey: "is_incognito")
         defaults.set(true, forKey: "ad_block_enabled")
+        defaults.set([], forKey: "soulo_ad_block_allowlisted_hosts")
+        defaults.set(false, forKey: BrowserDomainNavigationPolicy.preferenceKey)
+        savedTemporaryHosts = AdBlockSettingsService.shared.temporaryAllowlistedHosts
+        AdBlockSettingsService.shared.clearTemporaryExceptions()
+        AdBlockSettingsService.shared.reloadFromDefaults()
         defaults.removeObject(forKey: BuiltInAdRuleStore.storageKey)
         defaults.removeObject(forKey: BuiltInAdRuleStore.versionKey)
         // These regression fixtures drive navigation with synthetic JavaScript.
@@ -613,6 +623,9 @@ import Combine
 
     override func tearDown() {
         for key in keys { UserDefaults.standard.set(saved[key], forKey: key) }
+        AdBlockSettingsService.shared.clearTemporaryExceptions()
+        AdBlockSettingsService.shared.reloadFromDefaults()
+        savedTemporaryHosts.forEach { AdBlockSettingsService.shared.temporarilyDisableFiltering(for: $0) }
         saved.removeAll()
         super.tearDown()
     }
@@ -957,7 +970,7 @@ import Combine
         XCTAssertNil(model.errorMessage)
     }
 
-    func testNewWindowWebLinkIsCancelledBeforeWebKitCanLaunchAnApp() async throws {
+    func testNewWindowWebLinkRoutesNativeTabAndKeepsSource() async throws {
         // This test drives a synthetic click. Exercise the external-app policy
         // independently of ad blocking, which correctly rejects untrusted popups.
         UserDefaults.standard.set(false, forKey: "ad_block_enabled")
@@ -973,14 +986,26 @@ import Combine
         model.loadURL(root.appendingPathComponent("page"))
         try await wait(model, for: "!!document.getElementById('result')")
         let web = try XCTUnwrap(model.webView)
-        let coordinator = try XCTUnwrap(web.navigationDelegate as? WebViewRepresentable.Coordinator)
-        let observer = WebLinkNavigationObserver(coordinator: coordinator)
-        web.navigationDelegate = observer
-        defer { web.navigationDelegate = coordinator }
-        _ = try await web.evaluateJavaScript("document.getElementById('result').click()")
-        try await wait(model, for: "!!document.getElementById('destination')")
-        XCTAssertEqual(observer.newWindowPolicies, [.cancel],
-            "Allowing this action lets WebKit launch a Universal Link before WKUIDelegate can handle it")
+        try await clickNewWindowLink("result", in: web, target: root.appendingPathComponent("next"))
+        XCTAssertEqual(web.url?.path, "/page", "A new-window link must keep its source document intact")
+        XCTAssertNil(model.errorMessage)
+    }
+
+    private func clickNewWindowLink(_ id: String, in web: WKWebView, target: URL) async throws {
+        let opened = expectation(description: "New-window link reaches the native tab router")
+        let observer = NotificationCenter.default.addObserver(forName: .openInNewTab, object: nil, queue: .main) { note in
+            guard note.userInfo?["url"] as? URL == target else { return }
+            XCTAssertEqual((note.userInfo?["request"] as? URLRequest)?.url, target)
+            opened.fulfill()
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+        // A page-world synthetic click cannot manufacture trusted input. Use
+        // the production isolated gesture message, keeping its real delegate.
+        _ = try await web.callAsyncJavaScript("window.webkit.messageHandlers.souloNavigationGesture.postMessage({newTab:true,link:true,event:'click',destinations:[target]});",
+            arguments: ["target": target.absoluteString], in: nil, contentWorld: BrowserNavigationGesture.world)
+        try await Task.sleep(for: .milliseconds(100))
+        _ = try await web.callAsyncJavaScript("document.getElementById(id).click();return true;", arguments: ["id": id], in: nil, contentWorld: .page)
+        await fulfillment(of: [opened], timeout: 5)
     }
 
     private func close(_ model: WebViewModel, _ window: UIWindow, _ previous: UIWindow?) {
@@ -1687,9 +1712,8 @@ import Combine
         XCTAssertTrue(web.canGoForward)
         web.goForward()
         try await wait(model, for: "!!document.getElementById('receipt')")
-        _ = try await web.evaluateJavaScript("document.getElementById('next').click()")
-        try await wait(model, for: "!!document.getElementById('destination')")
-        XCTAssertEqual(web.url?.path, "/destination")
+        try await clickNewWindowLink("next", in: web, target: root.appendingPathComponent("destination"))
+        XCTAssertEqual(web.url?.path, "/receipt")
         XCTAssertNil(model.errorMessage)
     }
 

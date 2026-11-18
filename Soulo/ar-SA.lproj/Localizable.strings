@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "المدعومة";
 "userscript_docs_supported_desc" = "المطابقة الأساسية، وبدء/نهاية المستند، والأنماط/العناصر، والتخزين الفردي والمجمّع، ومستمعي القيمة المحلية، والحافظة، والقوائم، والإشعارات داخل الصفحة، وعلامات التبويب، والتنزيلات، وبيانات علامة التبويب، وملفات تعريف الارتباط، والموارد، وتغييرات عنوان URL، والطلبات ذات نطاق الأذونات.";
 "userscript_docs_partial_title" = "مدعومة جزئيا";
-"userscript_docs_partial_desc" = "تتجاهل طلبات الشبكة التحميل/التقدم ونقل ملفات تعريف الارتباط. تكون الإشعارات موجودة في الصفحة، وتكون واجهات برمجة تطبيقات الموارد غير متزامنة، ويقوم مستمعو تغيير القيمة بالإبلاغ عن التغييرات التي تجريها الصفحة الحالية. عمليات التحقق من التحديث تتم يدويًا.";
+"userscript_docs_partial_desc" = "تظهر الإشعارات داخل الصفحة وتعيد واجهات الموارد Promise. يتطلب خيار cookie إذن GM_cookie؛ ولا تُرسل ملفات الارتباط تلقائيًا.";
 "userscript_docs_unsupported_title" = "غير معتمد حاليا";
-"userscript_docs_unsupported_desc" = "GM_webRequest، وGM_audio، وعزل وضع الحماية/التشغيل، وعمليات التحقق من التحديث التلقائي، والسلوكيات الدقيقة لسطح المكتب فقط التي لا يمكن لـ WKWebView توفيرها.";
+"userscript_docs_unsupported_desc" = "GM_webRequest وGM_audio وعزل sandbox/run-in وسلوك سطح المكتب غير المتاح في WKWebView.";
 "userscript_docs_metadata_title" = "البيانات الوصفية";
 "userscript_docs_metadata_identity" = "يظهر اسم البرنامج النصي الذي يمكن قراءته بواسطة الإنسان والوصف الاختياري قبل التثبيت وفي تفاصيل البرنامج النصي.";
 "userscript_docs_metadata_version" = "استخدم مساحة اسم ثابتة وفريدة من نوعها وقم بزيادة الإصدار كلما تغير البرنامج النصي المجمع.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "حذف قيمة ثابتة واحدة لهذا البرنامج النصي.";
 "userscript_docs_api_list" = "إرجاع كافة مفاتيح التخزين الدائمة المملوكة لهذا البرنامج النصي.";
 "userscript_docs_api_bulk" = "قراءة أو كتابة أو حذف قيم JSON متعددة في عملية واحدة؛ يتم التحقق من صحة عمليات الكتابة ذريًا بواسطة المتجر الأصلي.";
-"userscript_docs_api_listener" = "يلاحظ تغييرات التخزين التي أجراها البرنامج النصي في صفحة الويب الحالية. لا يتم إصدار الإشعارات عن بعد لعلامات التبويب المتقاطعة.";
+"userscript_docs_api_listener" = "يراقب تغييرات التخزين محليًا وعبر علامات التبويب، مع remote=true للتغييرات من علامة أخرى.";
 "userscript_docs_api_element" = "إنشاء عنصر وإلحاقه بالسمات، بما في ذلك بشكل آمن أثناء بدء المستند.";
 "userscript_docs_api_clipboard" = "نسخ النص إلى حافظة النظام من خلال الجسر الأصلي لـ Soulo.";
 "userscript_docs_extended_title" = "القوائم وعلامات التبويب والملفات وتكامل الصفحات";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "طلبات الشبكة";
 "userscript_docs_network_legacy" = "يبدأ طلبًا مميزًا ويعيد مؤشر الإجهاض. قم بتعريف المنحة المطابقة ومضيفي @connect.";
 "userscript_docs_network_modern" = "الاسم المستعار الحديث لواجهة برمجة تطبيقات الطلب المميز مع نفس كائن التفاصيل وسلوك رد الاتصال.";
-"userscript_docs_network_details" = "يدعم عنوان url، والطريقة، والرؤوس، والبيانات، والمهلة، ونوع الاستجابة، وonloadstart، وonreadystatechange، وonload، وonerror، وonloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "استخدم json، أو blob، أو arraybuffer، أو اتركه فارغًا للنص. تتضمن الاستجابات الحالة و FinalUrl والرؤوس ونص الاستجابة والاستجابة.";
 "userscript_docs_network_connect" = "استخدم self لمضيف الصفحة، أو المجال الخاص به ونطاقاته الفرعية، أو مجال البدل، أو * فقط عند الضرورة حقًا.";
 "userscript_docs_limits_title" = "السلوك والحدود";
 "userscript_docs_limits_web" = "تتوفر DOM القياسية والأحداث وMutationObserver والجلب والمؤقتات وواجهات برمجة تطبيقات WKWebView الأخرى. لا يزال الجلب العادي يتبع CORS.";
 "userscript_docs_limits_storage" = "يجب أن تكون القيم المخزنة قابلة للتسلسل بتنسيق JSON: ما يصل إلى 256 كيلو بايت لكل قيمة وإجمالي 1 ميجابايت لكل برنامج نصي.";
-"userscript_docs_limits_network" = "تقتصر الاستجابات المميزة على 20 ميجابايت، ويتم تحديد المهلة لمدة تتراوح من 1 إلى 60 ثانية، ولا يتم قبول رؤوس ملفات تعريف الارتباط/المضيف/الأصل.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts لا تعمل في التصفح الخاص.";
 "userscript_docs_limits_require" = "تُنزَّل ملفات @require عبر HTTPS وتُحفَظ عند التثبيت أو الحفظ، ثم تُنفَّذ بالترتيب قبل البرنامج النصي.";
 "userscript_docs_template_title" = "قالب الحد الأدنى";

@@ -121,7 +121,7 @@ struct AdBlockManagementView: View {
             }
         }
         .onCompatibleChange(of: adBlockEnabled) { _, _ in onChanged?() }
-        .modifier(AdBlockRuleNavigation(currentHost: host, onChanged: changed))
+        .modifier(AdBlockRuleNavigation(currentHost: host, onChanged: changed, isEnabled: !embedded))
         .sheet(item: $legacyRuleDestination) { destination in
             // Give legacy SwiftUI a separate hosting boundary instead of
             // invalidating the settings NavigationStack during a nested push.
@@ -169,11 +169,14 @@ struct AdBlockManagementView: View {
 // iOS 16 uses isolated sheets for all five rule pages. Register value-based
 // destinations only on systems that use them; keeping an unused registration
 // on the legacy parent still couples its navigation environment to child lists.
-private struct AdBlockRuleNavigation: ViewModifier {
+// Embedded pages register on ProtectionSettingsView, above its paged TabView;
+// a registration inside a lazily hosted page cannot own the outer stack's push.
+struct AdBlockRuleNavigation: ViewModifier {
     let currentHost: String?
     var onChanged: (() -> Void)?
+    var isEnabled = true
     @ViewBuilder func body(content: Content) -> some View {
-        if #available(iOS 17.0, *) {
+        if #available(iOS 17.0, *), isEnabled {
             content.navigationDestination(for: AdBlockRuleDestination.self) { destination in
                 AdBlockRuleDestinationView(destination: destination, currentHost: currentHost, onChanged: onChanged)
             }

@@ -493,6 +493,33 @@ struct HomeView: View {
     private var homeContent: some View {
         VStack(spacing: 0) {
             topBar.padding(.top, 8)
+            GeometryReader { viewport in
+                homeContent(width: viewport.size.width)
+                    .overlay {
+                        if showsHomeToolbar(.free) {
+                            freeHomeToolbar
+                                // Leave room for the home indicator without reserving the full safe area.
+                                .padding(.bottom, min(viewport.safeAreaInsets.bottom, 16))
+                                .ignoresSafeArea(.container, edges: .bottom)
+                        }
+                    }
+            }
+        }
+        .buttonStyle(HomePressButtonStyle())
+    }
+
+    private var freeHomeToolbar: some View {
+        GeometryReader { geometry in
+            let sideMargin: CGFloat = 16
+            let metrics = homeToolbarMetrics(width: max(0, geometry.size.width - 2 * sideMargin), height: geometry.size.height)
+            let center = homeToolbar.layout.center(in: metrics.area, strip: metrics.size)
+            liveHomeToolbar(metrics: metrics)
+                .position(x: center.x + sideMargin, y: center.y)
+        }
+    }
+
+    private func homeContent(width: CGFloat) -> some View {
+        VStack(spacing: 0) {
             // Keep the search field mounted while the window changes size.
             // Center when there is room, scroll when folding or the keyboard
             // reduces the available height.
@@ -502,10 +529,16 @@ struct HomeView: View {
                         headingGap: displayedHomeSubtitle.isEmpty ? (verticalSizeClass == .compact ? 8 : 12) : (verticalSizeClass == .compact ? 12 : 24),
                         detailsGap: verticalSizeClass == .compact ? 12 : 16, searchOffsetRatio: -0.5) {
                         homeHeading.padding(.horizontal, 24)
-                        homeSearchField
-                            .accessibilityElement(children: .contain)
-                            .accessibilityIdentifier("home.search.field")
-                            .zIndex(1)
+                        VStack(spacing: 12) {
+                            homeSearchField
+                                .accessibilityElement(children: .contain)
+                                .accessibilityIdentifier("home.search.field")
+                                .zIndex(1)
+                            if showsHomeToolbar(.belowSearch) {
+                                homeToolbarStrip(width: max(0, min(geometry.size.width - 32, 526)))
+                            }
+                        }
+                        .zIndex(1)
                         homeSearchDetails
                     }
                     .frame(maxWidth: 656)
@@ -515,37 +548,12 @@ struct HomeView: View {
                 .scrollDismissesKeyboard(.interactively)
                 .accessibilityIdentifier("home.search.area")
             }
-            if homeToolbar.isVisible && !keyboardVisible {
-                if UIDevice.current.userInterfaceIdiom == .pad {
-                    let count = homeToolbar.actions.filter { $0 != .none }.count
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 50, maximum: 50), spacing: 18)], spacing: 12) {
-                        homeToolbarButtons
-                    }
-                    .frame(maxWidth: min(526, CGFloat(count) * 50 + CGFloat(max(0, count - 1)) * 18))
-                    .padding(.horizontal, 32).padding(.top, 8).padding(.bottom, 20)
-                } else {
-                    GeometryReader { geometry in
-                        let visibleCount = homeToolbar.actions.filter { $0 != .none }.count
-                        let spacing = visibleCount > 1
-                            ? min(18, max(0, (geometry.size.width - CGFloat(visibleCount) * 50) / CGFloat(visibleCount - 1)))
-                            : 0
-                        HStack(spacing: spacing) { homeToolbarButtons }.frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                    .frame(maxWidth: 420).frame(height: 48)
-                    .padding(.horizontal, 32).padding(.top, 8).padding(.bottom, 20)
-                }
-            }
-            if wallpaperManager.source.isRemote {
-                Text(wallpaperManager.source == .bing ? "Bing Daily" : wallpaperManager.searchTopic)
-                    .font(.system(size: 8, weight: .medium))
-                    .foregroundStyle(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.7))
-                    .lineLimit(1)
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 8)
-                    .accessibilityIdentifier("home.wallpaper.topic")
+            if showsHomeToolbar(.bottom) {
+                homeToolbarStrip(width: min(526, max(0, width - 32)))
+                    .frame(maxWidth: .infinity, alignment: homeToolbar.layout.alignment.frameAlignment)
+                    .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 20)
             }
         }
-        .buttonStyle(HomePressButtonStyle())
     }
 
     private var homeHeading: some View {
@@ -670,20 +678,39 @@ struct HomeView: View {
 
     // MARK: - Top Bar
 
-    private var homeToolbarButtons: some View {
-        ForEach(Array(homeToolbar.actions.enumerated()), id: \.offset) { index, action in
-            if action != .none {
-                Button { performHomeToolbarAction(action) } label: {
-                    HomeToolbarButtonFace(action: action, lightWallpaper: usesLightWallpaperContent,
-                        isActive: action == .privateBrowsing && searchVM.isIncognito,
-                        isLoading: action == .refreshWallpaper && wallpaperManager.networkLoading,
-                        tabCount: tabManager.tabCount)
-                }
-                .buttonStyle(HomeToolbarButtonStyle(lightWallpaper: usesLightWallpaperContent, showsBackground: homeToolbar.showsButtonBackground))
-                .accessibilityLabel(action.title)
-                .accessibilityIdentifier("home.toolbar.\(index)")
-                .accessibilityAddTraits(action == .privateBrowsing && searchVM.isIncognito ? .isSelected : [])
-                .disabled(action == .refreshWallpaper && wallpaperManager.networkLoading)
+    private var homeToolbarIndices: [Int] { homeToolbar.actions.indices.filter { homeToolbar.actions[$0] != .none } }
+
+    private func showsHomeToolbar(_ placement: HomeToolbarLayout.Placement) -> Bool {
+        homeToolbar.isVisible && !keyboardVisible && homeToolbar.layout.placement == placement
+    }
+
+    private func homeToolbarMetrics(width: CGFloat, height: CGFloat = 0) -> HomeToolbarMetrics {
+        HomeToolbarMetrics(width: width, height: height, count: homeToolbarIndices.count, style: homeToolbar.layout.style)
+    }
+
+    private func homeToolbarStrip(width: CGFloat) -> some View { liveHomeToolbar(metrics: homeToolbarMetrics(width: width)) }
+
+    private func liveHomeToolbar(metrics: HomeToolbarMetrics) -> some View {
+        HomeToolbarStrip(indices: homeToolbarIndices, metrics: metrics, style: homeToolbar.layout.style,
+            lightWallpaper: usesLightWallpaperContent) { homeToolbarButton($0) }
+    }
+
+    private func homeToolbarButton(_ index: Int) -> some View {
+        let action = homeToolbar.actions[index]
+        return Button { performHomeToolbarAction(action) } label: {
+            HomeToolbarButtonFace(action: action, lightWallpaper: usesLightWallpaperContent,
+                isActive: action == .privateBrowsing && searchVM.isIncognito,
+                isLoading: action == .refreshWallpaper && wallpaperManager.networkLoading,
+                tabCount: tabManager.tabCount)
+        }
+        .buttonStyle(HomeToolbarButtonStyle(lightWallpaper: usesLightWallpaperContent, showsBackground: homeToolbar.layout.style == .tiles))
+        .accessibilityLabel(action.title)
+        .accessibilityIdentifier("home.toolbar.\(index)")
+        .accessibilityAddTraits(action == .privateBrowsing && searchVM.isIncognito ? .isSelected : [])
+        .disabled(action == .refreshWallpaper && wallpaperManager.networkLoading)
+        .contextMenu {
+            Button { homeToolbarDestination = .homeToolbar } label: {
+                Label(ToolText.text("home_toolbar_customize"), systemImage: "slider.horizontal.3")
             }
         }
     }

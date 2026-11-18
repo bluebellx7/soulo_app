@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "รองรับ";
 "userscript_docs_supported_desc" = "การจับคู่หลัก การเริ่มต้น/สิ้นสุดเอกสาร สไตล์/องค์ประกอบ พื้นที่จัดเก็บเดี่ยวและจำนวนมาก ผู้ฟังค่าในเครื่อง คลิปบอร์ด เมนู การแจ้งเตือนในเพจ แท็บ การดาวน์โหลด ข้อมูลแท็บ คุกกี้ ทรัพยากร การเปลี่ยนแปลง URL และคำขอที่กำหนดขอบเขตสิทธิ์";
 "userscript_docs_partial_title" = "รองรับได้บางส่วน";
-"userscript_docs_partial_desc" = "คำขอเครือข่ายละเว้นการอัปโหลด/ความคืบหน้าและการขนส่งคุกกี้ การแจ้งเตือนอยู่ในเพจ API ทรัพยากรเป็นแบบอะซิงโครนัส และผู้ฟังการเปลี่ยนแปลงค่ารายงานการเปลี่ยนแปลงที่ทำโดยเพจปัจจุบัน การตรวจสอบการอัปเดตเป็นการดำเนินการด้วยตนเอง";
+"userscript_docs_partial_desc" = "การแจ้งเตือนอยู่ในหน้าเว็บ และ API ทรัพยากรคืนค่า Promise ตัวเลือก cookie ต้องมีสิทธิ์ GM_cookie และไม่ส่งคุกกี้อัตโนมัติ";
 "userscript_docs_unsupported_title" = "ยังไม่รองรับในขณะนี้";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, การแยกแซนด์บ็อกซ์/รันอิน, การตรวจสอบการอัปเดตอัตโนมัติ และลักษณะการทำงานเฉพาะบนเดสก์ท็อปเท่านั้นที่ WKWebView ไม่สามารถให้ได้";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, การแยก sandbox/run-in และพฤติกรรมเดสก์ท็อปที่ WKWebView ไม่มี";
 "userscript_docs_metadata_title" = "ข้อมูลเมตา";
 "userscript_docs_metadata_identity" = "ชื่อสคริปต์ที่มนุษย์สามารถอ่านได้และคำอธิบายเพิ่มเติมที่แสดงก่อนการติดตั้งและในรายละเอียดสคริปต์";
 "userscript_docs_metadata_version" = "ใช้เนมสเปซที่เสถียรและไม่ซ้ำกัน และเพิ่มเวอร์ชันทุกครั้งที่มีการเปลี่ยนแปลงสคริปต์ที่รวมกลุ่ม";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "ลบหนึ่งค่าถาวรสำหรับสคริปต์นี้";
 "userscript_docs_api_list" = "ส่งคืนคีย์หน่วยเก็บข้อมูลถาวรทั้งหมดที่เป็นของสคริปต์นี้";
 "userscript_docs_api_bulk" = "อ่าน เขียน หรือลบค่า JSON หลายค่าในการดำเนินการครั้งเดียว การเขียนได้รับการตรวจสอบความถูกต้องแบบอะตอมโดยร้านค้าเนทีฟ";
-"userscript_docs_api_listener" = "สังเกตการเปลี่ยนแปลงพื้นที่เก็บข้อมูลที่ทำโดยสคริปต์ในหน้าเว็บปัจจุบัน ไม่มีการส่งการแจ้งเตือนระยะไกลแบบแท็บข้าม";
+"userscript_docs_api_listener" = "ติดตามการเปลี่ยนแปลงที่เก็บข้อมูลในหน้าและข้ามแท็บ การเปลี่ยนจากแท็บอื่นมี remote=true";
 "userscript_docs_api_element" = "สร้างและต่อท้ายองค์ประกอบด้วยคุณลักษณะ รวมถึงอย่างปลอดภัยระหว่างการเริ่มเอกสาร";
 "userscript_docs_api_clipboard" = "คัดลอกข้อความไปยังคลิปบอร์ดของระบบผ่านเนทิฟบริดจ์ของ Soulo";
 "userscript_docs_extended_title" = "เมนู แท็บ ไฟล์ และการรวมเพจ";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "คำขอเครือข่าย";
 "userscript_docs_network_legacy" = "เริ่มต้นคำขอสิทธิพิเศษและส่งกลับหมายเลขอ้างอิงที่ยกเลิก ประกาศสิทธิ์ที่ตรงกันและโฮสต์ @connect";
 "userscript_docs_network_modern" = "นามแฝงสมัยใหม่ของ API คำขอสิทธิพิเศษที่มีออบเจ็กต์รายละเอียดและพฤติกรรมการติดต่อกลับเหมือนกัน";
-"userscript_docs_network_details" = "รองรับ url, วิธีการ, ส่วนหัว, ข้อมูล, หมดเวลา, responseType, onloadstart, onreadystatechange, onload, onerror และ onloadend";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "ใช้ json, blob, arraybuffer หรือเว้นว่างไว้สำหรับข้อความ การตอบกลับประกอบด้วยสถานะ, FinalUrl, ส่วนหัว, ข้อความตอบกลับ และการตอบกลับ";
 "userscript_docs_network_connect" = "ใช้ self สำหรับโฮสต์ของหน้า โดเมนสำหรับโฮสต์และโดเมนย่อย โดเมนไวด์การ์ด หรือ * เฉพาะเมื่อจำเป็นจริงๆ เท่านั้น";
 "userscript_docs_limits_title" = "พฤติกรรมและข้อจำกัด";
 "userscript_docs_limits_web" = "DOM มาตรฐาน เหตุการณ์ MutationObserver การดึงข้อมูล ตัวจับเวลา และ WKWebView API อื่นๆ พร้อมใช้งาน การดึงข้อมูลแบบปกติยังคงเป็นไปตาม CORS";
 "userscript_docs_limits_storage" = "ค่าที่เก็บไว้ต้องเป็นแบบอนุกรม JSON: สูงสุด 256 KB ต่อค่า และรวม 1 MB ต่อสคริปต์";
-"userscript_docs_limits_network" = "การตอบกลับแบบมีสิทธิพิเศษจำกัดอยู่ที่ 20 MB การหมดเวลาจะถูกจำกัดไว้ที่ 1–60 วินาที และไม่ยอมรับส่วนหัวของ Cookie/Host/Origin";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts ไม่ทำงานในการดูเว็บแบบส่วนตัว";
 "userscript_docs_limits_require" = "ไฟล์ @require ผ่าน HTTPS จะดาวน์โหลดและแคชเมื่อติดตั้งหรือบันทึก แล้วทำงานตามลำดับก่อนสคริปต์หลัก";
 "userscript_docs_template_title" = "เทมเพลตขั้นต่ำ";

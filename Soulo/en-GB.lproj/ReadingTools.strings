@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Position %d";
 "home_toolbar_reset" = "Hide All";
 "home_toolbar_default_hint" = "Home shortcuts are hidden by default.";
+"home_toolbar_position" = "Position";
+"home_toolbar_buttons" = "Buttons";
+"home_toolbar_tiles" = "Separate";
+"home_toolbar_capsule" = "Capsule";
+"home_toolbar_icons" = "Icons only";
+"home_toolbar_bottom" = "Bottom";
+"home_toolbar_belowSearch" = "Below Search";
+"home_toolbar_free" = "Free Placement";
+"home_toolbar_leading" = "Align start";
+"home_toolbar_center" = "Center";
+"home_toolbar_trailing" = "Align end";
+"home_toolbar_drag_position" = "Drag the toolbar to place it.";
+"home_toolbar_drag_buttons" = "Tap to change a button. Drag to reorder.";
 "home_toolbar_search" = "Find a page";
 "group_default_search" = "Default search";
 "group_search_settings" = "Group Settings";
 "group_engine_name" = "Search engine name";
-"group_search_url" = "Search URL with %@";
-"group_default_search_hint" = "Used when this group has no enabled platforms. Include %@ in the URL for the search terms. Disabled platforms stay disabled.";
-"group_search_url_invalid" = "Enter a name and a valid HTTP or HTTPS search URL containing %@.";
+"group_search_url" = "Search or homepage URL (search terms: %@)";
+"group_default_search_hint" = "Used when this group has no enabled platforms. Choose any platform in this group. %@ is replaced with your search terms; without a placeholder, the page opens directly. Disabled platforms stay disabled.";
+"group_search_url_invalid" = "Enter a name and a valid HTTP or HTTPS URL. Search templates can use %@.";
 "batch_import_new_group" = "Imported Group";
 "image_resources" = "Resources";
 "screen_keep_awake" = "Keep Screen On";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "This format cannot be sent directly with the system player. Open Control Center, choose Screen Mirroring, then select your TV or Mac.";
 "userscript_check_updates" = "Check Updates";
 "userscript_update_no_url" = "No update address is provided. Import a newer script file to update it.";
-"userscript_update_manual_hint" = "Checks run only when requested. Review the new version before updating. Built-in scripts update with the app.";
+"userscript_update_manual_hint" = "Opening Installed checks up to 4 scripts per visit, once per script every 24 hours. Pauses in Private Browsing, Low Power Mode or high heat. Updates require review.";
 "userscript_update_latest" = "Up to date";
 "userscript_update_invalid" = "The update is invalid, belongs to a different script, or has an inconsistent version.";
 "userscript_update_changed" = "This script changed after the check. Check for updates again.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Frosted Glass";
 "wallpaper_blur_amount" = "Blur Strength";
 
-"auto_hide_platform_bar_hint" = "The platform bar hides only after you tap webpage content. Automatic redirects and scrolling do not hide it. Return to the search results or start a new search to show it again.";
+"auto_hide_platform_bar_hint" = "When enabled, the platform bar hides only after you tap webpage content and the page’s domain matches none of the platforms in the current bar. A match keeps or restores the bar. Scrolling and automatic redirects do not hide it.";
 
 "ad_subscription_add" = "Add filter list";
 "ad_subscription_name" = "Name";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Control vibration and interface sounds throughout the app. Webpage, video, and audio playback are unaffected.";
 
 "home_display_settings" = "Home Display";
-"browsing_display_settings" = "Browsing Display";
+"browsing_display_settings" = "Browsing Settings";
 
 "web_video_download" = "Web Video Downloads";
 "web_video_download_description" = "Show video download controls on webpages, episode lists, and players. Playback and existing downloads stay unchanged.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "Clears offline articles, the book library and reading progress.";
 
 "storage_cleanup_offline_desc" = "Deletes offline video remnants without download records.";
+
+"storage_website_shared" = "Shared and unattributed data";
+"storage_website_shared_desc" = "Includes shared network caches, cookies and data that cannot be attributed to a single site.";
+"storage_website_clear_scope" = "Clears ordinary websites and shared network caches. Use Extension temporary cache for extension media; extension settings are kept.";
+
+"storage_quick_clear" = "Quick clear";
+"storage_quick_clear_done" = "Cache cleared";
+
+"storage_website_cleanup_pending" = "Website data is still being cleared. You can go back and keep browsing. Please do not start another cleanup.";
+
+"storage_auto_cleanup" = "Automatic cleanup";
+
+"storage_auto_cleanup_desc" = "Tries at most once every 24 hours while the app is idle in the background. Only removes unused temporary import, export and preview files older than 24 hours. Each pass lasts about 1 second or checks 2000 items, and stops when you return to the app. Skipped during playback, downloads or exports, or when Low Power Mode is on or the device is noticeably hot. Bookmarks, saved downloads, logins and website data are never deleted automatically.";
+
+"restore_last_page_on_launch" = "Restore last page";
+"restore_last_page_on_launch_desc" = "Reopen the last webpage when the app starts. Private tabs are not restored.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Gestures & Shortcuts";
+"app_icon_shortcuts" = "App Icon Shortcuts";
+"settings_sync_backup" = "Sync & Backups";
+"icloud_bookmark_sync" = "iCloud Bookmark Sync";
+"manual_settings_backups" = "Manual backups";
+"create_settings_backup" = "Create";
+"toolbar_settings" = "Toolbars";
+"toolbar_section_home" = "Home";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Clear manual backups";
+"clear_manual_backups_message" = "Deletes only manually created or imported backups. Automatic and older recovery snapshots, current settings and iCloud sync are preserved.";
+"recovery_settings_backups" = "Automatic & previous backups";
+
+/* Settings hierarchy */
+"settings_personalization" = "Personalization";
+"appearance_home_settings" = "Home & Wallpaper";
+"settings_data" = "Data";
+"about_feedback_settings" = "About & Feedback";
+"browsing_startup_tabs" = "Startup & Tabs";
+"browsing_interface" = "Interface";
+"browsing_web_display" = "Webpages";
+"manual_backups_empty" = "No manual backups yet";
+"browsing_display_settings_legacy" = "Browsing Display";

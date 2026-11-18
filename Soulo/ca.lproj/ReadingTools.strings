@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Posició %d";
 "home_toolbar_reset" = "Amaga-ho tot";
 "home_toolbar_default_hint" = "Les dreceres d'inici s'amaguen de manera predeterminada.";
+"home_toolbar_position" = "Posició";
+"home_toolbar_buttons" = "Botons";
+"home_toolbar_tiles" = "Separats";
+"home_toolbar_capsule" = "Càpsula";
+"home_toolbar_icons" = "Només icones";
+"home_toolbar_bottom" = "A baix";
+"home_toolbar_belowSearch" = "Sota la cerca";
+"home_toolbar_free" = "Posició lliure";
+"home_toolbar_leading" = "Alinea a l’inici";
+"home_toolbar_center" = "Centra";
+"home_toolbar_trailing" = "Alinea al final";
+"home_toolbar_drag_position" = "Arrossega la barra per situar-la.";
+"home_toolbar_drag_buttons" = "Toca per canviar un botó. Arrossega’l per reordenar-lo.";
 "home_toolbar_search" = "Busca una pàgina";
 "group_default_search" = "Cerca per defecte";
 "group_search_settings" = "Configuració del grup";
 "group_engine_name" = "Nom del motor de cerca";
-"group_search_url" = "Cerca URL amb %@";
-"group_default_search_hint" = "S'utilitza quan aquest grup no té plataformes activades. Inclou %@ a URL per als termes de cerca. Les plataformes desactivades es mantenen desactivades.";
-"group_search_url_invalid" = "Introduïu un nom i una cerca vàlida HTTP o HTTPS URL que contingui %@.";
+"group_search_url" = "URL de cerca o d’inici (termes: %@)";
+"group_default_search_hint" = "S’utilitza quan aquest grup no té plataformes activades. Pots triar qualsevol plataforma del grup. %@ se substitueix pels termes de cerca; sense marcador, la pàgina s’obre directament. Les plataformes desactivades continuen desactivades.";
+"group_search_url_invalid" = "Introdueix un nom i un URL HTTP o HTTPS vàlid. Les plantilles de cerca poden fer servir %@.";
 "batch_import_new_group" = "Grup importat";
 "image_resources" = "Recursos";
 "screen_keep_awake" = "Mantén la pantalla encesa";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Aquest format no es pot enviar directament amb el reproductor del sistema. Obriu Control Center, seleccioneu Screen Mirroring i, a continuació, seleccioneu el vostre televisor o Mac.";
 "userscript_check_updates" = "Comproveu les actualitzacions";
 "userscript_update_no_url" = "No es proporciona cap adreça d'actualització. Importeu un fitxer d'script més recent per actualitzar-lo.";
-"userscript_update_manual_hint" = "Els controls només s'executen quan se sol·licita. Reviseu la nova versió abans d'actualitzar. Actualització dels scripts integrats amb l'aplicació.";
+"userscript_update_manual_hint" = "Obrir Instal·lats comprova fins a 4 scripts per visita, una vegada cada 24 hores per script. Es pausa en navegació privada, baix consum o calor elevada. Les actualitzacions requereixen revisió.";
 "userscript_update_latest" = "Actualitzat";
 "userscript_update_invalid" = "L'actualització no és vàlida, pertany a un script diferent o té una versió incoherent.";
 "userscript_update_changed" = "Aquest script ha canviat després de la comprovació. Torneu a comprovar si hi ha actualitzacions.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Vidre esmerilat";
 "wallpaper_blur_amount" = "Intensitat del desenfocament";
 
-"auto_hide_platform_bar_hint" = "La barra de plataformes només s’amaga quan toques el contingut web. Les redireccions automàtiques i el desplaçament no l’amaguen. Torna als resultats o inicia una cerca nova per mostrar-la.";
+"auto_hide_platform_bar_hint" = "Quan s’activa, la barra només s’amaga després de tocar el contingut web i si el domini de la pàgina no coincideix amb cap plataforma de la barra actual. Si hi ha una coincidència, es manté visible o torna a aparèixer. El desplaçament i les redireccions automàtiques no l’amaguen.";
 
 "ad_subscription_add" = "Afegeix una llista";
 "ad_subscription_name" = "Nom";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Controla la vibració i els sons de la interfície a tota l’app. No afecta la reproducció de pàgines web, vídeo ni àudio.";
 
 "home_display_settings" = "Visualització de l’inici";
-"browsing_display_settings" = "Visualització de navegació";
+"browsing_display_settings" = "Configuració de navegació";
 
 "web_video_download" = "Descàrregues de vídeo web";
 "web_video_download_description" = "Mostra els controls de descàrrega de vídeo en pàgines web, llistes d’episodis i reproductors. No canvia la reproducció ni les descàrregues existents.";
@@ -563,3 +576,45 @@
 "storage_cleanup_reading_desc" = "Neteja els articles sense connexió, la biblioteca i el progrés de lectura.";
 
 "storage_cleanup_offline_desc" = "Suprimeix les restes de vídeos sense connexió sense registre de baixada.";
+
+"storage_website_shared" = "Dades compartides i sense atribució";
+"storage_website_shared_desc" = "Inclou memòries cau de xarxa compartides, galetes i dades que no es poden atribuir a un sol lloc.";
+"storage_website_clear_scope" = "Esborra dades de llocs web normals i memòries cau de xarxa compartides. Per als mitjans de les extensions, fes servir «Memòria cau temporal d’extensions»; se'n conserven els ajustos.";
+
+"storage_quick_clear" = "Neteja ràpida";
+"storage_quick_clear_done" = "Memòria cau esborrada";
+
+"storage_website_cleanup_pending" = "Encara s'estan esborrant les dades dels llocs web. Pots tornar enrere i continuar navegant. No iniciïs una altra neteja.";
+
+"storage_auto_cleanup" = "Neteja automàtica";
+
+"storage_auto_cleanup_desc" = "Ho intenta com a màxim un cop cada 24 hores quan l’app està inactiva en segon pla. Només elimina fitxers temporals d’importació, exportació i previsualització de més de 24 hores que no s’utilitzen. Cada passada dura prop d’1 segon o revisa 2000 elements i s’atura en tornar a l’app. Se salta si hi ha reproduccions, baixades o exportacions, mode de baix consum activat o calor notable. Els marcadors, les baixades desades, les sessions i les dades dels webs no s’eliminen automàticament.";
+
+"restore_last_page_on_launch" = "Restaura la darrera pàgina";
+"restore_last_page_on_launch_desc" = "Obre la darrera pàgina web en iniciar l’app. Les pestanyes privades no es restauren.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Gestos i dreceres";
+"app_icon_shortcuts" = "Dreceres de la icona";
+"settings_sync_backup" = "Sincronització i còpies";
+"icloud_bookmark_sync" = "Sincronitza marcadors a iCloud";
+"manual_settings_backups" = "Còpies manuals";
+"create_settings_backup" = "Crea";
+"toolbar_settings" = "Barres d’eines";
+"toolbar_section_home" = "Inici";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Esborra les còpies manuals";
+"clear_manual_backups_message" = "Només elimina les còpies creades manualment o importades. Conserva les instantànies automàtiques i antigues, la configuració actual i la sincronització amb iCloud.";
+"recovery_settings_backups" = "Còpies automàtiques i anteriors";
+
+/* Settings hierarchy */
+"settings_personalization" = "Personalització";
+"appearance_home_settings" = "Inici i fons";
+"settings_data" = "Dades";
+"about_feedback_settings" = "Quant a i comentaris";
+"browsing_startup_tabs" = "Inici i pestanyes";
+"browsing_interface" = "Interfície";
+"browsing_web_display" = "Pàgines web";
+"manual_backups_empty" = "Encara no hi ha còpies manuals";
+"browsing_display_settings_legacy" = "Visualització de navegació";

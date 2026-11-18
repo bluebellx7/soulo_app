@@ -1,1 +1,4 @@
-Peningkatan jendela iPad, input suara, ringkasan lokal, dan aksesibilitas. Peningkatan ekspor media di latar belakang, Pintasan, dan kompatibilitas ekstensi. Beberapa fitur bergantung pada perangkat, versi sistem, dan bahasa.
+• Pengaturan ditata ulang. Lihat pratinjau bilah alat beranda saat mengganti gaya, mengatur ulang tombol, atau menyeret bilah ke posisi yang diinginkan.
+• Jika pemulihan saat mulai ulang diaktifkan, Soulo membuka beranda atau halaman web terakhir yang Anda lihat.
+• Menu peramban kini lebih mudah dibaca. Tampilkan kembali bilah alat yang tersembunyi dari menu Lainnya.
+• Permintaan jaringan dan pemeriksaan pembaruan untuk skrip pengguna ditingkatkan.

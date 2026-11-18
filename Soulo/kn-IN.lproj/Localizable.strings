@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "ಬೆಂಬಲಿತವಾಗಿದೆ";
 "userscript_docs_supported_desc" = "ಕೋರ್ ಹೊಂದಾಣಿಕೆ, ಡಾಕ್ಯುಮೆಂಟ್-ಪ್ರಾರಂಭ/ಅಂತ್ಯ, ಶೈಲಿಗಳು/ಎಲಿಮೆಂಟ್‌ಗಳು, ಏಕ ಮತ್ತು ಬೃಹತ್ ಸಂಗ್ರಹಣೆ, ಸ್ಥಳೀಯ ಮೌಲ್ಯ ಕೇಳುಗರು, ಕ್ಲಿಪ್‌ಬೋರ್ಡ್, ಮೆನುಗಳು, ಇನ್-ಪೇಜ್ ಅಧಿಸೂಚನೆಗಳು, ಟ್ಯಾಬ್‌ಗಳು, ಡೌನ್‌ಲೋಡ್‌ಗಳು, ಟ್ಯಾಬ್ ಡೇಟಾ, ಕುಕೀಸ್, ಸಂಪನ್ಮೂಲಗಳು, URL ಬದಲಾವಣೆಗಳು ಮತ್ತು ಅನುಮತಿ-ವ್ಯಾಪ್ತಿಯ ವಿನಂತಿಗಳು.";
 "userscript_docs_partial_title" = "ಭಾಗಶಃ ಬೆಂಬಲಿತವಾಗಿದೆ";
-"userscript_docs_partial_desc" = "ನೆಟ್‌ವರ್ಕ್ ವಿನಂತಿಗಳು ಅಪ್‌ಲೋಡ್/ಪ್ರಗತಿ ಮತ್ತು ಕುಕೀ ಸಾರಿಗೆಯನ್ನು ಬಿಟ್ಟುಬಿಡುತ್ತವೆ. ಅಧಿಸೂಚನೆಗಳು ಪುಟದಲ್ಲಿವೆ, ಸಂಪನ್ಮೂಲ APIಗಳು ಅಸಮಕಾಲಿಕವಾಗಿರುತ್ತವೆ ಮತ್ತು ಪ್ರಸ್ತುತ ಪುಟದಿಂದ ಮಾಡಿದ ಬದಲಾವಣೆಗಳನ್ನು ಮೌಲ್ಯ-ಬದಲಾವಣೆ ಕೇಳುಗರು ವರದಿ ಮಾಡುತ್ತಾರೆ. ನವೀಕರಣ ಪರಿಶೀಲನೆಗಳು ಹಸ್ತಚಾಲಿತವಾಗಿವೆ.";
+"userscript_docs_partial_desc" = "ಅಧಿಸೂಚನೆಗಳು ಪುಟದಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ; ಸಂಪನ್ಮೂಲ API ಗಳು Promise ನೀಡುತ್ತವೆ. cookie ಗೆ GM_cookie ಅನುಮತಿ ಬೇಕು; ಕುಕಿಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಕಳುಹಿಸುವುದಿಲ್ಲ.";
 "userscript_docs_unsupported_title" = "ಪ್ರಸ್ತುತ ಬೆಂಬಲಿತವಾಗಿಲ್ಲ";
-"userscript_docs_unsupported_desc" = "GM_webRequest ಪ್ರತಿಬಂಧ, GM_audio, ಸ್ಯಾಂಡ್‌ಬಾಕ್ಸ್/ರನ್-ಇನ್ ಐಸೋಲೇಶನ್, ಸ್ವಯಂಚಾಲಿತ ನವೀಕರಣ ಪರಿಶೀಲನೆಗಳು ಮತ್ತು WKWebView ಒದಗಿಸಲು ಸಾಧ್ಯವಾಗದ ನಿಖರವಾದ ಡೆಸ್ಕ್‌ಟಾಪ್-ಮಾತ್ರ ನಡವಳಿಕೆಗಳು.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in ಪ್ರತ್ಯೇಕತೆ ಮತ್ತು WKWebView ನಲ್ಲಿ ಲಭ್ಯವಿಲ್ಲದ ಡೆಸ್ಕ್‌ಟಾಪ್ ವರ್ತನೆ.";
 "userscript_docs_metadata_title" = "ಮೆಟಾಡೇಟಾ";
 "userscript_docs_metadata_identity" = "ಮಾನವ-ಓದಬಲ್ಲ ಸ್ಕ್ರಿಪ್ಟ್ ಹೆಸರು ಮತ್ತು ಐಚ್ಛಿಕ ವಿವರಣೆಯನ್ನು ಅನುಸ್ಥಾಪನೆಯ ಮೊದಲು ಮತ್ತು ಸ್ಕ್ರಿಪ್ಟ್ ವಿವರಗಳಲ್ಲಿ ತೋರಿಸಲಾಗಿದೆ.";
 "userscript_docs_metadata_version" = "ಸ್ಥಿರವಾದ, ವಿಶಿಷ್ಟವಾದ ನೇಮ್‌ಸ್ಪೇಸ್ ಅನ್ನು ಬಳಸಿ ಮತ್ತು ಬಂಡಲ್ ಮಾಡಿದ ಸ್ಕ್ರಿಪ್ಟ್ ಬದಲಾದಾಗ ಆವೃತ್ತಿಯನ್ನು ಹೆಚ್ಚಿಸಿ.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "ಈ ಸ್ಕ್ರಿಪ್ಟ್‌ಗಾಗಿ ಒಂದು ನಿರಂತರ ಮೌಲ್ಯವನ್ನು ಅಳಿಸುತ್ತದೆ.";
 "userscript_docs_api_list" = "ಈ ಸ್ಕ್ರಿಪ್ಟ್ ಮಾಲೀಕತ್ವದ ಎಲ್ಲಾ ನಿರಂತರ ಸಂಗ್ರಹಣೆ ಕೀಗಳನ್ನು ಹಿಂತಿರುಗಿಸುತ್ತದೆ.";
 "userscript_docs_api_bulk" = "ಒಂದು ಕಾರ್ಯಾಚರಣೆಯಲ್ಲಿ ಬಹು JSON ಮೌಲ್ಯಗಳನ್ನು ಓದುತ್ತದೆ, ಬರೆಯುತ್ತದೆ ಅಥವಾ ಅಳಿಸುತ್ತದೆ; ಬರಹಗಳನ್ನು ಸ್ಥಳೀಯ ಅಂಗಡಿಯಿಂದ ಪರಮಾಣುವಾಗಿ ಮೌಲ್ಯೀಕರಿಸಲಾಗುತ್ತದೆ.";
-"userscript_docs_api_listener" = "ಪ್ರಸ್ತುತ ವೆಬ್‌ಪುಟದಲ್ಲಿ ಸ್ಕ್ರಿಪ್ಟ್ ಮಾಡಿದ ಶೇಖರಣಾ ಬದಲಾವಣೆಗಳನ್ನು ಗಮನಿಸುತ್ತದೆ. ಕ್ರಾಸ್-ಟ್ಯಾಬ್ ರಿಮೋಟ್ ಅಧಿಸೂಚನೆಗಳನ್ನು ಹೊರಸೂಸಲಾಗುವುದಿಲ್ಲ.";
+"userscript_docs_api_listener" = "ಸ್ಥಳೀಯ ಮತ್ತು ಇತರ ಟ್ಯಾಬ್‌ಗಳ ಸಂಗ್ರಹ ಬದಲಾವಣೆಗಳನ್ನು ಗಮನಿಸುತ್ತದೆ. ಇತರ ಟ್ಯಾಬ್ ಬದಲಾವಣೆಗಳಿಗೆ remote=true ಇರುತ್ತದೆ.";
 "userscript_docs_api_element" = "ಡಾಕ್ಯುಮೆಂಟ್-ಪ್ರಾರಂಭದ ಸಮಯದಲ್ಲಿ ಸುರಕ್ಷಿತವಾಗಿ ಸೇರಿದಂತೆ ಗುಣಲಕ್ಷಣಗಳೊಂದಿಗೆ ಅಂಶವನ್ನು ರಚಿಸುತ್ತದೆ ಮತ್ತು ಸೇರಿಸುತ್ತದೆ.";
 "userscript_docs_api_clipboard" = "Soulo ನ ಸ್ಥಳೀಯ ಸೇತುವೆಯ ಮೂಲಕ ಸಿಸ್ಟಮ್ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್‌ಗೆ ಪಠ್ಯವನ್ನು ನಕಲಿಸುತ್ತದೆ.";
 "userscript_docs_extended_title" = "ಮೆನುಗಳು, ಟ್ಯಾಬ್‌ಗಳು, ಫೈಲ್‌ಗಳು ಮತ್ತು ಪುಟ ಏಕೀಕರಣ";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "ನೆಟ್‌ವರ್ಕ್ ವಿನಂತಿಗಳು";
 "userscript_docs_network_legacy" = "ವಿಶೇಷ ವಿನಂತಿಯನ್ನು ಪ್ರಾರಂಭಿಸುತ್ತದೆ ಮತ್ತು ಸ್ಥಗಿತ ಹ್ಯಾಂಡಲ್ ಅನ್ನು ಹಿಂತಿರುಗಿಸುತ್ತದೆ. ಹೊಂದಾಣಿಕೆಯ ಅನುದಾನ ಮತ್ತು @connect ಹೋಸ್ಟ್‌ಗಳನ್ನು ಘೋಷಿಸಿ.";
 "userscript_docs_network_modern" = "ಅದೇ ವಿವರಗಳ ವಸ್ತು ಮತ್ತು ಕಾಲ್‌ಬ್ಯಾಕ್ ನಡವಳಿಕೆಯೊಂದಿಗೆ ಸವಲತ್ತು ಪಡೆದ ವಿನಂತಿ API ನ ಆಧುನಿಕ ಅಲಿಯಾಸ್.";
-"userscript_docs_network_details" = "url, ವಿಧಾನ, ಹೆಡರ್‌ಗಳು, ಡೇಟಾ, ಟೈಮ್‌ಔಟ್, ಪ್ರತಿಕ್ರಿಯೆ ಪ್ರಕಾರ, ಆನ್‌ಲೋಡ್‌ಸ್ಟಾರ್ಟ್, ಆನ್‌ರೆಡಿಸ್ಟೇಟ್‌ಚೇಂಜ್, ಆನ್‌ಲೋಡ್, ಒನ್‌ರಾರ್ ಮತ್ತು ಆನ್‌ಲೋಡ್‌ಎಂಡ್ ಅನ್ನು ಬೆಂಬಲಿಸುತ್ತದೆ.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "json, blob, arraybuffer ಬಳಸಿ ಅಥವಾ ಪಠ್ಯಕ್ಕಾಗಿ ಖಾಲಿ ಬಿಡಿ. ಪ್ರತಿಕ್ರಿಯೆಗಳು ಸ್ಥಿತಿ, finalUrl, ಹೆಡರ್‌ಗಳು, ಪ್ರತಿಕ್ರಿಯೆ ಪಠ್ಯ ಮತ್ತು ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ಒಳಗೊಂಡಿವೆ.";
 "userscript_docs_network_connect" = "ಪುಟ ಹೋಸ್ಟ್‌ಗಾಗಿ ಸ್ವಯಂ ಬಳಸಿ, ಅದಕ್ಕೆ ಡೊಮೇನ್ ಮತ್ತು ಅದರ ಉಪಡೊಮೇನ್‌ಗಳು, ವೈಲ್ಡ್‌ಕಾರ್ಡ್ ಡೊಮೇನ್, ಅಥವಾ * ನಿಜವಾಗಿಯೂ ಅಗತ್ಯವಿದ್ದಾಗ ಮಾತ್ರ.";
 "userscript_docs_limits_title" = "ನಡವಳಿಕೆ ಮತ್ತು ಮಿತಿಗಳು";
 "userscript_docs_limits_web" = "ಪ್ರಮಾಣಿತ DOM, ಈವೆಂಟ್‌ಗಳು, MutationObserver, ಪಡೆದುಕೊಳ್ಳುವಿಕೆ, ಟೈಮರ್‌ಗಳು ಮತ್ತು ಇತರ WKWebView APIಗಳು ಲಭ್ಯವಿವೆ. ಸಾಮಾನ್ಯ ಪಡೆಯುವಿಕೆ ಇನ್ನೂ CORS ಅನ್ನು ಅನುಸರಿಸುತ್ತದೆ.";
 "userscript_docs_limits_storage" = "ಸಂಗ್ರಹಿಸಲಾದ ಮೌಲ್ಯಗಳು JSON-ಧಾರಾವಾಹಿಯಾಗಿರಬೇಕು: ಪ್ರತಿ ಮೌಲ್ಯಕ್ಕೆ 256 KB ಮತ್ತು ಪ್ರತಿ ಸ್ಕ್ರಿಪ್ಟ್‌ಗೆ ಒಟ್ಟು 1 MB.";
-"userscript_docs_limits_network" = "ವಿಶೇಷ ಪ್ರತಿಕ್ರಿಯೆಗಳು 20 MB ಗೆ ಸೀಮಿತವಾಗಿವೆ, ಸಮಯ ಮೀರುವಿಕೆಯನ್ನು 1-60 ಸೆಕೆಂಡ್‌ಗಳಿಗೆ ಕ್ಲ್ಯಾಂಪ್ ಮಾಡಲಾಗಿದೆ ಮತ್ತು ಕುಕಿ/ಹೋಸ್ಟ್/ಮೂಲದ ಹೆಡರ್‌ಗಳನ್ನು ಸ್ವೀಕರಿಸಲಾಗುವುದಿಲ್ಲ.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "ಖಾಸಗಿ ಬ್ರೌಸಿಂಗ್‌ನಲ್ಲಿ UserScriptಗಳು ರನ್ ಆಗುವುದಿಲ್ಲ.";
 "userscript_docs_limits_require" = "HTTPS @require ಫೈಲ್‌ಗಳನ್ನು ಸ್ಥಾಪಿಸುವಾಗ ಅಥವಾ ಉಳಿಸುವಾಗ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ ಕ್ಯಾಶ್ ಮಾಡಲಾಗುತ್ತದೆ, ನಂತರ ಸ್ಕ್ರಿಪ್ಟ್‌ಗೆ ಮೊದಲು ಕ್ರಮವಾಗಿ ರನ್ ಮಾಡಲಾಗುತ್ತದೆ.";
 "userscript_docs_template_title" = "ಕನಿಷ್ಠ ಟೆಂಪ್ಲೇಟ್";

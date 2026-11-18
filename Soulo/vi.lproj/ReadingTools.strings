@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Vị trí %d";
 "home_toolbar_reset" = "Ẩn tất cả";
 "home_toolbar_default_hint" = "Các phím tắt ở nhà được ẩn theo mặc định.";
+"home_toolbar_position" = "Vị trí";
+"home_toolbar_buttons" = "Nút";
+"home_toolbar_tiles" = "Tách riêng";
+"home_toolbar_capsule" = "Dạng viên";
+"home_toolbar_icons" = "Chỉ biểu tượng";
+"home_toolbar_bottom" = "Dưới cùng";
+"home_toolbar_belowSearch" = "Dưới ô tìm kiếm";
+"home_toolbar_free" = "Đặt tự do";
+"home_toolbar_leading" = "Căn đầu";
+"home_toolbar_center" = "Căn giữa";
+"home_toolbar_trailing" = "Căn cuối";
+"home_toolbar_drag_position" = "Kéo thanh công cụ đến vị trí mong muốn.";
+"home_toolbar_drag_buttons" = "Chạm để đổi nút. Kéo để sắp xếp lại.";
 "home_toolbar_search" = "Tìm một trang";
 "group_default_search" = "Tìm kiếm mặc định";
 "group_search_settings" = "Cài đặt nhóm";
 "group_engine_name" = "Tên công cụ tìm kiếm";
-"group_search_url" = "Tìm kiếm URL với %@";
-"group_default_search_hint" = "Được sử dụng khi nhóm này không có nền tảng được kích hoạt. Bao gồm %@ trong URL cho cụm từ tìm kiếm. Nền tảng bị vô hiệu hóa vẫn bị vô hiệu hóa.";
-"group_search_url_invalid" = "Nhập tên và HTTP hoặc HTTPS tìm kiếm URL hợp lệ có chứa %@.";
+"group_search_url" = "URL tìm kiếm hoặc địa chỉ trang chủ (từ khóa: %@)";
+"group_default_search_hint" = "Dùng khi nhóm này không có nền tảng nào đang bật. Có thể chọn bất kỳ nền tảng nào trong nhóm. %@ được thay bằng từ khóa; nếu không có ký hiệu này, trang sẽ được mở trực tiếp. Các nền tảng đã tắt sẽ không tự bật lại.";
+"group_search_url_invalid" = "Nhập tên và URL HTTP hoặc HTTPS hợp lệ; mẫu tìm kiếm có thể dùng %@.";
 "batch_import_new_group" = "Nhóm nhập khẩu";
 "image_resources" = "Tài nguyên";
 "screen_keep_awake" = "Giữ màn hình luôn bật";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Định dạng này không thể được gửi trực tiếp bằng trình phát hệ thống. Mở Control Center, chọn Phản chiếu màn hình, sau đó chọn TV hoặc máy Mac của bạn.";
 "userscript_check_updates" = "Kiểm tra cập nhật";
 "userscript_update_no_url" = "Không có địa chỉ cập nhật được cung cấp. Nhập tệp tập lệnh mới hơn để cập nhật nó.";
-"userscript_update_manual_hint" = "Kiểm tra chỉ chạy khi được yêu cầu. Xem lại phiên bản mới trước khi cập nhật. Cập nhật tập lệnh tích hợp với ứng dụng.";
+"userscript_update_manual_hint" = "Mở Đã cài đặt kiểm tra tối đa 4 tập lệnh mỗi lượt, mỗi tập lệnh một lần trong 24 giờ. Tạm dừng khi riêng tư, ít nguồn điện hoặc quá nóng. Bản cập nhật cần xem xét.";
 "userscript_update_latest" = "Cập nhật";
 "userscript_update_invalid" = "Bản cập nhật không hợp lệ, thuộc về tập lệnh khác hoặc có phiên bản không nhất quán.";
 "userscript_update_changed" = "Kịch bản này đã thay đổi sau khi kiểm tra. Kiểm tra cập nhật một lần nữa.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Kính mờ";
 "wallpaper_blur_amount" = "Mức độ làm mờ";
 
-"auto_hide_platform_bar_hint" = "Thanh nền tảng chỉ ẩn sau khi bạn chạm vào nội dung trang web. Chuyển hướng tự động và cuộn không làm ẩn thanh. Quay lại kết quả hoặc bắt đầu tìm kiếm mới để hiện lại.";
+"auto_hide_platform_bar_hint" = "Khi bật, thanh chỉ ẩn sau khi bạn trực tiếp chạm vào nội dung trang và tên miền không khớp với nền tảng nào trên thanh hiện tại. Nếu khớp với bất kỳ nền tảng nào, thanh được giữ hoặc hiện lại. Cuộn và chuyển hướng tự động không làm ẩn thanh.";
 
 "ad_subscription_add" = "Thêm danh sách lọc";
 "ad_subscription_name" = "Tên";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Điều khiển rung và âm thanh giao diện trong toàn bộ ứng dụng. Không ảnh hưởng đến việc phát trang web, video và âm thanh.";
 
 "home_display_settings" = "Hiển thị trang chủ";
-"browsing_display_settings" = "Hiển thị duyệt web";
+"browsing_display_settings" = "Cài đặt duyệt web";
 
 "web_video_download" = "Tải video web";
 "web_video_download_description" = "Hiện nút tải video trên trang web, danh sách tập và trình phát. Việc phát và các lượt tải hiện có không thay đổi.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "Xóa bài viết ngoại tuyến, thư viện sách và tiến độ đọc.";
 
 "storage_cleanup_offline_desc" = "Xóa video ngoại tuyến còn sót lại không có bản ghi tải xuống.";
+
+"storage_website_shared" = "Dữ liệu dùng chung và chưa phân loại";
+"storage_website_shared_desc" = "Gồm bộ nhớ đệm mạng dùng chung, cookie và dữ liệu không thể gán cho một trang cụ thể.";
+"storage_website_clear_scope" = "Xóa dữ liệu trang web thông thường và bộ nhớ đệm mạng dùng chung. Với nội dung đa phương tiện của tiện ích, dùng «Bộ nhớ đệm tạm của tiện ích»; các cài đặt tiện ích được giữ lại.";
+
+"storage_quick_clear" = "Dọn nhanh";
+"storage_quick_clear_done" = "Đã xóa bộ nhớ đệm";
+
+"storage_website_cleanup_pending" = "Dữ liệu trang web vẫn đang được xóa. Bạn có thể quay lại và tiếp tục duyệt web. Vui lòng không bắt đầu dọn dẹp lần nữa.";
+
+"storage_auto_cleanup" = "Dọn dẹp tự động";
+
+"storage_auto_cleanup_desc" = "Thử tối đa một lần mỗi 24 giờ khi ứng dụng rảnh trong nền. Chỉ xóa tệp nhập, xuất và xem trước tạm thời quá 24 giờ không được sử dụng. Mỗi lượt kéo dài khoảng 1 giây hoặc kiểm tra 2000 mục, rồi dừng khi bạn trở lại ứng dụng. Bỏ qua khi đang phát, tải xuống, xuất, Chế độ nguồn điện thấp đang bật hoặc máy nóng rõ rệt. Dấu trang, bản tải xuống đã lưu, thông tin đăng nhập và dữ liệu trang web không bao giờ bị xóa tự động.";
+
+"restore_last_page_on_launch" = "Khôi phục trang gần nhất";
+"restore_last_page_on_launch_desc" = "Mở trang web gần nhất khi khởi động ứng dụng. Không khôi phục tab riêng tư.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Cử chỉ và phím tắt";
+"app_icon_shortcuts" = "Phím tắt biểu tượng ứng dụng";
+"settings_sync_backup" = "Đồng bộ và sao lưu";
+"icloud_bookmark_sync" = "Đồng bộ dấu trang iCloud";
+"manual_settings_backups" = "Sao lưu thủ công";
+"create_settings_backup" = "Tạo";
+"toolbar_settings" = "Thanh công cụ";
+"toolbar_section_home" = "Trang chủ";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Xóa bản sao lưu thủ công";
+"clear_manual_backups_message" = "Chỉ xóa bản sao lưu được tạo thủ công hoặc nhập vào. Các bản khôi phục tự động và cũ, cài đặt hiện tại và đồng bộ iCloud được giữ nguyên.";
+"recovery_settings_backups" = "Bản sao lưu tự động và trước đây";
+
+/* Settings hierarchy */
+"settings_personalization" = "Cá nhân hóa";
+"appearance_home_settings" = "Trang chủ & Hình nền";
+"settings_data" = "Dữ liệu";
+"about_feedback_settings" = "Giới thiệu và phản hồi";
+"browsing_startup_tabs" = "Khởi động và tab";
+"browsing_interface" = "Giao diện";
+"browsing_web_display" = "Trang web";
+"manual_backups_empty" = "Chưa có bản sao lưu thủ công";
+"browsing_display_settings_legacy" = "Hiển thị duyệt web";

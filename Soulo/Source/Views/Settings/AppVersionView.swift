@@ -46,7 +46,7 @@ struct AppVersionView: View {
                 }.accessibilityIdentifier("version.terms")
             }.tint(.primary)
         }
-        .navigationTitle(LanguageManager.shared.localizedString("settings_section_about_support"))
+        .navigationTitle(ToolText.text("about_feedback_settings"))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showFeedback) { FeedbackView() }
     }

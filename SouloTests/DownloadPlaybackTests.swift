@@ -764,9 +764,9 @@ final class DownloadPlaybackTests: XCTestCase {
     private func checkHLSFinalization(cancel: Bool) async throws {
         let fixture = try encryptedPackage()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
-        // AVFoundation reads the first manifest. Hold the app's post-download
-        // verification request so cancellation and background events can race it.
-        let server = try DownloadPlaybackHTTPFixture(files: fixture.files, holdAfterRequestCount: ["/media.m3u8": 3])
+        // Segment-normalization probing adds a manifest read before the native
+        // download. Hold the later offline verification, not its initial load.
+        let server = try DownloadPlaybackHTTPFixture(files: fixture.files, holdAfterRequestCount: ["/media.m3u8": 4])
         let origin = try await server.start(); defer { server.stop() }
         let resource = WebMediaResource(kind: .video, url: origin.appendingPathComponent("media.m3u8"),
                                        title: "Encrypted offline download", posterURL: nil, delivery: .hls)
@@ -786,7 +786,7 @@ final class DownloadPlaybackTests: XCTestCase {
             }
         }
         try await waitFor("HLS did not reach its offline material preparation") {
-            service.hasPendingHLSFinalization && server.receivedRequests.filter { $0.path == "/media.m3u8" }.count >= 3
+            service.hasPendingHLSFinalization && server.receivedRequests.filter { $0.path == "/media.m3u8" }.count >= 4
         }
         let item = try XCTUnwrap(manager.activeDownload(for: resource.url))
         let package = try OfflineHLSReference.packageURL(for: item.localURL)

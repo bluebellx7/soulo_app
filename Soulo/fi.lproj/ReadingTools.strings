@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Sijainti %d";
 "home_toolbar_reset" = "Piilota kaikki";
 "home_toolbar_default_hint" = "Etusivun pikakuvakkeet ovat oletuksena piilossa.";
+"home_toolbar_position" = "Sijainti";
+"home_toolbar_buttons" = "Painikkeet";
+"home_toolbar_tiles" = "Erilliset";
+"home_toolbar_capsule" = "Kapseli";
+"home_toolbar_icons" = "Vain kuvakkeet";
+"home_toolbar_bottom" = "Alhaalla";
+"home_toolbar_belowSearch" = "Haun alla";
+"home_toolbar_free" = "Vapaa sijoittelu";
+"home_toolbar_leading" = "Tasaa alkuun";
+"home_toolbar_center" = "Keskitä";
+"home_toolbar_trailing" = "Tasaa loppuun";
+"home_toolbar_drag_position" = "Vedä työkalupalkki haluamaasi paikkaan.";
+"home_toolbar_drag_buttons" = "Vaihda painike napauttamalla. Järjestä vetämällä.";
 "home_toolbar_search" = "Etsi sivu";
 "group_default_search" = "Oletushaku";
 "group_search_settings" = "Ryhmäasetukset";
 "group_engine_name" = "Hakukoneen nimi";
-"group_search_url" = "Hae URL komennolla %@";
-"group_default_search_hint" = "Käytetään, kun tässä ryhmässä ei ole käytössä olevia alustoja. Sisällytä %@ hakutermien URL-kenttään. Vammaiset alustat pysyvät poissa käytöstä.";
-"group_search_url_invalid" = "Anna nimi ja kelvollinen HTTP tai HTTPS-haku URL, joka sisältää %@.";
+"group_search_url" = "Haun tai kotisivun URL (hakusanat: %@)";
+"group_default_search_hint" = "Käytetään, kun ryhmässä ei ole käytössä olevia alustoja. Voit valita minkä tahansa ryhmän alustan. %@ korvataan hakusanoilla; ilman paikkamerkkiä sivu avataan suoraan. Käytöstä poistetut alustat pysyvät poissa käytöstä.";
+"group_search_url_invalid" = "Anna nimi ja kelvollinen HTTP- tai HTTPS-osoite. Hakumalleissa voi käyttää merkintää %@.";
 "batch_import_new_group" = "Tuotu ryhmä";
 "image_resources" = "Resurssit";
 "screen_keep_awake" = "Pidä näyttö päällä";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Tätä muotoa ei voi lähettää suoraan järjestelmäsoittimen kanssa. Avaa Control Center, valitse Näytön peilaus ja valitse sitten TV tai Mac.";
 "userscript_check_updates" = "Tarkista päivitykset";
 "userscript_update_no_url" = "Päivitysosoitetta ei ole annettu. Tuo uudempi komentosarjatiedosto päivittääksesi sen.";
-"userscript_update_manual_hint" = "Tarkastukset suoritetaan vain pyydettäessä. Tarkista uusi versio ennen päivittämistä. Sisäänrakennetut skriptit päivitetään sovelluksen kanssa.";
+"userscript_update_manual_hint" = "Asennettujen avaaminen tarkistaa enintään 4 skriptiä, kunkin kerran 24 tunnissa. Tarkistukset taukoavat yksityisessä selauksessa, virransäästössä tai kuumana. Päivitykset on tarkistettava.";
 "userscript_update_latest" = "Ajantasainen";
 "userscript_update_invalid" = "Päivitys on virheellinen, se kuuluu eri skriptiin tai sen versio on epäjohdonmukainen.";
 "userscript_update_changed" = "Tämä skripti muuttui tarkistuksen jälkeen. Tarkista päivitykset uudelleen.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Huurrelasi";
 "wallpaper_blur_amount" = "Sumennuksen voimakkuus";
 
-"auto_hide_platform_bar_hint" = "Alustapalkki piilotetaan vasta, kun napautat verkkosivun sisältöä. Automaattiset uudelleenohjaukset ja vieritys eivät piilota sitä. Palaa hakutuloksiin tai aloita uusi haku näyttääksesi palkin uudelleen.";
+"auto_hide_platform_bar_hint" = "Kun toiminto on käytössä, palkki piilotetaan vasta napautettuasi verkkosivun sisältöä ja vain, jos sivun verkkotunnus ei vastaa mitään nykyisen palkin alustaa. Osuma pitää palkin näkyvissä tai palauttaa sen. Vieritys ja automaattiset uudelleenohjaukset eivät piilota palkkia.";
 
 "ad_subscription_add" = "Lisää suodatinlista";
 "ad_subscription_name" = "Nimi";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Hallitse värinää ja käyttöliittymän ääniä koko sovelluksessa. Ei vaikuta verkkosivujen, videoiden tai äänen toistoon.";
 
 "home_display_settings" = "Aloitussivun näyttö";
-"browsing_display_settings" = "Selausnäkymä";
+"browsing_display_settings" = "Selausasetukset";
 
 "web_video_download" = "Verkkovideoiden lataus";
 "web_video_download_description" = "Näytä videon latauspainikkeet verkkosivuilla, jaksolistoissa ja soittimissa. Toisto ja nykyiset lataukset eivät muutu.";
@@ -563,3 +576,45 @@
 "storage_cleanup_reading_desc" = "Tyhjentää offline-artikkelit, kirjaston ja lukemisen edistymisen.";
 
 "storage_cleanup_offline_desc" = "Poistaa offline-videoiden jäänteet, joilla ei ole latausmerkintöjä.";
+
+"storage_website_shared" = "Jaetut ja kohdistamattomat tiedot";
+"storage_website_shared_desc" = "Sisältää jaetut verkkovälimuistit, evästeet ja tiedot, joita ei voi kohdistaa yksittäiseen sivustoon.";
+"storage_website_clear_scope" = "Tyhjentää tavallisten sivustojen tiedot ja jaetut verkkovälimuistit. Käytä laajennusten mediasisällöille toimintoa ”Laajennusten tilapäinen välimuisti”; laajennusten asetukset säilyvät.";
+
+"storage_quick_clear" = "Pikatyhjennys";
+"storage_quick_clear_done" = "Välimuisti tyhjennetty";
+
+"storage_website_cleanup_pending" = "Verkkosivustojen tietoja poistetaan yhä. Voit palata ja jatkaa selaamista. Älä aloita uutta siivousta.";
+
+"storage_auto_cleanup" = "Automaattinen siivous";
+
+"storage_auto_cleanup_desc" = "Yrittää enintään kerran 24 tunnissa, kun appi on taustalla jouten. Poistaa vain yli 24 tuntia vanhat, käyttämättömät tuonnin, viennin ja esikatselun väliaikaistiedostot. Kierros kestää noin sekunnin tai tarkistaa 2000 kohdetta ja pysähtyy appiin palattaessa. Ohitetaan toiston, latausten, viennin, käytössä olevan alhaisen virran tilan tai selvän kuumenemisen aikana. Kirjanmerkkejä, tallennettuja latauksia, kirjautumisia ja sivustotietoja ei poisteta automaattisesti.";
+
+"restore_last_page_on_launch" = "Palauta viimeisin sivu";
+"restore_last_page_on_launch_desc" = "Avaa viimeisin verkkosivu sovelluksen käynnistyessä. Yksityisiä välilehtiä ei palauteta.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Eleet ja pikatoiminnot";
+"app_icon_shortcuts" = "Appikuvakkeen pikatoiminnot";
+"settings_sync_backup" = "Synkronointi ja varmuuskopiot";
+"icloud_bookmark_sync" = "iCloud-kirjanmerkkisynkronointi";
+"manual_settings_backups" = "Manuaaliset kopiot";
+"create_settings_backup" = "Luo";
+"toolbar_settings" = "Työkalupalkit";
+"toolbar_section_home" = "Koti";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Poista manuaaliset varmuuskopiot";
+"clear_manual_backups_message" = "Poistaa vain käsin luodut tai tuodut varmuuskopiot. Automaattiset ja aiemmat palautuskopiot, nykyiset asetukset ja iCloud-synkronointi säilyvät.";
+"recovery_settings_backups" = "Automaattiset ja aiemmat kopiot";
+
+/* Settings hierarchy */
+"settings_personalization" = "Mukauttaminen";
+"appearance_home_settings" = "Koti ja taustakuva";
+"settings_data" = "Tiedot";
+"about_feedback_settings" = "Tietoja ja palaute";
+"browsing_startup_tabs" = "Käynnistys ja välilehdet";
+"browsing_interface" = "Käyttöliittymä";
+"browsing_web_display" = "Verkkosivut";
+"manual_backups_empty" = "Ei vielä manuaalisia kopioita";
+"browsing_display_settings_legacy" = "Selausnäkymä";

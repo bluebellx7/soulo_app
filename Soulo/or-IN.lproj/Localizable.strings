@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "ସମର୍ଥିତ";
 "userscript_docs_supported_desc" = "କୋର ମେଳକ, ଡକ୍ୟୁମେଣ୍ଟ-ଷ୍ଟାର୍ଟ / ଏଣ୍ଡ, ଶ yles ଳୀ / ଉପାଦାନ, ଏକକ ଏବଂ ବଲ୍କ ଷ୍ଟୋରେଜ୍, ସ୍ଥାନୀୟ ମୂଲ୍ୟ ଶ୍ରୋତା, କ୍ଲିପବୋର୍ଡ, ମେନୁ, ଇନ୍-ପେଜ୍ ବିଜ୍ଞପ୍ତି, ଟ୍ୟାବ୍, ଡାଉନଲୋଡ୍, ଟ୍ୟାବ୍ ଡାଟା, କୁକିଜ୍, ଉତ୍ସ, URL ପରିବର୍ତ୍ତନ, ଏବଂ ଅନୁମତି-ସ୍କୋପ୍ ଅନୁରୋଧ";
 "userscript_docs_partial_title" = "ଆଂଶିକ ସମର୍ଥିତ";
-"userscript_docs_partial_desc" = "ନେଟୱର୍କ ଅନୁରୋଧ ଅପଲୋଡ୍ / ପ୍ରଗତି ଏବଂ କୁକି ପରିବହନକୁ ଛାଡିଦିଅ | ବିଜ୍ଞପ୍ତିଗୁଡ଼ିକ ପୃଷ୍ଠାରେ ଅଛି, ଉତ୍ସ API ଗୁଡିକ ଅସନ୍ତୁଳିତ, ଏବଂ ମୂଲ୍ୟ ପରିବର୍ତ୍ତନ ଶ୍ରୋତାମାନେ ସାମ୍ପ୍ରତିକ ପୃଷ୍ଠା ଦ୍ୱାରା କରାଯାଇଥିବା ପରିବର୍ତ୍ତନଗୁଡିକ ରିପୋର୍ଟ କରନ୍ତି | ଅଦ୍ୟତନ ଯାଞ୍ଚଗୁଡ଼ିକ ମାନୁଆଲ୍ ଅଟେ";
+"userscript_docs_partial_desc" = "ବିଜ୍ଞପ୍ତି ପୃଷ୍ଠାରେ ଦେଖାଯାଏ; ରିସୋର୍ସ API Promise ଫେରାଏ। cookie ପାଇଁ GM_cookie ଅନୁମତି ଦରକାର; କୁକି ସ୍ୱୟଂଚାଳିତ ଭାବେ ପଠାଯାଏ ନାହିଁ।";
 "userscript_docs_unsupported_title" = "ସମ୍ପ୍ରତି ସମର୍ଥିତ ନୁହେଁ";
-"userscript_docs_unsupported_desc" = "GM_webRequest ବାଧା, GM_audio, ସ୍ୟାଣ୍ଡବକ୍ସ / ରନ୍-ଇନ୍ ବିଚ୍ଛିନ୍ନତା, ସ୍ୱୟଂଚାଳିତ ଅଦ୍ୟତନ ଯାଞ୍ଚ, ଏବଂ ସଠିକ୍ ଡେସ୍କଟପ୍-ଆଚରଣ ଯାହା WKWebView ପ୍ରଦାନ କରିପାରିବ ନାହିଁ";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in ପୃଥକୀକରଣ ଏବଂ WKWebView ରେ ନଥିବା ଡେସ୍କଟପ୍ ସୁବିଧା।";
 "userscript_docs_metadata_title" = "ମେଟାଡାଟା";
 "userscript_docs_metadata_identity" = "ସ୍ଥାପନ ପୂର୍ବରୁ ଏବଂ ସ୍କ୍ରିପ୍ଟ ବିବରଣୀରେ ଦର୍ଶାଯାଇଥିବା ମାନବ-ପଠନୀୟ ସ୍କ୍ରିପ୍ଟ ନାମ ଏବଂ ବ al କଳ୍ପିକ ବର୍ଣ୍ଣନା";
 "userscript_docs_metadata_version" = "ଯେତେବେଳେ ସ୍ଥିର ହୋଇଥିବା ସ୍କ୍ରିପ୍ଟ ପରିବର୍ତ୍ତନ ହୁଏ, ଏକ ସ୍ଥିର, ଅନନ୍ୟ ନାମ ସ୍ଥାନ ଏବଂ ସଂସ୍କରଣକୁ ବୃଦ୍ଧି କର";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "ଏହି ସ୍କ୍ରିପ୍ଟ ପାଇଁ ଗୋଟିଏ ସ୍ଥାୟୀ ମୂଲ୍ୟ ବିଲୋପ କରେ";
 "userscript_docs_api_list" = "ଏହି ସ୍କ୍ରିପ୍ଟର ମାଲିକାନା ଥିବା ସମସ୍ତ ସ୍ଥାୟୀ ଷ୍ଟୋରେଜ୍ କିଗୁଡ଼ିକୁ ଫେରସ୍ତ କରେ";
 "userscript_docs_api_bulk" = "ଗୋଟିଏ କାର୍ଯ୍ୟରେ ଏକାଧିକ JSON ମୂଲ୍ୟ ପ Read ଼େ, ଲେଖେ, କିମ୍ବା ଡିଲିଟ କରେ; ଲେଖାଗୁଡ଼ିକ ଦେଶୀ ଷ୍ଟୋର୍ ଦ୍ୱାରା ପରମାଣୁ ଭାବରେ ବ valid ଧ ହୋଇଛି";
-"userscript_docs_api_listener" = "ସାମ୍ପ୍ରତିକ ୱେବପୃଷ୍ଠାରେ ସ୍କ୍ରିପ୍ଟ ଦ୍ୱାରା କରାଯାଇଥିବା ଷ୍ଟୋରେଜ୍ ପରିବର୍ତ୍ତନଗୁଡ଼ିକୁ ଦେଖ | କ୍ରସ୍-ଟ୍ୟାବ୍ ରିମୋଟ୍ ବିଜ୍ଞପ୍ତିଗୁଡିକ ନିର୍ଗତ ହୁଏ ନାହିଁ";
+"userscript_docs_api_listener" = "ସ୍ଥାନୀୟ ଏବଂ ଅନ୍ୟ ଟ୍ୟାବ୍‌ର ସଂରକ୍ଷଣ ପରିବର୍ତ୍ତନ ଦେଖେ। ଅନ୍ୟ ଟ୍ୟାବ୍‌ର ପରିବର୍ତ୍ତନରେ remote=true ରହେ।";
 "userscript_docs_api_element" = "ଡକ୍ୟୁମେଣ୍ଟ୍-ଷ୍ଟାର୍ଟ ସମୟରେ ସୁରକ୍ଷିତ ଭାବରେ ଅନ୍ତର୍ଭୂକ୍ତ କରି ଗୁଣବତ୍ତା ସହିତ ଏକ ଉପାଦାନ ସୃଷ୍ଟି ଏବଂ ଯୋଡେ";
 "userscript_docs_api_clipboard" = "Soulo ର ଦେଶୀ ବ୍ରିଜ୍ ମାଧ୍ୟମରେ ସିଷ୍ଟମ୍ କ୍ଲିପବୋର୍ଡରେ ପାଠ୍ୟ କପି କରେ";
 "userscript_docs_extended_title" = "ମେନୁ, ଟ୍ୟାବ୍, ଫାଇଲ୍, ଏବଂ ପୃଷ୍ଠା ଏକୀକରଣ";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "ନେଟୱର୍କ ଅନୁରୋଧ";
 "userscript_docs_network_legacy" = "ଏକ ସୁବିଧାଜନକ ଅନୁରୋଧ ଆରମ୍ଭ କରେ ଏବଂ ଏକ ଗର୍ଭପାତ ହ୍ୟାଣ୍ଡେଲ ଫେରସ୍ତ କରେ | ମେଳ ଖାଉଥିବା ଅନୁଦାନ ଏବଂ @ ସଂଯୋଗ ହୋଷ୍ଟ ଘୋଷଣା କରନ୍ତୁ";
 "userscript_docs_network_modern" = "ସମାନ ବିବରଣୀ ବସ୍ତୁ ଏବଂ କଲବ୍ୟାକ୍ ଆଚରଣ ସହିତ ସୁବିଧା ଅନୁରୋଧ API ର ଆଧୁନିକ ଛଦ୍ମନାମ";
-"userscript_docs_network_details" = "Url, ପଦ୍ଧତି, ହେଡର୍ସ, ଡାଟା, ଟାଇମଆଉଟ୍, ରେସପନ୍ସ ଟାଇପ୍, ଅନଲୋଡ୍ ଷ୍ଟାର୍ଟ, ଅନ୍ଷ୍ଟେଟେଚେଞ୍ଜ୍, ଅନଲୋଡ୍, ଅନରୋର ଏବଂ ଅନଲୋଡେଣ୍ଡକୁ ସମର୍ଥନ କରେ";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Json, blob, arraybuffer ବ୍ୟବହାର କରନ୍ତୁ, କିମ୍ବା ପାଠ ପାଇଁ ଖାଲି ଛାଡନ୍ତୁ | ପ୍ରତିକ୍ରିୟାଗୁଡ଼ିକରେ ସ୍ଥିତି, ଫାଇନାଲ୍ ୟୁର୍, ହେଡର୍ସ, ରେସପନ୍ସ ଟେକ୍ସଟ୍ ଏବଂ ପ୍ରତିକ୍ରିୟା ଅନ୍ତର୍ଭୁକ୍ତ";
 "userscript_docs_network_connect" = "ପେଜ୍ ହୋଷ୍ଟ ପାଇଁ ଏହା ବ୍ୟବହାର କରନ୍ତୁ, ଏହା ପାଇଁ ଏକ ଡୋମେନ୍ ଏବଂ ଏହାର ସବଡୋମେନ୍, ୱାଇଲ୍ଡକାର୍ଡ ଡୋମେନ୍, କିମ୍ବା * ଯେତେବେଳେ ପ୍ରକୃତରେ ଆବଶ୍ୟକ ହୁଏ";
 "userscript_docs_limits_title" = "ଆଚରଣ ଏବଂ ସୀମା";
 "userscript_docs_limits_web" = "ଷ୍ଟାଣ୍ଡାର୍ଡ DOM, ଇଭେଣ୍ଟସ୍, MutationObserver, fetch, timers, ଏବଂ ଅନ୍ୟାନ୍ୟ WKWebView API ଗୁଡିକ ଉପଲବ୍ଧ | ସାଧାରଣ ଫେଚ୍ ତଥାପି CORS ଅନୁସରଣ କରେ";
 "userscript_docs_limits_storage" = "ଗଚ୍ଛିତ ମୂଲ୍ୟଗୁଡ଼ିକ JSON- କ୍ରମିକୀକରଣ ହେବା ଜରୁରୀ: ମୂଲ୍ୟ ପ୍ରତି 256 KB ଏବଂ ସ୍କ୍ରିପ୍ଟ ପ୍ରତି ମୋଟ 1 MB ପର୍ଯ୍ୟନ୍ତ";
-"userscript_docs_limits_network" = "ସୁବିଧାଜନକ ପ୍ରତିକ୍ରିୟା 20 MB ରେ ସୀମିତ, ସମୟ ସମାପ୍ତି 1-60 ସେକେଣ୍ଡ ପର୍ଯ୍ୟନ୍ତ ବନ୍ଦ ହୋଇଯାଏ, ଏବଂ କୁକି / ହୋଷ୍ଟ / ମୂଳ ହେଡର୍ ଗ୍ରହଣ କରାଯାଏ ନାହିଁ";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "ବ୍ୟକ୍ତିଗତ ବ୍ରାଉଜିଂରେ UserScript ଗୁଡିକ ଚାଲୁ ନାହିଁ";
 "userscript_docs_limits_require" = "HTTPS @require ଫାଇଲଗୁଡ଼ିକ ସଂସ୍ଥାପନ କିମ୍ବା ସଞ୍ଚୟ ସମୟରେ ଡାଉନଲୋଡ୍ ଓ କ୍ୟାଶ୍ ହୁଏ, ପରେ ସ୍କ୍ରିପ୍ଟ ପୂର୍ବରୁ କ୍ରମରେ ଚାଲେ।";
 "userscript_docs_template_title" = "ସର୍ବନିମ୍ନ ଟେମ୍ପଲେଟ୍";

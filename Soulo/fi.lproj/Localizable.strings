@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Tuettu";
 "userscript_docs_supported_desc" = "Ydinvastaavuus, asiakirjan alku/loppu, tyylit/elementit, yksittäinen ja joukkotallennus, paikallisten arvojen kuuntelijat, leikepöytä, valikot, sivun sisäiset ilmoitukset, välilehdet, lataukset, välilehtien tiedot, evästeet, resurssit, URL-osoitteen muutokset ja käyttöoikeuslaajuiset pyynnöt.";
 "userscript_docs_partial_title" = "Osittain tuettu";
-"userscript_docs_partial_desc" = "Verkkopyynnöt jättävät pois latauksen/edistymisen ja evästeiden kuljetuksen. Ilmoitukset ovat sivulla, resurssien sovellusliittymät ovat asynkronisia, ja arvonmuutosseuraajat raportoivat nykyisen sivun tekemät muutokset. Päivitystarkistukset ovat manuaalisia.";
+"userscript_docs_partial_desc" = "Ilmoitukset näkyvät sivulla; resurssirajapinnat palauttavat Promise-arvon. cookie vaatii GM_cookie-oikeuden; evästeitä ei lähetetä automaattisesti.";
 "userscript_docs_unsupported_title" = "Ei tällä hetkellä tuettu";
-"userscript_docs_unsupported_desc" = "GM_webRequest sieppaus, GM_audio, sandbox/run-in-eristys, automaattiset päivitystarkistukset ja täsmälliset vain työpöydän toiminnot, joita WKWebView ei pysty tarjoamaan.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in-eristys ja työpöytätoiminnot, joita WKWebView ei tarjoa.";
 "userscript_docs_metadata_title" = "Metatiedot";
 "userscript_docs_metadata_identity" = "Ihmisten luettavissa oleva komentosarjan nimi ja valinnainen kuvaus näkyvät ennen asennusta ja komentosarjan tiedoissa.";
 "userscript_docs_metadata_version" = "Käytä vakaata, ainutlaatuista nimiavaruutta ja lisää versiota aina, kun niputettu komentosarja muuttuu.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Poistaa yhden pysyvän arvon tästä skriptistä.";
 "userscript_docs_api_list" = "Palauttaa kaikki tämän skriptin omistamat pysyvät tallennusavaimet.";
 "userscript_docs_api_bulk" = "Lukee, kirjoittaa tai poistaa useita JSON-arvoja yhdellä toiminnolla; kirjoitukset vahvistetaan atomisäilön toimesta.";
-"userscript_docs_api_listener" = "Tarkkailee skriptin tekemiä tallennusmuutoksia nykyisellä verkkosivulla. Välilehtien välisiä etäilmoituksia ei lähetetä.";
+"userscript_docs_api_listener" = "Seuraa paikallisia ja välilehtien välisiä tallennusmuutoksia. Muilla välilehdillä tehdyissä muutoksissa remote=true.";
 "userscript_docs_api_element" = "Luo ja liittää elementin attribuuteineen, myös turvallisesti asiakirjan käynnistyksen aikana.";
 "userscript_docs_api_clipboard" = "Kopioi tekstin järjestelmän leikepöydälle Soulo alkuperäisen sillan kautta.";
 "userscript_docs_extended_title" = "Valikot, välilehdet, tiedostot ja sivuintegraatio";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Verkkopyynnöt";
 "userscript_docs_network_legacy" = "Aloittaa etuoikeutetun pyynnön ja palauttaa keskeytyskahvan. Ilmoita vastaava myöntäminen ja @connect hosts.";
 "userscript_docs_network_modern" = "Etuoikeutetun pyynnön API:n nykyaikainen alias, jolla on sama tietoobjekti ja takaisinsoitto.";
-"userscript_docs_network_details" = "Tukee URL-osoitetta, menetelmää, otsikoita, tietoja, aikakatkaisua, vastaustyyppiä, onloadstart-, onreadystatechange-, onload-, onrror- ja onloadend-tunnisteita.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Käytä json, blob, arraybuffer tai jätä tyhjäksi tekstiä varten. Vastaukset sisältävät status, finalUrl, otsikot, vastausteksti ja vastaus.";
 "userscript_docs_network_connect" = "Käytä itse sivun isäntänä, verkkotunnusta sille ja sen aliverkkotunnuksille, jokerimerkkiverkkotunnusta tai * vain silloin, kun se on todella tarpeen.";
 "userscript_docs_limits_title" = "Käyttäytyminen ja rajat";
 "userscript_docs_limits_web" = "Vakio DOM, tapahtumat, MutationObserver, haku, ajastimet ja muut WKWebView-sovellusliittymät ovat saatavilla. Normaali haku seuraa edelleen CORS:ia.";
 "userscript_docs_limits_storage" = "Tallennettujen arvojen on oltava JSON-sarjoitettavissa: enintään 256 kt arvoa kohden ja yhteensä 1 megatavu skriptiä kohden.";
-"userscript_docs_limits_network" = "Etuoikeutettujen vastausten enimmäiskoko on 20 megatavua, aikakatkaisu on rajoitettu 1–60 sekuntiin, eikä eväste-/isäntä-/alkuperä-otsikoita hyväksytä.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts eivät toimi yksityisessä selauksessa.";
 "userscript_docs_limits_require" = "HTTPS-osoitteiden @require-tiedostot ladataan ja tallennetaan välimuistiin asennettaessa tai tallennettaessa ja suoritetaan järjestyksessä ennen komentosarjaa.";
 "userscript_docs_template_title" = "Minimaalinen malli";

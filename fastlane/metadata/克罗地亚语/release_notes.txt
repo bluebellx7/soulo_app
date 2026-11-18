@@ -1,1 +1,4 @@
-Poboljšani su prozori na iPadu, glasovni unos, lokalni sažeci i pristupačnost. Poboljšani su izvoz medija u pozadini, Prečaci i kompatibilnost proširenja. Neke značajke ovise o uređaju, verziji sustava i jeziku.
+• Postavke su preuređene. Pregledajte alatnu traku početne stranice, promijenite stil, presložite gumbe i povucite traku na željeno mjesto.
+• Ako uključite vraćanje pri ponovnom pokretanju, Soulo se vraća na početnu ili posljednju pregledanu stranicu.
+• Poboljšan je kontrast izbornika preglednika. Skrivenu alatnu traku možete ponovno prikazati putem izbornika Više.
+• Poboljšani su mrežni zahtjevi i provjera ažuriranja korisničkih skripti.

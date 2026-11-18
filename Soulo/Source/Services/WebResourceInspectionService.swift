@@ -273,7 +273,7 @@ enum WebResourceInspectionService {
         // player a short opportunity to publish the response for the new URL;
         // otherwise the document-level globals can still describe the prior video.
         for attempt in 0..<12 {
-            let state = try await webView.evaluateJavaScript(#"""
+            let state = try await webView.evaluateCompatibleJavaScript(#"""
             (() => {
                 if (typeof window.__souloResolveCurrentYouTubePlayerResponse !== 'function') return -1;
                 if (typeof window.__souloCurrentYouTubeVideoID === 'function'
@@ -284,7 +284,7 @@ enum WebResourceInspectionService {
             if state?.intValue != 0 { break }
             if attempt < 11 { try await Task.sleep(for: .milliseconds(100)) }
         }
-        let value = try await webView.evaluateJavaScript(extractionScript)
+        let value = try await webView.evaluateCompatibleJavaScript(extractionScript)
         guard let dictionary = value as? [String: Any] else {
             throw WebResourceInspectionError.invalidResult
         }
@@ -1215,7 +1215,7 @@ enum WebResourceMediaService {
             return image
         }
 
-        guard let rectValue = try? await webView.evaluateJavaScript(
+        guard let rectValue = try? await webView.evaluateCompatibleJavaScript(
             """
             (() => {
                 const video = document.querySelector('video');

@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Pozicija %d";
 "home_toolbar_reset" = "Sakrij sve";
 "home_toolbar_default_hint" = "Prečaci na početnoj stranici su prema zadanim postavkama skriveni.";
+"home_toolbar_position" = "Položaj";
+"home_toolbar_buttons" = "Gumbi";
+"home_toolbar_tiles" = "Odvojeni";
+"home_toolbar_capsule" = "Kapsula";
+"home_toolbar_icons" = "Samo ikone";
+"home_toolbar_bottom" = "Pri dnu";
+"home_toolbar_belowSearch" = "Ispod pretraživanja";
+"home_toolbar_free" = "Slobodan položaj";
+"home_toolbar_leading" = "Poravnaj na početak";
+"home_toolbar_center" = "Centriraj";
+"home_toolbar_trailing" = "Poravnaj na kraj";
+"home_toolbar_drag_position" = "Povuci alatnu traku na željeno mjesto.";
+"home_toolbar_drag_buttons" = "Dodirni za promjenu gumba. Povuci za promjenu redoslijeda.";
 "home_toolbar_search" = "Pronađite stranicu";
 "group_default_search" = "Zadana pretraga";
 "group_search_settings" = "Postavke grupe";
 "group_engine_name" = "Naziv tražilice";
-"group_search_url" = "Traži URL s %@";
-"group_default_search_hint" = "Koristi se kada ova grupa nema omogućene platforme. Uključite %@ u URL za pojmove za pretraživanje. Onesposobljene platforme ostaju onemogućene.";
-"group_search_url_invalid" = "Unesite ime i valjanu HTTP ili HTTPS pretragu URL koja sadrži %@.";
+"group_search_url" = "URL pretraživanja ili početne stranice (pojmovi: %@)";
+"group_default_search_hint" = "Koristi se kada ova grupa nema uključenih platformi. Možete odabrati bilo koju platformu u grupi. %@ zamjenjuje se pojmovima pretraživanja; bez rezerviranog mjesta stranica se otvara izravno. Isključene platforme ostaju isključene.";
+"group_search_url_invalid" = "Unesite naziv i valjan HTTP ili HTTPS URL. Predlošci pretraživanja mogu koristiti %@.";
 "batch_import_new_group" = "Uvezena grupa";
 "image_resources" = "Resursi";
 "screen_keep_awake" = "Drži zaslon uključenim";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Ovaj se format ne može poslati izravno sa playerom sustava. Otvorite Control Center, odaberite Screen Mirroring, zatim odaberite svoj TV ili Mac.";
 "userscript_check_updates" = "Provjerite ažuriranja";
 "userscript_update_no_url" = "Nije navedena adresa ažuriranja. Uvezite noviju datoteku skripte da biste je ažurirali.";
-"userscript_update_manual_hint" = "Provjere se pokreću samo na zahtjev. Pregledajte novu verziju prije ažuriranja. Ugrađene skripte ažuriraju se s aplikacijom.";
+"userscript_update_manual_hint" = "Otvaranje instaliranih provjerava do 4 skripte po posjetu, svaku jednom u 24 sata. Pauzira u privatnom načinu, štednji energije ili pri visokoj temperaturi. Ažuriranja treba pregledati.";
 "userscript_update_latest" = "Ažurno";
 "userscript_update_invalid" = "Ažuriranje je nevažeće, pripada drugoj skripti ili ima nedosljednu verziju.";
 "userscript_update_changed" = "Ova se skripta promijenila nakon provjere. Ponovo provjeri ima li ažuriranja.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Mutno staklo";
 "wallpaper_blur_amount" = "Jačina zamućenja";
 
-"auto_hide_platform_bar_hint" = "Traka platformi skriva se tek kada dodirnete sadržaj stranice. Automatska preusmjeravanja i pomicanje ne skrivaju je. Vratite se na rezultate ili započnite novo pretraživanje za ponovni prikaz.";
+"auto_hide_platform_bar_hint" = "Kad je uključeno, traka se skriva tek nakon dodira sadržaja stranice i samo ako domena stranice ne odgovara nijednoj platformi na trenutačnoj traci. Ako odgovara, traka ostaje vidljiva ili se ponovno prikazuje. Pomicanje i automatska preusmjeravanja ne skrivaju traku.";
 
 "ad_subscription_add" = "Dodaj popis filtara";
 "ad_subscription_name" = "Naziv";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Upravljajte vibracijom i zvukovima sučelja u cijeloj aplikaciji. Ne utječe na reprodukciju web-stranica, videozapisa i zvuka.";
 
 "home_display_settings" = "Prikaz početne stranice";
-"browsing_display_settings" = "Prikaz pregledavanja";
+"browsing_display_settings" = "Postavke pregledavanja";
 
 "web_video_download" = "Preuzimanje web-videa";
 "web_video_download_description" = "Prikaži kontrole za preuzimanje videa na web-stranicama, popisima epizoda i reproduktorima. Reprodukcija i postojeća preuzimanja ostaju nepromijenjeni.";
@@ -563,3 +576,45 @@
 "storage_cleanup_reading_desc" = "Čisti izvanmrežne članke, knjižnicu i napredak čitanja.";
 
 "storage_cleanup_offline_desc" = "Briše ostatke izvanmrežnih videozapisa bez zapisa preuzimanja.";
+
+"storage_website_shared" = "Dijeljeni i nedodijeljeni podaci";
+"storage_website_shared_desc" = "Uključuje dijeljenu mrežnu predmemoriju, kolačiće i podatke koji se ne mogu pripisati jednoj stranici.";
+"storage_website_clear_scope" = "Briše podatke običnih web-stranica i dijeljenu mrežnu predmemoriju. Za medije proširenja upotrijebite „Privremena predmemorija proširenja”; postavke proširenja ostaju sačuvane.";
+
+"storage_quick_clear" = "Brzo čišćenje";
+"storage_quick_clear_done" = "Predmemorija obrisana";
+
+"storage_website_cleanup_pending" = "Podaci web-stranica još se brišu. Možete se vratiti i nastaviti pregledavati. Nemojte pokretati novo čišćenje.";
+
+"storage_auto_cleanup" = "Automatsko čišćenje";
+
+"storage_auto_cleanup_desc" = "Pokušava najviše jednom svaka 24 sata kada aplikacija miruje u pozadini. Uklanja samo nekorištene privremene datoteke uvoza, izvoza i pregleda starije od 24 sata. Svaki prolaz traje oko 1 sekunde ili provjerava 2000 stavki, a prestaje povratkom u aplikaciju. Preskače se tijekom reprodukcije, preuzimanja ili izvoza te uz uključen način rada niske potrošnje ili primjetno zagrijavanje. Oznake, spremljena preuzimanja, prijave i podaci web-mjesta ne brišu se automatski.";
+
+"restore_last_page_on_launch" = "Vrati posljednju stranicu";
+"restore_last_page_on_launch_desc" = "Otvori posljednju web-stranicu pri pokretanju aplikacije. Privatne kartice ne vraćaju se.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Geste i prečaci";
+"app_icon_shortcuts" = "Prečaci ikone aplikacije";
+"settings_sync_backup" = "Sinkronizacija i kopije";
+"icloud_bookmark_sync" = "iCloud sinkronizacija oznaka";
+"manual_settings_backups" = "Ručne kopije";
+"create_settings_backup" = "Izradi";
+"toolbar_settings" = "Alatne trake";
+"toolbar_section_home" = "Početna";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Izbriši ručne kopije";
+"clear_manual_backups_message" = "Briše samo ručno izrađene ili uvezene kopije. Automatske i starije kopije za oporavak, trenutačne postavke i iCloud sinkronizacija ostaju sačuvani.";
+"recovery_settings_backups" = "Automatske i prethodne kopije";
+
+/* Settings hierarchy */
+"settings_personalization" = "Prilagodba";
+"appearance_home_settings" = "Početna i pozadina";
+"settings_data" = "Podaci";
+"about_feedback_settings" = "Informacije i povratne informacije";
+"browsing_startup_tabs" = "Pokretanje i kartice";
+"browsing_interface" = "Sučelje";
+"browsing_web_display" = "Web-stranice";
+"manual_backups_empty" = "Još nema ručnih kopija";
+"browsing_display_settings_legacy" = "Prikaz pregledavanja";

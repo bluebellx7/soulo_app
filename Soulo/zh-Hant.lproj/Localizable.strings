@@ -174,7 +174,7 @@
 "enter_fullscreen" = "全螢幕";
 "exit_fullscreen" = "退出全螢幕";
 "fullscreen_exit_hint" = "輕點展開，下拉退出";
-"restore_browser_toolbar" = "恢復工具列";
+"restore_browser_toolbar" = "顯示工具列";
 "floating_more_detach" = "退出吸附";
 "floating_more_snap" = "吸附到螢幕邊緣";
 "more_navigation" = "導覽";
@@ -671,9 +671,9 @@
 "userscript_docs_supported_title" = "支援";
 "userscript_docs_supported_desc" = "核心比對、文件開始/結束、樣式/元素、單一和批次儲存、本機值偵聽器、剪貼簿、選單、頁內通知、標籤、下載、標籤資料、cookie、資源、URL 變更和權限範圍的請求。";
 "userscript_docs_partial_title" = "部分支持";
-"userscript_docs_partial_desc" = "網路請求省略上傳/進度和 cookie 傳輸。通知位於頁內，資源 API 是非同步的，值變更偵聽器報告目前頁面所做的變更。更新檢查是手動的。";
+"userscript_docs_partial_desc" = "通知在網頁內顯示；資源介面回傳 Promise。cookie 參數需 GM_cookie 權限，請求不會自動傳送 Cookie。";
 "userscript_docs_unsupported_title" = "目前不支援";
-"userscript_docs_unsupported_desc" = "GM_webRequest 攔截、GM_audio、沙箱/運行隔離、自動更新檢查以及 WKWebView 無法提供的精確的僅桌面行為。";
+"userscript_docs_unsupported_desc" = "GM_webRequest、GM_audio、sandbox/run-in 隔離，以及 WKWebView 不具備的桌面特性。";
 "userscript_docs_metadata_title" = "元數據";
 "userscript_docs_metadata_identity" = "在安裝之前和腳本詳細資訊中顯示人類可讀的腳本名稱和可選描述。";
 "userscript_docs_metadata_version" = "使用穩定、唯一的命名空間，並在捆綁腳本發生變更時增加版本。";
@@ -695,7 +695,7 @@
 "userscript_docs_api_delete" = "刪除此腳本的一個持久值。";
 "userscript_docs_api_list" = "傳回此腳本擁有的所有持久性儲存金鑰。";
 "userscript_docs_api_bulk" = "在一次操作中讀取、寫入或刪除多個 JSON 值；寫入由本機儲存以原子方式驗證。";
-"userscript_docs_api_listener" = "觀察腳本在目前網頁中所做的儲存變更。不會發出跨選項卡遠端通知。";
+"userscript_docs_api_listener" = "支援本機及跨分頁的儲存值變更；其他分頁的變更會以 remote=true 通知。";
 "userscript_docs_api_element" = "建立並附加帶有屬性的元素，包括在文件啟動期間安全地新增。";
 "userscript_docs_api_clipboard" = "透過 Soulo 的本機橋接器將文字複製到系統剪貼簿。";
 "userscript_docs_extended_title" = "選單、選項卡、文件和頁面集成";
@@ -711,13 +711,13 @@
 "userscript_docs_network_title" = "網路請求";
 "userscript_docs_network_legacy" = "啟動特權請求並傳回中止句柄。宣告符合的 grant 和 @connect 主機。";
 "userscript_docs_network_modern" = "特權請求 API 的現代別名，具有相同的詳細資訊物件和回調行為。";
-"userscript_docs_network_details" = "支援 url、方法、標頭、資料、逾時、responseType、onloadstart、onreadystatechange、onload、onerror 和 onloadend。";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "使用 json、blob、arraybuffer，或將文字留空。回應包括狀態、finalUrl、標頭、回應文字和回應。";
 "userscript_docs_network_connect" = "僅在真正必要時才使用 self 作為頁面主機、其網域及其子網域、通配符網域或 *。";
 "userscript_docs_limits_title" = "行為和限制";
 "userscript_docs_limits_web" = "標準 DOM、事件、MutationObserver、fetch、計時器和其他 WKWebView API 均可使用。正常的獲取仍然遵循 CORS。";
 "userscript_docs_limits_storage" = "儲存的值必須是 JSON 可序列化的：每個值最多 256 KB，每個腳本總共 1 MB。";
-"userscript_docs_limits_network" = "特權回應限制為 20 MB，超時限制為 1-60 秒，且不接受 Cookie/Host/Origin 標頭。";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts 不在無痕瀏覽中運作。";
 "userscript_docs_limits_require" = "安裝或儲存時下載並快取 HTTPS @require 檔案，在腳本主體前依宣告順序執行。";
 "userscript_docs_template_title" = "最小模板";

@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Sprijinit";
 "userscript_docs_supported_desc" = "Potrivirea de bază, începutul/sfârșitul documentului, stiluri/elemente, stocare unică și în bloc, ascultători de valori locale, clipboard, meniuri, notificări în pagină, file, descărcări, date filelor, cookie-uri, resurse, modificări ale adresei URL și solicitări cu permisiuni.";
 "userscript_docs_partial_title" = "Susținut parțial";
-"userscript_docs_partial_desc" = "Solicitările de rețea omit încărcarea/progresul și transportul cookie-urilor. Notificările sunt în pagină, API-urile de resurse sunt asincrone, iar ascultătorii care modifică valoarea raportează modificările făcute de pagina curentă. Verificările de actualizare sunt manuale.";
+"userscript_docs_partial_desc" = "Notificările rămân în pagină; API-urile de resurse returnează Promise. cookie necesită GM_cookie; cookie-urile nu se trimit automat.";
 "userscript_docs_unsupported_title" = "Nu este acceptat momentan";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolarea sandbox/run-in, verificări automate de actualizare și comportamente exacte numai pentru desktop pe care WKWebView nu le poate oferi.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolarea sandbox/run-in și funcții desktop indisponibile în WKWebView.";
 "userscript_docs_metadata_title" = "Metadate";
 "userscript_docs_metadata_identity" = "Numele scriptului care poate fi citit de om și descrierea opțională sunt afișate înainte de instalare și în detaliile scriptului.";
 "userscript_docs_metadata_version" = "Folosiți un spațiu de nume stabil și unic și creșteți versiunea ori de câte ori se modifică scriptul inclus.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Șterge o valoare persistentă pentru acest script.";
 "userscript_docs_api_list" = "Returnează toate cheile de stocare persistente deținute de acest script.";
 "userscript_docs_api_bulk" = "Citește, scrie sau șterge mai multe valori JSON într-o singură operație; scrierile sunt validate atomic de magazinul nativ.";
-"userscript_docs_api_listener" = "Observă modificările de stocare făcute de script în pagina web curentă. Notificările de la distanță încrucișate nu sunt emise.";
+"userscript_docs_api_listener" = "Urmărește modificările locale și cele din alte file, marcate cu remote=true.";
 "userscript_docs_api_element" = "Creează și adaugă un element cu atribute, inclusiv în siguranță în timpul pornirii documentului.";
 "userscript_docs_api_clipboard" = "Copiază textul în clipboard-ul sistemului prin bridge-ul nativ al Soulo.";
 "userscript_docs_extended_title" = "Meniuri, file, fișiere și integrarea paginilor";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Cereri de rețea";
 "userscript_docs_network_legacy" = "Pornește o solicitare privilegiată și returnează un handle de anulare. Declarați gazdele care se potrivesc grant și @connect.";
 "userscript_docs_network_modern" = "Alias modern al API-ului de solicitare privilegiată cu același obiect de detalii și comportament de apel invers.";
-"userscript_docs_network_details" = "Acceptă url, metodă, anteturi, date, timeout, responseType, onloadstart, onreadystatechange, onload, onerror și onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Utilizați json, blob, arraybuffer sau lăsați necompletat pentru text. Răspunsurile includ status, finalUrl, anteturi, responseText și răspuns.";
 "userscript_docs_network_connect" = "Utilizați self pentru gazda paginii, un domeniu pentru aceasta și subdomeniile sale, un domeniu wildcard sau * numai atunci când este cu adevărat necesar.";
 "userscript_docs_limits_title" = "Comportament și limite";
 "userscript_docs_limits_web" = "Sunt disponibile DOM standard, evenimente, MutationObserver, preluare, cronometre și alte API-uri WKWebView. Preluarea normală urmează în continuare CORS.";
 "userscript_docs_limits_storage" = "Valorile stocate trebuie să fie serializabile prin JSON: până la 256 KB per valoare și 1 MB total per script.";
-"userscript_docs_limits_network" = "Răspunsurile privilegiate sunt limitate la 20 MB, timeout-ul este limitat la 1–60 de secunde, iar anteturile Cookie/Gazdă/Origine nu sunt acceptate.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripte nu rulează în Navigare privată.";
 "userscript_docs_limits_require" = "Fișierele @require HTTPS sunt descărcate și memorate în cache la instalare sau salvare, apoi executate în ordine înaintea scriptului.";
 "userscript_docs_template_title" = "Șablon minim";

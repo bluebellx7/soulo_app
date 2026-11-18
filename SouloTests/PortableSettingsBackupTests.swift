@@ -27,8 +27,41 @@ final class PortableSettingsBackupTests: XCTestCase {
         XCTAssertNil(exported["bookmarks"])
         let current: CloudSettingsSyncEngine.Values = ["home_title": "Current"]
         let imported = try target.importData(data, preserving: current)
+        XCTAssertEqual(imported.isManual, true)
         XCTAssertEqual(current["home_title"] as? String, "Current", "Import only creates a backup; restore is a separate action")
         XCTAssertEqual(try target.values(for: imported)["home_title"] as? String, "Saved")
+    }
+
+    func testClearingManualCopiesPreservesAutomaticInitialAndLegacyFiles() throws {
+        let backups = store()
+        defer { try? FileManager.default.removeItem(at: backups.directory) }
+        let initial = try backups.save(["home_title": "Initial"], initial: true)
+        let legacy = try backups.save(["home_title": "Legacy"])
+        let legacyURL = backups.directory.appendingPathComponent(legacy.id.uuidString + ".json")
+        var legacyJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: legacyURL)) as? [String: Any])
+        legacyJSON.removeValue(forKey: "isManual")
+        try JSONSerialization.data(withJSONObject: legacyJSON).write(to: legacyURL)
+        let automatic = try backups.save(["home_title": "Current"])
+        let manual = try backups.save(["home_title": "Current"], manual: true)
+        XCTAssertNotEqual(manual.id, automatic.id, "A manual copy must not reuse an identical automatic snapshot")
+        XCTAssertEqual(try backups.list().first(where: { $0.id == legacy.id })?.isManual, nil)
+        try backups.deleteManualBackups()
+        XCTAssertEqual(Set(try backups.list().map(\.id)), Set([initial.id, legacy.id, automatic.id]))
+        XCTAssertEqual(try backups.values(for: automatic)["home_title"] as? String, "Current")
+    }
+
+    func testAutomaticRotationDoesNotDeleteManualBackups() throws {
+        let backups = store()
+        defer { try? FileManager.default.removeItem(at: backups.directory) }
+        let initial = try backups.save(["home_title": "Initial"], initial: true, date: Date(timeIntervalSince1970: 0))
+        let manual = try backups.save(["home_title": "Manual"], manual: true, date: Date(timeIntervalSince1970: 1))
+        for index in 0..<30 {
+            try backups.save(["home_title": "Auto \(index)"], date: Date(timeIntervalSince1970: Double(index + 2)))
+        }
+        let stored = try backups.list()
+        XCTAssertTrue(stored.contains { $0.id == initial.id })
+        XCTAssertTrue(stored.contains { $0.id == manual.id && $0.isManual == true })
+        XCTAssertEqual(stored.filter { !$0.isInitial && $0.isManual != true }.count, CloudSettingsBackupStore.maximumRecentBackups)
     }
 
     func testOlderScopePreservesNewSettingsButHonorsExplicitMissingKeys() throws {

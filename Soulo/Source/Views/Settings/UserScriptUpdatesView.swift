@@ -32,7 +32,7 @@ struct UserScriptUpdatesView: View {
                             }
                             Spacer()
                             if checking == script.id { ProgressView() }
-                            else if updates[script.id] != nil { Text(LanguageManager.shared.localizedString("extension_update")) }
+                            else if updates[script.id] != nil || service.availableUserScriptUpdateVersions[script.id] != nil { Text(LanguageManager.shared.localizedString("extension_update")) }
                             else { Image(systemName: "arrow.clockwise") }
                         }.frame(minHeight: 44)
                     }

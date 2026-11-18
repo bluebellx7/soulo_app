@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Unterstützt";
 "userscript_docs_supported_desc" = "Kernabgleich, Dokumentanfang/-ende, Stile/Elemente, Einzel- und Massenspeicher, lokale Werte-Listener, Zwischenablage, Menüs, In-Page-Benachrichtigungen, Registerkarten, Downloads, Registerkartendaten, Cookies, Ressourcen, URL-Änderungen und berechtigungsbezogene Anfragen.";
 "userscript_docs_partial_title" = "Teilweise unterstützt";
-"userscript_docs_partial_desc" = "Netzwerkanfragen lassen Upload/Fortschritt und Cookie-Transport aus. Benachrichtigungen erfolgen seitenintern, Ressourcen-APIs sind asynchron und Wertänderungs-Listener melden Änderungen, die von der aktuellen Seite vorgenommen wurden. Aktualisierungsprüfungen erfolgen manuell.";
+"userscript_docs_partial_desc" = "Benachrichtigungen bleiben auf der Seite; Ressourcen-APIs liefern Promises. cookie erfordert GM_cookie; Cookies werden nicht automatisch gesendet.";
 "userscript_docs_unsupported_title" = "Derzeit nicht unterstützt";
-"userscript_docs_unsupported_desc" = "GM_webRequest-Abfangen, GM_audio, Sandbox-/Run-in-Isolation, automatische Update-Prüfungen und exakte reine Desktop-Verhaltensweisen, die WKWebView nicht bieten kann.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in-Isolierung und in WKWebView nicht verfügbare Desktop-Funktionen.";
 "userscript_docs_metadata_title" = "Metadaten";
 "userscript_docs_metadata_identity" = "Für Menschen lesbarer Skriptname und optionale Beschreibung, die vor der Installation und in den Skriptdetails angezeigt werden.";
 "userscript_docs_metadata_version" = "Verwenden Sie einen stabilen, eindeutigen Namespace und erhöhen Sie die Version, wenn sich das gebündelte Skript ändert.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Löscht einen dauerhaften Wert für dieses Skript.";
 "userscript_docs_api_list" = "Gibt alle persistenten Speicherschlüssel zurück, die diesem Skript gehören.";
 "userscript_docs_api_bulk" = "Liest, schreibt oder löscht mehrere JSON-Werte in einem Vorgang; Schreibvorgänge werden vom nativen Speicher atomar validiert.";
-"userscript_docs_api_listener" = "Beobachtet vom Skript vorgenommene Speicheränderungen auf der aktuellen Webseite. Es werden keine Remote-Benachrichtigungen für Kreuztabellen ausgegeben.";
+"userscript_docs_api_listener" = "Beobachtet lokale und tabübergreifende Speicheränderungen. Änderungen anderer Tabs haben remote=true.";
 "userscript_docs_api_element" = "Erstellt ein Element mit Attributen und hängt es an, auch sicher beim Dokumentstart.";
 "userscript_docs_api_clipboard" = "Kopiert Text über die native Bridge von Soulo in die Zwischenablage des Systems.";
 "userscript_docs_extended_title" = "Menüs, Registerkarten, Dateien und Seitenintegration";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Netzwerkanfragen";
 "userscript_docs_network_legacy" = "Startet eine privilegierte Anfrage und gibt ein Abbruch-Handle zurück. Deklarieren Sie die passenden Grant- und @connect-Hosts.";
 "userscript_docs_network_modern" = "Moderner Alias der privilegierten Anforderungs-API mit demselben Detailobjekt und demselben Rückrufverhalten.";
-"userscript_docs_network_details" = "Unterstützt URL, Methode, Header, Daten, Timeout, ResponseType, onloadstart, onreadystatechange, onload, onerror und onloadend.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Verwenden Sie JSON, Blob, Arraybuffer oder lassen Sie es für Text leer. Zu den Antworten gehören Status, finalUrl, Header, Antworttext und Antwort.";
 "userscript_docs_network_connect" = "Verwenden Sie self für den Seitenhost, eine Domain für ihn und seine Subdomains, eine Wildcard-Domain oder * nur, wenn es wirklich notwendig ist.";
 "userscript_docs_limits_title" = "Verhalten und Grenzen";
 "userscript_docs_limits_web" = "Standard-DOM, Ereignisse, MutationObserver, Fetch, Timer und andere WKWebView-APIs sind verfügbar. Der normale Abruf folgt weiterhin CORS.";
 "userscript_docs_limits_storage" = "Gespeicherte Werte müssen JSON-serialisierbar sein: bis zu 256 KB pro Wert und 1 MB insgesamt pro Skript.";
-"userscript_docs_limits_network" = "Privilegierte Antworten sind auf 20 MB begrenzt, das Timeout ist auf 1–60 Sekunden begrenzt und Cookie/Host/Origin-Header werden nicht akzeptiert.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts werden beim privaten Surfen nicht ausgeführt.";
 "userscript_docs_limits_require" = "HTTPS-Dateien aus @require werden beim Installieren oder Speichern heruntergeladen und zwischengespeichert und vor dem Skript der Reihe nach ausgeführt.";
 "userscript_docs_template_title" = "Minimale Vorlage";

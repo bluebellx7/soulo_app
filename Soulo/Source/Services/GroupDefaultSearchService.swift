@@ -22,16 +22,50 @@ struct GroupDefaultSearchEngine: Codable, Hashable, Identifiable {
     var template: String
     var homeURL: String
     var icon: String
+    var interactionType: PlatformInteractionType? = nil
+    var requiresLogin: Bool? = nil
     func platform(region: PlatformRegion) -> SearchPlatform {
         SearchPlatform(id: id, name: name, iconName: icon, searchURLTemplate: template, homeURL: homeURL,
-            region: region, isBuiltIn: false, isVisible: true, sortOrder: 0, usageCount: 0, isCustom: true)
+            region: region, isBuiltIn: false, isVisible: true, sortOrder: 0, usageCount: 0, isCustom: true,
+            requiresLogin: requiresLogin ?? false, interactionType: interactionType ?? .urlSearch)
     }
     static func validTemplate(_ value: String) -> Bool {
-        guard value.contains("%@"), !value.contains(where: \.isWhitespace),
+        // Some platforms are landing pages (including chat sites), with no
+        // keyword placeholder. Keep those usable without inventing a query URL.
+        guard !value.contains(where: \.isWhitespace),
+              !value.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }),
               let url = URL(string: value.replacingOccurrences(of: "%@", with: "test")),
               ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
               url.host?.isEmpty == false, url.user == nil, url.password == nil else { return false }
         return true
+    }
+    var hasValidURLs: Bool {
+        Self.validTemplate(template) && (homeURL.isEmpty || Self.validTemplate(homeURL))
+    }
+    static func groupOptions(for scope: SearchGroupScope, platforms: [SearchPlatform],
+                             customGroups: [CustomGroup]) -> [Self] {
+        let ordered: [SearchPlatform]
+        switch scope {
+        case .region(let region):
+            ordered = platforms.enumerated().filter { $0.element.region == region }
+                .sorted {
+                    $0.element.sortOrder == $1.element.sortOrder
+                        ? $0.offset < $1.offset : $0.element.sortOrder < $1.element.sortOrder
+                }.map(\.element)
+        case .custom(let id):
+            let members = customGroups.first { $0.id == id }?.platformIDs ?? []
+            let byID = Dictionary(platforms.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            ordered = members.compactMap { byID[$0] }
+        }
+        var seen: Set<UUID> = []
+        // Visibility never removes a choice. The saved value is a snapshot,
+        // independent of later edits or removal of the original platform.
+        return ordered.compactMap { platform in
+            guard seen.insert(platform.id).inserted else { return nil }
+            return Self(id: platform.id, name: platform.name, template: platform.searchURLTemplate,
+                        homeURL: platform.homeURL, icon: platform.iconName,
+                        interactionType: platform.interactionType, requiresLogin: platform.requiresLogin)
+        }
     }
     static let presets: [Self] = [
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000001")!, name: "platform_baidu", template: "https://www.baidu.com/s?wd=%@", homeURL: "https://www.baidu.com", icon: "icon_baidu"),
@@ -80,13 +114,13 @@ final class GroupDefaultSearchService: ObservableObject {
         if changed { defaults.set(try? JSONEncoder().encode(overrides), forKey: Self.storageKey) }
     }
     func engine(for scope: SearchGroupScope, language: String? = nil) -> GroupDefaultSearchEngine {
-        if let value = overrides[scope.id], GroupDefaultSearchEngine.validTemplate(value.template) { return value }
+        if let value = overrides[scope.id], value.hasValidURLs { return value }
         return .initial(scope: scope, language: language ?? defaults.string(forKey: "app_language") ?? Locale.preferredLanguages.first ?? "en")
     }
     func platform(for scope: SearchGroupScope, region: PlatformRegion? = nil) -> SearchPlatform { engine(for: scope).platform(region: region ?? scope.region) }
     func save(_ engine: GroupDefaultSearchEngine, for scope: SearchGroupScope) throws {
         guard !engine.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              GroupDefaultSearchEngine.validTemplate(engine.template) else { throw URLError(.badURL) }
+              engine.hasValidURLs else { throw URLError(.badURL) }
         var next = overrides; next[scope.id] = engine
         let data = try JSONEncoder().encode(next)
         defaults.set(data, forKey: Self.storageKey); overrides = next

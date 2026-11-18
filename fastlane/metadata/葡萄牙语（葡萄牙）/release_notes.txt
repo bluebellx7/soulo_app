@@ -1,1 +1,4 @@
-Melhorias nas janelas do iPad, na entrada por voz, nos resumos locais e na acessibilidade. Melhorias na exportação de multimédia em segundo plano, nos Atalhos e na compatibilidade com extensões. Algumas funcionalidades dependem do dispositivo, do sistema e do idioma.
+• As definições foram reorganizadas. Pré-visualize a barra de ferramentas da página inicial enquanto muda o estilo, reordena os botões ou arrasta a barra para o local pretendido.
+• Com o restauro ao reiniciar ativo, o Soulo regressa à página inicial ou à última página que estava a ver.
+• Os menus do navegador estão mais legíveis. Pode voltar a mostrar a barra de ferramentas oculta através do menu Mais.
+• Melhorámos os pedidos de rede e a verificação de atualizações dos scripts de utilizador.

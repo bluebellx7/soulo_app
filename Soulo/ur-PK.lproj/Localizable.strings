@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "حمایت یافتہ";
 "userscript_docs_supported_desc" = "بنیادی مماثلت، دستاویز کا آغاز/اختتام، طرزیں/عناصر، سنگل اور بلک اسٹوریج، لوکل ویلیو سننے والے، کلپ بورڈ، مینوز، صفحہ میں اطلاعات، ٹیبز، ڈاؤن لوڈز، ٹیب ڈیٹا، کوکیز، وسائل، یو آر ایل کی تبدیلیاں، اور اجازت کے دائرہ کار کی درخواستیں۔";
 "userscript_docs_partial_title" = "جزوی طور پر حمایت یافتہ";
-"userscript_docs_partial_desc" = "نیٹ ورک کی درخواستیں اپ لوڈ/پیش رفت اور کوکی ٹرانسپورٹ کو چھوڑ دیتی ہیں۔ اطلاعات صفحہ کے اندر ہیں، وسائل APIs غیر مطابقت پذیر ہیں، اور قدر کی تبدیلی کے سامعین موجودہ صفحہ کے ذریعے کی گئی تبدیلیوں کی اطلاع دیتے ہیں۔ اپ ڈیٹ چیک دستی ہیں۔";
+"userscript_docs_partial_desc" = "اطلاعات صفحے میں دکھتی ہیں؛ ریسورس API، Promise واپس کرتی ہیں۔ cookie کے لیے GM_cookie اجازت ضروری ہے؛ کُکیاں خودکار طور پر نہیں بھیجی جاتیں۔";
 "userscript_docs_unsupported_title" = "فی الحال تعاون یافتہ نہیں ہے۔";
-"userscript_docs_unsupported_desc" = "GM_webRequest انٹرسیپشن، GM_audio، سینڈ باکس/رن ان آئسولیشن، خودکار اپ ڈیٹ چیک، اور صرف ڈیسک ٹاپ کے عین مطابق رویے جو WKWebView فراہم نہیں کر سکتا۔";
+"userscript_docs_unsupported_desc" = "GM_webRequest، GM_audio، sandbox/run-in علیحدگی اور WKWebView میں دستیاب نہ ہونے والے ڈیسک ٹاپ رویے۔";
 "userscript_docs_metadata_title" = "میٹا ڈیٹا";
 "userscript_docs_metadata_identity" = "انسانی پڑھنے کے قابل اسکرپٹ کا نام اور اختیاری تفصیل انسٹالیشن سے پہلے اور اسکرپٹ کی تفصیلات میں دکھائی گئی ہے۔";
 "userscript_docs_metadata_version" = "ایک مستحکم، منفرد نام کی جگہ کا استعمال کریں اور جب بھی بنڈل اسکرپٹ میں تبدیلی آئے تو ورژن میں اضافہ کریں۔";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "اس اسکرپٹ کے لیے ایک مستقل قدر کو حذف کرتا ہے۔";
 "userscript_docs_api_list" = "اس اسکرپٹ کی ملکیت تمام مستقل اسٹوریج کیز کو لوٹاتا ہے۔";
 "userscript_docs_api_bulk" = "ایک آپریشن میں متعدد JSON اقدار کو پڑھتا، لکھتا یا حذف کرتا ہے۔ تحریروں کو مقامی اسٹور کے ذریعہ ایٹمی طور پر توثیق کیا جاتا ہے۔";
-"userscript_docs_api_listener" = "موجودہ ویب صفحہ میں اسکرپٹ کے ذریعے کی گئی اسٹوریج کی تبدیلیوں کا مشاہدہ کرتا ہے۔ کراس ٹیب ریموٹ اطلاعات خارج نہیں ہوتی ہیں۔";
+"userscript_docs_api_listener" = "مقامی اور دوسرے ٹیبز کی اسٹوریج تبدیلیاں دیکھتا ہے۔ دوسرے ٹیب کی تبدیلی میں remote=true ہوتا ہے۔";
 "userscript_docs_api_element" = "صفات کے ساتھ ایک عنصر بناتا اور شامل کرتا ہے، بشمول دستاویز کے آغاز کے دوران محفوظ طریقے سے۔";
 "userscript_docs_api_clipboard" = "Soulo کے مقامی برج کے ذریعے سسٹم کلپ بورڈ پر متن کاپی کرتا ہے۔";
 "userscript_docs_extended_title" = "مینو، ٹیبز، فائلز، اور صفحہ انضمام";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "نیٹ ورک کی درخواستیں۔";
 "userscript_docs_network_legacy" = "ایک مراعات یافتہ درخواست شروع کرتا ہے اور اسقاط کا ہینڈل واپس کرتا ہے۔ مماثل گرانٹ اور @connect میزبانوں کا اعلان کریں۔";
 "userscript_docs_network_modern" = "اسی تفصیلات کے آبجیکٹ اور کال بیک رویے کے ساتھ مراعات یافتہ درخواست API کا جدید عرف۔";
-"userscript_docs_network_details" = "یو آر ایل، طریقہ، ہیڈر، ڈیٹا، ٹائم آؤٹ، ریسپانس ٹائپ، آن لوڈ اسٹارٹ، آن ریڈیسٹیٹ چینج، آن لوڈ، آن ایرر، اور آن لوڈ اینڈ کو سپورٹ کرتا ہے۔";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "json، blob، arraybuffer استعمال کریں، یا متن کے لیے خالی چھوڑ دیں۔ جوابات میں اسٹیٹس، فائنل یو آر ایل، ہیڈرز، ریسپانس ٹیکسٹ اور رسپانس شامل ہیں۔";
 "userscript_docs_network_connect" = "صفحہ کے میزبان کے لیے خود استعمال کریں، اس کے لیے ایک ڈومین اور اس کے ذیلی ڈومینز، ایک وائلڈ کارڈ ڈومین، یا * صرف اس صورت میں جب واقعی ضروری ہو۔";
 "userscript_docs_limits_title" = "سلوک اور حدود";
 "userscript_docs_limits_web" = "معیاری DOM، واقعات، MutationObserver، fetch، ٹائمرز، اور دیگر WKWebView APIs دستیاب ہیں۔ عام بازیافت ابھی بھی CORS کی پیروی کرتی ہے۔";
 "userscript_docs_limits_storage" = "ذخیرہ شدہ قدریں JSON- سیریلائز ہونے کے قابل ہونی چاہئیں: فی قدر 256 KB تک اور فی اسکرپٹ کل 1 MB۔";
-"userscript_docs_limits_network" = "مراعات یافتہ جوابات 20 MB تک محدود ہیں، ٹائم آؤٹ کو 1-60 سیکنڈ تک بند کر دیا گیا ہے، اور Cookie/Host/Origin ہیڈر قبول نہیں کیے جاتے ہیں۔";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts نجی براؤزنگ میں نہیں چلتی ہیں۔";
 "userscript_docs_limits_require" = "HTTPS کی @require فائلیں انسٹال یا محفوظ کرتے وقت ڈاؤن لوڈ اور کیش کی جاتی ہیں، پھر اسکرپٹ سے پہلے ترتیب سے چلتی ہیں۔";
 "userscript_docs_template_title" = "کم سے کم ٹیمپلیٹ";

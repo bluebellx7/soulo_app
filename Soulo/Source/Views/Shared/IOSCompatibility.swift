@@ -1,6 +1,42 @@
 import SwiftUI
 import WebKit
 
+private struct AppPresentationColorSchemeKey: EnvironmentKey {
+    static let defaultValue: ColorScheme? = nil
+}
+
+private struct BrowserChromeColorSchemeKey: EnvironmentKey {
+    static let defaultValue: ColorScheme? = nil
+}
+
+extension EnvironmentValues {
+    /// Captured at the window root, before wallpaper or webpage chrome overrides.
+    var appPresentationColorScheme: ColorScheme? {
+        get { self[AppPresentationColorSchemeKey.self] }
+        set { self[AppPresentationColorSchemeKey.self] = newValue }
+    }
+
+    var browserChromeColorScheme: ColorScheme? {
+        get { self[BrowserChromeColorSchemeKey.self] }
+        set { self[BrowserChromeColorSchemeKey.self] = newValue }
+    }
+}
+
+private struct AppPresentationAppearance: ViewModifier {
+    @Environment(\.appPresentationColorScheme) private var appColorScheme
+    @Environment(\.colorScheme) private var inheritedColorScheme
+
+    func body(content: Content) -> some View {
+        content.environment(\.colorScheme, appColorScheme ?? inheritedColorScheme)
+    }
+}
+
+extension View {
+    func appPresentationAppearance() -> some View {
+        modifier(AppPresentationAppearance())
+    }
+}
+
 private struct SegmentedValueSwipeModifier<Selection: Equatable>: ViewModifier {
     @Binding var selection: Selection
     let values: [Selection]
@@ -45,7 +81,12 @@ extension View {
 
 extension WKWebView {
     func evaluateCompatibleJavaScript(_ source: String) async throws -> Any? {
-        try await evaluateJavaScript(source)
+        try await withCheckedThrowingContinuation { continuation in
+            evaluateJavaScript(source, completionHandler: { value, error in
+                if let error { continuation.resume(throwing: error) }
+                else { continuation.resume(returning: value) }
+            })
+        }
     }
 
     func evaluateCompatibleJavaScript(_ source: String,
@@ -53,13 +94,10 @@ extension WKWebView {
         evaluateJavaScript(source, completionHandler: completionHandler)
     }
 
-    /// The iOS 16 Swift overlay force-unwraps an undefined result from a
-    /// content-world evaluation. Its public Objective-C API accepts nil.
+    /// Older Swift overlays, including iOS 17.4, force-unwrap undefined
+    /// results. The public Objective-C callback preserves optional values.
     func evaluateCompatibleJavaScript(_ source: String, in frame: WKFrameInfo? = nil,
                                       contentWorld: WKContentWorld) async throws -> Any? {
-        if #available(iOS 17.0, *) {
-            return try await evaluateJavaScript(source, in: frame, contentWorld: contentWorld)
-        }
         return try await withCheckedThrowingContinuation { continuation in
             __evaluateJavaScript(source, inFrame: frame, in: contentWorld, completionHandler: { value, error in
                 if let error { continuation.resume(throwing: error) }
@@ -71,14 +109,10 @@ extension WKWebView {
     func evaluateCompatibleJavaScript(_ source: String, in frame: WKFrameInfo? = nil,
                                       in contentWorld: WKContentWorld,
                                       completionHandler: ((Result<Any, Error>) -> Void)? = nil) {
-        if #available(iOS 17.0, *) {
-            evaluateJavaScript(source, in: frame, in: contentWorld, completionHandler: completionHandler)
-        } else {
-            __evaluateJavaScript(source, inFrame: frame, in: contentWorld, completionHandler: { value, error in
-                if let error { completionHandler?(.failure(error)) }
-                else { completionHandler?(.success(value ?? NSNull())) }
-            })
-        }
+        __evaluateJavaScript(source, inFrame: frame, in: contentWorld, completionHandler: { value, error in
+            if let error { completionHandler?(.failure(error)) }
+            else { completionHandler?(.success(value ?? NSNull())) }
+        })
     }
 }
 
@@ -377,19 +411,26 @@ extension View {
     /// Use UIKit's non-adapting popover so the same menu stays content-sized.
     func compatiblePopover<Panel: View>(isPresented: Binding<Bool>,
         attachmentAnchor: PopoverAttachmentAnchor = .rect(.bounds), arrowEdge: Edge = .top,
+        tracksSourceView: Bool = false, usesAppAppearance: Bool = false,
         @ViewBuilder content: @escaping () -> Panel) -> AnyView {
+        func panel() -> AnyView {
+            if usesAppAppearance { return AnyView(content().appPresentationAppearance()) }
+            return AnyView(content())
+        }
         // Keep both OS branches and the potentially large panel type out of
         // the caller's metadata. On device, resolving a deeply nested toolbar
         // type can exhaust the main stack before the popover is even opened.
-        if #available(iOS 16.4, *) {
+        if #available(iOS 16.4, *), !tracksSourceView {
             return AnyView(popover(isPresented: isPresented, attachmentAnchor: attachmentAnchor, arrowEdge: arrowEdge) {
-                AnyView(content())
+                panel()
             })
         } else {
-            // Keep the anchor mounted, but build the legacy panel only when
-            // shown. Its stable AnyView type preserves updates and dismissal.
+            // A concrete source UIView also avoids stale SwiftUI popover
+            // geometry after the keyboard or glass toolbar changes its layout.
+            // Build the panel only when shown, keeping the anchor mounted.
             return AnyView(background(LegacyContentPopover(isPresented: isPresented, arrowEdge: arrowEdge,
-                panel: isPresented.wrappedValue ? AnyView(content()) : AnyView(EmptyView()))))
+                usesAppAppearance: usesAppAppearance,
+                panel: isPresented.wrappedValue ? panel() : AnyView(EmptyView()))))
         }
     }
 }
@@ -397,21 +438,39 @@ extension View {
 private struct LegacyContentPopover<Panel: View>: UIViewRepresentable {
     @Binding var isPresented: Bool
     let arrowEdge: Edge
+    let usesAppAppearance: Bool
     let panel: Panel
     func makeCoordinator() -> Coordinator { Coordinator() }
     final class Anchor: UIView {
         var ready: ((UIView) -> Void)?
+        private var lastWindowFrame: CGRect?
         override func didMoveToWindow() { super.didMoveToWindow(); if window != nil { ready?(self) } }
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            guard let window else { return }
+            let frame = convert(bounds, to: window)
+            guard frame != lastWindowFrame else { return }
+            lastWindowFrame = frame
+            ready?(self)
+        }
     }
     func makeUIView(context: Context) -> UIView {
         let view = Anchor()
-        view.ready = { [weak coordinator = context.coordinator] in coordinator?.update(anchor: $0) }
+        view.ready = { [weak coordinator = context.coordinator] anchor in
+            DispatchQueue.main.async { [weak anchor, weak coordinator] in
+                if let anchor { coordinator?.update(anchor: anchor) }
+            }
+        }
         return view
     }
     func updateUIView(_ view: UIView, context: Context) {
         let coordinator = context.coordinator
         coordinator.isPresented = $isPresented
         coordinator.panel = AnyView(panel.environment(\.self, context.environment))
+        let appScheme = usesAppAppearance ? context.environment.appPresentationColorScheme : nil
+        coordinator.interfaceStyle = appScheme.map {
+            $0 == .dark ? UIUserInterfaceStyle.dark : .light
+        } ?? .unspecified
         coordinator.edge = arrowEdge
         DispatchQueue.main.async { [weak view, weak coordinator] in
             if let view { coordinator?.update(anchor: view) }
@@ -423,6 +482,7 @@ private struct LegacyContentPopover<Panel: View>: UIViewRepresentable {
         var isPresented: Binding<Bool>?
         var panel = AnyView(EmptyView())
         var edge: Edge = .top
+        var interfaceStyle: UIUserInterfaceStyle = .unspecified
         var host: UIHostingController<AnyView>?
         func update(anchor: UIView) {
             guard isPresented?.wrappedValue == true else { close(); return }
@@ -431,6 +491,7 @@ private struct LegacyContentPopover<Panel: View>: UIViewRepresentable {
             if let host { controller = host; host.rootView = panel }
             else {
                 controller = UIHostingController(rootView: panel)
+                controller.overrideUserInterfaceStyle = interfaceStyle
                 controller.modalPresentationStyle = .popover
                 controller.view.backgroundColor = .systemBackground
                 controller.view.accessibilityIdentifier = "soulo.legacy-popover"
@@ -451,6 +512,10 @@ private struct LegacyContentPopover<Panel: View>: UIViewRepresentable {
                 controller.preferredContentSize = fittingSize(controller, window: window)
                 presenter.present(controller, animated: true)
             }
+            if controller.overrideUserInterfaceStyle != interfaceStyle {
+                controller.overrideUserInterfaceStyle = interfaceStyle
+            }
+            controller.popoverPresentationController?.sourceRect = anchor.bounds
             let size = fittingSize(controller, window: window)
             if controller.preferredContentSize != size { controller.preferredContentSize = size }
         }

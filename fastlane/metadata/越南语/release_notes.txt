@@ -1,1 +1,4 @@
-Cải thiện cửa sổ iPad, nhập bằng giọng nói, tóm tắt cục bộ và trợ năng. Cải thiện xuất phương tiện trong nền, Phím tắt và khả năng tương thích tiện ích. Một số tính năng phụ thuộc vào thiết bị, phiên bản hệ điều hành và ngôn ngữ.
+• Sắp xếp lại phần cài đặt. Xem trước thanh công cụ trang chủ khi đổi kiểu, sắp xếp lại các nút hoặc kéo thanh đến vị trí mong muốn.
+• Khi bật khôi phục lúc khởi động lại, Soulo sẽ mở trang chủ hoặc trang web bạn xem gần nhất.
+• Menu trình duyệt dễ đọc hơn. Bạn có thể hiện lại thanh công cụ đã ẩn từ menu Thêm.
+• Cải thiện yêu cầu mạng và tính năng kiểm tra bản cập nhật cho tập lệnh người dùng.

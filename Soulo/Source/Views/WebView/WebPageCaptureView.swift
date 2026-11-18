@@ -393,7 +393,7 @@ enum WebPageCaptureService {
     }
 
     private static func pageBackgroundColor(in webView: WKWebView) async -> UIColor {
-        let value = try? await webView.evaluateJavaScript(pageBackgroundColorScript)
+        let value = try? await webView.evaluateCompatibleJavaScript(pageBackgroundColorScript)
         return colorFromComputedCSS(value as? String) ?? .white
     }
 

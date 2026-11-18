@@ -1,1 +1,4 @@
-Forbedret iPad-vinduer, taleinndata, lokale sammendrag og tilgjengelighet. Forbedret medieeksport i bakgrunnen, Snarveier og kompatibilitet med utvidelser. Enkelte funksjoner avhenger av enhet, systemversjon og språk.
+• Innstillingene er omorganisert. Forhåndsvis verktøylinjen på startsiden mens du endrer stil, flytter knapper eller drar den på plass.
+• Når gjenoppretting ved omstart er på, åpner Soulo startsiden eller nettsiden du så på sist.
+• Nettlesermenyene er lettere å lese. Du kan vise en skjult verktøylinje igjen fra Mer-menyen.
+• Nettverksforespørsler og oppdateringssjekk for brukerskript er forbedret.

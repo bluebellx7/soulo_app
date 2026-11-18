@@ -314,6 +314,21 @@ final class CloudSyncSafetyTests: XCTestCase {
         XCTAssertEqual(try backups.values(for: backup)[VideoPlaybackPreferences.holdSpeedKey] as? Double, 1.75)
     }
 
+    func testClearingManualBackupsDoesNotChangeSettingsSyncOrRecoveryCopies() throws {
+        let local = defaults(), cloud = TestCloudSettingsStore(), backups = backupStore()
+        local.set("Current title", forKey: "home_title")
+        local.set(true, forKey: AppConstants.StorageKeys.iCloudSyncEnabled)
+        let recovery = try backups.save(["home_title": "Recovery"], initial: true)
+        let sync = service(local, cloud: cloud, id: "manual-clear", backups: backups)
+        try sync.saveBackup()
+        XCTAssertEqual(try backups.list().filter { $0.isManual == true }.count, 1)
+        try sync.clearManualBackups()
+        XCTAssertEqual(try backups.list().map(\.id), [recovery.id])
+        XCTAssertEqual(local.string(forKey: "home_title"), "Current title")
+        XCTAssertTrue(local.bool(forKey: AppConstants.StorageKeys.iCloudSyncEnabled))
+        XCTAssertTrue(cloud.writes.isEmpty)
+    }
+
     func testBackupFailurePreventsRemoteOverwriteAndUpload() throws {
         let local = defaults(), cloud = TestCloudSettingsStore()
         local.set("Local", forKey: "home_title")

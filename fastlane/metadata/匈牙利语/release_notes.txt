@@ -1,1 +1,4 @@
-Fejlesztettük az iPad-ablakokat, a hangbevitelt, a helyi összefoglalókat és a kisegítő lehetőségeket. Javult a háttérben történő médiaexportálás, a Parancsok és a bővítmények kompatibilitása. Egyes funkciók az eszköztől, a rendszerverziótól és a nyelvtől függenek.
+• Átrendeztük a beállításokat. Az élő előnézetben módosíthatod a kezdőlap eszköztárának stílusát, átrendezheted a gombokat, és a helyére húzhatod az eszköztárat.
+• Ha az újraindításkori visszaállítás be van kapcsolva, a Soulo a kezdőlapot vagy a legutóbb megtekintett weboldalt nyitja meg.
+• A böngésző menüi könnyebben olvashatók. A Továbbiak menüben újra megjelenítheted az elrejtett eszköztárat.
+• Javítottuk a felhasználói szkriptek hálózati kéréseit és frissítéskeresését.

@@ -203,7 +203,7 @@ struct DeviceAcceptanceProbe: View {
                     }
                     if let expected = run.extensionPlayerURL, let web = tabs.activeWebViewModel?.webView,
                        web.url == expected,
-                       let state = try? await web.evaluateJavaScript("""
+                       let state = try? await web.evaluateCompatibleJavaScript("""
                        (()=>{const p=globalThis.fastStream,v=p?.player?.getVideo?.(),bar=document.querySelector('.fluid_controls_progress_container'),full=document.querySelector('.fluid_control_fullscreen');return {time:p?.currentTime??0,duration:p?.duration??0,ready:v?.readyState??0,paused:v?.paused??true,bar:bar?.getBoundingClientRect().toJSON()??null,full:full?.getBoundingClientRect().toJSON()??null,controlsVisible:Number(getComputedStyle(document.querySelector('.fluid_controls_container')||document.body).opacity)>.7,fullscreen:!!document.fullscreenElement,download:document.querySelector('.main_download')?.getBoundingClientRect().toJSON()??null,error:v?.error?.message??'',environment:{downloadSource:String(chrome?.downloads?.download).slice(0,110),extension:typeof chrome?.extension,downloads:typeof chrome?.downloads?.download,serviceWorker:typeof navigator.serviceWorker,documentRouting:!!globalThis.__souloFrameMessagingCore?.documentInstalled},saveState:{making:p?.interfaceController?.saveManager?.makingDownload??null,reuse:p?.interfaceController?.saveManager?.reuseDownloadURL??null},text:document.body.innerText.slice(-600)};})()
                        """) as? [String: Any] {
                         var result = state
@@ -219,7 +219,7 @@ struct DeviceAcceptanceProbe: View {
                               let model = tabs.activeWebViewModel, let web = model.webView {
                         // Read-only live-site evidence. Never synthesize a play
                         // gesture or change a publisher's media/source state.
-                        if var state = try? await web.evaluateJavaScript("""
+                        if var state = try? await web.evaluateCompatibleJavaScript("""
                         (()=>{const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}};
                         return {url:location.href,title:document.title,text:(document.body?.innerText||'').slice(0,1200),
                         videos:[...document.querySelectorAll('video')].map(v=>({time:v.currentTime,duration:Number.isFinite(v.duration)?v.duration:0,ready:v.readyState,paused:v.paused,width:v.videoWidth,height:v.videoHeight,fullscreen:!!(v.webkitDisplayingFullscreen||v.webkitPresentationMode==='fullscreen'||document.fullscreenElement),error:v.error?.message||'',rect:rect(v)})),

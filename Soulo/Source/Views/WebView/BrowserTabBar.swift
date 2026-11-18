@@ -26,12 +26,12 @@ struct BrowserTabBar: View {
                             total: tabManager.tabs.count,
                             onTap: {
                                 HapticsManager.selection()
-                                tabManager.switchToTab(at: index)
+                                tabManager.switchToTab(id: tab.id)
                             },
                             onClose: {
                                 HapticsManager.light()
                                 withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
-                                    tabManager.closeTab(at: index)
+                                    tabManager.closeTab(id: tab.id)
                                 }
                             }
                         )
@@ -65,7 +65,8 @@ struct BrowserTabBar: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(LanguageManager.shared.localizedString("settings"))
                     .accessibilityIdentifier("browser.top-tab-options")
-                    .compatiblePopover(isPresented: $showTabOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+                    .compatiblePopover(isPresented: $showTabOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .top,
+                        usesAppAppearance: true) {
                         BrowserTabOptionsPanel(tabManager: tabManager, dismissWhenHidingBar: true, onHidingTabBar: onHidingTabBar,
                             onDismiss: { showTabOptions = false }, onNewTab: onNewTab)
                             .compatiblePopoverAdaptation()
@@ -75,14 +76,16 @@ struct BrowserTabBar: View {
                 .padding(.vertical, 6)
             }
             .frame(height: 42)
-            .onAppear {
-                if let id = tabManager.activeTab?.id { proxy.scrollTo(id, anchor: .center) }
-            }
-            .onCompatibleChange(of: tabManager.activeTabIndex) { _, _ in
-                if let id = tabManager.activeTab?.id {
-                    withAnimation(reduceMotion ? nil : .default) {
-                        proxy.scrollTo(id, anchor: .center)
-                    }
+            .task(id: tabManager.activeTab?.id) {
+                let id = tabManager.activeTab?.id
+                // Closing a tab changes both the lazy stack and its selection.
+                // Scroll after that update, and cancel if the strip disappears
+                // (including the two-tabs-to-one transition on older SwiftUI).
+                await Task.yield()
+                guard !Task.isCancelled, let id, tabManager.tabs.count > 1,
+                      tabManager.activeTab?.id == id else { return }
+                withAnimation(reduceMotion ? nil : .default) {
+                    proxy.scrollTo(id, anchor: .center)
                 }
             }
         }

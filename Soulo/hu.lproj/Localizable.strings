@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "Támogatott";
 "userscript_docs_supported_desc" = "Alapegyeztetés, dokumentum eleje/vége, stílusok/elemek, egyszeri és tömeges tárolás, helyi értékfigyelők, vágólap, menük, oldalon belüli értesítések, lapok, letöltések, lapadatok, cookie-k, erőforrások, URL-módosítások és engedély-hatókörű kérések.";
 "userscript_docs_partial_title" = "Részben támogatott";
-"userscript_docs_partial_desc" = "A hálózati kérések kihagyják a feltöltést/haladást és a cookie-átvitelt. Az értesítések az oldalon belüliek, az erőforrás-API-k aszinkronok, és az értékváltozás-figyelők jelentik az aktuális oldal módosításait. A frissítések ellenőrzése manuális.";
+"userscript_docs_partial_desc" = "Az értesítések az oldalon jelennek meg; az erőforrás-API-k Promise értéket adnak. A cookie GM_cookie-jogot igényel; nincs automatikus sütiküldés.";
 "userscript_docs_unsupported_title" = "Jelenleg nem támogatott";
-"userscript_docs_unsupported_desc" = "GM_webRequest lehallgatás, GM_audio, homokozó/befutó elkülönítés, automatikus frissítésellenőrzés és olyan pontos, csak az asztali számítógépeken végzett viselkedés, amelyet a WKWebView nem tud biztosítani.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in-elkülönítés és a WKWebView által nem kínált asztali funkciók.";
 "userscript_docs_metadata_title" = "Metaadatok";
 "userscript_docs_metadata_identity" = "Ember által olvasható szkriptnév és opcionális leírás a telepítés előtt és a szkript részleteiben.";
 "userscript_docs_metadata_version" = "Használjon stabil, egyedi névteret, és növelje a verziót, amikor a kötegelt szkript változik.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "Töröl egy állandó értéket ehhez a szkripthez.";
 "userscript_docs_api_list" = "Visszaadja a szkript tulajdonában lévő összes állandó tárolókulcsot.";
 "userscript_docs_api_bulk" = "Több JSON-érték beolvasása, írása vagy törlése egy műveletben; Az írásokat a natív tároló atomosan érvényesíti.";
-"userscript_docs_api_listener" = "Figyeli a szkript által az aktuális weboldalon végrehajtott tárolási módosításokat. A fülek közötti távoli értesítések nem jelennek meg.";
+"userscript_docs_api_listener" = "Figyeli a helyi és lapok közötti tárolóváltozásokat. Más lap változásainál remote=true.";
 "userscript_docs_api_element" = "Létrehoz és hozzáfűz egy elemet attribútumokkal, többek között biztonságosan a dokumentumindítás során.";
 "userscript_docs_api_clipboard" = "A szöveget a rendszer vágólapjára másolja a Soulo natív hídján keresztül.";
 "userscript_docs_extended_title" = "Menük, lapok, fájlok és oldalintegráció";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "Hálózati kérések";
 "userscript_docs_network_legacy" = "Elindít egy privilegizált kérést, és egy megszakítási leírót ad vissza. Deklarálja a megfelelő támogatást és @connect hosts.";
 "userscript_docs_network_modern" = "A privilegizált kérelem API modern álneve, ugyanazzal a részletek objektummal és visszahívási viselkedéssel.";
-"userscript_docs_network_details" = "Támogatja az URL-t, a metódust, a fejléceket, az adatokat, az időtúllépést, a választípust, az onloadstart, az onreadystatechange, az onload, az onror és az onloadend kifejezéseket.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "Használja a json, blob, arraybuffer parancsot, vagy hagyja üresen a szöveget. A válaszok közé tartozik az állapot, a végső URL, a fejlécek, a válaszszöveg és a válasz.";
 "userscript_docs_network_connect" = "Használja a self-t az oldalgazdaként, a domaint és az aldomainjeit, a helyettesítő karakteres tartományt, vagy csak akkor, ha valóban szükséges.";
 "userscript_docs_limits_title" = "Viselkedés és korlátok";
 "userscript_docs_limits_web" = "Szabványos DOM, események, MutationObserver, lekérés, időzítők és egyéb WKWebView API-k állnak rendelkezésre. A normál lekérés továbbra is a CORS-t követi.";
 "userscript_docs_limits_storage" = "A tárolt értékeknek JSON-sorosíthatónak kell lenniük: legfeljebb 256 KB értékenként és összesen 1 MB szkriptenként.";
-"userscript_docs_limits_network" = "A privilegizált válaszok 20 MB-ra korlátozódnak, az időtúllépés 1–60 másodpercre van korlátozva, és a Cookie/Host/Origin fejlécek nem fogadhatók el.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScripts nem futnak privát böngészés közben.";
 "userscript_docs_limits_require" = "A HTTPS @require fájlok telepítéskor vagy mentéskor letöltődnek és gyorsítótárba kerülnek, majd a szkript előtt sorrendben futnak.";
 "userscript_docs_template_title" = "Minimális sablon";

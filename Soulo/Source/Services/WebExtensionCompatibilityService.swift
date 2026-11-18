@@ -2712,7 +2712,7 @@ private final class WebExtensionUserScriptExecutionHost {
             self.facades[owner.uniqueIdentifier] = (web, host)
             web.load(URLRequest(url: owner.baseURL.appendingPathComponent(WebExtensionDownloadsScript.helperFilename)))
             for _ in 0..<150 {
-                if (try? await web.evaluateJavaScript("document.readyState==='complete'&&typeof globalThis.chrome?.tabs?.query==='function'")) as? Bool == true { return web }
+                if (try? await web.evaluateCompatibleJavaScript("document.readyState==='complete'&&typeof globalThis.chrome?.tabs?.query==='function'")) as? Bool == true { return web }
                 try await Task.sleep(for: .milliseconds(20))
             }
             throw URLError(.timedOut)
@@ -2745,7 +2745,7 @@ private final class WebExtensionUserScriptExecutionHost {
             }
             self.view = web; web.load(URLRequest(url: context.baseURL.appendingPathComponent("host.html")))
             for _ in 0..<150 {
-                if (try? await web.evaluateJavaScript("!!document.getElementById('soulo-script-host')")) as? Bool == true { return web }
+                if (try? await web.evaluateCompatibleJavaScript("!!document.getElementById('soulo-script-host')")) as? Bool == true { return web }
                 try await Task.sleep(for: .milliseconds(20))
             }
             throw URLError(.timedOut)

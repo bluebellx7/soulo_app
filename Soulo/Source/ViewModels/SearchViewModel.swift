@@ -371,6 +371,22 @@ class SearchViewModel: ObservableObject {
 
     // MARK: - Clear
 
+    /// Resume the saved destination without submitting its old search again.
+    @discardableResult
+    func restoreLastPageIfEnabled(tabManager: TabManager, defaults: UserDefaults = .standard) -> Bool {
+        guard defaults.bool(forKey: BrowserInitialPreferences.restoreLastPageKey),
+              !isIncognito, !isSearching,
+              tabManager.didLeaveBrowserVisible,
+              let tab = tabManager.activeTab,
+              let url = tab.webViewModel.currentURL ?? tab.suspendedURL,
+              ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return false }
+        currentKeyword = tab.keyword ?? ""
+        selectedPlatform = tab.platform
+        tabManager.tabs[tabManager.activeTabIndex].browserControlSearchID = searchID
+        isSearching = true
+        return true
+    }
+
     func clearSearch() {
         searchText = ""
         isSearching = false

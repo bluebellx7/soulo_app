@@ -5,6 +5,7 @@ import PhotosUI
 struct WallpaperSettingsView: View {
     @ObservedObject var wallpaperManager = WallpaperManager.shared
     var showsFavoritesOnly = false
+    var embedded = false
     @AppStorage("fav_section_collapsed") private var isFavCollapsed = false
     
     @Environment(\.colorScheme) private var colorScheme
@@ -163,8 +164,7 @@ struct WallpaperSettingsView: View {
                 }
             } else { sourceOptions }
         }
-        .navigationTitle(LText(showsFavoritesOnly ? "wallpaper_favorites" : "settings_wallpaper"))
-        .navigationBarTitleDisplayMode(.inline)
+        .modifier(SettingsPageTitle(embedded: embedded, title: LText(showsFavoritesOnly ? "wallpaper_favorites" : "settings_wallpaper")))
         .onAppear { editingAppearance = WallpaperAppearance(colorScheme) }
         .task(id: wallpaperManager.source) { if !showsFavoritesOnly { await wallpaperManager.ensureCandidatesLoaded() } }
         .task(id: "\(wallpaperManager.source.rawValue)-\(wallpaperManager.customPhotoRevision)") {

@@ -1,1 +1,4 @@
-Verbeterde iPad-vensters, spraakinvoer, lokale samenvattingen en toegankelijkheid. Verbeterde media-export op de achtergrond, Opdrachten en compatibiliteit met extensies. Sommige functies zijn afhankelijk van het apparaat, het systeem en de taal.
+• De instellingen zijn opnieuw ingedeeld. Bekijk de werkbalk op de startpagina terwijl je de stijl verandert, knoppen herschikt of de balk versleept.
+• Als herstellen bij herstart is ingeschakeld, opent Soulo de startpagina of de laatst bekeken webpagina.
+• Browsermenu’s hebben beter contrast. Via het menu Meer kun je een verborgen werkbalk weer tonen.
+• Netwerkverzoeken en updatecontroles voor gebruikersscripts zijn verbeterd.

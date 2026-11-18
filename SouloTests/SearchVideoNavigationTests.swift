@@ -364,15 +364,15 @@ final class SearchVideoNavigationTests: XCTestCase {
         _ = try await web.evaluateJavaScript("clonedMedia.forEach(m=>{m.pause();m.removeAttribute('src');m.load()})")
     }
 
-    func testNativeAndPageLinkNavigationPausePreviewBeforeTheDestinationLoads() async throws {
+    func testNativeAndPageLinkNavigationKeepWebKitMediaLifecycleUntilCommit() async throws {
         for native in [false,true] { try await checkNavigation(native:native,crossOrigin:false) }
     }
 
-    func testNavigationPausesCrossOriginPreviewAndDestinationCanStillAutoplay() async throws {
+    func testCrossOriginPreviewNavigationLeavesDestinationAutoplayAvailable() async throws {
         try await checkNavigation(native:false,crossOrigin:true)
     }
 
-    func testOutgoingPreviewCannotRestartWhileTheDestinationIsPending() async throws {
+    func testPreviewPlayCallsDuringPendingNavigationDoNotLeakSuspension() async throws {
         try await checkNavigation(native: false, crossOrigin: false, restartPreview: true)
     }
 
@@ -411,7 +411,7 @@ final class SearchVideoNavigationTests: XCTestCase {
         try await wait(web, for: "document.getElementById('v')?.currentTime > 0.1 && !v.paused")
         let destination = root.appendingPathComponent("detail.html")
         model.loadURL(destination)
-        try await wait(web, for: "v.paused")
+        try await wait(web, for: "v.readyState>=2 && v.currentSrc.endsWith('/clip.mp4')")
         for _ in 0..<3 {
             model.mediaSession.beginNavigation(to: destination)
             model.mediaSession.setActive(false)
@@ -421,7 +421,7 @@ final class SearchVideoNavigationTests: XCTestCase {
         _ = try await web.evaluateJavaScript("v.play().catch(()=>{}); null")
         try await wait(web, for: "!v.paused")
         model.loadURL(destination)
-        try await wait(web, for: "v.paused")
+        try await wait(web, for: "v.readyState>=2 && v.currentSrc.endsWith('/clip.mp4')")
         model.mediaSession.setActive(false)
         server.releaseDownloads()
         try await wait(web, for: "!!document.getElementById('detail') && v.readyState>=2")
@@ -457,14 +457,17 @@ final class SearchVideoNavigationTests: XCTestCase {
         }
         if native { model.loadURL(root.appendingPathComponent("detail.html")) }
         else { _ = try await web.evaluateJavaScript("document.getElementById('next').click()") }
-        // The held response keeps the outgoing document alive. Its player must
-        // already be paused, including media in a different-origin iframe.
-        try await wait(web,for:crossOrigin ? "window.__oldPaused===true" : "document.getElementById('v')?.paused===true")
+        // A provisional response can be stopped. Keep the original source and
+        // leave foreground playback/teardown to WebKit, including its BFCache.
+        try await wait(web,for:crossOrigin ? "typeof window.__oldPaused==='boolean'" : "document.getElementById('v')?.readyState>=2 && v.currentSrc.endsWith('/clip.mp4')")
         if restartPreview {
+            _ = try await web.evaluateJavaScript("v.pause();v.play().catch(()=>{});null")
             try await Task.sleep(for: .milliseconds(400))
-            let paused = try await web.evaluateJavaScript("v.paused") as? Bool
-            XCTAssertEqual(paused, true, "The outgoing page restarted its preview during navigation")
         }
+        let state: WKMediaPlaybackState = await withCheckedContinuation { continuation in
+            web.requestMediaPlaybackState { continuation.resume(returning: $0) }
+        }
+        XCTAssertNotEqual(state, .suspended, "Foreground navigation must not globally suspend the next document")
         XCTAssertTrue(model.mediaSession.isActive, "Navigation must not suspend the next document")
         server.releaseDownloads()
         try await wait(web,for:"!!document.getElementById('detail') && document.getElementById('v')?.paused===false")
@@ -549,7 +552,7 @@ final class SearchVideoNavigationTests: XCTestCase {
         }
     }
 
-    func testHandoffReleasesOldSourceAndStartsPausedDetailsWithTheChosenSoundState() async throws {
+    func testHandoffPreservesOriginalSourceAndStartsDetailsWithTheChosenSoundState() async throws {
         for muted in [false, true] {
             let server = try fixture(destinationAutoplay: false, pauseAfterStartup: true)
             let root = try await server.start()
@@ -572,14 +575,15 @@ final class SearchVideoNavigationTests: XCTestCase {
             let target = root.appendingPathComponent("detail.html")
             let handoff = try XCTUnwrap(WebMediaPlaybackHandoff(target: target, values: try XCTUnwrap(values)))
             model.loadVideoDetail(target, mediaHandoff: handoff)
-            try await wait(web, for: "document.getElementById('v')?.readyState===0 && v.paused && !v.getAttribute('src')")
+            try await wait(web, for: "document.getElementById('v')?.readyState>=2 && v.currentSrc.endsWith('/clip.mp4')")
             server.releaseDownloads()
             try await wait(web, for: "!!document.getElementById('detail') && !v.paused && v.currentTime>=4 && v.muted===\(muted)")
             let volume = try await web.evaluateJavaScript("v.volume") as? Double
             XCTAssertEqual(try XCTUnwrap(volume), handoff.volume, accuracy: 0.01)
             let hidden = probe.events.first { $0["event"] as? String == "pagehide" && ($0["url"] as? String)?.contains("preview.html") == true }
             let media = try XCTUnwrap(hidden?["media"] as? [[String: Any]])
-            XCTAssertTrue(media.allSatisfy { $0["configuredSource"] as? Bool == false && $0["paused"] as? Bool == true && $0["ready"] as? Int == 0 }, "Old document kept a media resource: \(media)")
+            XCTAssertFalse(media.isEmpty, "The outgoing document must report its lifecycle checkpoint")
+            XCTAssertTrue(media.allSatisfy { $0["configuredSource"] as? Bool == true }, "Native navigation must preserve sources for WebKit history restoration")
             web.goBack()
             try await wait(web, for: "location.pathname==='/preview.html' && document.getElementById('v')?.readyState>=2")
             let restoredSource = try await web.evaluateJavaScript("v.currentSrc.endsWith('/clip.mp4')") as? Bool
@@ -621,7 +625,7 @@ final class SearchVideoNavigationTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(350))
             let endValue = try await web.evaluateJavaScript("v.currentTime")
             let end = try XCTUnwrap(endValue as? Double)
-            if playing { XCTAssertGreaterThan(end, start + 0.15) }
+            if playing { try await wait(web, for: "v.currentTime > \(start + 0.15) && !v.paused") }
             else { XCTAssertEqual(end, start, accuracy: 0.1) }
             XCTAssertFalse(model.isLoading)
         }

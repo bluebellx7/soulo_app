@@ -44,6 +44,7 @@ struct ProtectionSettingsView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
         }
+        .modifier(AdBlockRuleNavigation(currentHost: currentHost, onChanged: onChanged))
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle(selection.title).navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -139,16 +140,6 @@ struct PrivacySettingsView: View {
                     SectionHeader(title: LanguageManager.shared.localizedString("privacy_section_browsing"))
                 } footer: {
                     Text(LanguageManager.shared.localizedString("privacy_global_scope_desc"))
-                }
-
-                Section {
-                    NavigationLink {
-                        StorageUsageView()
-                    } label: {
-                        Label(FeatureText.text("Storage"), systemImage: "internaldrive")
-                    }.accessibilityIdentifier("privacy.storage")
-                } header: {
-                    SectionHeader(title: LanguageManager.shared.localizedString("privacy_section_data"))
                 }
 
             }

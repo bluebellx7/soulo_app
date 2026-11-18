@@ -1,1 +1,4 @@
-Parannettu iPad-ikkunoita, puhesyöttöä, paikallisia yhteenvetoja ja käyttöapua. Parannettu median taustavientiä, Pikakomentoja ja laajennusten yhteensopivuutta. Osa ominaisuuksista riippuu laitteesta, järjestelmäversiosta ja kielestä.
+• Asetukset on järjestetty uudelleen. Esikatsele aloitussivun työkaluriviä, vaihda sen tyyliä, järjestä painikkeet tai vedä rivi haluamaasi paikkaan.
+• Kun palautus käynnistettäessä on käytössä, Soulo avaa aloitussivun tai viimeksi katsomasi verkkosivun.
+• Selaimen valikoissa on parempi kontrasti. Voit näyttää piilotetun työkalurivin uudelleen Lisää-valikosta.
+• Käyttäjäskriptien verkkopyyntöjä ja päivitysten tarkistusta on parannettu.

@@ -13,7 +13,7 @@ struct PageSummaryView: View {
             let sourceURL = viewModel.currentURL
             do {
                 guard let webView = viewModel.webView else { loading = false; return }
-                let text = try await webView.evaluateJavaScript("(document.querySelector('article') || document.querySelector('main') || document.body)?.innerText?.slice(0,120000) || ''") as? String ?? ""
+                let text = try await webView.evaluateCompatibleJavaScript("(document.querySelector('article') || document.querySelector('main') || document.body)?.innerText?.slice(0,120000) || ''") as? String ?? ""
                 let result = try await PageSummaryService.summarizeLocally(text: text, locale: LanguageManager.shared.locale)
                 try Task.checkCancellation()
                 guard viewModel.currentURL == sourceURL else { return }

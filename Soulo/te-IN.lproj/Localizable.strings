@@ -665,9 +665,9 @@
 "userscript_docs_supported_title" = "మద్దతు ఇచ్చారు";
 "userscript_docs_supported_desc" = "కోర్ మ్యాచింగ్, డాక్యుమెంట్-స్టార్ట్/ఎండ్, స్టైల్స్/ఎలిమెంట్స్, సింగిల్ మరియు బల్క్ స్టోరేజ్, స్థానిక విలువ శ్రోతలు, క్లిప్‌బోర్డ్, మెనూలు, ఇన్-పేజీ నోటిఫికేషన్‌లు, ట్యాబ్‌లు, డౌన్‌లోడ్‌లు, ట్యాబ్ డేటా, కుక్కీలు, వనరులు, URL మార్పులు మరియు అనుమతి-స్కోప్డ్ అభ్యర్థనలు.";
 "userscript_docs_partial_title" = "పాక్షికంగా మద్దతు ఇచ్చింది";
-"userscript_docs_partial_desc" = "నెట్‌వర్క్ అభ్యర్థనలు అప్‌లోడ్/పురోగతి మరియు కుక్కీ రవాణాను విస్మరిస్తాయి. నోటిఫికేషన్‌లు పేజీలో ఉంటాయి, రిసోర్స్ APIలు అసమకాలికమైనవి మరియు ప్రస్తుత పేజీ ద్వారా చేసిన మార్పులను విలువ-మార్పు శ్రోతలు నివేదించారు. నవీకరణ తనిఖీలు మాన్యువల్.";
+"userscript_docs_partial_desc" = "నోటిఫికేషన్‌లు పేజీలో కనిపిస్తాయి; రిసోర్స్ APIలు Promise ఇస్తాయి. cookie ఎంపికకు GM_cookie అనుమతి అవసరం; కుకీలు ఆటోమేటిక్‌గా పంపబడవు.";
 "userscript_docs_unsupported_title" = "ప్రస్తుతం మద్దతు లేదు";
-"userscript_docs_unsupported_desc" = "GM_webRequest ఇంటర్‌సెప్షన్, GM_audio, శాండ్‌బాక్స్/రన్-ఇన్ ఐసోలేషన్, ఆటోమేటిక్ అప్‌డేట్ చెక్‌లు మరియు WKWebView అందించలేని ఖచ్చితమైన డెస్క్‌టాప్-మాత్రమే ప్రవర్తనలు.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in వేరుచేయడం మరియు WKWebViewలో లేని డెస్క్‌టాప్ లక్షణాలు.";
 "userscript_docs_metadata_title" = "మెటాడేటా";
 "userscript_docs_metadata_identity" = "మానవులు చదవగలిగే స్క్రిప్ట్ పేరు మరియు ఐచ్ఛిక వివరణ ఇన్‌స్టాలేషన్‌కు ముందు మరియు స్క్రిప్ట్ వివరాలలో చూపబడింది.";
 "userscript_docs_metadata_version" = "బండిల్ చేయబడిన స్క్రిప్ట్ మారినప్పుడల్లా స్థిరమైన, ప్రత్యేకమైన నేమ్‌స్పేస్‌ని ఉపయోగించండి మరియు సంస్కరణను పెంచండి.";
@@ -689,7 +689,7 @@
 "userscript_docs_api_delete" = "ఈ స్క్రిప్ట్ కోసం ఒక స్థిరమైన విలువను తొలగిస్తుంది.";
 "userscript_docs_api_list" = "ఈ స్క్రిప్ట్ యాజమాన్యంలోని అన్ని నిరంతర నిల్వ కీలను అందిస్తుంది.";
 "userscript_docs_api_bulk" = "ఒక ఆపరేషన్‌లో బహుళ JSON విలువలను చదవడం, వ్రాయడం లేదా తొలగించడం; వ్రాతలు స్థానిక స్టోర్ ద్వారా పరమాణుపరంగా ధృవీకరించబడతాయి.";
-"userscript_docs_api_listener" = "ప్రస్తుత వెబ్‌పేజీలో స్క్రిప్ట్ చేసిన నిల్వ మార్పులను గమనిస్తుంది. క్రాస్-ట్యాబ్ రిమోట్ నోటిఫికేషన్‌లు విడుదల చేయబడవు.";
+"userscript_docs_api_listener" = "స్థానిక మరియు ఇతర ట్యాబ్‌ల స్టోరేజ్ మార్పులను గమనిస్తుంది. ఇతర ట్యాబ్ మార్పులకు remote=true ఉంటుంది.";
 "userscript_docs_api_element" = "డాక్యుమెంట్-ప్రారంభ సమయంలో సురక్షితంగా సహా లక్షణాలతో ఒక మూలకాన్ని సృష్టిస్తుంది మరియు జోడిస్తుంది.";
 "userscript_docs_api_clipboard" = "Soulo యొక్క స్థానిక వంతెన ద్వారా సిస్టమ్ క్లిప్‌బోర్డ్‌కి వచనాన్ని కాపీ చేస్తుంది.";
 "userscript_docs_extended_title" = "మెనూలు, ట్యాబ్‌లు, ఫైల్‌లు మరియు పేజీ ఇంటిగ్రేషన్";
@@ -705,13 +705,13 @@
 "userscript_docs_network_title" = "నెట్‌వర్క్ అభ్యర్థనలు";
 "userscript_docs_network_legacy" = "ప్రత్యేక అభ్యర్థనను ప్రారంభిస్తుంది మరియు రద్దు హ్యాండిల్‌ను అందిస్తుంది. మ్యాచింగ్ గ్రాంట్ మరియు @connect హోస్ట్‌లను ప్రకటించండి.";
 "userscript_docs_network_modern" = "అదే వివరాల వస్తువు మరియు కాల్‌బ్యాక్ ప్రవర్తనతో ప్రత్యేక అభ్యర్థన API యొక్క ఆధునిక మారుపేరు.";
-"userscript_docs_network_details" = "url, మెథడ్, హెడర్‌లు, డేటా, టైమ్‌అవుట్, రెస్పాన్స్ టైప్, ఆన్‌లోడ్‌స్టార్ట్, ఆన్‌రెడిస్టేట్‌చేంజ్, ఆన్‌లోడ్, ఎరర్ మరియు ఆన్‌లోడ్‌ఎండ్‌కు మద్దతు ఇస్తుంది.";
+"userscript_docs_network_details" = "url · method · headers · data · timeout · responseType · cookie · anonymous · context. onloadstart / onreadystatechange / onprogress / upload / ontimeout / onabort / onload / onerror / onloadend. data: String / Blob / ArrayBuffer / TypedArray / URLSearchParams / FormData.";
 "userscript_docs_network_response" = "json, blob, arraybuffer ఉపయోగించండి లేదా టెక్స్ట్ కోసం ఖాళీగా ఉంచండి. ప్రతిస్పందనలలో స్థితి, finalUrl, శీర్షికలు, ప్రతిస్పందన వచనం మరియు ప్రతిస్పందన ఉన్నాయి.";
 "userscript_docs_network_connect" = "పేజీ హోస్ట్ కోసం స్వీయ, దాని కోసం డొమైన్ మరియు దాని సబ్‌డొమైన్‌లు, వైల్డ్‌కార్డ్ డొమైన్ లేదా *ని నిజంగా అవసరమైనప్పుడు మాత్రమే ఉపయోగించండి.";
 "userscript_docs_limits_title" = "ప్రవర్తన మరియు పరిమితులు";
 "userscript_docs_limits_web" = "ప్రామాణిక DOM, ఈవెంట్‌లు, MutationObserver, పొందడం, టైమర్‌లు మరియు ఇతర WKWebView APIలు అందుబాటులో ఉన్నాయి. సాధారణ పొందడం ఇప్పటికీ CORSని అనుసరిస్తుంది.";
 "userscript_docs_limits_storage" = "నిల్వ చేయబడిన విలువలు తప్పనిసరిగా JSON-క్రమీకరించదగినవిగా ఉండాలి: ఒక్కో విలువకు 256 KB మరియు స్క్రిప్ట్‌కు మొత్తం 1 MB.";
-"userscript_docs_limits_network" = "ప్రత్యేక ప్రతిస్పందనలు 20 MBకి పరిమితం చేయబడ్డాయి, గడువు ముగింపు 1–60 సెకన్లకు బిగించబడింది మరియు కుకీ/హోస్ట్/ఆరిజిన్ హెడర్‌లు ఆమోదించబడవు.";
+"userscript_docs_limits_network" = "response ≤ 20 MiB · data ≤ 8 MiB · XHR × 8 · timeout 1–60 s. onprogress: loaded / total; response: onload. headers.Cookie / Host / Origin: ✕; cookie: GM_cookie + @connect.";
 "userscript_docs_limits_private" = "UserScriptలు ప్రైవేట్ బ్రౌజింగ్‌లో అమలు చేయబడవు.";
 "userscript_docs_limits_require" = "HTTPS @require ఫైల్‌లు ఇన్‌స్టాల్ లేదా సేవ్ చేసేటప్పుడు డౌన్‌లోడ్ చేసి కాష్ చేయబడతాయి, ఆపై స్క్రిప్ట్‌కు ముందు క్రమంలో అమలవుతాయి.";
 "userscript_docs_template_title" = "కనిష్ట టెంప్లేట్";

@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "Poziția %d";
 "home_toolbar_reset" = "Ascunde tot";
 "home_toolbar_default_hint" = "Comenzile rapide de acasă sunt ascunse în mod implicit.";
+"home_toolbar_position" = "Poziție";
+"home_toolbar_buttons" = "Butoane";
+"home_toolbar_tiles" = "Separate";
+"home_toolbar_capsule" = "Capsulă";
+"home_toolbar_icons" = "Doar pictograme";
+"home_toolbar_bottom" = "Jos";
+"home_toolbar_belowSearch" = "Sub căutare";
+"home_toolbar_free" = "Poziție liberă";
+"home_toolbar_leading" = "Aliniază la început";
+"home_toolbar_center" = "Centrează";
+"home_toolbar_trailing" = "Aliniază la final";
+"home_toolbar_drag_position" = "Trage bara în poziția dorită.";
+"home_toolbar_drag_buttons" = "Atinge pentru a schimba un buton. Trage pentru a reordona.";
 "home_toolbar_search" = "Găsiți o pagină";
 "group_default_search" = "Căutare implicită";
 "group_search_settings" = "Setări de grup";
 "group_engine_name" = "Numele motorului de căutare";
-"group_search_url" = "Căutați URL cu %@";
-"group_default_search_hint" = "Folosit atunci când acest grup nu are platforme activate. Includeți %@ în URL pentru termenii de căutare. Platformele dezactivate rămân dezactivate.";
-"group_search_url_invalid" = "Introduceți un nume și o căutare validă HTTP sau HTTPS URL care conține %@.";
+"group_search_url" = "URL de căutare sau pagină de pornire (cuvinte-cheie: %@)";
+"group_default_search_hint" = "Folosit când grupul nu are platforme activate. Poți alege orice platformă din grup. %@ este înlocuit cu termenii căutării; fără substituent, pagina se deschide direct. Platformele dezactivate nu vor fi reactivate.";
+"group_search_url_invalid" = "Introdu un nume și un URL HTTP sau HTTPS valid; șabloanele de căutare pot folosi %@.";
 "batch_import_new_group" = "Grup importat";
 "image_resources" = "Resurse";
 "screen_keep_awake" = "Păstrați ecranul pornit";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "Acest format nu poate fi trimis direct cu playerul de sistem. Deschide Control Center, alege Screen Mirroring, apoi selectează televizorul sau Mac.";
 "userscript_check_updates" = "Verificați actualizările";
 "userscript_update_no_url" = "Nu este furnizată nicio adresă de actualizare. Importați un fișier script mai nou pentru a-l actualiza.";
-"userscript_update_manual_hint" = "Verificările rulează numai atunci când sunt solicitate. Examinați noua versiune înainte de a actualiza. Scripturile încorporate se actualizează cu aplicația.";
+"userscript_update_manual_hint" = "Deschiderea listei Instalate verifică până la 4 scripturi per vizită, fiecare o dată la 24 de ore. Pauză în privat, la consum redus sau temperaturi ridicate. Actualizările necesită examinare.";
 "userscript_update_latest" = "La zi";
 "userscript_update_invalid" = "Actualizarea este nevalidă, aparține unui script diferit sau are o versiune inconsistentă.";
 "userscript_update_changed" = "Acest script s-a schimbat după verificare. Verificați din nou actualizările.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "Sticlă mată";
 "wallpaper_blur_amount" = "Intensitatea estompării";
 
-"auto_hide_platform_bar_hint" = "Bara platformelor se ascunde doar după ce atingi conținutul paginii. Redirecționările automate și derularea nu o ascund. Revino la rezultate sau începe o căutare nouă pentru a o afișa din nou.";
+"auto_hide_platform_bar_hint" = "Când este activată, bara se ascunde doar după ce atingi conținutul paginii și domeniul nu corespunde niciunei platforme din bara curentă. Dacă există o potrivire, bara rămâne vizibilă sau reapare. Derularea și redirecționările automate nu o ascund.";
 
 "ad_subscription_add" = "Adaugă listă de filtre";
 "ad_subscription_name" = "Nume";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "Controlează vibrațiile și sunetele interfeței în întreaga aplicație. Redarea paginilor web, a videoclipurilor și a conținutului audio nu este afectată.";
 
 "home_display_settings" = "Afișarea paginii de pornire";
-"browsing_display_settings" = "Afișarea navigării";
+"browsing_display_settings" = "Configurări de navigare";
 
 "web_video_download" = "Descărcări video web";
 "web_video_download_description" = "Afișează comenzile de descărcare video pe pagini web, liste de episoade și în playere. Redarea și descărcările existente rămân neschimbate.";
@@ -563,3 +576,45 @@
 "storage_cleanup_reading_desc" = "Curăță articolele offline, biblioteca și progresul lecturii.";
 
 "storage_cleanup_offline_desc" = "Șterge resturile video offline fără înregistrări de descărcare.";
+
+"storage_website_shared" = "Date comune și neatribuite";
+"storage_website_shared_desc" = "Include cache-uri de rețea comune, cookie-uri și date care nu pot fi atribuite unui singur site.";
+"storage_website_clear_scope" = "Șterge datele site-urilor obișnuite și cache-urile de rețea comune. Pentru fișierele media ale extensiilor, folosiți „Cache temporar al extensiilor”; setările extensiilor sunt păstrate.";
+
+"storage_quick_clear" = "Curățare rapidă";
+"storage_quick_clear_done" = "Cache șters";
+
+"storage_website_cleanup_pending" = "Datele site-urilor încă se șterg. Puteți reveni și continua navigarea. Nu porniți o altă curățare.";
+
+"storage_auto_cleanup" = "Curățare automată";
+
+"storage_auto_cleanup_desc" = "Încearcă cel mult o dată la 24 de ore când aplicația este inactivă în fundal. Elimină doar fișierele temporare de import, export și previzualizare nefolosite, mai vechi de 24 de ore. O rundă durează circa 1 secundă sau verifică 2000 de elemente și se oprește la revenirea în aplicație. Se omite în timpul redării, descărcării, exportului, cu modul Consum redus activat sau încălzire vizibilă. Marcajele, descărcările salvate, autentificările și datele site-urilor nu se șterg automat.";
+
+"restore_last_page_on_launch" = "Restabilește ultima pagină";
+"restore_last_page_on_launch_desc" = "Deschide ultima pagină web la pornirea aplicației. Filele private nu sunt restabilite.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "Gesturi și scurtături";
+"app_icon_shortcuts" = "Scurtături ale pictogramei";
+"settings_sync_backup" = "Sincronizare și copii";
+"icloud_bookmark_sync" = "Marcaje iCloud";
+"manual_settings_backups" = "Copii manuale";
+"create_settings_backup" = "Creează";
+"toolbar_settings" = "Bare de instrumente";
+"toolbar_section_home" = "Acasă";
+
+/* Manual backup controls */
+"clear_manual_backups" = "Șterge copiile manuale";
+"clear_manual_backups_message" = "Șterge doar copiile create manual sau importate. Copiile automate și vechi de recuperare, configurările actuale și sincronizarea iCloud se păstrează.";
+"recovery_settings_backups" = "Copii automate și anterioare";
+
+/* Settings hierarchy */
+"settings_personalization" = "Personalizare";
+"appearance_home_settings" = "Acasă și fundal";
+"settings_data" = "Date";
+"about_feedback_settings" = "Despre și feedback";
+"browsing_startup_tabs" = "Pornire și file";
+"browsing_interface" = "Interfață";
+"browsing_web_display" = "Pagini web";
+"manual_backups_empty" = "Nu există copii manuale";
+"browsing_display_settings_legacy" = "Afișarea navigării";

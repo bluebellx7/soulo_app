@@ -57,6 +57,16 @@ final class WebViewModel: ObservableObject {
     private var platformSearchHasLeftRoot = false
     private var tracksPlatformSearch = false
     private var platformSearchRootURL: URL?
+    private var platformBarMatchingHosts: Set<String> = []
+    private var platformBarHideRequestedByTap = false
+    private var platformBarHideRequestedByTabActivation = false
+    private var platformBarNeedsTabActivation = false
+
+    func setPlatformBarMatchingHosts(_ hosts: Set<String>) {
+        guard platformBarMatchingHosts != hosts else { return }
+        platformBarMatchingHosts = hosts
+        refreshPlatformBarAutoHide()
+    }
 
     func beginPlatformSearchTracking() {
         tracksPlatformSearch = true
@@ -73,13 +83,32 @@ final class WebViewModel: ObservableObject {
     }
 
     func resetPlatformBarAutoHide() {
+        platformBarHideRequestedByTap = false
+        platformBarHideRequestedByTabActivation = false
+        platformBarNeedsTabActivation = false
         if platformBarHiddenByPageTap { platformBarHiddenByPageTap = false }
+    }
+
+    /// Queue this until the browser has supplied the current group's hosts.
+    /// Also survives opening the tab overview from Home, before this view exists.
+    func requestPlatformBarTabActivation() { platformBarNeedsTabActivation = true }
+
+    @discardableResult
+    func applyPendingPlatformBarTabActivation(autoHideEnabled: Bool) -> Bool {
+        guard platformBarNeedsTabActivation else { return false }
+        platformBarNeedsTabActivation = false
+        platformBarHideRequestedByTap = false
+        platformBarHideRequestedByTabActivation = autoHideEnabled
+            && currentURL.flatMap(PlatformBarDomainPolicy.host) != nil
+            && !PlatformBarDomainPolicy.matches(currentURL, hosts: platformBarMatchingHosts)
+        refreshPlatformBarAutoHide()
+        return true
     }
 
     /// Called only for a trusted click from our isolated content world. A
     /// touchstart may become a scroll, and URL changes may be automatic.
     func recordPlatformPageTap(autoHideEnabled: Bool) {
-        guard tracksPlatformSearch, autoHideEnabled, !platformBarHiddenByPageTap else { return }
+        guard tracksPlatformSearch, autoHideEnabled, !platformBarHideRequestedByTap else { return }
         // The site may have redirected itself since the search finished. Use
         // the document the user actually tapped as the return-to-results root.
         if let currentURL {
@@ -88,7 +117,22 @@ final class WebViewModel: ObservableObject {
             platformSearchRootURL = parts?.url
             platformSearchHasLeftRoot = false
         }
-        platformBarHiddenByPageTap = true
+        platformBarHideRequestedByTap = true
+        refreshPlatformBarAutoHide()
+    }
+
+    private func refreshPlatformBarAutoHide() {
+        let matches = PlatformBarDomainPolicy.matches(currentURL, hosts: platformBarMatchingHosts)
+        // Arriving at any platform restores the bar, even before loading has
+        // finished. A later unrelated redirect then needs a fresh user tap.
+        if matches && platformBarHiddenByPageTap {
+            platformBarHideRequestedByTap = false
+            platformBarHideRequestedByTabActivation = false
+        }
+        let hasWebHost = currentURL.flatMap(PlatformBarDomainPolicy.host) != nil
+        let requested = (tracksPlatformSearch && platformBarHideRequestedByTap) || platformBarHideRequestedByTabActivation
+        let hidden = requested && hasWebHost && !matches
+        if platformBarHiddenByPageTap != hidden { platformBarHiddenByPageTap = hidden }
     }
 
     private func updatePlatformSearchNavigation(finished: Bool = false) {
@@ -103,11 +147,16 @@ final class WebViewModel: ObservableObject {
             platformSearchRootURL = documentURL(currentURL)
         }
         let leftRoot = documentURL(currentURL) != platformSearchRootURL
-        if platformSearchHasLeftRoot && !leftRoot { resetPlatformBarAutoHide() }
+        if platformSearchHasLeftRoot && !leftRoot {
+            platformBarHideRequestedByTap = false
+            refreshPlatformBarAutoHide()
+        }
         platformSearchHasLeftRoot = leftRoot
     }
 
-    @Published var currentURL: URL?
+    @Published var currentURL: URL? {
+        didSet { if oldValue != currentURL { refreshPlatformBarAutoHide() } }
+    }
     @Published private(set) var userAgentOverride: String?
     @Published var pageTitle: String = ""
     var lastURLString: String = ""
@@ -240,14 +289,11 @@ final class WebViewModel: ObservableObject {
             // SwiftUI, WebKit presentations or downloads can retain a retired
             // runtime after the model drops it. stopLoading() does not stop
             // media, and a one-off pause lets page scripts start it again.
-            if #available(iOS 17.0, *) {
-                oldValue?.setAllMediaPlaybackSuspended(true, completionHandler: nil)
-                oldValue?.closeAllMediaPresentations(completionHandler: nil)
-            } else {
-                // Older WebKit may invoke the optional block unconditionally.
-                oldValue?.setAllMediaPlaybackSuspended(true, completionHandler: {})
-                oldValue?.closeAllMediaPresentations(completionHandler: {})
-            }
+            // Some older WebKit builds invoke these optional blocks without
+            // checking for nil. Supply callbacks on every supported OS rather
+            // than assuming the behavior changed at a major-version boundary.
+            oldValue?.setAllMediaPlaybackSuspended(true, completionHandler: {})
+            oldValue?.closeAllMediaPresentations(completionHandler: {})
             if webView == nil {
                 isStreamingDownloadHandlerInstalled = false
             }
@@ -905,7 +951,7 @@ final class WebViewModel: ObservableObject {
         """#
 
         do {
-            let value = try await webView.evaluateJavaScript(script)
+            let value = try await webView.evaluateCompatibleJavaScript(script)
             guard pageLanguageDetectionID == detectionID,
                   webView.url?.absoluteString == expectedURL,
                   let result = value as? [String: Any],

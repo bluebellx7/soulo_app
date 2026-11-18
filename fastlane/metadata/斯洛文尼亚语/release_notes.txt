@@ -1,1 +1,4 @@
-Izboljšana okna na iPadu, glasovni vnos, lokalni povzetki in dostopnost. Izboljšan izvoz predstavnosti v ozadju, Bližnjice in združljivost razširitev. Nekatere funkcije so odvisne od naprave, različice sistema in jezika.
+• Nastavitve smo preuredili. Med predogledom orodne vrstice na začetni strani lahko spremenite slog, preuredite gumbe ali povlečete vrstico na želeno mesto.
+• Ko je obnovitev ob ponovnem zagonu vklopljena, Soulo odpre začetno stran ali nazadnje ogledano spletno stran.
+• Meniji brskalnika so bolje berljivi. Skrito orodno vrstico lahko znova prikažete v meniju Več.
+• Izboljšali smo omrežne zahteve in preverjanje posodobitev uporabniških skriptov.

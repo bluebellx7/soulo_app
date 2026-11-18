@@ -1,1 +1,4 @@
-Am îmbunătățit ferestrele de pe iPad, introducerea vocală, rezumatele locale și accesibilitatea. Am îmbunătățit exportul media în fundal, Scurtăturile și compatibilitatea extensiilor. Unele funcții depind de dispozitiv, versiunea sistemului și limbă.
+• Am reorganizat setările. Poți previzualiza bara de instrumente a paginii de pornire, îi poți schimba stilul, reordona butoanele sau muta bara prin tragere.
+• Când restaurarea la repornire este activată, Soulo deschide pagina de pornire sau ultima pagină web vizualizată.
+• Meniurile browserului sunt mai ușor de citit. Poți afișa din nou bara de instrumente ascunsă din meniul Mai multe.
+• Am îmbunătățit solicitările de rețea și verificarea actualizărilor pentru scripturile utilizatorului.

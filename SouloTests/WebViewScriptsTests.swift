@@ -2827,7 +2827,7 @@ final class WebViewScriptsTests: XCTestCase {
 
     @MainActor
     func testXiaohongshuSearchURLPreservesArbitrarySearchText() throws {
-        let platform = try XCTUnwrap(PlatformDataStore.shared.allPlatforms().first { $0.name == "platform_xiaohongshu" })
+        let platform = try XCTUnwrap(PlatformDataStore.defaultPlatforms().first { $0.name == "platform_xiaohongshu" })
         XCTAssertEqual(platform.interactionType, .urlSearch)
         for query in ["O'Reilly", "猫 & 狗 + #tag?x=1", "');window.injected=true;//", "line\nnext\u{2028}行"] {
             let url = try XCTUnwrap(platform.searchURL(for: query))

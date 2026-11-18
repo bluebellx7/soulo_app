@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "الموضع %d";
 "home_toolbar_reset" = "إخفاء الكل";
 "home_toolbar_default_hint" = "يتم إخفاء اختصارات الصفحة الرئيسية بشكل افتراضي.";
+"home_toolbar_position" = "الموضع";
+"home_toolbar_buttons" = "الأزرار";
+"home_toolbar_tiles" = "منفصلة";
+"home_toolbar_capsule" = "كبسولة";
+"home_toolbar_icons" = "أيقونات فقط";
+"home_toolbar_bottom" = "أسفل الشاشة";
+"home_toolbar_belowSearch" = "أسفل البحث";
+"home_toolbar_free" = "موضع حر";
+"home_toolbar_leading" = "محاذاة للبداية";
+"home_toolbar_center" = "توسيط";
+"home_toolbar_trailing" = "محاذاة للنهاية";
+"home_toolbar_drag_position" = "اسحب شريط الأدوات لتغيير موضعه.";
+"home_toolbar_drag_buttons" = "اضغط لتغيير الزر واسحب لإعادة ترتيبه.";
 "home_toolbar_search" = "ابحث عن صفحة";
 "group_default_search" = "البحث الافتراضي";
 "group_search_settings" = "إعدادات المجموعة";
 "group_engine_name" = "اسم محرك البحث";
-"group_search_url" = "ابحث عن URL باستخدام %@";
-"group_default_search_hint" = "يُستخدم عندما لا تحتوي هذه المجموعة على منصات ممكّنة. قم بتضمين %@ في URL لمصطلحات البحث. تظل الأنظمة الأساسية المعطلة معطلة.";
-"group_search_url_invalid" = "أدخل اسمًا وHTTP أو HTTPS بحث صالح URL يحتوي على %@.";
+"group_search_url" = "رابط البحث أو الصفحة الرئيسية (كلمات البحث: %@)";
+"group_default_search_hint" = "يُستخدم عندما لا تتضمن هذه المجموعة منصات مفعّلة. يمكنك اختيار أي منصة في المجموعة. تُستبدل %@ بكلمات البحث؛ وإذا لم يوجد عنصر نائب، تُفتح الصفحة مباشرةً. تبقى المنصات المعطّلة معطّلة.";
+"group_search_url_invalid" = "أدخل اسمًا ورابط HTTP أو HTTPS صالحًا. يمكن لقوالب البحث استخدام %@.";
 "batch_import_new_group" = "المجموعة المستوردة";
 "image_resources" = "الموارد";
 "screen_keep_awake" = "إبقاء الشاشة قيد التشغيل";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "لا يمكن إرسال هذا التنسيق مباشرة مع مشغل النظام. افتح Control Center، واختر Screen Mirroring، ثم حدد جهاز التلفزيون أو جهاز Mac الخاص بك.";
 "userscript_check_updates" = "التحقق من التحديثات";
 "userscript_update_no_url" = "لم يتم توفير عنوان التحديث. قم باستيراد ملف نصي أحدث لتحديثه.";
-"userscript_update_manual_hint" = "يتم تشغيل الشيكات فقط عند الطلب. قم بمراجعة الإصدار الجديد قبل التحديث. تحديث البرامج النصية المضمنة مع التطبيق.";
+"userscript_update_manual_hint" = "يفحص فتح المثبتة حتى 4 نصوص في كل زيارة، مرة لكل نص خلال 24 ساعة. يتوقف في التصفح الخاص أو الطاقة المنخفضة أو الحرارة العالية. تتطلب التحديثات مراجعة.";
 "userscript_update_latest" = "حتى الآن";
 "userscript_update_invalid" = "التحديث غير صالح، أو ينتمي إلى برنامج نصي مختلف، أو يحتوي على إصدار غير متناسق.";
 "userscript_update_changed" = "تم تغيير هذا البرنامج النصي بعد الفحص. تحقق من وجود تحديثات مرة أخرى.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "زجاج ضبابي";
 "wallpaper_blur_amount" = "قوة التمويه";
 
-"auto_hide_platform_bar_hint" = "يختفي شريط المنصات فقط بعد النقر على محتوى الصفحة. لا يخفيه التمرير أو إعادة التوجيه التلقائية. عُد إلى نتائج البحث أو ابدأ بحثًا جديدًا لإظهاره.";
+"auto_hide_platform_bar_hint" = "عند التفعيل، لا يختفي شريط المنصات إلا بعد النقر يدويًا على محتوى الصفحة، وفقط إذا لم يطابق نطاقها أي منصة في الشريط الحالي. إذا طابق أي منصة، يظل الشريط ظاهرًا أو يظهر مجددًا. لا يؤدي التمرير أو إعادة التوجيه التلقائية إلى إخفائه.";
 
 "ad_subscription_add" = "إضافة قائمة تصفية";
 "ad_subscription_name" = "الاسم";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "تحكّم في الاهتزاز وأصوات الواجهة في التطبيق بأكمله. لا يؤثر ذلك في تشغيل صفحات الويب والفيديو والصوت.";
 
 "home_display_settings" = "عرض الصفحة الرئيسية";
-"browsing_display_settings" = "عرض التصفح";
+"browsing_display_settings" = "إعدادات التصفح";
 
 "web_video_download" = "تنزيل فيديو الويب";
 "web_video_download_description" = "إظهار عناصر تنزيل الفيديو في صفحات الويب وقوائم الحلقات والمشغلات. لا يتغير التشغيل أو التنزيلات الحالية.";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "يمسح المقالات دون اتصال ومكتبة الكتب وتقدم القراءة.";
 
 "storage_cleanup_offline_desc" = "يحذف بقايا الفيديوهات دون اتصال التي لا تملك سجلات تنزيل.";
+
+"storage_website_shared" = "بيانات مشتركة وغير منسوبة";
+"storage_website_shared_desc" = "تشمل ذاكرة الشبكة المؤقتة المشتركة وملفات الارتباط والبيانات التي لا يمكن نسبتها إلى موقع واحد.";
+"storage_website_clear_scope" = "يمسح بيانات المواقع العادية وذاكرة الشبكة المؤقتة المشتركة. استخدم «ذاكرة الإضافات المؤقتة» لوسائط الإضافات؛ تُحفظ إعدادات الإضافات.";
+
+"storage_quick_clear" = "تنظيف سريع";
+"storage_quick_clear_done" = "تم مسح ذاكرة التخزين المؤقت";
+
+"storage_website_cleanup_pending" = "لا يزال مسح بيانات المواقع جاريًا. يمكنك الرجوع ومتابعة التصفح. يُرجى عدم بدء عملية مسح أخرى.";
+
+"storage_auto_cleanup" = "تنظيف تلقائي";
+
+"storage_auto_cleanup_desc" = "تُجرى محاولة واحدة على الأكثر كل 24 ساعة عندما يكون التطبيق خاملاً في الخلفية. تُحذف فقط ملفات الاستيراد والتصدير والمعاينة المؤقتة غير المستخدمة التي تجاوز عمرها 24 ساعة. تستغرق المحاولة نحو ثانية أو تفحص 2000 عنصر، وتتوقف عند العودة للتطبيق. تُتخطى أثناء التشغيل أو التنزيل أو التصدير، أو عند تفعيل نمط الطاقة المنخفضة أو ارتفاع حرارة الجهاز بشكل ملحوظ. لا تُحذف الإشارات المرجعية والتنزيلات المحفوظة وتسجيلات الدخول وبيانات المواقع تلقائيًا.";
+
+"restore_last_page_on_launch" = "استعادة آخر صفحة";
+"restore_last_page_on_launch_desc" = "افتح آخر صفحة ويب عند بدء التطبيق. لا تُستعاد علامات التبويب الخاصة.";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "الإيماءات والاختصارات";
+"app_icon_shortcuts" = "اختصارات أيقونة التطبيق";
+"settings_sync_backup" = "المزامنة والنسخ الاحتياطي";
+"icloud_bookmark_sync" = "مزامنة إشارات iCloud";
+"manual_settings_backups" = "النسخ اليدوية";
+"create_settings_backup" = "إنشاء";
+"toolbar_settings" = "أشرطة الأدوات";
+"toolbar_section_home" = "الرئيسية";
+
+/* Manual backup controls */
+"clear_manual_backups" = "مسح النسخ اليدوية";
+"clear_manual_backups_message" = "يحذف النسخ المنشأة يدويًا أو المستوردة فقط. تُحفظ لقطات الاستعادة التلقائية والقديمة والإعدادات الحالية ومزامنة iCloud.";
+"recovery_settings_backups" = "النسخ التلقائية والسابقة";
+
+/* Settings hierarchy */
+"settings_personalization" = "التخصيص";
+"appearance_home_settings" = "الرئيسية والخلفية";
+"settings_data" = "البيانات";
+"about_feedback_settings" = "حول وملاحظات";
+"browsing_startup_tabs" = "البدء وعلامات التبويب";
+"browsing_interface" = "الواجهة";
+"browsing_web_display" = "صفحات الويب";
+"manual_backups_empty" = "لا توجد نسخ يدوية بعد";
+"browsing_display_settings_legacy" = "عرض التصفح";

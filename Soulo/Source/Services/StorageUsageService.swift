@@ -3,6 +3,84 @@ import WebKit
 import Darwin
 import CoreData
 
+/// Serializes WebKit data mutations. Repeated global requests share one task;
+/// an outstanding WebKit callback keeps ownership even if its view disappears.
+@MainActor final class WebsiteDataCleanupCoordinator {
+    private var locked = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    private enum Scope: Hashable { case all, cache }
+    private struct Job {
+        let id: UUID
+        let response: Task<StorageCleanupReport, Never>
+    }
+    private var jobs: [Scope: Job] = [:]
+
+    func perform<Value>(_ operation: @MainActor () async throws -> Value) async rethrows -> Value {
+        if locked { await withCheckedContinuation { waiters.append($0) } }
+        else { locked = true }
+        defer {
+            if waiters.isEmpty { locked = false }
+            else { waiters.removeFirst().resume() }
+        }
+        return try await operation()
+    }
+
+    func clearAll(timeoutNanoseconds: UInt64 = 20_000_000_000,
+                  _ operation: @escaping @MainActor () async -> StorageCleanupReport) async -> StorageCleanupReport {
+        await report(scope: .all, timeoutNanoseconds: timeoutNanoseconds, operation)
+    }
+
+    func clearCaches(_ operation: @escaping @MainActor () async -> StorageCleanupReport) async -> StorageCleanupReport {
+        await report(scope: .cache, timeoutNanoseconds: 20_000_000_000, operation)
+    }
+
+    private func report(scope: Scope, timeoutNanoseconds: UInt64,
+                        _ operation: @escaping @MainActor () async -> StorageCleanupReport) async -> StorageCleanupReport {
+        if let existing = jobs[scope] { return await existing.response.value }
+        let id = UUID(), result = ResultDelivery()
+        let response = Task { @MainActor in
+            await result.wait(timeoutNanoseconds: timeoutNanoseconds,
+                              category: scope == .all ? .websiteStorage : .webData)
+        }
+        jobs[scope] = Job(id: id, response: response)
+        // The worker owns the mutation lock until WebKit actually calls back.
+        // A UI timeout must never unlock it or start another removal request.
+        Task { @MainActor in
+            let report = await self.perform(operation)
+            result.finish(report)
+            if self.jobs[scope]?.id == id { self.jobs.removeValue(forKey: scope) }
+        }
+        return await response.value
+    }
+
+    @MainActor private final class ResultDelivery {
+        private var result: StorageCleanupReport?
+        private var continuation: CheckedContinuation<StorageCleanupReport, Never>?
+        private var timer: Task<Void, Never>?
+
+        func wait(timeoutNanoseconds: UInt64, category: StorageUsageCategory) async -> StorageCleanupReport {
+            if let result { return result }
+            return await withCheckedContinuation { continuation in
+                self.continuation = continuation
+                timer = Task { @MainActor in
+                    do { try await Task.sleep(nanoseconds: timeoutNanoseconds) }
+                    catch { return }
+                    self.finish(.init(retainedCategories: [category],
+                        failures: [ToolText.text("storage_website_cleanup_pending")]))
+                }
+            }
+        }
+
+        func finish(_ report: StorageCleanupReport) {
+            guard result == nil else { return }
+            result = report
+            timer?.cancel(); timer = nil
+            let waiting = continuation; continuation = nil
+            waiting?.resume(returning: report)
+        }
+    }
+}
+
 enum StorageUsageCategory: String, CaseIterable, Identifiable, Sendable {
     case webData, websiteStorage, tabSnapshots, favicons, wallpaperCache, otherCaches, temporaryFiles, ruleCache
     case wallpapers, downloads, downloadTasks, readingData, backups, filterRules, extensions, personalData, sharedData, otherData
@@ -79,7 +157,6 @@ enum StorageUsageService {
         var report = StorageCleanupReport()
         switch category {
         case .webData:
-            URLCache.shared.removeAllCachedResponses()
             report = await WebsiteStorageService.clearBrowserCaches()
         case .tabSnapshots:
             tabManager?.tabs.forEach { $0.webViewModel.clearSnapshotCache() }
@@ -101,9 +178,15 @@ enum StorageUsageService {
                 throw WebExtensionTemporaryCacheError.inUse
             }
             if category == .wallpaperCache { WallpaperManager.shared.prepareForImageCacheCleanup() }
-            if category == .otherCaches { URLCache.shared.removeAllCachedResponses() }
             let locations = StorageUsageLocations.current, cutoff = sessionStartedAt
-            report.merge(try await Task.detached(priority: .utility) { try clearAdditionalCache(category, locations: locations, olderThan: cutoff) }.value)
+            let leasedPaths: Set<String>
+            if #available(iOS 18.4, *) {
+                leasedPaths = Set(WebExtensionBlobBridge.retainedTemporaryURLs.map(\.path))
+            } else { leasedPaths = [] }
+            report.merge(try await Task.detached(priority: .utility) {
+                if category == .otherCaches { URLCache.shared.removeAllCachedResponses() }
+                return try clearAdditionalCache(category, locations: locations, olderThan: cutoff, protectedPaths: leasedPaths)
+            }.value)
         case .websiteStorage, .wallpapers, .downloads, .readingData, .backups, .filterRules,
              .extensions, .personalData, .sharedData, .otherData:
             throw CocoaError(.fileWriteNoPermission)
@@ -114,8 +197,6 @@ enum StorageUsageService {
     @MainActor static func clearWebsiteData() async -> StorageCleanupReport {
         invalidateInventory()
         defer { invalidateInventory() }
-        URLCache.shared.removeAllCachedResponses()
-        HTTPCookieStorage.shared.removeCookies(since: .distantPast)
         return await WebsiteStorageService.clearAll()
     }
 
@@ -289,7 +370,7 @@ extension StorageUsageService {
     /// go through their owning services rather than raw filesystem deletion.
     @discardableResult
     static func clearAdditionalCache(_ category: StorageUsageCategory, locations: StorageUsageLocations,
-                                     olderThan cutoff: Date) throws -> StorageCleanupReport {
+                                     olderThan cutoff: Date, protectedPaths: Set<String> = []) throws -> StorageCleanupReport {
         let manager = FileManager.default
         let base: URL
         switch category {
@@ -303,6 +384,7 @@ extension StorageUsageService {
         let children = try manager.contentsOfDirectory(at: base, includingPropertiesForKeys: [.isSymbolicLinkKey, .contentModificationDateKey])
         var report = StorageCleanupReport()
         let classifier = StoragePathClassifier(locations: locations)
+        let protected = Set(StorageMediaCleanup.openFilePaths().union(protectedPaths).map { classifier.normalizedPath($0) })
         for child in children {
             do {
             let info = try child.resourceValues(forKeys: [.isSymbolicLinkKey, .contentModificationDateKey])
@@ -310,6 +392,13 @@ extension StorageUsageService {
             // Classify a child path, including an empty directory, using the
             // same rule as inventory. Never traverse a user-supplied symlink.
             guard classifier.category(child.appendingPathComponent(".probe").path) == category else { continue }
+            let childPath = classifier.normalizedPath(child.path)
+            // Read-only playback does not refresh modification dates. Keep the
+            // whole cache/temp directory when one file is open or has an active
+            // Blob lease, including the gaps between asynchronous chunk reads.
+            guard !protected.contains(where: { $0 == childPath || $0.hasPrefix(childPath + "/") }) else {
+                report.retainedCategories.insert(category); continue
+            }
             if category == .otherCaches {
                 let name = child.lastPathComponent
                 // Their live database files belong to URLCache / WebKit APIs.
@@ -398,11 +487,35 @@ struct WebsiteStorageBytes: Sendable, Hashable {
     var localStorage: Int64 = 0
     var other: Int64 = 0
     var isExtension = false
-    var total: Int64 { indexedDB + cache + localStorage + other }
+    var total: Int64 { [indexedDB, cache, localStorage, other].reduce(0, StorageUsageService.adding) }
     mutating func add(_ other: Self) {
-        indexedDB += other.indexedDB; cache += other.cache
-        localStorage += other.localStorage; self.other += other.other
+        indexedDB = StorageUsageService.adding(indexedDB, other.indexedDB)
+        cache = StorageUsageService.adding(cache, other.cache)
+        localStorage = StorageUsageService.adding(localStorage, other.localStorage)
+        self.other = StorageUsageService.adding(self.other, other.other)
         isExtension = isExtension || other.isExtension
+    }
+}
+
+struct WebsiteStorageSnapshot: Sendable {
+    let entries: [WebsiteStorageEntry]
+    let totalBytes: Int64
+    let unattributedBytes: Int64
+
+    init(entries: [WebsiteStorageEntry], totalBytes: Int64) {
+        let total = max(0, totalBytes)
+        let attributed = entries.reduce(Int64(0)) { StorageUsageService.adding($0, $1.bytes?.total ?? 0) }
+        self.totalBytes = total
+        if attributed > total {
+            // A website can remove files between the origin estimate and the
+            // fresh inventory. Do not present stale per-site values exceeding
+            // the entire website category, or invent a proportional split.
+            self.entries = entries.map { .init(domain: $0.domain, dataTypes: $0.dataTypes, bytes: nil) }
+            unattributedBytes = total
+        } else {
+            self.entries = entries
+            unattributedBytes = total - attributed
+        }
     }
 }
 
@@ -410,8 +523,18 @@ struct WebsiteStorageBytes: Sendable, Hashable {
 /// estimate reads only origin metadata and file sizes in our own sandbox.
 /// Unrecognized layouts remain unknown; files are never deleted directly.
 enum WebsiteStorageService {
+    @MainActor private static let cleanup = WebsiteDataCleanupCoordinator()
     static let cacheTypes: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache,
         WKWebsiteDataTypeOfflineWebApplicationCache, WKWebsiteDataTypeFetchCache, WKWebsiteDataTypeServiceWorkerRegistrations]
+
+    @MainActor static func snapshot(onList: (([WebsiteStorageEntry]) -> Void)? = nil) async -> WebsiteStorageSnapshot {
+        let sites = await entries(onList: onList)
+        guard !Task.isCancelled else { return .init(entries: [], totalBytes: 0) }
+        let inventory = await StorageUsageService.inventory(forceRefresh: true)
+        let total = inventory.records.filter { $0.category == .webData || $0.category == .websiteStorage }
+            .reduce(Int64(0)) { StorageUsageService.adding($0, $1.bytes) }
+        return .init(entries: sites, totalBytes: total)
+    }
 
     @MainActor static func entries(onList: (([WebsiteStorageEntry]) -> Void)? = nil) async -> [WebsiteStorageEntry] {
         let records = await records()
@@ -420,10 +543,12 @@ enum WebsiteStorageService {
             .sorted { $0.domain.localizedStandardCompare($1.domain) == .orderedAscending })
         let root = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0].appendingPathComponent("WebKit")
         let domains = Set(types.keys)
-        let measured = await Task.detached(priority: .utility) { measure(root: root, domains: domains) }.value
+        let work = Task.detached(priority: .utility) { measure(root: root, domains: domains) }
+        let measured = await withTaskCancellationHandler(operation: { await work.value }, onCancel: { work.cancel() })
         // Public website records can omit custom extension schemes. Their
         // locally measured origin metadata still provides a verified identity.
         for (domain, bytes) in measured where bytes.isExtension && bytes.total > 0 {
+            if types[domain] == nil { types[domain] = [] }
             if bytes.indexedDB > 0 { types[domain, default: []].insert(WKWebsiteDataTypeIndexedDBDatabases) }
             if bytes.cache > 0 { types[domain, default: []].insert(WKWebsiteDataTypeFetchCache) }
             if bytes.localStorage > 0 { types[domain, default: []].insert(WKWebsiteDataTypeLocalStorage) }
@@ -442,111 +567,168 @@ enum WebsiteStorageService {
     @MainActor static func clear(_ entry: WebsiteStorageEntry, types: Set<String>) async throws {
         StorageUsageService.invalidateInventory()
         defer { StorageUsageService.invalidateInventory() }
-        if types == cacheTypes, let id = UUID(uuidString: entry.domain), #available(iOS 18.4, *) {
-            try await NativeWebExtensionRuntime.shared.clearTemporaryCaches(identifiers: [id])
-            return
-        }
-        let matching = await records().filter { $0.displayName == entry.domain }
-        guard !matching.isEmpty else { return }
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            WKWebsiteDataStore.default().removeData(ofTypes: types, for: matching) { continuation.resume() }
+        try await cleanup.perform {
+            if types == cacheTypes, let id = UUID(uuidString: entry.domain), #available(iOS 18.4, *) {
+                try await NativeWebExtensionRuntime.shared.clearTemporaryCaches(identifiers: [id])
+                return
+            }
+            let matching = await records().filter { $0.displayName == entry.domain }
+            guard !matching.isEmpty else { return }
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                WKWebsiteDataStore.default().removeData(ofTypes: types, for: matching) { continuation.resume() }
+            }
         }
     }
 
     @discardableResult @MainActor static func clearBrowserCaches() async -> StorageCleanupReport {
-        // Do not bypass the active-media guard by deleting extension caches as
-        // part of the global website-store removal first.
-        let matching = await records().filter { UUID(uuidString: $0.displayName) == nil }
-        if !matching.isEmpty {
-            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-                WKWebsiteDataStore.default().removeData(ofTypes: cacheTypes, for: matching) { continuation.resume() }
-            }
+        await cleanup.clearCaches {
+            defer { StorageUsageService.invalidateInventory() }
+            await clearFoundationCache(cookies: false)
+            let listed = await records()
+            let matching = listed.filter { UUID(uuidString: $0.displayName) == nil }
+            await clearOrdinaryRecords(matching, types: cacheTypes)
+            await clearSharedNetworkCache()
+            return retainedExtensionReport(listed)
         }
-        var report = StorageCleanupReport()
-        if #available(iOS 18.4, *) {
-            do { try await NativeWebExtensionRuntime.shared.clearTemporaryCaches() }
-            catch {
-                report.retainedCategories.insert(.webData)
-                if !(error is WebExtensionTemporaryCacheError) { report.failures.append(error.localizedDescription) }
-            }
-        }
-        return report
     }
 
-    /// One confirmed action clears every website's databases, cache and login
-    /// storage. Active extension media remains protected, without preventing
-    /// removal of other sites. The full-store API also covers unlisted origins.
+    /// Website cleanup never creates another controller for installed extension
+    /// origins or deletes underneath their live background/offscreen pages.
+    /// Extension media keeps its separate, guarded maintenance action.
     @MainActor static func clearAll() async -> StorageCleanupReport {
-        var report = StorageCleanupReport()
-        var extensionsInUse = false
-        if #available(iOS 18.4, *) {
-            do { try await NativeWebExtensionRuntime.shared.clearTemporaryCaches() }
-            catch {
-                extensionsInUse = true; report.retainedCategories.insert(.websiteStorage)
-                if !(error is WebExtensionTemporaryCacheError) { report.failures.append(error.localizedDescription) }
-            }
+        await cleanup.clearAll {
+            defer { StorageUsageService.invalidateInventory() }
+            await clearFoundationCache(cookies: true)
+            let types = WKWebsiteDataStore.allWebsiteDataTypes()
+            let listed = await records()
+            let report = retainedExtensionReport(listed)
+            let sites = listed.filter { UUID(uuidString: $0.displayName) == nil }
+            // Use the same public per-site deletion path as the working site
+            // detail action. Avoid a single all-types/all-origins purge while
+            // dozens of browser tabs still own their database connections.
+            await clearOrdinaryRecords(sites, types: types)
+            await clearSharedNetworkCache()
+            return report
         }
-        let store = WKWebsiteDataStore.default(), types = WKWebsiteDataStore.allWebsiteDataTypes()
-        if extensionsInUse {
-            let sites = await records().filter { UUID(uuidString: $0.displayName) == nil }
-            if !sites.isEmpty {
-                await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
-                    store.removeData(ofTypes: types, for: sites) { c.resume() }
-                }
-            }
-        } else {
+    }
+
+    @MainActor private static func clearOrdinaryRecords(_ records: [WKWebsiteDataRecord], types: Set<String>) async {
+        let store = WKWebsiteDataStore.default()
+        for record in records.sorted(by: { $0.displayName < $1.displayName }) {
+            let matchingTypes = record.dataTypes.intersection(types)
+            guard !matchingTypes.isEmpty else { continue }
+            // Let a confirmation dismiss and navigation/events run between
+            // sites. Only one WebKit deletion request is in flight at a time.
+            await Task.yield()
             await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
-                store.removeData(ofTypes: types, modifiedSince: .distantPast) { c.resume() }
+                store.removeData(ofTypes: matchingTypes, for: [record]) { c.resume() }
             }
         }
-        return report
+    }
+
+    @MainActor private static func retainedExtensionReport(_ records: [WKWebsiteDataRecord]) -> StorageCleanupReport {
+        var retained = records.contains { UUID(uuidString: $0.displayName) != nil }
+        if #available(iOS 18.4, *) {
+            // A storage query must not synchronously decode the script store,
+            // restore every installed extension or create a new WK controller.
+            retained = retained || !(BrowserExtensionService.existingShared?.webExtensions.isEmpty ?? true)
+                || (NativeWebExtensionRuntime.existingShared?.hasLoadedExtensionContexts ?? false)
+        }
+        return StorageCleanupReport(retainedCategories: retained ? [.extensions] : [])
+    }
+
+    private static func clearFoundationCache(cookies: Bool) async {
+        // Foundation's disk cache removal is synchronous. Hundreds of MB must
+        // never be evicted on the UI actor while the browser is still running.
+        await Task.detached(priority: .utility) {
+            URLCache.shared.removeAllCachedResponses()
+            if cookies { HTTPCookieStorage.shared.removeCookies(since: .distantPast) }
+        }.value
+    }
+
+    @MainActor private static func clearSharedNetworkCache() async {
+        await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+            WKWebsiteDataStore.default().removeData(ofTypes: [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache],
+                                                   modifiedSince: .distantPast) { c.resume() }
+        }
     }
 
     static func measure(root: URL, domains: Set<String>) -> [String: WebsiteStorageBytes] {
         let manager = FileManager.default
-        let keys: Set<URLResourceKey> = [.isDirectoryKey, .isSymbolicLinkKey, .isRegularFileKey, .fileAllocatedSizeKey, .fileSizeKey]
+        let keys: Set<URLResourceKey> = [.isDirectoryKey, .isSymbolicLinkKey, .isRegularFileKey,
+            .totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .fileSizeKey]
         guard (try? root.resourceValues(forKeys: keys).isSymbolicLink) == false,
-              let files = manager.enumerator(at: root, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles]) else { return [:] }
-        var result: [String: WebsiteStorageBytes] = [:], visited = 0
-        let orderedDomains = domains.sorted { $0.count > $1.count }
+              let files = manager.enumerator(at: root, includingPropertiesForKeys: Array(keys)) else { return [:] }
+        var result: [String: WebsiteStorageBytes] = [:]
+        let orderedDomains = domains.sorted { $0.count == $1.count ? $0 < $1 : $0.count > $1.count }
         func domain(for host: String) -> String? {
             orderedDomains.first { host == $0.lowercased() || host.hasSuffix("." + $0.lowercased()) }
         }
-        for case let file as URL in files {
-            guard !Task.isCancelled, visited < 100_000 else { break }; visited += 1
-            guard let info = try? file.resourceValues(forKeys: keys), info.isSymbolicLink != true else { files.skipDescendants(); continue }
-            if info.isDirectory == true {
-                let origin = file.appendingPathComponent("origin")
-                if let size = try? origin.resourceValues(forKeys: keys), size.isRegularFile == true,
-                   size.isSymbolicLink != true, (size.fileSize ?? Int.max) <= 4_096,
-                   let data = try? Data(contentsOf: origin), let decoded = decodeOrigin(data),
-                   let name = domain(for: decoded.host) ?? (decoded.scheme == "webkit-extension" ? decoded.host : nil) {
-                    var value = WebsiteStorageBytes(); value.isExtension = decoded.scheme == "webkit-extension"
-                    value.indexedDB = directoryBytes(file.appendingPathComponent("IndexedDB"))
-                    value.cache = directoryBytes(file.appendingPathComponent("CacheStorage"))
-                    value.localStorage = directoryBytes(file.appendingPathComponent("LocalStorage"))
-                    for kind in ["FileSystem", "BackgroundFetch"] { value.other += directoryBytes(file.appendingPathComponent(kind)) }
-                    result[name, default: .init()].add(value); files.skipDescendants()
-                } else if file.pathComponents.contains("IndexedDB"), let host = legacyHost(file.lastPathComponent), let name = domain(for: host) {
-                    var value = WebsiteStorageBytes(); value.indexedDB = directoryBytes(file)
-                    result[name, default: .init()].add(value); files.skipDescendants()
+        struct Scope {
+            let path: String
+            let name: String?
+            var isExtension = false
+        }
+        func normalizedPath(_ url: URL) -> String {
+            let path = url.standardizedFileURL.path
+            return path.hasPrefix("/private/var/") || path.hasPrefix("/private/tmp/") ? String(path.dropFirst(8)) : path
+        }
+        func scope(at directory: URL) -> Scope? {
+            let path = normalizedPath(directory)
+            let origin = directory.appendingPathComponent("origin")
+            if let metadata = try? origin.resourceValues(forKeys: keys) {
+                guard metadata.isRegularFile == true, metadata.isSymbolicLink != true,
+                      (metadata.fileSize ?? Int.max) <= 4_096,
+                      let data = try? Data(contentsOf: origin), let decoded = decodeOrigin(data) else {
+                    // An unknown child origin must not be charged to its parent.
+                    return Scope(path: path, name: nil)
                 }
+                return Scope(path: path,
+                    name: domain(for: decoded.host) ?? (decoded.scheme == "webkit-extension" ? decoded.host : nil),
+                    isExtension: decoded.scheme == "webkit-extension")
             }
+            if directory.pathComponents.contains("IndexedDB"), let host = legacyHost(directory.lastPathComponent) {
+                return Scope(path: path, name: domain(for: host))
+            }
+            return nil
+        }
+        let rootPath = normalizedPath(root)
+        // DirectoryEnumerator visits a directory before its descendants. Keep
+        // only active origin scopes, not a path dictionary for every cache file.
+        var scopes = [scope(at: root) ?? Scope(path: rootPath, name: nil)]
+        for case let file as URL in files {
+            guard !Task.isCancelled else { break }
+            guard let info = try? file.resourceValues(forKeys: keys), info.isSymbolicLink != true else { files.skipDescendants(); continue }
+            let path = normalizedPath(file)
+            while let last = scopes.last, path != last.path, !path.hasPrefix(last.path + "/") { scopes.removeLast() }
+            // Inventory puts these compiled browser rules in a separate group.
+            if file.pathComponents.contains("ContentRuleLists") { files.skipDescendants(); continue }
+            if info.isDirectory == true {
+                if let ownScope = scope(at: file) { scopes.append(ownScope) }
+                continue
+            }
+            guard info.isRegularFile == true else { continue }
+            var owner = scopes.last
+            // Legacy WebKit stores LocalStorage in host-named files rather
+            // than directories containing an origin sidecar. Include WAL/SHM.
+            if file.pathComponents.contains("LocalStorage"),
+               let suffix = file.lastPathComponent.range(of: ".localstorage"),
+               let host = legacyHost(String(file.lastPathComponent[..<suffix.lowerBound])) {
+                owner = Scope(path: path, name: domain(for: host))
+            }
+            guard let owner, let name = owner.name else { continue }
+            let bytes = Int64(max(0, info.totalFileAllocatedSize ?? info.fileAllocatedSize ?? info.fileSize ?? 0))
+            var value = WebsiteStorageBytes(); value.isExtension = owner.isExtension
+            let components = file.pathComponents
+            if components.contains("IndexedDB") { value.indexedDB = bytes }
+            else if components.contains(where: { ["CacheStorage", "NetworkCache", "ServiceWorkers", "ApplicationCache"].contains($0) }) { value.cache = bytes }
+            else if components.contains("LocalStorage") { value.localStorage = bytes }
+            else { value.other = bytes }
+            // Every regular file is charged once to its nearest verified
+            // origin. Unknown layouts/global cache blobs remain unattributed.
+            result[name, default: .init()].add(value)
         }
         return result
-    }
-
-    private static func directoryBytes(_ root: URL) -> Int64 {
-        let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey, .fileAllocatedSizeKey, .fileSizeKey]
-        guard (try? root.resourceValues(forKeys: keys).isSymbolicLink) == false,
-              let iterator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles]) else { return 0 }
-        var bytes: Int64 = 0, count = 0
-        for case let file as URL in iterator {
-            guard !Task.isCancelled, count < 100_000 else { break }; count += 1
-            guard let info = try? file.resourceValues(forKeys: keys), info.isSymbolicLink != true else { iterator.skipDescendants(); continue }
-            if info.isRegularFile == true { bytes += Int64(max(0, info.fileAllocatedSize ?? info.fileSize ?? 0)) }
-        }
-        return bytes
     }
 
     private static func legacyHost(_ name: String) -> String? {
@@ -601,23 +783,35 @@ enum WebsiteStorageService {
 
     func inventory(forceRefresh: Bool = false) async -> StorageUsageInventory {
         if !forceRefresh, let value, Date().timeIntervalSince(measuredAt) < 15 { return value }
-        let work: (UUID, Task<StorageUsageInventory, Never>)
-        if let inFlight { work = inFlight }
-        else {
-            let scan = scan, appBytes = appBytes
-            work = (UUID(), Task.detached(priority: .utility) { scan(appBytes) })
-            inFlight = work
-        }
-        let result = await work.1.value
-        if inFlight?.0 == work.0 {
-            inFlight = nil
-            if !work.1.isCancelled {
-                value = result; appBytes = result.appBytes; measuredAt = Date()
+        var retriesRemaining = 2
+        while true {
+            let work: (UUID, Task<StorageUsageInventory, Never>)
+            if let inFlight { work = inFlight }
+            else {
+                let scan = scan, appBytes = appBytes
+                work = (UUID(), Task.detached(priority: .utility) { scan(appBytes) })
+                inFlight = work
             }
-        } else if work.1.isCancelled, !Task.isCancelled {
-            return await inventory(forceRefresh: false)
+            let result = await work.1.value
+            if inFlight?.0 == work.0 {
+                inFlight = nil
+                if !work.1.isCancelled {
+                    value = result; appBytes = result.appBytes; measuredAt = Date()
+                }
+            } else if work.1.isCancelled, !Task.isCancelled {
+                // Coalesce a superseded scan without retaining a recursive
+                // chain of suspended inventory() frames during cleanup.
+                if let value { return value }
+                // Continuous mutations must not keep this caller retrying
+                // forever. A cancelled result is never cached; the owning
+                // view's next refresh will request a fresh measurement.
+                if retriesRemaining > 0 {
+                    retriesRemaining -= 1
+                    continue
+                }
+            }
+            return result
         }
-        return result
     }
 }
 
@@ -963,10 +1157,9 @@ enum StorageOtherCleanup {
         if let entry, !canClearCache(entry, locations: places) { throw ReadingToolError.unsafePath }
         StorageUsageService.invalidateInventory()
         defer { StorageUsageService.invalidateInventory() }
-        URLCache.shared.removeAllCachedResponses()
-        WebsiteFaviconService.shared.clear()
         let cutoff = Date()
-        var report = try await Task.detached(priority: .utility) {
+        let report = try await Task.detached(priority: .utility) {
+            URLCache.shared.removeAllCachedResponses()
             let roots: [URL]
             if let entry { roots = [entry] }
             else {
@@ -981,7 +1174,8 @@ enum StorageOtherCleanup {
             }
             return result
         }.value
-        if !report.retainedCategories.isEmpty { report.failures.append(ToolText.text("storage_system_data_retained")) }
+        // Keeping open files/system databases is an expected safety measure,
+        // not a cleanup error. Real I/O failures remain in report.failures.
         return report
     }
 

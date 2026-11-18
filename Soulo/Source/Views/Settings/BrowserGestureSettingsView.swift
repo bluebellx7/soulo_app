@@ -23,10 +23,15 @@ struct GesturesFeedbackSettingsView: View {
                 } label: {
                     SettingsNavigationLabel(icon: "speaker.wave.2", color: Color(uiColor: .secondaryLabel), title: ToolText.text("feedback_settings"))
                 }.accessibilityIdentifier("settings.interaction.feedback")
+                SettingsSubpageLink {
+                    AppQuickActionSettingsView()
+                } label: {
+                    SettingsNavigationLabel(icon: "hand.tap", color: Color(uiColor: .secondaryLabel), title: ToolText.text("app_icon_shortcuts"))
+                }.accessibilityIdentifier("settings.interaction.quickActions")
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle(ToolText.text("gestures_feedback_settings"))
+        .navigationTitle(ToolText.text("gestures_shortcuts_settings"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

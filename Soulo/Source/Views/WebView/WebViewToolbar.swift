@@ -212,7 +212,7 @@ struct WebViewToolbar: View {
             .compatiblePopover(isPresented: Binding(
                 get: { showPlatformMenu || showSiteInformation },
                 set: { if !$0 { showPlatformMenu = false; showSiteInformation = false } }
-            ), attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+            ), attachmentAnchor: .rect(.bounds), arrowEdge: .bottom, usesAppAppearance: true) {
                 auxiliaryPopoverContent
             }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
@@ -477,7 +477,10 @@ struct WebViewToolbar: View {
     }
 
     private var showsAddressTranslationAction: Bool {
-        guard let url = viewModel.currentURL,
+        guard !toolbarConfiguration.actions.contains(.translate),
+              toolbarConfiguration.leadingAction != .translate,
+              toolbarConfiguration.addressAction != .translate,
+              let url = viewModel.currentURL,
               ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
             return false
         }
@@ -602,7 +605,8 @@ struct WebViewToolbar: View {
 
     private var moreMenuPresentation: AnyView {
         AnyView(moreMenuLauncher
-            .compatiblePopover(isPresented: $showMoreMenu, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+            .compatiblePopover(isPresented: $showMoreMenu, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom,
+                tracksSourceView: true, usesAppAppearance: true) {
                 moreMenuPopoverContent
             }
             .accessibilityIdentifier("browser.more")
@@ -624,12 +628,14 @@ struct WebViewToolbar: View {
         AnyView(moreMenuPresentation
             .sheet(isPresented: $showZoomControls) {
                 AnyView(persistentZoomPanel
+                    .appPresentationAppearance()
                     .presentationDetents([.height(190)])
                     .presentationDragIndicator(.visible)
                     .compatiblePresentationBackground(.ultraThinMaterial))
             }
             .sheet(isPresented: $showMediaRateControls) {
                 AnyView(mediaRatePanel
+                    .appPresentationAppearance()
                     .presentationDetents([.height(250)])
                     .presentationDragIndicator(.visible)
                     .compatiblePresentationBackground(.ultraThinMaterial))
@@ -689,19 +695,9 @@ struct WebViewToolbar: View {
                 onOpenSettings?()
             }
 
-            if showsOnlyMore {
-                moreMenuActionRow(
-                    "restore_browser_toolbar",
-                    systemImage: BrowserChromeSymbol.toolbarVisibility
-                ) {
-                    onRestoreToolbar?()
-                }
-            } else if onHideToolbar != nil {
-                moreMenuActionRow(
-                    "hide_browser_toolbar",
-                    systemImage: BrowserChromeSymbol.toolbarVisibility
-                ) {
-                    onHideToolbar?()
+            if toolbarVisibilityAction != nil {
+                moreMenuActionRow(toolbarVisibilityTitleKey, systemImage: BrowserChromeSymbol.toolbarVisibility) {
+                    performToolbarAction(.hideToolbar)
                 }
             }
 
@@ -1035,18 +1031,33 @@ struct WebViewToolbar: View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 4), spacing: 2) {
             ForEach(Array(toolbarConfiguration.moreActions.enumerated()).filter { $0.element != .none }, id: \.offset) { _, action in
                 moreMenuShortcut(
-                    action == .fullscreen && isFullscreen ? "exit_fullscreen" : action.titleKey,
+                    action.titleKey,
                     systemImage: toolbarSymbol(for: action),
                     isEnabled: isToolbarActionEnabled(action),
                     isActive: toolbarActionIsActive(action),
                     activeColor: action == .bookmark ? .systemOrange : AppTheme.uiAccent,
-                    localizedTitle: action == .fullscreen && isFullscreen
-                        ? LanguageManager.shared.localizedString("exit_fullscreen") : action.localizedTitle
+                    localizedTitle: moreMenuShortcutTitle(for: action)
                 ) { performToolbarAction(action) }
                 .accessibilityIdentifier("browser.moreMenu." + action.rawValue)
                 .accessibilityAddTraits(.isButton)
             }
         }.padding(.horizontal, 2)
+    }
+
+    private var toolbarVisibilityTitleKey: String {
+        showsOnlyMore ? "restore_browser_toolbar" : "hide_browser_toolbar"
+    }
+
+    private var toolbarVisibilityAction: (() -> Void)? {
+        showsOnlyMore ? onRestoreToolbar : onHideToolbar
+    }
+
+    private func moreMenuShortcutTitle(for action: BrowserToolbarAction) -> String {
+        switch action {
+        case .hideToolbar: LanguageManager.shared.localizedString(toolbarVisibilityTitleKey)
+        case .fullscreen where isFullscreen: LanguageManager.shared.localizedString("exit_fullscreen")
+        default: action.localizedTitle
+        }
     }
 
     private func toolbarActionIsActive(_ action: BrowserToolbarAction) -> Bool {
@@ -1401,7 +1412,7 @@ struct WebViewToolbar: View {
         case .settings: onOpenSettings != nil
         case .extensions: onShowExtensions != nil
         case .library: onShowLibrary != nil
-        case .hideToolbar: onHideToolbar != nil
+        case .hideToolbar: toolbarVisibilityAction != nil
         case .screenshot: onCapturePage != nil
         case .translate: onTranslatePage != nil
         case .readerMode: readerCommandAvailable
@@ -1461,7 +1472,7 @@ struct WebViewToolbar: View {
         case .reload:
             viewModel.reload()
         case .hideToolbar:
-            onHideToolbar?()
+            toolbarVisibilityAction?()
         case .screenshot:
             onCapturePage?()
         case .translate:

@@ -13,9 +13,9 @@ struct SettingsView: View {
     @EnvironmentObject var searchVM: SearchViewModel
     @Environment(\.managedObjectContext) private var modelContext
 
-    @State private var selectedAppearance: String = ThemeManager.shared.appearance
-    @AppStorage(VideoScreenAwakeService.preferenceKey) private var keepScreenAwake = false
     @State private var settingsQuery = ""
+    @ObservedObject private var quickCleanup = StorageQuickCleanupService.shared
+    @State private var quickClearNotice: String?
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -27,234 +27,88 @@ struct SettingsView: View {
         LanguageManager.shared.currentLanguageName
     }
 
-    private func setAppearance(_ mode: String) {
-        selectedAppearance = mode
-        HapticsManager.selection()
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { ThemeManager.shared.setAppearance(mode) }
-    }
-
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.themeGroupedBg.ignoresSafeArea()
 
                 List {
-                    if isSearchingSettings && !searchEntries.isEmpty {
+                    if isSearchingSettings {
+                        if searchEntries.isEmpty && !showsQuickClearSearchResult {
+                            CompatibleUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
+                        } else {
+                            Section {
+                                ForEach(searchEntries) { entry in
+                                    if entry.destination == .defaultBrowser {
+                                        Button { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } } label: {
+                                            SettingsActionLabel(icon: entry.icon, color: neutralIconColor, title: settingsTitle(entry.key))
+                                        }.buttonStyle(.plain).accessibilityIdentifier("settings.defaultBrowser")
+                                    } else {
+                                        NavigationLink(value: entry.destination) {
+                                            SettingsNavigationLabel(icon: entry.icon, color: neutralIconColor, title: settingsTitle(entry.key))
+                                        }.accessibilityIdentifier("settings." + String(describing: entry.destination))
+                                    }
+                                }
+                                if showsQuickClearSearchResult { quickClearButton }
+                            }
+                        }
+                    } else {
                         Section {
-                            ForEach(searchEntries) { entry in
-                                NavigationLink(value: entry.destination) {
-                                    SettingsNavigationLabel(icon: entry.icon, color: neutralIconColor, title: settingsTitle(entry.key))
-                                }.accessibilityIdentifier("settings." + String(describing: entry.destination))
-                            }
-                        }
-                    }
-                    if isSearchingSettings && !matchesSettings(Self.sectionSearchKeys.flatMap { $0 }) {
-                        CompatibleUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
-                    }
-                    // MARK: - Platform Management
-                    if matchesSettings(Self.sectionSearchKeys[0]) && (!isSearchingSettings || searchEntries.isEmpty) {
-                    Section {
-                        NavigationLink(value: Destination.platforms) {
-                            SettingsNavigationLabel(icon: "square.grid.2x2.fill", color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_platforms"))
-                        }
-                    } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_platforms"))
-                    }
+                            AppAppearanceSettingsRow()
+                            settingsLink(.appearanceHome, title: ToolText.text("appearance_home_settings"), icon: "house", id: "personalization")
+                            NavigationLink(value: Destination.language) {
+                                HStack(spacing: 12) {
+                                    SettingsNavigationLabel(icon: "globe", color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_language"))
+                                    Text(currentLanguageName).foregroundStyle(.secondary).font(.subheadline)
+                                }
+                            }.accessibilityIdentifier("settings.language")
+                            settingsLink(.toolbar, title: ToolText.text("toolbar_settings"), icon: "slider.horizontal.3", id: "toolbar",
+                                description: BrowserToolbarSettingsView.Section.allCases.map(\.title).joined(separator: " · "))
+                        } header: { SectionHeader(title: ToolText.text("settings_personalization")) }
 
-                    }
+                        Section {
+                            settingsLink(.platforms, title: LanguageManager.shared.localizedString("platform_management"), icon: "square.grid.2x2", id: "platforms")
+                            settingsLink(.browsingDisplay, title: ToolText.text("browsing_display_settings"), icon: "rectangle.topthird.inset.filled", id: "browsingDisplay",
+                                description: ["browsing_startup_tabs", "browsing_interface", "browsing_web_display"].map { ToolText.text($0) }.joined(separator: " · "))
+                            settingsLink(.video, title: ToolText.text("video_settings"), icon: "play.rectangle", id: "video")
+                            settingsLink(.interaction, title: ToolText.text("gestures_shortcuts_settings"), icon: "hand.draw", id: "interaction")
+                            settingsLink(.adBlock, title: ToolText.text("settings_ads_and_privacy"), icon: "shield.lefthalf.filled", id: "protection")
+                            settingsLink(.extensions, title: LanguageManager.shared.localizedString("userscripts"), icon: "puzzlepiece.extension", id: "extensions")
+                        } header: { SectionHeader(title: LanguageManager.shared.localizedString("browsing")) }
 
-                    // MARK: - Appearance, Language & Background
-                    if matchesSettings(Self.sectionSearchKeys[1]) && (!isSearchingSettings || searchEntries.isEmpty || matchesSettings(["settings_section_appearance", "settings_appearance", "screen_keep_awake"])) {
-                    Section {
-                        HStack(spacing: 12) {
-                            SettingsNavigationLabel(icon: "paintbrush.fill", color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_appearance"))
-                            Spacer(minLength: 4)
-                            ViewThatFits(in: .horizontal) {
-                                HStack(spacing: 4) {
-                                    ForEach(["system", "light", "dark"], id: \.self) { mode in
-                                        Button { setAppearance(mode) } label: {
-                                            Text(LanguageManager.shared.localizedString("theme_\(mode)"))
-                                                .font(.caption.weight(.semibold))
-                                                .fixedSize()
-                                                .padding(.horizontal, 8).padding(.vertical, 7)
-                                                .foregroundStyle(selectedAppearance == mode ? Color.themePrimary : .secondary)
-                                                .background(selectedAppearance == mode ? Color.themePrimary.opacity(0.14) : Color(uiColor: .secondarySystemFill), in: Capsule())
-                                        }.buttonStyle(.plain).frame(minHeight: 44)
-                                    }
-                                }.fixedSize()
-                                Picker("", selection: Binding(get: { selectedAppearance }, set: setAppearance)) {
-                                    ForEach(["system", "light", "dark"], id: \.self) { mode in
-                                        Text(LanguageManager.shared.localizedString("theme_\(mode)")).tag(mode)
-                                    }
-                                }.labelsHidden().pickerStyle(.menu)
-                            }
-                        }
+                        Section {
+                            settingsLink(.backups, title: ToolText.text("settings_sync_backup"), icon: "icloud", id: "backups")
+                            settingsLink(.storage, title: FeatureText.text("Storage"), icon: "internaldrive", id: "storage")
+                            quickClearButton
+                        } header: { SectionHeader(title: ToolText.text("settings_data")) }
 
-                        NavigationLink(value: Destination.language) {
-                            HStack(spacing: 12) {
-                                SettingsNavigationLabel(icon: "globe", color: neutralIconColor,
-                                    title: LanguageManager.shared.localizedString("settings_language"))
-                                Text(currentLanguageName).foregroundStyle(.secondary).font(.subheadline)
-                            }
-                        }
-
-                        NavigationLink(value: Destination.wallpaper) {
-                            SettingsNavigationLabel(icon: HomeToolbarAction.wallpaper.listSymbol, color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_wallpaper"))
-                        }
-                        .accessibilityIdentifier("settings.wallpaper")
-
-                        Toggle(isOn: $keepScreenAwake) {
-                            SettingsDescriptionLabel(icon: "sun.max.fill",
-                                color: keepScreenAwake ? Color.themePrimary : Color(uiColor: .systemGray3),
-                                title: ToolText.text("screen_keep_awake"), description: ToolText.text("screen_keep_awake_desc"))
-                        }
-                        .tint(Color.themePrimary)
-                        .accessibilityIdentifier("settings.keepScreenAwake")
-                        .onCompatibleChange(of: keepScreenAwake) { _, _ in
-                            VideoScreenAwakeService.shared.reloadUserPreference()
-                        }
-
-                    } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_appearance"))
-                    }
-
-                    }
-
-                    // MARK: - Home
-                    if matchesSettings(Self.sectionSearchKeys[2]) && (!isSearchingSettings || searchEntries.isEmpty || matchesSettings(["home_screen"])) {
-                    Section {
-                        NavigationLink(value: Destination.homeToolbar) {
-                            SettingsNavigationLabel(icon: "rectangle.split.2x2", color: neutralIconColor, title: ToolText.text("home_toolbar_customize"))
-                        }.accessibilityIdentifier("settings.homeToolbar")
-
-                        NavigationLink(value: Destination.homeDisplay) {
-                            SettingsNavigationLabel(icon: "rectangle", color: neutralIconColor, title: ToolText.text("home_display_settings"))
-                        }.accessibilityIdentifier("settings.homeDisplay")
-                    } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("home_screen"))
-                    }
-
-                    }
-
-                    // MARK: - Browsing
-                    if matchesSettings(Self.sectionSearchKeys[3]) && (!isSearchingSettings || searchEntries.isEmpty || matchesSettings(["browsing", "settings_default_browser"])) {
-                    Section {
-                        Button {
-                            if let url = URL(string: UIApplication.openSettingsURLString) {
-                                openURL(url)
-                            }
-                        } label: {
-                            SettingsActionLabel(
-                                icon: "globe",
-                                color: neutralIconColor,
-                                title: LanguageManager.shared.localizedString("settings_default_browser")
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("settings.defaultBrowser")
-                        .accessibilityHint(LanguageManager.shared.localizedString("settings_default_browser_hint"))
-
-                        NavigationLink(value: Destination.browsingDisplay) {
-                            SettingsNavigationLabel(icon: "rectangle.topthird.inset.filled", color: neutralIconColor, title: ToolText.text("browsing_display_settings"))
-                        }.accessibilityIdentifier("settings.browsingDisplay")
-
-                        NavigationLink(value: Destination.video) {
-                            SettingsNavigationLabel(icon: "play.rectangle", color: neutralIconColor,
-                                title: ToolText.text("video_settings"))
-                        }
-                        .accessibilityIdentifier("settings.video")
-
-                        NavigationLink(value: Destination.interaction) {
-                            SettingsNavigationLabel(icon: "hand.draw", color: neutralIconColor, title: ToolText.text("gestures_feedback_settings"))
-                        }.accessibilityIdentifier("settings.interaction")
-
-                        NavigationLink(value: Destination.toolbar) {
-                            SettingsNavigationLabel(
-                                icon: "slider.horizontal.3",
-                                color: neutralIconColor,
-                                title: LanguageManager.shared.localizedString("toolbar_customize")
-                            )
-                        }
-
-                        NavigationLink(value: Destination.adBlock) {
-                            SettingsNavigationLabel(icon: "shield.lefthalf.filled", color: neutralIconColor,
-                                title: ToolText.text("settings_ads_and_privacy"))
-                        }.accessibilityIdentifier("settings.protection")
-
-                        NavigationLink(value: Destination.extensions) {
-                            SettingsNavigationLabel(
-                                icon: "puzzlepiece.extension",
-                                color: neutralIconColor,
-                                title: LanguageManager.shared.localizedString("userscripts")
-                            )
-                        }
-
-                    } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("browsing"))
-                    }
-
-                    }
-
-                    // MARK: - Other
-                    if matchesSettings(Self.sectionSearchKeys[4]) && (!isSearchingSettings || searchEntries.isEmpty || matchesSettings(["settings_other"])) {
-                    Section {
-                        NavigationLink(value: Destination.backups) {
-                            SettingsNavigationLabel(icon: "clock.arrow.circlepath", color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_backups"))
-                        }
-                        .accessibilityIdentifier("settings.backups")
-                        NavigationLink(value: Destination.quickActions) {
-                            SettingsNavigationLabel(icon: "hand.tap", color: neutralIconColor, title: ToolText.text("quick_actions_title"))
-                        }.accessibilityIdentifier("settings.quick-actions")
-                        NavigationLink(value: Destination.storage) {
-                            SettingsNavigationLabel(icon: "internaldrive", color: neutralIconColor, title: FeatureText.text("Storage"))
-                        }.accessibilityIdentifier("settings.storage")
-
-                    } header: {
-                        SectionHeader(title: ToolText.text("settings_other"))
-                    }
-
-                    }
-
-                    // MARK: - About & Support
-                    if matchesSettings(Self.sectionSearchKeys[5]) && (!isSearchingSettings || searchEntries.isEmpty || matchesSettings(["settings_section_about_support"])) {
-                    Section {
-                        NavigationLink(value: Destination.version) {
-                            SettingsNavigationLabel(icon: "info.circle.fill", color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_section_about_support"))
-                        }.accessibilityIdentifier("settings.version")
-
-                        NavigationLink(value: Destination.telegram) {
-                            SettingsNavigationLabel(icon: "paperplane.fill", color: neutralIconColor, title: ToolText.text("feedback_telegram"))
-                        }
-                        .accessibilityIdentifier("settings.telegram")
-
-                    } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_about_support"))
-                    } footer: {
-                        HStack {
-                            Spacer()
+                        Section {
+                            settingsLink(.version, title: ToolText.text("about_feedback_settings"), icon: "info.circle", id: "version")
+                            settingsLink(.telegram, title: ToolText.text("feedback_telegram"), icon: "paperplane", id: "telegram")
+                        } header: {
+                            SectionHeader(title: LanguageManager.shared.localizedString("settings_section_support"))
+                        } footer: {
                             VStack(spacing: 4) {
-                                Text("Soulo \(appVersion)")
+                                Text("Soulo \(appVersion)").font(.caption.weight(.semibold))
                                     .accessibilityIdentifier("settings.footer.version")
-                                    .font(.caption)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.secondary)
-                                Text("Made with \u{2764}\u{FE0F}")
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
+                                Text("Made with \u{2764}\u{FE0F}").font(.caption2)
                             }
-                            Spacer()
+                            .foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(.top, 8)
                         }
-                        .padding(.top, 8)
-                    }                    }
-
-
+                    }
                 }
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
             }
             .navigationTitle(LanguageManager.shared.localizedString("settings_title"))
             .navigationBarTitleDisplayMode(.inline)
+            .alert(ToolText.text("storage_quick_clear"), isPresented: Binding(
+                get: { quickClearNotice != nil }, set: { if !$0 { quickClearNotice = nil } }
+            )) {
+                Button(ToolText.text("done")) { quickClearNotice = nil }
+            } message: { Text(quickClearNotice ?? "") }
             .searchable(text: $settingsQuery, prompt: LanguageManager.shared.localizedString("search"))
+            .task { await quickCleanup.refreshSize() }
             .navigationDestination(for: Destination.self) { [tabManager, searchVM, dismiss, appVersion] destination in
                 SettingsDestinationView(destination: destination, tabManager: tabManager,
                     searchVM: searchVM, dismiss: dismiss, appVersion: appVersion)
@@ -271,6 +125,16 @@ struct SettingsView: View {
         }
     }
 
+    private func settingsLink(_ destination: Destination, title: String, icon: String, id: String, description: String? = nil) -> some View {
+        NavigationLink(value: destination) {
+            if let description {
+                SettingsDescriptionLabel(icon: icon, color: neutralIconColor, title: title, description: description)
+            } else {
+                SettingsNavigationLabel(icon: icon, color: neutralIconColor, title: title)
+            }
+        }.accessibilityIdentifier("settings." + id)
+    }
+
     private struct SearchEntry: Identifiable {
         let destination: Destination
         let key: String
@@ -278,45 +142,109 @@ struct SettingsView: View {
         var id: Destination { destination }
     }
     private static let searchableEntries: [SearchEntry] = [
-        .init(destination: .platforms, key: "settings_platforms", icon: "square.grid.2x2.fill"),
+        .init(destination: .appearance, key: "settings_appearance", icon: "circle.lefthalf.filled"),
+        .init(destination: .appearanceHome, key: "appearance_home_settings", icon: "house"),
+        .init(destination: .defaultBrowser, key: "settings_default_browser", icon: "globe"),
+        .init(destination: .platforms, key: "platform_management", icon: "square.grid.2x2.fill"),
         .init(destination: .language, key: "settings_language", icon: "globe"),
         .init(destination: .wallpaper, key: "settings_wallpaper", icon: "photo"),
         .init(destination: .webAppearance, key: "web_appearance", icon: "circle.lefthalf.filled"),
         .init(destination: .video, key: "video_settings", icon: "play.rectangle"),
-        .init(destination: .interaction, key: "gestures_feedback_settings", icon: "hand.draw"),
+        .init(destination: .interaction, key: "gestures_shortcuts_settings", icon: "hand.draw"),
         .init(destination: .shake, key: "shake_action", icon: "iphone.radiowaves.left.and.right"),
         .init(destination: .gestures, key: "gesture_settings_title", icon: "hand.draw"),
         .init(destination: .feedbackPreferences, key: "feedback_settings", icon: "speaker.wave.2"),
         .init(destination: .websiteZoom, key: "page_zoom", icon: "text.magnifyingglass"),
-        .init(destination: .toolbar, key: "toolbar_customize", icon: "slider.horizontal.3"),
+        .init(destination: .toolbar, key: "toolbar_settings", icon: "slider.horizontal.3"),
         .init(destination: .homeDisplay, key: "home_display_settings", icon: "rectangle"),
         .init(destination: .browsingDisplay, key: "browsing_display_settings", icon: "rectangle.topthird.inset.filled"),
         .init(destination: .homeToolbar, key: "home_toolbar_customize", icon: "rectangle.split.2x2"),
         .init(destination: .adBlock, key: "settings_ads_and_privacy", icon: "shield.lefthalf.filled"),
         .init(destination: .extensions, key: "userscripts", icon: "puzzlepiece.extension"),
-        .init(destination: .backups, key: "settings_backups", icon: "clock.arrow.circlepath"),
-        .init(destination: .quickActions, key: "quick_actions_title", icon: "hand.tap"),
-        .init(destination: .version, key: "settings_section_about_support", icon: "info.circle.fill"),
+        .init(destination: .backups, key: "settings_sync_backup", icon: "icloud"),
+        .init(destination: .quickActions, key: "app_icon_shortcuts", icon: "hand.tap"),
+        .init(destination: .version, key: "about_feedback_settings", icon: "info.circle.fill"),
         .init(destination: .telegram, key: "feedback_telegram", icon: "paperplane.fill"),
         .init(destination: .storage, key: "Storage", icon: "internaldrive")
     ]
     private var isSearchingSettings: Bool { !settingsQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var showsQuickClearSearchResult: Bool {
+        isSearchingSettings && matchesSettings(["Storage", "storage_quick_clear", "privacy_clear_cache"])
+    }
+    private var quickClearButton: some View {
+        HStack(spacing: 10) {
+            Button {
+                guard !quickCleanup.isRunning else { return }
+                Task {
+                    guard !quickCleanup.isRunning else { return }
+                    let report = await quickCleanup.clearDefaults(tabManager: tabManager)
+                    if report.failures.isEmpty { HapticsManager.success() }
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    SettingsNavigationLabel(icon: "eraser", color: neutralIconColor, title: ToolText.text("storage_quick_clear"))
+                    Spacer(minLength: 4)
+                    Text(quickCleanup.clearableBytes.map { "≈ " + ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? "—")
+                        .foregroundStyle(.secondary).font(.subheadline).monospacedDigit()
+                        .accessibilityValue(quickCleanup.clearableBytes.map { String($0) } ?? "")
+                        .accessibilityIdentifier("settings.quickClear.size")
+                    if quickCleanup.isRunning { ProgressView().controlSize(.small) }
+                    else if quickCleanup.didClear {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                            .accessibilityLabel(ToolText.text("storage_quick_clear_done"))
+                            .accessibilityIdentifier("settings.quickClear.success")
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).disabled(quickCleanup.isRunning)
+            .accessibilityIdentifier("settings.quickClear")
+            if !quickCleanup.isRunning, let notice = quickCleanup.lastReport?.notice {
+                Button { quickClearNotice = notice } label: {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(.secondary)
+                        .frame(minWidth: 32, minHeight: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(ToolText.text(quickCleanup.didClear ? "storage_quick_clear_done" : "error"))
+                .accessibilityHint(notice)
+                .accessibilityIdentifier("settings.quickClear.result")
+            }
+        }
+    }
     private var searchEntries: [SearchEntry] {
         Self.searchableEntries.filter { entry in
             let aliases: [String]
             switch entry.destination {
+            case .appearance: aliases = ["dynamic_theme", "settings_section_appearance", "theme_system", "theme_light", "theme_dark"]
+            case .appearanceHome: aliases = ["home_screen", "settings_wallpaper", "settings_personalization"]
+            case .platforms: aliases = ["settings_platforms"]
             case .adBlock: aliases = ["ad_block_management", "settings_privacy"]
             case .storage: aliases = ["privacy_section_data", "privacy_clear_cache", "privacy_clear_history", "privacy_clear_bookmarks", "privacy_clear_browsing_on_exit"]
             case .gestures: aliases = ["gesture_title"]
+            case .interaction: aliases = ["gestures_feedback_settings"]
+            case .toolbar: aliases = ["toolbar_customize", "toolbar_more_panel", "home_toolbar_browser_tools"]
             case .feedbackPreferences: aliases = ["gesture_haptics", "gesture_sound"]
             case .homeDisplay: aliases = ["home_screen", "home_display_settings", "edit_title", "edit_subtitle", "show_bookmarks_home", "show_group_picker_home", "show_recent_searches_home", "live_activity"]
-            case .browsingDisplay: aliases = ["show_platform_bar", "show_top_search_bar", "keep_fullscreen_browsing", "extend_page_background", "page_background_gradient", "freeze_page_background_on_scroll", "keep_page_above_toolbar"]
-            case .backups: aliases = ["icloud_settings_sync"]
-            case .quickActions: aliases = ["quick_actions_explanation"]
-            case .version: aliases = ["settings_version", "settings_rate", "settings_feedback", "URL Scheme"]
+            case .browsingDisplay: aliases = ["browsing_display_settings_legacy", "screen_keep_awake", "browsing_startup_tabs", "browsing_interface", "browsing_web_display", "show_platform_bar", "show_top_search_bar", "restore_last_page_on_launch", "keep_fullscreen_browsing", "extend_page_background", "page_background_gradient", "freeze_page_background_on_scroll", "keep_page_above_toolbar"]
+            case .backups: aliases = ["settings_backups", "icloud_settings_sync", "icloud_bookmark_sync", "manual_settings_backups"]
+            case .quickActions: aliases = ["quick_actions_title", "quick_actions_explanation"]
+            case .version: aliases = ["settings_section_about_support", "settings_section_support", "settings_version", "settings_rate", "settings_feedback", "URL Scheme"]
             default: aliases = []
             }
-            return matchesSettings([entry.key] + aliases)
+            let group: String
+            switch entry.destination {
+            case .appearance, .appearanceHome, .language, .wallpaper, .homeDisplay, .toolbar, .homeToolbar:
+                group = "settings_personalization"
+            case .backups, .storage:
+                group = "settings_data"
+            case .version, .telegram:
+                group = "settings_section_support"
+            default:
+                group = "browsing"
+            }
+            return matchesSettings([entry.key, group] + aliases)
         }
     }
     private func settingsTitle(_ key: String) -> String {
@@ -325,15 +253,6 @@ struct SettingsView: View {
         let tool = ToolText.text(key)
         return tool == key ? FeatureText.text(key) : tool
     }
-
-    private static let sectionSearchKeys: [[String]] = [
-        ["settings_platforms"],
-        ["settings_section_appearance", "settings_appearance", "settings_language", "settings_wallpaper", "screen_keep_awake"],
-        ["home_screen", "home_display_settings", "edit_title", "edit_subtitle", "home_toolbar_customize", "show_bookmarks_home", "show_group_picker_home", "show_recent_searches_home", "live_activity"],
-        ["browsing", "settings_ads_and_privacy", "browsing_display_settings", "settings_default_browser", "show_top_search_bar", "extend_page_background", "keep_page_above_toolbar", "keep_fullscreen_browsing", "video_settings", "web_appearance", "gestures_feedback_settings", "shake_action", "gesture_title", "gesture_settings_title", "page_zoom", "toolbar_customize", "ad_block_management", "settings_privacy", "userscripts"],
-        ["settings_other", "Storage", "privacy_clear_cache", "feedback_settings", "gesture_haptics", "gesture_sound", "icloud_settings_sync", "settings_backups", "quick_actions_title"],
-        ["settings_section_about_support", "settings_rate", "settings_feedback", "settings_version", "feedback_telegram", "URL Scheme"],
-    ]
 
     private func matchesSettings(_ keys: [String]) -> Bool {
         let query = settingsQuery.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -347,7 +266,7 @@ struct SettingsView: View {
     // Value-based links defer service/archive initialization until a subpage
     // is actually opened, instead of constructing every destination at once.
     fileprivate enum Destination: Hashable {
-        case platforms, language, wallpaper, webAppearance, video, shake, toolbar, homeToolbar
+        case appearance, appearanceHome, defaultBrowser, platforms, language, wallpaper, webAppearance, video, shake, toolbar, homeToolbar
         case gestures, websiteZoom, feedbackPreferences, homeDisplay, browsingDisplay, interaction
         case adBlock, privacy, extensions, backups, quickActions, version, storage, telegram
     }
@@ -365,9 +284,15 @@ private struct SettingsDestinationView: View {
     let appVersion: String
     @ViewBuilder var body: some View {
         switch destination {
+        case .appearance:
+            AppAppearanceSettingsView()
+                .navigationTitle(LanguageManager.shared.localizedString("settings_appearance"))
+                .navigationBarTitleDisplayMode(.inline)
+        case .appearanceHome: AppearanceHomeSettingsView()
+        case .defaultBrowser: BrowsingDisplaySettingsView()
         case .platforms: PlatformManagementView()
         case .language: LanguageSettingsView()
-        case .wallpaper: WallpaperSettingsView()
+        case .wallpaper: AppearanceHomeSettingsView(initialPage: .wallpaper)
         case .webAppearance: WebAppearanceSettingsView()
         case .video: VideoSettingsView()
         case .interaction: GesturesFeedbackSettingsView()
@@ -375,9 +300,9 @@ private struct SettingsDestinationView: View {
         case .gestures: BrowserGestureSettingsView()
         case .feedbackPreferences: AppFeedbackSettingsView()
         case .websiteZoom: WebsiteZoomSettingsView()
-        case .toolbar: BrowserToolbarSettingsView()
+        case .toolbar: BrowserToolbarSettingsView(initialSection: searchVM.isSearching ? .browsing : .home)
         case .homeToolbar: HomeToolbarSettingsView()
-        case .homeDisplay: HomeDisplaySettingsView()
+        case .homeDisplay: AppearanceHomeSettingsView(initialPage: .home)
         case .browsingDisplay: BrowsingDisplaySettingsView()
         case .adBlock: ProtectionSettingsView()
         case .privacy: ProtectionSettingsView(initialPage: .privacy)
@@ -402,7 +327,139 @@ private struct SettingsDestinationView: View {
 
 }
 
+struct SettingsPageTitle: ViewModifier {
+    let embedded: Bool
+    let title: String
+    @ViewBuilder func body(content: Content) -> some View {
+        if embedded { content }
+        else { content.navigationTitle(title).navigationBarTitleDisplayMode(.inline) }
+    }
+}
+
+struct AppearanceHomeSettingsView: View {
+    enum Page: Int, CaseIterable {
+        case home, wallpaper
+        @MainActor var title: String {
+            switch self {
+            case .home: ToolText.text("toolbar_section_home")
+            case .wallpaper: LanguageManager.shared.localizedString("settings_wallpaper")
+            }
+        }
+    }
+    @State private var selection: Page
+    @State private var visitedWallpaper: Bool
+    init(initialPage: Page = .home) {
+        _selection = State(initialValue: initialPage)
+        _visitedWallpaper = State(initialValue: initialPage == .wallpaper)
+    }
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker(ToolText.text("appearance_home_settings"), selection: $selection) {
+                ForEach(Page.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented).padding(.horizontal, 20).padding(.vertical, 12)
+            .accessibilityIdentifier("settings.personalization.section")
+            TabView(selection: $selection) {
+                HomeDisplaySettingsView(embedded: true).tag(Page.home)
+                Group {
+                    if visitedWallpaper { WallpaperSettingsView(embedded: true) }
+                    else { Color.clear }
+                }.tag(Page.wallpaper)
+            }.tabViewStyle(.page(indexDisplayMode: .never))
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle(ToolText.text("appearance_home_settings")).navigationBarTitleDisplayMode(.inline)
+        .onCompatibleChange(of: selection) { _, page in
+            if page == .wallpaper { visitedWallpaper = true }
+        }
+    }
+}
+
+private struct AppAppearanceSettingsRow: View {
+    @ObservedObject private var themeManager = ThemeManager.shared
+
+    private var label: some View {
+        SettingsNavigationLabel(icon: "circle.lefthalf.filled", color: Color(uiColor: .secondaryLabel),
+            title: LanguageManager.shared.localizedString("settings_appearance"))
+    }
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                label.fixedSize(horizontal: true, vertical: false)
+                Spacer(minLength: 4)
+                choices(fixedWidth: true)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                label
+                choices(fixedWidth: false)
+            }
+        }
+    }
+
+    private func choices(fixedWidth: Bool) -> some View {
+        HStack(spacing: 4) {
+            ForEach(["system", "light", "dark"], id: \.self) { mode in
+                let selected = themeManager.appearance == mode
+                Button {
+                    HapticsManager.selection()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { themeManager.setAppearance(mode) }
+                } label: {
+                    Text(LanguageManager.shared.localizedString("theme_" + mode))
+                        .font(.caption.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: fixedWidth, vertical: true)
+                        .frame(maxWidth: fixedWidth ? nil : .infinity)
+                        .padding(.horizontal, 8).padding(.vertical, 7)
+                        .foregroundStyle(selected ? Color.themePrimary : .secondary)
+                        .background(selected ? Color.themePrimary.opacity(0.14) : Color(uiColor: .secondarySystemFill), in: Capsule())
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("settings.appearance." + mode)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+    }
+}
+
+private struct AppAppearanceSettingsView: View {
+    @ObservedObject private var themeManager = ThemeManager.shared
+    var body: some View {
+        List {
+            Section {
+                HStack(spacing: 10) {
+                    ForEach(["system", "light", "dark"], id: \.self) { mode in
+                        let selected = themeManager.appearance == mode
+                        Button {
+                            HapticsManager.selection()
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { themeManager.setAppearance(mode) }
+                        } label: {
+                            VStack(spacing: 12) {
+                                Image(systemName: mode == "system" ? "circle.lefthalf.filled" : mode == "light" ? "sun.max.fill" : "moon.fill")
+                                    .font(.system(size: 24, weight: .medium)).frame(height: 30)
+                                Text(LanguageManager.shared.localizedString("theme_" + mode))
+                                    .font(.subheadline.weight(.medium)).multilineTextAlignment(.center)
+                            }
+                            .foregroundStyle(selected ? Color.themePrimary : Color.primary)
+                            .frame(maxWidth: .infinity, minHeight: 100)
+                            .padding(.horizontal, 4)
+                            .background(selected ? Color.themePrimary.opacity(0.09) : Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 16))
+                            .overlay { RoundedRectangle(cornerRadius: 16).stroke(selected ? Color.themePrimary : .clear, lineWidth: 1.5) }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.appearance." + mode)
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                    }
+                }.padding(.vertical, 4)
+            } header: { Text(LanguageManager.shared.localizedString("dynamic_theme")) }
+        }.listStyle(.insetGrouped)
+    }
+}
+
 struct HomeDisplaySettingsView: View {
+    var embedded = false
     private let neutralIconColor = Color(uiColor: .secondaryLabel)
     @AppStorage(LiveActivityService.enabledKey) private var liveActivityEnabled: Bool = true
     @AppStorage("show_bookmarks_on_home") private var showBookmarksOnHome: Bool = false
@@ -500,8 +557,7 @@ struct HomeDisplaySettingsView: View {
             }
         }
         .listStyle(.insetGrouped).tint(.themePrimary)
-        .navigationTitle(ToolText.text("home_display_settings"))
-        .navigationBarTitleDisplayMode(.inline)
+        .modifier(SettingsPageTitle(embedded: embedded, title: ToolText.text("home_display_settings")))
         .alert(LanguageManager.shared.localizedString("edit_title"), isPresented: $showHomeTitleEdit) {
             TextField("Soulo", text: $editingHomeTitle)
             Button(LanguageManager.shared.localizedString("save")) {
@@ -527,6 +583,8 @@ struct HomeDisplaySettingsView: View {
 
 struct BrowsingDisplaySettingsView: View {
     var focusPlatformBar = false
+    @Environment(\.openURL) private var openURL
+    @AppStorage(VideoScreenAwakeService.preferenceKey) private var keepScreenAwake = false
     @AppStorage(PlatformBarPreferences.visibilityKey) private var showPlatformBar = true
     @AppStorage(AppConstants.StorageKeys.extendPageBackground) private var extendPageBackground = BrowserInitialPreferences.extendPageBackground
     @AppStorage(AppConstants.StorageKeys.pageBackgroundGradient) private var pageBackgroundGradient = false
@@ -534,12 +592,29 @@ struct BrowsingDisplaySettingsView: View {
     @State private var example: BrowsingDisplayExample?
     private let neutralIconColor = Color(uiColor: .secondaryLabel)
     @AppStorage("show_top_search_bar") private var showTopSearchBar = BrowserInitialPreferences.showTopSearchBar
+    @AppStorage(BrowserInitialPreferences.restoreLastPageKey) private var restoreLastPage = false
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @AppStorage(AppConstants.StorageKeys.keepPageAboveToolbar) private var keepPageAboveToolbar = false
 
     var body: some View {
         ScrollViewReader { proxy in
         List {
+            Section {
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                } label: {
+                    SettingsActionLabel(icon: "globe", color: neutralIconColor,
+                        title: LanguageManager.shared.localizedString("settings_default_browser"))
+                }
+                .buttonStyle(.plain).accessibilityIdentifier("settings.defaultBrowser")
+                .accessibilityHint(LanguageManager.shared.localizedString("settings_default_browser_hint"))
+                Toggle(isOn: $restoreLastPage) {
+                    SettingsDescriptionLabel(icon: "arrow.counterclockwise", color: restoreLastPage ? Color.themePrimary : Color(uiColor: .systemGray3),
+                        title: ToolText.text("restore_last_page_on_launch"), description: ToolText.text("restore_last_page_on_launch_desc"))
+                }
+                .accessibilityIdentifier("settings.browsingDisplay.restoreLastPage")
+
+            } header: { Text(ToolText.text("browsing_startup_tabs")) }
             Section {
                 Toggle(isOn: Binding(get: { showPlatformBar }, set: {
                     showPlatformBar = $0
@@ -572,7 +647,29 @@ struct BrowsingDisplaySettingsView: View {
                 }
                 .tint(Color.themePrimary)
                 .accessibilityIdentifier("settings.browsingDisplay.fullscreen")
-            }
+                Toggle(isOn: Binding(get: { keepPageAboveToolbar }, set: { keepPageAboveToolbar = $0; if $0 { example = .aboveToolbar } })) {
+                    SettingsDescriptionLabel(
+                        icon: "rectangle.bottomthird.inset.filled",
+                        color: keepPageAboveToolbar ? Color.themePrimary : Color(uiColor: .systemGray3),
+                        title: LanguageManager.shared.localizedString("keep_page_above_toolbar"),
+                        description: LanguageManager.shared.localizedString("keep_page_above_toolbar_desc")
+                    )
+                }
+                .tint(Color.themePrimary)
+                .accessibilityIdentifier("settings.browsingDisplay.pageAboveToolbar")
+
+                        Toggle(isOn: $keepScreenAwake) {
+                            SettingsDescriptionLabel(icon: "sun.max.fill",
+                                color: keepScreenAwake ? Color.themePrimary : Color(uiColor: .systemGray3),
+                                title: ToolText.text("screen_keep_awake"), description: ToolText.text("screen_keep_awake_desc"))
+                        }
+                        .tint(Color.themePrimary)
+                        .accessibilityIdentifier("settings.keepScreenAwake")
+                        .onCompatibleChange(of: keepScreenAwake) { _, _ in
+                            VideoScreenAwakeService.shared.reloadUserPreference()
+                        }
+
+            } header: { Text(ToolText.text("browsing_interface")) }
             Section {
                 Toggle(isOn: Binding(get: { extendPageBackground }, set: { extendPageBackground = $0; if $0 { example = .background } })) {
                     SettingsDescriptionLabel(icon: "paintpalette", color: extendPageBackground ? Color.themePrimary : Color(uiColor: .systemGray3),
@@ -594,19 +691,6 @@ struct BrowsingDisplaySettingsView: View {
                     .tint(.themePrimary)
                     .accessibilityIdentifier("settings.browsingDisplay.freezeBackgroundOnScroll")
                 }
-            }
-            Section {
-                Toggle(isOn: Binding(get: { keepPageAboveToolbar }, set: { keepPageAboveToolbar = $0; if $0 { example = .aboveToolbar } })) {
-                    SettingsDescriptionLabel(
-                        icon: "rectangle.bottomthird.inset.filled",
-                        color: keepPageAboveToolbar ? Color.themePrimary : Color(uiColor: .systemGray3),
-                        title: LanguageManager.shared.localizedString("keep_page_above_toolbar"),
-                        description: LanguageManager.shared.localizedString("keep_page_above_toolbar_desc")
-                    )
-                }
-                .tint(Color.themePrimary)
-                .accessibilityIdentifier("settings.browsingDisplay.pageAboveToolbar")
-
                 SettingsSubpageLink {
                     WebsiteZoomSettingsView()
                 } label: {
@@ -617,7 +701,7 @@ struct BrowsingDisplaySettingsView: View {
                 } label: {
                     SettingsNavigationLabel(icon: "circle.lefthalf.filled", color: neutralIconColor, title: LanguageManager.shared.localizedString("web_appearance"))
                 }.accessibilityIdentifier("settings.webAppearance")
-            }
+            } header: { Text(ToolText.text("browsing_web_display")) }
         }
         .onAppear {
             if focusPlatformBar { DispatchQueue.main.async { proxy.scrollTo("platform-bar-setting", anchor: .top) } }

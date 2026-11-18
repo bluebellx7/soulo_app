@@ -908,12 +908,12 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     private func installEngineIfNeeded(in webView: WKWebView) async throws {
-        _ = try await webView.evaluateJavaScript(Self.nativeFetchBridgeScript)
-        let nativeFetchReady = try await webView.evaluateJavaScript(
+        _ = try await webView.evaluateCompatibleJavaScript(Self.nativeFetchBridgeScript)
+        let nativeFetchReady = try await webView.evaluateCompatibleJavaScript(
             "typeof window.__souloNativeFetch === 'function'"
         ) as? Bool ?? false
         guard nativeFetchReady else { throw StreamingMediaDownloadError.unavailable }
-        let installed = try await webView.evaluateJavaScript(
+        let installed = try await webView.evaluateCompatibleJavaScript(
             "typeof window.__souloSABRDownload === 'function' && window.__souloSABREngineVersion === \(Self.sabrEngineVersion)"
         ) as? Bool ?? false
         if installed { return }
@@ -921,11 +921,11 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
               let source = try? String(contentsOf: url, encoding: .utf8) else {
             throw StreamingMediaDownloadError.unavailable
         }
-        _ = try await webView.evaluateJavaScript(
+        _ = try await webView.evaluateCompatibleJavaScript(
             Self.preparedSABREngineSource(source)
                 + ";window.__souloSABREngineVersion=\(Self.sabrEngineVersion);"
         )
-        let ready = try await webView.evaluateJavaScript(
+        let ready = try await webView.evaluateCompatibleJavaScript(
             "typeof window.__souloSABRDownload === 'function'"
         ) as? Bool ?? false
         guard ready else { throw StreamingMediaDownloadError.unavailable }
@@ -933,7 +933,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
 
     private func prepareYouTubePlayerContext(in webView: WKWebView) async throws -> String {
         for attempt in 0..<20 {
-            let playerResponseJSON = try await webView.evaluateJavaScript(#"""
+            let playerResponseJSON = try await webView.evaluateCompatibleJavaScript(#"""
         (() => {
             function currentVideoID() {
                 try {

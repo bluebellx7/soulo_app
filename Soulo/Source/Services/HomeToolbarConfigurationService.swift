@@ -80,8 +80,8 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .homeToolbar: ToolText.text("home_toolbar_home_tools")
         case .adBlock: LanguageManager.shared.localizedString("ad_block")
         case .privacy: LanguageManager.shared.localizedString("settings_privacy")
-        case .backups: LanguageManager.shared.localizedString("settings_backups")
-        case .quickActions: ToolText.text("quick_actions_title")
+        case .backups: ToolText.text("settings_sync_backup")
+        case .quickActions: ToolText.text("app_icon_shortcuts")
         case .urlSchemes: ToolText.text("scheme_title")
         case .shake: LanguageManager.shared.localizedString("shake_action")
         case .feedback: LanguageManager.shared.localizedString("feedback_title")
@@ -90,22 +90,68 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+struct HomeToolbarLayout: Equatable {
+    enum Style: String, CaseIterable { case tiles, capsule, icons }
+    enum Placement: String, CaseIterable { case bottom, belowSearch, free }
+    enum EdgeAlignment: String, CaseIterable { case leading, center, trailing }
+
+    var style: Style = .tiles
+    var placement: Placement = .bottom
+    var alignment: EdgeAlignment = .center
+    var x: Double = 0.5
+    var y: Double = 1
+
+    init() {}
+
+    init(_ values: [String: Any]?, showsButtonBackground: Bool) {
+        style = (values?["style"] as? String).flatMap(Style.init(rawValue:)) ?? (showsButtonBackground ? .tiles : .icons)
+        placement = (values?["placement"] as? String).flatMap(Placement.init(rawValue:)) ?? .bottom
+        alignment = (values?["alignment"] as? String).flatMap(EdgeAlignment.init(rawValue:)) ?? .center
+        x = Self.normalized(values?["x"] as? Double, fallback: 0.5)
+        y = Self.normalized(values?["y"] as? Double, fallback: 1)
+    }
+
+    var propertyList: [String: Any] {
+        ["style": style.rawValue, "placement": placement.rawValue, "alignment": alignment.rawValue,
+         "x": Self.normalized(x, fallback: 0.5), "y": Self.normalized(y, fallback: 1)]
+    }
+
+    func center(in area: CGSize, strip: CGSize, translation: CGSize = .zero) -> CGPoint {
+        let travel = CGSize(width: max(0, area.width - strip.width), height: max(0, area.height - strip.height))
+        return CGPoint(x: strip.width / 2 + min(travel.width, max(0, travel.width * x + translation.width)),
+                       y: strip.height / 2 + min(travel.height, max(0, travel.height * y + translation.height)))
+    }
+
+    mutating func move(by translation: CGSize, in area: CGSize, strip: CGSize) {
+        let width = area.width - strip.width, height = area.height - strip.height
+        if width > 0 { x = Self.normalized(x + translation.width / width, fallback: x) }
+        if height > 0 { y = Self.normalized(y + translation.height / height, fallback: y) }
+    }
+
+    private static func normalized(_ value: Double?, fallback: Double) -> Double {
+        guard let value, value.isFinite else { return fallback }
+        return min(1, max(0, value))
+    }
+}
+
 @MainActor
 final class HomeToolbarConfigurationService: ObservableObject {
     static let shared = HomeToolbarConfigurationService()
     static let storageKey = "home_toolbar_actions"
     static let backgroundKey = "home_toolbar_button_background"
+    static let layoutKey = "home_toolbar_layout"
     static let maximumSlotCount = 8
     static var slotCount: Int { UIDevice.current.userInterfaceIdiom == .pad ? maximumSlotCount : 5 }
     @Published private(set) var actions: [HomeToolbarAction]
-    @Published private(set) var showsButtonBackground: Bool
+    @Published private(set) var layout: HomeToolbarLayout
+    var showsButtonBackground: Bool { layout.style != .icons }
     private let defaults: UserDefaults
     private let slotLimit: Int
     init(defaults: UserDefaults = .standard, slotLimit: Int? = nil) {
         self.defaults = defaults
         self.slotLimit = min(max(slotLimit ?? Self.slotCount, 1), Self.maximumSlotCount)
         actions = Self.resolve(defaults.stringArray(forKey: Self.storageKey), slotLimit: self.slotLimit)
-        showsButtonBackground = defaults.object(forKey: Self.backgroundKey) == nil || defaults.bool(forKey: Self.backgroundKey)
+        layout = Self.readLayout(from: defaults)
     }
     static func resolve(_ raw: [String]?, slotLimit: Int? = nil) -> [HomeToolbarAction] {
         (0..<min(max(slotLimit ?? slotCount, 1), maximumSlotCount)).map { index in
@@ -115,16 +161,28 @@ final class HomeToolbarConfigurationService: ObservableObject {
     }
     func reloadFromDefaults() {
         actions = Self.resolve(defaults.stringArray(forKey: Self.storageKey), slotLimit: self.slotLimit)
-        showsButtonBackground = defaults.object(forKey: Self.backgroundKey) == nil || defaults.bool(forKey: Self.backgroundKey)
+        layout = Self.readLayout(from: defaults)
     }
-    func save(_ actions: [HomeToolbarAction], showsButtonBackground: Bool? = nil) {
+    private static func readLayout(from defaults: UserDefaults) -> HomeToolbarLayout {
+        HomeToolbarLayout(defaults.dictionary(forKey: layoutKey), showsButtonBackground:
+            defaults.object(forKey: backgroundKey) == nil || defaults.bool(forKey: backgroundKey))
+    }
+
+    func save(_ actions: [HomeToolbarAction], showsButtonBackground: Bool? = nil, layout newLayout: HomeToolbarLayout? = nil) {
         self.actions = Self.resolve(actions.map(\.rawValue), slotLimit: slotLimit)
         // Editing the five visible phone slots must not delete iPad-only slots
         // when the same settings are restored or synchronized across devices.
         let extra = Array((defaults.stringArray(forKey: Self.storageKey) ?? []).dropFirst(slotLimit).prefix(Self.maximumSlotCount - slotLimit))
         defaults.set(self.actions.map(\.rawValue) + extra, forKey: Self.storageKey)
-        if let showsButtonBackground {
-            self.showsButtonBackground = showsButtonBackground
+        if let updated = newLayout {
+            layout = updated
+            defaults.set(updated.propertyList, forKey: Self.layoutKey)
+            defaults.set(updated.style != .icons, forKey: Self.backgroundKey)
+        } else if let showsButtonBackground {
+            layout.style = showsButtonBackground ? .tiles : .icons
+            if defaults.object(forKey: Self.layoutKey) != nil {
+                defaults.set(layout.propertyList, forKey: Self.layoutKey)
+            }
             defaults.set(showsButtonBackground, forKey: Self.backgroundKey)
         }
     }

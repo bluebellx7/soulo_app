@@ -80,7 +80,8 @@ struct SearchBarView: View {
                         isIncognito ? "privacy_exit_incognito" : "privacy_enter_incognito"
                     )
                 )
-                .compatiblePopover(isPresented: $showSearchActions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+                .compatiblePopover(isPresented: $showSearchActions, attachmentAnchor: .rect(.bounds), arrowEdge: .top,
+                    usesAppAppearance: true) {
                     searchActionsPanel(onIncognitoTap: onIncognitoTap, onScanTap: onScanTap)
                         .compatiblePopoverAdaptation()
                 }

@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "پوزیشن %d";
 "home_toolbar_reset" = "سب چھپائیں۔";
 "home_toolbar_default_hint" = "ہوم شارٹ کٹس بطور ڈیفالٹ پوشیدہ ہیں۔";
+"home_toolbar_position" = "مقام";
+"home_toolbar_buttons" = "بٹن";
+"home_toolbar_tiles" = "الگ الگ";
+"home_toolbar_capsule" = "کیپسول";
+"home_toolbar_icons" = "صرف آئیکن";
+"home_toolbar_bottom" = "نیچے";
+"home_toolbar_belowSearch" = "تلاش کے نیچے";
+"home_toolbar_free" = "من پسند جگہ";
+"home_toolbar_leading" = "شروع کی طرف";
+"home_toolbar_center" = "درمیان میں";
+"home_toolbar_trailing" = "آخر کی طرف";
+"home_toolbar_drag_position" = "ٹول بار کو مطلوبہ جگہ پر گھسیٹیں۔";
+"home_toolbar_drag_buttons" = "بٹن بدلنے کے لیے ٹیپ کریں۔ ترتیب بدلنے کے لیے گھسیٹیں۔";
 "home_toolbar_search" = "ایک صفحہ تلاش کریں۔";
 "group_default_search" = "پہلے سے طے شدہ تلاش";
 "group_search_settings" = "گروپ کی ترتیبات";
 "group_engine_name" = "سرچ انجن کا نام";
-"group_search_url" = "URL کو %@ کے ساتھ تلاش کریں";
-"group_default_search_hint" = "استعمال کیا جاتا ہے جب اس گروپ میں کوئی فعال پلیٹ فارم نہ ہو۔ تلاش کی اصطلاحات کے لیے URL میں %@ شامل کریں۔ غیر فعال پلیٹ فارم غیر فعال رہتے ہیں۔";
-"group_search_url_invalid" = "ایک نام درج کریں اور ایک درست HTTP یا HTTPS تلاش کریں URL جس میں %@ ہو۔";
+"group_search_url" = "تلاش کا URL یا ہوم پیج کا پتہ (تلاش کے الفاظ کے لیے %@)";
+"group_default_search_hint" = "اس گروپ میں کوئی پلیٹ فارم فعال نہ ہو تو استعمال ہوتا ہے۔ گروپ کا کوئی بھی پلیٹ فارم منتخب کر سکتے ہیں۔ %@ کی جگہ تلاش کے الفاظ آتے ہیں؛ پلیس ہولڈر نہ ہو تو صفحہ براہ راست کھلتا ہے۔ بند پلیٹ فارم دوبارہ فعال نہیں ہوتے۔";
+"group_search_url_invalid" = "نام اور درست HTTP یا HTTPS پتہ درج کریں؛ تلاش کے سانچے میں %@ استعمال کیا جا سکتا ہے۔";
 "batch_import_new_group" = "امپورٹڈ گروپ";
 "image_resources" = "وسائل";
 "screen_keep_awake" = "اسکرین کو آن رکھیں";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "یہ فارمیٹ سسٹم پلیئر کے ساتھ براہ راست نہیں بھیجا جا سکتا۔ Control Center کھولیں، اسکرین مررنگ کا انتخاب کریں، پھر اپنا TV یا Mac منتخب کریں۔";
 "userscript_check_updates" = "اپڈیٹس چیک کریں۔";
 "userscript_update_no_url" = "کوئی اپ ڈیٹ ایڈریس فراہم نہیں کیا گیا ہے۔ اسے اپ ڈیٹ کرنے کے لیے ایک نئی اسکرپٹ فائل درآمد کریں۔";
-"userscript_update_manual_hint" = "چیک صرف اس وقت چلتے ہیں جب درخواست کی جائے۔ اپ ڈیٹ کرنے سے پہلے نئے ورژن کا جائزہ لیں۔ ایپ کے ساتھ بلٹ ان اسکرپٹس اپ ڈیٹ۔";
+"userscript_update_manual_hint" = "نصب شدہ فہرست کھولنے پر ہر بار زیادہ سے زیادہ 4 اسکرپٹس، ہر اسکرپٹ 24 گھنٹوں میں ایک بار جانچا جاتا ہے۔ نجی براؤزنگ، کم توانائی یا زیادہ گرمی میں توقف ہوتا ہے۔ اپ ڈیٹ کے لیے جائزہ ضروری ہے۔";
 "userscript_update_latest" = "تازہ ترین";
 "userscript_update_invalid" = "اپ ڈیٹ غلط ہے، کسی مختلف اسکرپٹ سے تعلق رکھتا ہے، یا اس کا ورژن متضاد ہے۔";
 "userscript_update_changed" = "یہ اسکرپٹ چیک کے بعد بدل گیا۔ اپ ڈیٹس کے لیے دوبارہ چیک کریں۔";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "دھندلا شیشہ";
 "wallpaper_blur_amount" = "دھندلاپن کی شدت";
 
-"auto_hide_platform_bar_hint" = "ویب صفحے کے مواد پر ٹیپ کرنے کے بعد ہی پلیٹ فارم بار چھپے گی۔ خودکار ری ڈائریکٹ یا اسکرول کرنے سے نہیں۔ دوبارہ دکھانے کے لیے تلاش کے نتائج پر واپس جائیں یا نئی تلاش شروع کریں۔";
+"auto_hide_platform_bar_hint" = "فعال ہونے پر، صفحے کے مواد پر خود ٹیپ کرنے کے بعد اور صفحے کا ڈومین موجودہ بار کے کسی بھی پلیٹ فارم سے نہ ملنے پر ہی بار چھپتی ہے۔ کسی پلیٹ فارم سے ملنے پر بار دکھائی دیتی رہتی ہے یا دوبارہ ظاہر ہوتی ہے۔ اسکرول اور خودکار ری ڈائریکٹ بار کو نہیں چھپاتے۔";
 
 "ad_subscription_add" = "فلٹر فہرست شامل کریں";
 "ad_subscription_name" = "نام";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "پوری ایپ میں ارتعاش اور انٹرفیس کی آوازیں کنٹرول کریں۔ ویب صفحات، ویڈیو اور آڈیو کے پلے بیک پر اثر نہیں پڑتا۔";
 
 "home_display_settings" = "ہوم کی نمائش";
-"browsing_display_settings" = "براؤزنگ کی نمائش";
+"browsing_display_settings" = "براؤزنگ کی ترتیبات";
 
 "web_video_download" = "ویب ویڈیو ڈاؤن لوڈ";
 "web_video_download_description" = "ویب صفحات، قسطوں کی فہرستوں اور پلیئرز میں ویڈیو ڈاؤن لوڈ کنٹرول دکھائیں۔ پلے بیک اور موجودہ ڈاؤن لوڈ تبدیل نہیں ہوتے۔";
@@ -562,3 +575,45 @@
 "storage_cleanup_reading_desc" = "آف لائن مضامین، کتابوں کی لائبریری اور پڑھنے کی پیش رفت صاف کرتا ہے۔";
 
 "storage_cleanup_offline_desc" = "ڈاؤن لوڈ ریکارڈ کے بغیر آف لائن ویڈیو کی باقیات حذف کرتا ہے۔";
+
+"storage_website_shared" = "مشترک اور غیر منسوب ڈیٹا";
+"storage_website_shared_desc" = "اس میں مشترک نیٹ ورک کیش، کوکیز اور ایسا ڈیٹا شامل ہے جو کسی ایک سائٹ سے منسوب نہیں کیا جا سکتا۔";
+"storage_website_clear_scope" = "عام ویب سائٹس کا ڈیٹا اور مشترک نیٹ ورک کیش صاف کرتا ہے۔ ایکسٹینشن میڈیا کے لیے «ایکسٹینشن کی عارضی کیش» استعمال کریں؛ ایکسٹینشن کی ترتیبات برقرار رہتی ہیں۔";
+
+"storage_quick_clear" = "فوری صفائی";
+"storage_quick_clear_done" = "کیش صاف ہو گیا";
+
+"storage_website_cleanup_pending" = "ویب سائٹ کا ڈیٹا ابھی صاف ہو رہا ہے۔ آپ واپس جا کر براؤزنگ جاری رکھ سکتے ہیں۔ براہ کرم دوبارہ صفائی شروع نہ کریں۔";
+
+"storage_auto_cleanup" = "خودکار صفائی";
+
+"storage_auto_cleanup_desc" = "ایپ پس منظر میں غیر فعال ہو تو ہر 24 گھنٹے میں زیادہ سے زیادہ ایک بار کوشش کرتی ہے۔ صرف 24 گھنٹے سے پرانی، غیر استعمال شدہ عارضی درآمد، برآمد اور پیش نظارہ فائلیں ہٹاتی ہے۔ ہر بار تقریباً 1 سیکنڈ یا 2000 آئٹمز کی جانچ تک چلتی ہے؛ ایپ میں واپس آنے پر رک جاتی ہے۔ پلے بیک، ڈاؤن لوڈ، برآمد، لو پاور موڈ آن ہونے یا واضح گرمی کی صورت میں چھوڑ دیتی ہے۔ بُک مارکس، محفوظ ڈاؤن لوڈز، لاگ ان اور ویب سائٹ کا ڈیٹا خودکار طور پر حذف نہیں ہوتے۔";
+
+"restore_last_page_on_launch" = "آخری صفحہ بحال کریں";
+"restore_last_page_on_launch_desc" = "ایپ شروع ہونے پر آخری ویب صفحہ کھولیں۔ نجی ٹیب بحال نہیں کیے جاتے۔";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "اشارے اور شارٹ کٹس";
+"app_icon_shortcuts" = "ایپ آئیکن شارٹ کٹس";
+"settings_sync_backup" = "سنک اور بیک اپ";
+"icloud_bookmark_sync" = "iCloud بُک مارک سنک";
+"manual_settings_backups" = "دستی بیک اپ";
+"create_settings_backup" = "بنائیں";
+"toolbar_settings" = "ٹول بار";
+"toolbar_section_home" = "ہوم";
+
+/* Manual backup controls */
+"clear_manual_backups" = "دستی بیک اپ صاف کریں";
+"clear_manual_backups_message" = "صرف دستی طور پر بنائے یا درآمد کیے گئے بیک اپ حذف ہوتے ہیں۔ خودکار اور پرانی بحالی کی نقول، موجودہ ترتیبات اور iCloud سنک برقرار رہتے ہیں۔";
+"recovery_settings_backups" = "خودکار اور پچھلے بیک اپ";
+
+/* Settings hierarchy */
+"settings_personalization" = "ذاتی نوعیت";
+"appearance_home_settings" = "ہوم اور وال پیپر";
+"settings_data" = "ڈیٹا";
+"about_feedback_settings" = "تعارف اور رائے";
+"browsing_startup_tabs" = "آغاز اور ٹیبز";
+"browsing_interface" = "انٹرفیس";
+"browsing_web_display" = "ویب صفحات";
+"manual_backups_empty" = "ابھی کوئی دستی بیک اپ نہیں";
+"browsing_display_settings_legacy" = "براؤزنگ کی نمائش";

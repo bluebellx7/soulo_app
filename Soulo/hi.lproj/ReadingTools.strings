@@ -384,13 +384,26 @@
 "home_toolbar_slot" = "स्थिति %d";
 "home_toolbar_reset" = "सभी छिपाएँ";
 "home_toolbar_default_hint" = "होम शॉर्टकट डिफ़ॉल्ट रूप से छिपे होते हैं।";
+"home_toolbar_position" = "स्थान";
+"home_toolbar_buttons" = "बटन";
+"home_toolbar_tiles" = "अलग-अलग";
+"home_toolbar_capsule" = "कैप्सूल";
+"home_toolbar_icons" = "सिर्फ़ आइकन";
+"home_toolbar_bottom" = "नीचे";
+"home_toolbar_belowSearch" = "खोज के नीचे";
+"home_toolbar_free" = "मनचाही जगह";
+"home_toolbar_leading" = "शुरू की ओर";
+"home_toolbar_center" = "बीच में";
+"home_toolbar_trailing" = "अंत की ओर";
+"home_toolbar_drag_position" = "टूलबार को मनचाही जगह पर खींचें।";
+"home_toolbar_drag_buttons" = "बटन बदलने के लिए टैप करें। क्रम बदलने के लिए खींचें।";
 "home_toolbar_search" = "एक पेज ढूंढें";
 "group_default_search" = "डिफ़ॉल्ट खोज";
 "group_search_settings" = "समूह सेटिंग्स";
 "group_engine_name" = "खोज इंजन का नाम";
-"group_search_url" = "URL को %@ से खोजें";
-"group_default_search_hint" = "इसका उपयोग तब किया जाता है जब इस समूह में कोई सक्षम प्लेटफ़ॉर्म न हो। खोज शब्दों के लिए URL में %@ शामिल करें। अक्षम प्लेटफ़ॉर्म अक्षम रहते हैं.";
-"group_search_url_invalid" = "एक नाम दर्ज करें और एक वैध HTTP या HTTPS %@ युक्त URL खोजें।";
+"group_search_url" = "खोज या होमपेज का URL (खोज के शब्द: %@)";
+"group_default_search_hint" = "इस समूह में कोई प्लेटफ़ॉर्म चालू न होने पर इस्तेमाल होगा। समूह का कोई भी प्लेटफ़ॉर्म चुन सकते हैं। %@ की जगह खोज के शब्द आएँगे; प्लेसहोल्डर न होने पर पेज सीधे खुलेगा। बंद किए गए प्लेटफ़ॉर्म बंद ही रहेंगे।";
+"group_search_url_invalid" = "एक नाम और मान्य HTTP या HTTPS URL दर्ज करें। खोज टेम्पलेट में %@ इस्तेमाल कर सकते हैं।";
 "batch_import_new_group" = "आयातित समूह";
 "image_resources" = "संसाधन";
 "screen_keep_awake" = "स्क्रीन चालू रखें";
@@ -409,7 +422,7 @@
 "media_airplay_mirroring_hint" = "यह प्रारूप सीधे सिस्टम प्लेयर के साथ नहीं भेजा जा सकता. Control Center खोलें, स्क्रीन मिररिंग चुनें, फिर अपना टीवी या मैक चुनें।";
 "userscript_check_updates" = "अपडेट जांचें";
 "userscript_update_no_url" = "कोई अद्यतन पता नहीं दिया गया है. इसे अद्यतन करने के लिए एक नई स्क्रिप्ट फ़ाइल आयात करें।";
-"userscript_update_manual_hint" = "अनुरोध किए जाने पर ही चेक चलाए जाते हैं. अपडेट करने से पहले नए संस्करण की समीक्षा करें. अंतर्निहित स्क्रिप्ट ऐप के साथ अपडेट होती हैं।";
+"userscript_update_manual_hint" = "इंस्टॉल सूची खोलने पर अधिकतम 4 स्क्रिप्ट जाँची जाती हैं, हर स्क्रिप्ट 24 घंटे में एक बार। निजी ब्राउज़िंग, कम शक्ति या अधिक ताप में जाँच रुकती है। अपडेट की समीक्षा आवश्यक है।";
 "userscript_update_latest" = "अप टू डेट";
 "userscript_update_invalid" = "अद्यतन अमान्य है, किसी भिन्न स्क्रिप्ट से संबंधित है, या असंगत संस्करण है।";
 "userscript_update_changed" = "जाँच के बाद यह स्क्रिप्ट बदल गई। अपडेट के लिए दोबारा जांचें.";
@@ -497,7 +510,7 @@
 "wallpaper_image_blur" = "धुंधला काँच";
 "wallpaper_blur_amount" = "धुंधलेपन की तीव्रता";
 
-"auto_hide_platform_bar_hint" = "वेबपेज की सामग्री पर टैप करने के बाद ही प्लेटफ़ॉर्म बार छिपेगा। अपने आप रीडायरेक्ट होने या स्क्रॉल करने से नहीं। दोबारा दिखाने के लिए खोज परिणामों पर लौटें या नई खोज करें।";
+"auto_hide_platform_bar_hint" = "चालू होने पर बार तभी छिपेगा, जब आप वेबपेज की सामग्री पर खुद टैप करें और पेज का डोमेन मौजूदा बार के किसी भी प्लेटफ़ॉर्म से मेल न खाए। किसी से मेल खाने पर बार दिखता रहेगा या फिर दिखने लगेगा। स्क्रॉल करने और अपने-आप रीडायरेक्ट होने पर बार नहीं छिपेगा।";
 
 "ad_subscription_add" = "फ़िल्टर सूची जोड़ें";
 "ad_subscription_name" = "नाम";
@@ -509,7 +522,7 @@
 "feedback_settings_hint" = "पूरे ऐप में कंपन और इंटरफ़ेस की ध्वनियाँ नियंत्रित करें। वेबपेज, वीडियो और ऑडियो प्लेबैक पर असर नहीं पड़ता।";
 
 "home_display_settings" = "होम का प्रदर्शन";
-"browsing_display_settings" = "ब्राउज़िंग का प्रदर्शन";
+"browsing_display_settings" = "ब्राउज़िंग सेटिंग्स";
 
 "web_video_download" = "वेब वीडियो डाउनलोड";
 "web_video_download_description" = "वेबपेज, एपिसोड सूचियों और प्लेयर में वीडियो डाउनलोड नियंत्रण दिखाएँ। प्लेबैक और मौजूदा डाउनलोड नहीं बदलते।";
@@ -563,3 +576,45 @@
 "storage_cleanup_reading_desc" = "ऑफ़लाइन लेख, पुस्तक लाइब्रेरी और पढ़ने की प्रगति साफ़ करता है।";
 
 "storage_cleanup_offline_desc" = "डाउनलोड रिकॉर्ड के बिना बची ऑफ़लाइन वीडियो फ़ाइलें हटाता है।";
+
+"storage_website_shared" = "साझा और असंबद्ध डेटा";
+"storage_website_shared_desc" = "इसमें साझा नेटवर्क कैश, कुकी और वह डेटा शामिल है जिसे किसी एक साइट से नहीं जोड़ा जा सकता।";
+"storage_website_clear_scope" = "सामान्य वेबसाइटों का डेटा और साझा नेटवर्क कैश साफ़ करता है। एक्सटेंशन मीडिया के लिए «एक्सटेंशन की अस्थायी कैश» इस्तेमाल करें; एक्सटेंशन की सेटिंग्स सुरक्षित रहती हैं।";
+
+"storage_quick_clear" = "त्वरित सफ़ाई";
+"storage_quick_clear_done" = "कैश साफ़ किया गया";
+
+"storage_website_cleanup_pending" = "वेबसाइट डेटा अभी साफ़ किया जा रहा है। आप वापस जाकर ब्राउज़िंग जारी रख सकते हैं। कृपया दोबारा सफ़ाई शुरू न करें।";
+
+"storage_auto_cleanup" = "अपने-आप सफ़ाई";
+
+"storage_auto_cleanup_desc" = "ऐप बैकग्राउंड में निष्क्रिय हो तो हर 24 घंटे में अधिकतम एक बार कोशिश करता है। केवल 24 घंटे से पुरानी और इस्तेमाल न हो रही आयात, निर्यात व प्रीव्यू की अस्थायी फ़ाइलें हटाता है। हर बार लगभग 1 सेकंड या 2000 आइटम की जाँच तक चलता है; ऐप में लौटने पर रुक जाता है। प्लेबैक, डाउनलोड, निर्यात, लो पावर मोड चालू होने या ज़्यादा गर्म होने पर छोड़ देता है। बुकमार्क, सहेजे गए डाउनलोड, लॉगिन और वेबसाइट डेटा अपने-आप नहीं मिटते।";
+
+"restore_last_page_on_launch" = "पिछला पृष्ठ बहाल करें";
+"restore_last_page_on_launch_desc" = "ऐप शुरू होने पर पिछला वेबपृष्ठ खोलें। निजी टैब बहाल नहीं किए जाते।";
+
+/* Settings organization */
+"gestures_shortcuts_settings" = "जेस्चर और शॉर्टकट";
+"app_icon_shortcuts" = "ऐप आइकन शॉर्टकट";
+"settings_sync_backup" = "सिंक और बैकअप";
+"icloud_bookmark_sync" = "iCloud बुकमार्क सिंक";
+"manual_settings_backups" = "मैनुअल बैकअप";
+"create_settings_backup" = "बनाएँ";
+"toolbar_settings" = "टूलबार";
+"toolbar_section_home" = "होम";
+
+/* Manual backup controls */
+"clear_manual_backups" = "मैनुअल बैकअप मिटाएँ";
+"clear_manual_backups_message" = "केवल हाथ से बनाए या आयात किए गए बैकअप मिटाता है। स्वचालित और पुराने बहाली स्नैपशॉट, वर्तमान सेटिंग्स और iCloud सिंक सुरक्षित रहते हैं।";
+"recovery_settings_backups" = "स्वचालित और पुराने बैकअप";
+
+/* Settings hierarchy */
+"settings_personalization" = "वैयक्तिकरण";
+"appearance_home_settings" = "होम और वॉलपेपर";
+"settings_data" = "डेटा";
+"about_feedback_settings" = "परिचय और प्रतिक्रिया";
+"browsing_startup_tabs" = "शुरुआत और टैब";
+"browsing_interface" = "इंटरफ़ेस";
+"browsing_web_display" = "वेबपृष्ठ";
+"manual_backups_empty" = "अभी कोई मैनुअल बैकअप नहीं";
+"browsing_display_settings_legacy" = "ब्राउज़िंग का प्रदर्शन";
