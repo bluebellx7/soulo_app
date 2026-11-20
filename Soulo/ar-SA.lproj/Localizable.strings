@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "مسح جميع الإشارات المرجعية؟";
 "settings" = "الإعدادات";
 "platform_management" = "إدارة المنصات";
+"home_quick_search" = "بحث سريع من الرئيسية";
 "region_korea" = "كوريا";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "ستتم إزالة ذاكرة الويب المؤقتة وسجل الصفحات لآخر 3 أيام مع الاحتفاظ بملفات تعريف الارتباط وتسجيل الدخول.";
 "enter_fullscreen" = "ملء الشاشة";
 "exit_fullscreen" = "الخروج من ملء الشاشة";
-"fullscreen_exit_hint" = "اضغط لعناصر التحكم واسحب لأسفل للخروج";
+"exit_fullscreen_short" = "خروج";
+"fullscreen_exit_hint" = "اضغط لفتح القائمة، واسحب لأعلى للخروج";
 "restore_browser_toolbar" = "استعادة شريط الأدوات";
 "floating_more_detach" = "إلغاء تثبيت زر المزيد";
 "floating_more_snap" = "تثبيت زر المزيد عند الحافة";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "مدعومة جزئيا";
 "userscript_docs_partial_desc" = "تظهر الإشعارات داخل الصفحة وتعيد واجهات الموارد Promise. يتطلب خيار cookie إذن GM_cookie؛ ولا تُرسل ملفات الارتباط تلقائيًا.";
 "userscript_docs_unsupported_title" = "غير معتمد حاليا";
-"userscript_docs_unsupported_desc" = "GM_webRequest وGM_audio وعزل sandbox/run-in وسلوك سطح المكتب غير المتاح في WKWebView.";
+"userscript_docs_network_webrequest" = "يدعم GM_webRequest إلغاء طلبات Fetch وXMLHttpRequest في الصفحة الرئيسية وإعادة توجيهها ضمن المصدر نفسه.";
+"userscript_docs_unsupported_desc" = "يحتاج GM_audio إلى كتم علامة التبويب بالكامل وقراءة حالة الصوت. واجهة WKWebView العامة محدودة في ذلك.\nيحدد @sandbox بيئة تشغيل النص. تعمل نصوص المستخدم في Soulo حاليًا داخل بيئة الصفحة.";
 "userscript_docs_metadata_title" = "البيانات الوصفية";
 "userscript_docs_metadata_identity" = "يظهر اسم البرنامج النصي الذي يمكن قراءته بواسطة الإنسان والوصف الاختياري قبل التثبيت وفي تفاصيل البرنامج النصي.";
 "userscript_docs_metadata_version" = "استخدم مساحة اسم ثابتة وفريدة من نوعها وقم بزيادة الإصدار كلما تغير البرنامج النصي المجمع.";

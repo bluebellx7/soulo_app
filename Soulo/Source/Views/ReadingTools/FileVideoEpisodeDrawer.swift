@@ -88,7 +88,7 @@ struct FileVideoEpisodeDrawer: ViewModifier {
                     }.font(.subheadline).padding(.horizontal, 20).frame(minHeight: 44).contentShape(Rectangle())
                 }
                 .accessibilityIdentifier("media.file.episodes.source")
-                .compatiblePopover(isPresented: $sourcesVisible) {
+                .videoMenuPopover(isPresented: $sourcesVisible) {
                     VStack(spacing: 0) {
                         ForEach(playlist.sources, id: \.id) { source in
                             Button {
@@ -100,7 +100,7 @@ struct FileVideoEpisodeDrawer: ViewModifier {
                                 }.padding(.horizontal, 12).frame(minHeight: 44).contentShape(Rectangle())
                             }.buttonStyle(.plain).accessibilityLabel(source.title)
                         }
-                    }.padding(8).frame(width: 220).compatiblePopoverAdaptation().videoPopoverSurface()
+                    }.padding(8).frame(width: 220)
                 }
             }
             if let failure = playlist.failure {

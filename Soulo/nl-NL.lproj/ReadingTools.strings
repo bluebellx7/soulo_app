@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Feedback proberen";
 
-"media_start_timeout" = "Het afspelen is niet gestart. Controleer het netwerk of wissel van speler.";
+"media_start_timeout" = "Het afspelen is niet gestart. Controleer het netwerk.";
+"media_load_complete" = "Volledig geladen";
+"media_playback_stalled" = "Het afspelen is vastgelopen.";
 
 "wallpaper_appearance_hint" = "Kies aparte achtergronden voor de lichte en donkere weergave. Ze wisselen automatisch met de app.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Downloads en bestanden";
 "storage_cache_group" = "Cache en tijdelijke bestanden";
+"storage_video_cache" = "Videocache";
 "storage_saved_group" = "Opgeslagen inhoud";
 
 "storage_clear_offline_media_warning" = "Verwijdert alle offlinevideo’s hier en hun bestandsvermeldingen. Onvoltooide bestands-/videodownloads, afspelen en exporteren worden gestopt.";

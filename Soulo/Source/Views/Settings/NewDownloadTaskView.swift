@@ -98,7 +98,7 @@ struct NewDownloadTaskView: View {
                     return try Data(contentsOf: url)
                 }.value
                 try Task.checkCancellation()
-                let id = try await TorrentDownloadService.shared.create(data: data, magnet: nil)
+                let id = try await TorrentDownloadService.shared.create(data: data, magnet: nil, openExisting: true)
                 path.append(id)
             } catch is CancellationError {} catch { self.error = error.localizedDescription }
         }
@@ -117,11 +117,11 @@ struct NewDownloadTaskView: View {
                     try await ED2KDownloadService.shared.create(file)
                     dismiss()
                 case .magnet(let url):
-                    path.append(try await TorrentDownloadService.shared.create(data: nil, magnet: url.absoluteString))
+                    path.append(try await TorrentDownloadService.shared.create(data: nil, magnet: url.absoluteString, openExisting: true))
                 case .web(let url):
                     if let data = try await TorrentMetadataFetcher.fetchIfTorrent(url) {
                         try Task.checkCancellation()
-                        path.append(try await TorrentDownloadService.shared.create(data: data, magnet: nil))
+                        path.append(try await TorrentDownloadService.shared.create(data: data, magnet: nil, openExisting: true))
                         return
                     }
                     let suggested = filename.isEmpty
@@ -131,7 +131,10 @@ struct NewDownloadTaskView: View {
                     // The native session owns the transfer after this form closes.
                     Task {
                         do {
-                            let local = try await BackgroundDownloadService.shared.start(request: URLRequest(url: url), item: item)
+                            let request = URLRequest(url: url)
+                            await WebResourceDownloadService.shared.registerDirectVideoPlayback(for: item, request: request)
+                            guard DownloadManagerService.shared.downloads.contains(where: { $0.id == item.id && $0.status == .inProgress }) else { return }
+                            let local = try await BackgroundDownloadService.shared.start(request: request, item: item)
                             if let data = await TorrentMetadataFetcher.validTorrentData(at: local),
                                (try? await TorrentDownloadService.shared.create(data: data, magnet: nil, openExisting: true)) != nil {
                                 DownloadManagerService.shared.delete(item)
@@ -173,8 +176,9 @@ enum TorrentMetadataFetcher {
         guard bytes.first == 100, let colon = bytes.firstIndex(of: 58), (2...4).contains(colon),
               let count = Int(String(decoding: bytes[1..<colon], as: UTF8.self)), count > 0,
               colon + 1 + count <= bytes.count else { return false }
-        let key = String(decoding: bytes[(colon + 1)..<(colon + 1 + count)], as: UTF8.self)
-        return ["announce", "announce-list", "info", "comment", "created by", "creation date", "encoding", "nodes", "url-list", "piece layers"].contains(key)
+        // Top-level dictionaries can begin with publisher-specific fields.
+        // The native parser validates the entire metainfo before importing it.
+        return true
     }
 
     static func fetch(_ url: URL) async throws -> Data {
@@ -229,7 +233,7 @@ struct TorrentTaskDetailView: View {
                     }
                     if !job.files.isEmpty {
                         Section {
-                            if !job.isActive && job.state != .finished {
+                            if job.canChangeSelection {
                                 Button(job.selected.count == job.files.filter { !$0.pad }.count ? ToolText.text("torrent_select_none") : ToolText.text("torrent_select_all")) {
                                     service.select(id, indices: job.selected.count == job.files.filter { !$0.pad }.count ? [] : Set(job.files.filter { !$0.pad }.map(\.index)))
                                 }
@@ -251,7 +255,7 @@ struct TorrentTaskDetailView: View {
                                                 .font(.caption).foregroundStyle(.secondary)
                                         }
                                     }.padding(.vertical, 3)
-                                }.buttonStyle(.plain).disabled(job.isActive || job.state == .finished)
+                                }.buttonStyle(.plain).disabled(!job.canChangeSelection)
                                     .accessibilityIdentifier("torrent.file.\(file.index)")
                                     .accessibilityValue(job.selected.contains(file.index) ? "selected" : "unselected")
                                   if service.canStream(id, file: file) {
@@ -286,7 +290,8 @@ struct TorrentTaskDetailView: View {
                                 .accessibilityIdentifier("torrent.pause")
                         } else {
                             Button { service.start(id); onStarted?() } label: {
-                                Label(LanguageManager.shared.localizedString(job.state == .selection ? "download" : "resume"), systemImage: "arrow.down.circle.fill")
+                                Label(LanguageManager.shared.localizedString(job.state == .selection ? "download" : job.state == .failed ? "retry" : "resume"),
+                                      systemImage: "arrow.down.circle.fill")
                             }.buttonStyle(CompactActionButtonStyle(prominent: true))
                                 .disabled(!job.files.isEmpty && job.selected.isEmpty)
                                 .accessibilityIdentifier("torrent.start")

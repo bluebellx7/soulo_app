@@ -21,6 +21,12 @@ final class PeerDownloadLinkTests: XCTestCase {
         }
     }
 
+    func testMagnetSchemeIsNormalizedWithoutRewritingTheQuery() throws {
+        let query = ":?xt=urn:btih:0123456789012345678901234567890123456789&dn=one%20two&tr=https%3A%2F%2Ftracker.example%2Fannounce%3Ftoken%3Da%2Bb"
+        guard case .magnet(let url) = try PeerDownloadLink.parse("  MAGNET" + query + "\n") else { return XCTFail() }
+        XCTAssertEqual(url.absoluteString, "magnet" + query)
+    }
+
     func testRejectsMalformedAndNestedLinks() {
         for value in ["ed2k://|file|x|0|\(fileHash)|/", "ed2k://|file|x|-1|\(fileHash)|/",
             "ed2k://|file|x|5|bad-hash|/", "thunder://@@@",
@@ -32,6 +38,7 @@ final class PeerDownloadLinkTests: XCTestCase {
     func testTorrentRecognitionDoesNotConfuseWebErrorsOrMediaWithMetadata() {
         XCTAssertTrue(TorrentMetadataFetcher.looksLikeTorrent(Data("d8:announce20:https://example.test4:infod".utf8)))
         XCTAssertTrue(TorrentMetadataFetcher.looksLikeTorrent(Data("d4:infod4:name4:test".utf8)))
+        XCTAssertTrue(TorrentMetadataFetcher.looksLikeTorrent(Data("d7:addedby4:host4:infod4:name4:test".utf8)))
         for value in ["<!doctype html>", "{\"error\":1}", "ftypisom", "d999999999:announce"] {
             XCTAssertFalse(TorrentMetadataFetcher.looksLikeTorrent(Data(value.utf8)))
         }

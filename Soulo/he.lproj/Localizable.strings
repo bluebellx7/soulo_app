@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "לנקות את כל הסימניות?";
 "settings" = "הגדרות";
 "platform_management" = "ניהול פלטפורמה";
+"home_quick_search" = "חיפוש מהיר מדף הבית";
 "region_korea" = "קוריאה";
 "platform_naver" = "נאבר";
 "platform_daum" = "דאום";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "משאבים בקובץ שמור וביקורים בדפים מ-3 הימים האחרונים יוסרו. עוגיות וכניסות יישמרו.";
 "enter_fullscreen" = "מסך מלא";
 "exit_fullscreen" = "צא ממסך מלא";
-"fullscreen_exit_hint" = "הקש לפקדים, משוך למטה כדי לצאת";
+"exit_fullscreen_short" = "יציאה";
+"fullscreen_exit_hint" = "הקש לפתיחת התפריט והחלק למעלה כדי לצאת";
 "restore_browser_toolbar" = "שחזור סרגל כלים";
 "floating_more_detach" = "כפתור ניתוק עוד";
 "floating_more_snap" = "הצמד את לחצן 'עוד' לקצה";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "נתמך חלקית";
 "userscript_docs_partial_desc" = "ההתראות מוצגות בעמוד וממשקי משאבים מחזירים Promise. האפשרות cookie דורשת GM_cookie; קובצי Cookie אינם נשלחים אוטומטית.";
 "userscript_docs_unsupported_title" = "לא נתמך כרגע";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, בידוד sandbox/run-in והתנהגות מחשב שולחני שאינה זמינה ב-WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest יכול לבטל בקשות Fetch ו־XMLHttpRequest של הדף הראשי או להפנות אותן לכתובת מאותו מקור.";
+"userscript_docs_unsupported_desc" = "GM_audio דורש השתקה של הכרטיסייה כולה וקריאת מצב השמע. הממשק הציבורי של WKWebView מספק תמיכה מוגבלת.\n@sandbox בוחר את סביבת הסקריפט. סקריפטים של משתמשים ב-Soulo פועלים כרגע בסביבת הדף.";
 "userscript_docs_metadata_title" = "מטא נתונים";
 "userscript_docs_metadata_identity" = "שם סקריפט קריא לאדם ותיאור אופציונלי מוצג לפני ההתקנה ובפרטי הסקריפט.";
 "userscript_docs_metadata_version" = "השתמש במרחב שמות יציב וייחודי והגדל את הגרסה בכל פעם שהסקריפט המצורף משתנה.";

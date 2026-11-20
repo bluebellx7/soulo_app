@@ -166,8 +166,8 @@ final class LocalizationLayoutTests: XCTestCase {
             manager.currentLanguage = code
             let model = WebViewModel()
             model.currentURL = URL(string: "https://example.com")
-            let menu = FullscreenQuickMenu(webViewModel: model, title: "Example",
-                isBookmarked: false, isDesktopMode: false, canSwitchContentMode: true, onAction: { _ in })
+            let menu = WebViewToolbar(viewModel: model, isBookmarked: .constant(false),
+                isFullscreen: true, onToggleFullscreen: {}).moreMenuPanel
                 .environment(\.layoutDirection, code == "ar-SA" ? .rightToLeft : .leftToRight)
                 .frame(width: 320)
             let image = try await snapshot(menu)

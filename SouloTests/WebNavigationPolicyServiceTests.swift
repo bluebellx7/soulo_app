@@ -243,6 +243,7 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
             canShowMIMEType: false,
             mimeType: "application/x-custom-binary"
         ))
+        XCTAssertTrue(BrowserDownloadPolicy.shouldDownload(canShowMIMEType: true, mimeType: "application/x-bittorrent"))
     }
 
     func testNormalHTMLResponseRemainsNavigable() {

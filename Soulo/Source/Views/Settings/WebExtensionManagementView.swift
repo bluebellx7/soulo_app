@@ -1,6 +1,49 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+struct LocalWebExtensionInstallView: View {
+    let url: URL
+    @Environment(\.dismiss) private var dismiss
+    @State private var preview: WebExtensionInstallPreview?
+    @State private var errorMessage: String?
+
+    var body: some View {
+        Group {
+            if let preview {
+                WebExtensionReviewView(preview: preview) { _ in HapticsManager.success() }
+            } else {
+                NavigationStack {
+                    Group {
+                        if let errorMessage {
+                            Form { Text(errorMessage) }
+                        } else {
+                            ProgressView()
+                        }
+                    }
+                    .navigationTitle(AppLocalization.string(errorMessage == nil ? "userscript_permissions_title" : "extension_install_failed"))
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(AppLocalization.string(errorMessage == nil ? "cancel" : "done")) { dismiss() }
+                        }
+                    }
+                }
+            }
+        }
+        .task {
+            guard preview == nil, errorMessage == nil else { return }
+            let service = BrowserExtensionService.shared
+            do {
+                let prepared = try await service.previewWebExtension(from: url)
+                if Task.isCancelled { service.discardWebExtensionPreview(prepared) }
+                else { preview = prepared }
+            } catch {
+                if !Task.isCancelled { errorMessage = error.localizedDescription }
+            }
+        }
+    }
+}
+
 struct WebExtensionReviewView: View {
     let preview: WebExtensionInstallPreview
     var actionKey: String? = nil

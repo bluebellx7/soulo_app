@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "ブックマークをすべて削除しますか？";
 "settings" = "設定";
 "platform_management" = "プラットフォーム管理";
+"home_quick_search" = "ホームのクイック検索";
 "region_korea" = "韓国";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Webキャッシュと過去3日間の閲覧履歴を削除します。Cookieとログイン状態は保持されます。";
 "enter_fullscreen" = "フルスクリーン";
 "exit_fullscreen" = "フルスクリーンを終了";
-"fullscreen_exit_hint" = "タップでメニュー、下に引いて終了";
+"exit_fullscreen_short" = "全画面解除";
+"fullscreen_exit_hint" = "タップでメニュー、上にスワイプして終了";
 "restore_browser_toolbar" = "ツールバーを復元";
 "floating_more_detach" = "吸着を解除";
 "floating_more_snap" = "画面端に吸着";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "部分的にサポートされています";
 "userscript_docs_partial_desc" = "通知はページ内に表示され、リソース API は Promise を返します。cookie オプションには GM_cookie 権限が必要で、Cookie は自動送信しません。";
 "userscript_docs_unsupported_title" = "現在サポートされていません";
-"userscript_docs_unsupported_desc" = "GM_webRequest、GM_audio、sandbox/run-in 分離、および WKWebView が提供しないデスクトップ機能。";
+"userscript_docs_network_webrequest" = "GM_webRequest はメインフレームの Fetch と XMLHttpRequest をキャンセルしたり、同一オリジンにリダイレクトしたりできます。";
+"userscript_docs_unsupported_desc" = "GM_audio にはタブ全体のミュートと音声状態の取得が必要です。WKWebView の公開 API で扱える範囲は限られます。\n@sandbox は実行環境を選びます。Soulo のユーザースクリプトは現在、ページの実行環境で動作します。";
 "userscript_docs_metadata_title" = "メタデータ";
 "userscript_docs_metadata_identity" = "インストール前およびスクリプトの詳細に人間が判読できるスクリプト名とオプションの説明が表示されます。";
 "userscript_docs_metadata_version" = "安定した一意の名前空間を使用し、バンドルされたスクリプトが変更されるたびにバージョンを増やします。";

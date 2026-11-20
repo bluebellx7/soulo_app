@@ -41,7 +41,8 @@ final class FeatureGuidanceUITests: XCTestCase {
         let app = launch(); defer { app.terminate() }
         openSettings(app)
         searchSettings(app, query: "Video", destination: "video")
-        XCTAssertTrue(app.staticTexts["video-settings.explanation"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["video-settings.takeover"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any)["video-settings.player"].exists)
         XCTAssertTrue(app.switches["video-settings.tools"].isHittable)
         capture(app, name: "video-guidance-light")
         app.navigationBars.buttons.firstMatch.tap()
@@ -86,7 +87,8 @@ final class FeatureGuidanceUITests: XCTestCase {
         let app = launch(chineseDark: true); defer { app.terminate() }
         openSettings(app, title: "设置")
         searchSettings(app, query: "视频", destination: "video")
-        XCTAssertTrue(app.staticTexts["video-settings.explanation"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["video-settings.takeover"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any)["video-settings.player"].exists)
         XCTAssertTrue(app.switches["video-settings.tools"].isHittable)
         capture(app, name: "video-guidance-chinese-dark")
     }

@@ -71,15 +71,22 @@ extension TorrentEngine {
 /// Owns all C++ calls on one worker queue, including synchronous resume-data creation.
 final class TorrentEngineWorker: TorrentEngine, @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.dkluge.Soulo.torrent-engine", qos: .utility)
+    private let discoveryEnabled: Bool
     private var engine: SLTorrentEngine?
+
+    init(discoveryEnabled: Bool = true) { self.discoveryEnabled = discoveryEnabled }
+
     private func instance() -> SLTorrentEngine {
         if let engine { return engine }
-        let value = SLTorrentEngine(certificateFile: Bundle.main.path(forResource: "torrent-ca", ofType: "pem") ?? "", discoveryEnabled: true)
+        let value = SLTorrentEngine(certificateFile: Bundle.main.path(forResource: "torrent-ca", ofType: "pem") ?? "",
+                                    discoveryEnabled: discoveryEnabled)
         engine = value
+        if discoveryEnabled { value.updatePublicTrackers(PublicTorrentTrackerStore.discoveryTrackers(PublicTorrentTrackerStore.fallback)) }
         refreshPublicTrackers()
         return value
     }
     private func refreshPublicTrackers() {
+        guard discoveryEnabled else { return }
         Task { [weak self] in
             let store = PublicTorrentTrackerStore.shared
             self?.applyTrackers(await store.current())
@@ -87,7 +94,8 @@ final class TorrentEngineWorker: TorrentEngine, @unchecked Sendable {
         }
     }
     private func applyTrackers(_ trackers: [String]) {
-        queue.async { [weak self] in self?.engine?.updatePublicTrackers(trackers) }
+        let discovery = PublicTorrentTrackerStore.discoveryTrackers(trackers)
+        queue.async { [weak self] in self?.engine?.updatePublicTrackers(discovery) }
     }
     private func perform<T>(_ work: @escaping (SLTorrentEngine) throws -> T) async throws -> T {
         try await withCheckedThrowingContinuation { continuation in
@@ -160,10 +168,16 @@ actor PublicTorrentTrackerStore {
     static let fallback = ["udp://tracker.opentrackr.org:1337/announce",
         "udp://open.stealth.si:80/announce", "udp://tracker.torrent.eu.org:451/announce",
         "udp://open.demonii.com:1337/announce"]
+    private static let httpsFallback = ["https://tr.nyacat.pw/announce", "https://tracker.7471.top/announce"]
     static let sources = ["https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt",
         "https://ngosang.github.io/trackerslist/trackers_best.txt"].compactMap(URL.init(string:))
     struct Cache: Codable, Sendable { let updatedAt: Date; let trackers: [String] }
     typealias Fetch = @Sendable (URL) async throws -> Data
+
+    nonisolated static func discoveryTrackers(_ trackers: [String]) -> [String] {
+        // Always leave room for HTTPS discovery on networks that filter UDP.
+        Array(trackers.lazy.filter { !httpsFallback.contains($0) }.prefix(24 - httpsFallback.count)) + httpsFallback
+    }
     private let cacheURL: URL
     private let fetch: Fetch
     private var cache: Cache?

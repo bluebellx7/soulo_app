@@ -16,7 +16,7 @@ final class NewDownloadTaskUITests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 5), app.debugDescription)
         field.tap(); field.typeText("not-a-link")
         app.buttons["downloads.new.create"].tap()
-        XCTAssertTrue(app.staticTexts["Enter a valid HTTP, HTTPS or magnet link."].waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["Enter a valid download link."].waitForExistence(timeout: 5), app.debugDescription)
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "new-download-validation"; shot.lifetime = .keepAlways; add(shot)
         app.buttons["Cancel"].firstMatch.tap()
         XCTAssertTrue(create.waitForExistence(timeout: 5))
@@ -46,6 +46,32 @@ extension NewDownloadTaskUITests {
 
 
 extension NewDownloadTaskUITests {
+    @MainActor
+    func testMagnetLinkOpeningNewWindowUsesSouloDownloadForm() async throws {
+        continueAfterFailure = false
+        let magnet = "magnet:?xt=urn:btih:0123456789012345678901234567890123456789&dn=SouloFixture"
+        let html = Data("""
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <a href="\(magnet.replacingOccurrences(of: "&", with: "&amp;"))" target="_blank">Open magnet</a>
+        """.utf8)
+        let server = try DownloadPlaybackHTTPFixture(files: ["/magnet.html": html])
+        let root = try await server.start()
+        defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-privacy_https_upgrade_enabled", "NO"]
+        app.launch()
+        defer { app.terminate() }
+        var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
+        route.queryItems = [URLQueryItem(name: "url", value: root.appendingPathComponent("magnet.html").absoluteString)]
+        app.open(try XCTUnwrap(route.url))
+        let link = app.webViews.links["Open magnet"].firstMatch
+        XCTAssertTrue(link.waitForExistence(timeout: 12), app.debugDescription)
+        link.tap()
+        let address = app.descendants(matching: .any)["downloads.new.address"].firstMatch
+        XCTAssertTrue(address.waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertEqual(address.value as? String, magnet)
+    }
+
     @MainActor
     func testTorrentURLShowsFilesWithoutStartingPayloadAndCanBeRemoved() async throws {
         continueAfterFailure = false

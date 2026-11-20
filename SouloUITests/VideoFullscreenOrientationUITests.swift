@@ -17,8 +17,9 @@ final class VideoFullscreenOrientationUITests: XCTestCase {
         defer { server.stop() }
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
         app.launchArguments = ["-app_language", "en-US", "-privacy_https_upgrade_enabled", "NO",
-            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-media.rate", "1.5"]
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-video.defaultPlayer", "system"]
         app.launch()
+        defer { app.terminate() }
         var route = URLComponents()
         route.scheme = "soulo"; route.host = "open"
         route.queryItems = [URLQueryItem(name: "url", value: root.appendingPathComponent("page.html").absoluteString)]
@@ -33,51 +34,25 @@ final class VideoFullscreenOrientationUITests: XCTestCase {
         let completed = app.buttons.matching(NSPredicate(format:
             "identifier BEGINSWITH %@ AND label CONTAINS %@", "downloads.open.", filename)).firstMatch
         XCTAssertTrue(completed.waitForExistence(timeout: 15), app.debugDescription)
-        completed.tap()
-        let fullscreen = app.buttons["media.fullscreen"]
-        XCTAssertTrue(fullscreen.waitForExistence(timeout: 10), app.debugDescription)
-        let repeatOne = app.buttons["Repeat one"]
-        XCTAssertTrue(repeatOne.waitForExistence(timeout: 5), app.debugDescription)
-        repeatOne.tap()
+        let player = app.otherElements["media.mkv.fullscreen.player"]
+        let close = app.buttons["media.mkv.fullscreen.close"]
         for iteration in 0..<4 {
-            fullscreen.tap()
-            let player = app.otherElements["media.fullscreen.player"]
-            XCTAssertTrue(player.waitForExistence(timeout: 5), app.debugDescription)
-            XCTAssertFalse(app.buttons["media.fullscreen.close"].exists, "AVKit already owns the close button")
-            XCTAssertFalse(app.buttons["media.rotate"].exists, "Rotation must not float above native controls")
-            let closeQuery = player.buttons.matching(NSPredicate(format: "label IN %@", ["Close", "Done", "关闭", "完成"]))
-            let close = closeQuery.firstMatch
-            // The first exit exercises dismissal while entry geometry is still
-            // changing. Later iterations verify an established landscape session.
+            completed.tap()
+            XCTAssertTrue(player.waitForExistence(timeout: 8), app.debugDescription)
+            try await revealControls(player: player, close: close)
+            // Close the first presentation immediately. Later iterations also
+            // verify that leaving an established landscape player restores portrait.
             if iteration > 0 {
+                if app.frame.width < app.frame.height { app.buttons["media.fullscreen.rotate"].tap() }
                 await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     app.frame.width > app.frame.height
                 }, object: nil)], timeout: 8)
+                try await revealControls(player: player, close: close)
             }
-            let revealed = try await revealControls(player: player, close: close)
-            XCTAssertTrue(revealed, app.debugDescription)
-            XCTAssertEqual(closeQuery.count, 1)
-            if iteration == 1 {
-                let visible = XCTAttachment(screenshot: app.screenshot())
-                visible.name = "fullscreen-native-controls-visible"; visible.lifetime = .keepAlways; add(visible)
-                await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                    !close.exists && player.exists
-                }, object: nil)], timeout: 10)
-                let hidden = XCTAttachment(screenshot: app.screenshot())
-                hidden.name = "fullscreen-all-controls-hidden"; hidden.lifetime = .keepAlways; add(hidden)
-                player.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).press(forDuration: 1.2)
-                let speed = app.descendants(matching: .any).matching(identifier: "media.video-hold-speed").firstMatch
-                XCTAssertTrue(speed.exists, app.debugDescription)
-                XCTAssertTrue(speed.label.contains("1.5×"), "Release shows the restored rate")
-                let restored = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-                restored.name = "native-fullscreen-restored-speed"; restored.lifetime = .keepAlways; add(restored)
-                XCTAssertTrue(speed.waitForNonExistence(timeout: 3))
-                let revealedAgain = try await revealControls(player: player, close: close)
-                XCTAssertTrue(revealedAgain, app.debugDescription)
-            }
+            XCTAssertEqual(app.buttons.matching(identifier: "media.mkv.fullscreen.close").count, 1)
             close.tap()
             await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                app.frame.height > app.frame.width && !player.exists && fullscreen.exists
+                app.frame.height > app.frame.width && !player.exists && completed.isHittable
             }, object: nil)], timeout: 8)
         }
         let shot = XCTAttachment(screenshot: app.screenshot())
@@ -85,14 +60,12 @@ final class VideoFullscreenOrientationUITests: XCTestCase {
     }
 
     @MainActor
-    private func revealControls(player: XCUIElement, close: XCUIElement) async throws -> Bool {
-        // AVKit may fade between a snapshot and waitForExistence's first
-        // one-second poll. Reveal only when hidden, then check immediately.
+    private func revealControls(player: XCUIElement, close: XCUIElement) async throws {
         for _ in 0..<3 {
-            if close.exists { return true }
+            if close.isHittable { return }
             player.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap()
             try await Task.sleep(for: .milliseconds(150))
         }
-        return close.exists
+        XCTAssertTrue(close.isHittable, player.debugDescription)
     }
 }

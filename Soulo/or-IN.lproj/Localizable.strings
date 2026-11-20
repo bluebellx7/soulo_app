@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "ସମସ୍ତ ବୁକମାର୍କଗୁଡିକ ସଫା କରନ୍ତୁ?";
 "settings" = "ସେଟିଂସମୂହ";
 "platform_management" = "ପ୍ଲାଟଫର୍ମ ପରିଚାଳନା";
+"home_quick_search" = "ହୋମ୍‌ରୁ ତ୍ୱରିତ ସନ୍ଧାନ";
 "region_korea" = "କୋରିଆ";
 "platform_naver" = "ନାଭର୍";
 "platform_daum" = "ଡାଉମ୍";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "ଗତ 3 ଦିନରୁ କ୍ୟାଚ୍ ହୋଇଥିବା ଉତ୍ସ ଏବଂ ପୃଷ୍ଠା ପରିଦର୍ଶନ ଅପସାରିତ ହେବ | କୁକିଜ୍ ଏବଂ ସାଇନ୍-ଇନ୍ ରଖାଯିବ";
 "enter_fullscreen" = "ପୂର୍ଣ୍ଣ ସ୍କ୍ରିନ୍";
 "exit_fullscreen" = "ଫୁଲ୍ ସ୍କ୍ରିନ୍ ଛାଡନ୍ତୁ";
-"fullscreen_exit_hint" = "ନିୟନ୍ତ୍ରଣ ପାଇଁ ଟ୍ୟାପ୍ କରନ୍ତୁ, ବାହାରକୁ ଯିବାକୁ ଟାଣନ୍ତୁ";
+"exit_fullscreen_short" = "ବାହାରନ୍ତୁ";
+"fullscreen_exit_hint" = "ମେନୁ ପାଇଁ ଟ୍ୟାପ୍ କରନ୍ତୁ, ବାହାରିବାକୁ ଉପରକୁ ସ୍ୱାଇପ୍ କରନ୍ତୁ";
 "restore_browser_toolbar" = "ଟୁଲ୍ ବାର୍ ପୁନରୁଦ୍ଧାର କରନ୍ତୁ";
 "floating_more_detach" = "ଅଧିକ ବଟନ୍ ଅଲଗା କରନ୍ତୁ";
 "floating_more_snap" = "ଧାରକୁ ଅଧିକ ବଟନ୍ ସ୍ନାପ୍ କରନ୍ତୁ";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "ଆଂଶିକ ସମର୍ଥିତ";
 "userscript_docs_partial_desc" = "ବିଜ୍ଞପ୍ତି ପୃଷ୍ଠାରେ ଦେଖାଯାଏ; ରିସୋର୍ସ API Promise ଫେରାଏ। cookie ପାଇଁ GM_cookie ଅନୁମତି ଦରକାର; କୁକି ସ୍ୱୟଂଚାଳିତ ଭାବେ ପଠାଯାଏ ନାହିଁ।";
 "userscript_docs_unsupported_title" = "ସମ୍ପ୍ରତି ସମର୍ଥିତ ନୁହେଁ";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in ପୃଥକୀକରଣ ଏବଂ WKWebView ରେ ନଥିବା ଡେସ୍କଟପ୍ ସୁବିଧା।";
+"userscript_docs_network_webrequest" = "GM_webRequest ମୁଖ୍ୟ ପୃଷ୍ଠାର Fetch ଏବଂ XMLHttpRequest ଅନୁରୋଧଗୁଡ଼ିକୁ ବାତିଲ କରିପାରେ କିମ୍ବା ସମାନ ଉତ୍ସକୁ ପୁନଃନିର୍ଦ୍ଦେଶ କରିପାରେ।";
+"userscript_docs_unsupported_desc" = "GM_audio ପାଇଁ ସମଗ୍ର ଟ୍ୟାବର ଶବ୍ଦ ବନ୍ଦ କରିବା ଏବଂ ଅଡିଓ ସ୍ଥିତି ପଢ଼ିବା ଦରକାର। WKWebViewର ସାର୍ବଜନୀନ API ଏଥିପାଇଁ ସୀମିତ ସୁବିଧା ଦିଏ।\n@sandbox ସ୍କ୍ରିପ୍ଟ ଚାଲିବା ପରିବେଶ ବାଛେ। Soulo ଏବେ ବ୍ୟବହାରକାରୀ ସ୍କ୍ରିପ୍ଟକୁ ପୃଷ୍ଠାର ପରିବେଶରେ ଚଲାଏ।";
 "userscript_docs_metadata_title" = "ମେଟାଡାଟା";
 "userscript_docs_metadata_identity" = "ସ୍ଥାପନ ପୂର୍ବରୁ ଏବଂ ସ୍କ୍ରିପ୍ଟ ବିବରଣୀରେ ଦର୍ଶାଯାଇଥିବା ମାନବ-ପଠନୀୟ ସ୍କ୍ରିପ୍ଟ ନାମ ଏବଂ ବ al କଳ୍ପିକ ବର୍ଣ୍ଣନା";
 "userscript_docs_metadata_version" = "ଯେତେବେଳେ ସ୍ଥିର ହୋଇଥିବା ସ୍କ୍ରିପ୍ଟ ପରିବର୍ତ୍ତନ ହୁଏ, ଏକ ସ୍ଥିର, ଅନନ୍ୟ ନାମ ସ୍ଥାନ ଏବଂ ସଂସ୍କରଣକୁ ବୃଦ୍ଧି କର";

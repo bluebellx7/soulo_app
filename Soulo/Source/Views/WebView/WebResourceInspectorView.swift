@@ -127,10 +127,11 @@ private final class WebResourceInspectorViewModel: ObservableObject {
         ).absoluteString
     }
 
-    func playbackAsset(for resource: WebMediaResource) async -> AVURLAsset {
+    func playbackAsset(for resource: WebMediaResource, cacheForPlayback: Bool = true) async -> AVURLAsset {
         await WebResourceMediaService.asset(
             for: resource,
-            webView: webViewModel?.webView
+            webView: webViewModel?.webView,
+            cacheForPlayback: cacheForPlayback
         )
     }
 }
@@ -229,7 +230,7 @@ struct WebResourceInspectorView: View {
                 }
             }
         }
-        .sheet(item: $selectedMedia) { media in
+        .fullScreenCover(item: $selectedMedia) { media in
             WebResourceMediaPlayerView(
                 resource: media,
                 pageURL: media.sourcePageURL ?? viewModel.snapshot.pageURL,
@@ -585,7 +586,7 @@ struct WebResourceInspectorView: View {
                             WebResourceVideoPreview(
                                 resource: resource,
                                 pageURL: viewModel.snapshot.pageURL,
-                                assetProvider: { await viewModel.playbackAsset(for: resource) },
+                                assetProvider: { await viewModel.playbackAsset(for: resource, cacheForPlayback: false) },
                                 pageFrameProvider: {
                                     await WebResourceMediaService.pageVideoFrame(
                                         in: viewModel.sourceWebView
@@ -1410,8 +1411,8 @@ struct WebResourceMediaPlayerView: View {
     let downloadAction: @MainActor () async -> URL?
     var souloStartAt: Double?
     var souloPlaying = true
+    var initialRate: Float?
     var episodeList: WebEpisodeList?
-    var systemPlayer = false
     var showsEpisodes = false
     private var player: AVPlayer { MediaSession.shared.player }
     private let restoringPlayback: Bool
@@ -1436,7 +1437,6 @@ struct WebResourceMediaPlayerView: View {
     @State private var episodeRequestID = UUID()
     @State private var failedEpisode: WebEpisode?
     @State private var showEpisodeFailure = false
-    @State private var usingSystem = false
     private var currentResource: WebMediaResource { selectedResource ?? resource }
 
     init(
@@ -1447,8 +1447,8 @@ struct WebResourceMediaPlayerView: View {
         downloadAction: @escaping @MainActor () async -> URL?,
         souloStartAt: Double? = nil,
         souloPlaying: Bool = true,
+        initialRate: Float? = nil,
         episodeList: WebEpisodeList? = nil,
-        systemPlayer: Bool = false,
         showsEpisodes: Bool = false,
         restoredContext: WebMediaPlaybackContext? = nil,
         embedded: Bool = false
@@ -1460,8 +1460,8 @@ struct WebResourceMediaPlayerView: View {
         self.downloadAction = downloadAction
         self.souloStartAt = souloStartAt
         self.souloPlaying = souloPlaying
+        self.initialRate = initialRate
         self.episodeList = episodeList
-        self.systemPlayer = systemPlayer
         self.showsEpisodes = showsEpisodes
         self.restoringPlayback = restoredContext != nil
         self.embedded = embedded
@@ -1475,6 +1475,11 @@ struct WebResourceMediaPlayerView: View {
 
     @ViewBuilder var body: some View {
         if embedded { playerContent }
+        else if resource.kind == .video {
+            playerContent
+                .background(Color.black.ignoresSafeArea())
+                .preferredColorScheme(.dark)
+        }
         else { NavigationStack { playerContent } }
     }
 
@@ -1495,14 +1500,14 @@ struct WebResourceMediaPlayerView: View {
                                                 ? (time: selectedEpisodeID == nil ? (souloStartAt ?? 0) : 0,
                                                    playing: selectedEpisodeID == nil ? souloPlaying : true) : nil,
                                              initialSouloSource: directSouloSource,
+                                             initialRate: selectedEpisodeID == nil ? initialRate : nil,
                                              restoredSoulo: restoringPlayback ? MediaSession.shared.soulo : nil,
                                              initialFullscreen: currentResource.kind == .video || souloStartAt != nil,
                                              fullscreenOnly: currentResource.kind == .video,
-                                             initialSystemPlayer: systemPlayer || (directSouloSource == nil
-                                                && (!restoringPlayback || MediaSession.shared.soulo == nil)),
+                                             initialSystemPlayer: restoringPlayback && directSouloSource == nil
+                                                 && MediaSession.shared.soulo == nil,
                                              initialEpisodes: showsEpisodes,
                                              initialTitle: currentResource.title, ownsExplicitSource: true, externalPlaylist: videoPlaylist,
-                                             playerSelection: $usingSystem,
                                              onFullscreenClose: { episodeTask?.cancel(); dismiss() },
                                              downloadAction: { downloadCurrentMedia() },
                                              downloadIsVideo: currentResource.kind == .video)
@@ -1557,7 +1562,7 @@ struct WebResourceMediaPlayerView: View {
                     .padding()
                 }
 
-                if let item = activeDownload {
+                if currentResource.kind != .video, let item = activeDownload {
                     Button {
                         selectedDownloadedItem = item
                     } label: {
@@ -1574,10 +1579,26 @@ struct WebResourceMediaPlayerView: View {
                     .padding(.horizontal)
                     .padding(.bottom, 12)
                     .accessibilityLabel(LanguageManager.shared.localizedString("downloads"))
-                } else if isDownloading {
+                } else if currentResource.kind != .video, isDownloading {
                     ProgressView()
                         .controlSize(.small)
                         .padding(.bottom, 12)
+                }
+            }
+            .overlay(alignment: .top) {
+                if resource.kind == .video, !embedded {
+                    HStack(spacing: 12) {
+                        VideoPlayerIconButton(symbol: "xmark", label: ToolText.text("close"), identifier: "media.web.close") {
+                            episodeTask?.cancel(); dismiss()
+                        }
+                        .frame(width: 44, height: 44)
+                        Spacer(minLength: 0)
+                        if !playbackError.isEmpty || useYouTubeWebPlayback {
+                            mediaActions
+                                .frame(minWidth: 44, minHeight: 44)
+                        }
+                    }
+                    .foregroundStyle(.white).padding(12)
                 }
             }
             .navigationTitle(
@@ -1588,42 +1609,7 @@ struct WebResourceMediaPlayerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
-                    ShareLink(item: currentResource.url) {
-                        Image(systemName: "square.and.arrow.up")
-                    }
-                    .accessibilityLabel(LanguageManager.shared.localizedString("share"))
-
-                    if let item = finishedDownload {
-                        Button {
-                            selectedDownloadedItem = item
-                        } label: {
-                            Image(systemName: "folder.fill")
-                        }
-                        .accessibilityLabel(
-                            LanguageManager.shared.localizedString("open_downloads_folder")
-                        )
-                    } else if let item = activeDownload {
-                        Button {
-                            selectedDownloadedItem = item
-                        } label: {
-                            Image(systemName: item.status == .paused ? "pause.circle.fill" : "arrow.down.circle.fill")
-                        }
-                        .accessibilityLabel(LanguageManager.shared.localizedString("downloads"))
-                    } else if currentResource.kind != .video || showsVideoDownloadControls {
-                        Button {
-                            downloadCurrentMedia(activateDownloaded: true)
-                        } label: {
-                            if isDownloading {
-                                ProgressView()
-                                    .controlSize(.small)
-                            } else {
-                                Image(systemName: "arrow.down.circle")
-                            }
-                        }
-                        .disabled(isDownloading)
-                        .accessibilityLabel(LanguageManager.shared.localizedString("download"))
-                        .accessibilityIdentifier("media.web.download")
-                    }
+                    mediaActions
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(LanguageManager.shared.localizedString("done")) { episodeTask?.cancel(); dismiss() }
@@ -1679,9 +1665,45 @@ struct WebResourceMediaPlayerView: View {
                 isPreparing = false
             }
 
-            .navigationDestination(isPresented: Binding(get: { selectedDownloadedItem != nil }, set: { if !$0 { selectedDownloadedItem = nil } })) {
+            .navigationDestination(isPresented: Binding(get: { (resource.kind != .video || embedded) && selectedDownloadedItem != nil }, set: { if !$0 { selectedDownloadedItem = nil } })) {
                 if let item = selectedDownloadedItem { DownloadManagerContentView(highlightedItemID: item.id).navigationTitle(LanguageManager.shared.localizedString("downloads")) }
             }
+            .sheet(item: Binding(get: { resource.kind == .video && !embedded ? selectedDownloadedItem : nil }, set: { selectedDownloadedItem = $0 })) { item in
+                NavigationStack {
+                    DownloadManagerContentView(highlightedItemID: item.id)
+                        .navigationTitle(LanguageManager.shared.localizedString("downloads"))
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button(ToolText.text("done")) { selectedDownloadedItem = nil }
+                            }
+                        }
+                }
+            }
+    }
+
+    @ViewBuilder private var mediaActions: some View {
+        ShareLink(item: currentResource.url) {
+            Image(systemName: "square.and.arrow.up")
+        }
+        .accessibilityLabel(LanguageManager.shared.localizedString("share"))
+
+        if let item = finishedDownload {
+            Button { selectedDownloadedItem = item } label: { Image(systemName: "folder.fill") }
+                .accessibilityLabel(LanguageManager.shared.localizedString("open_downloads_folder"))
+        } else if let item = activeDownload {
+            Button { selectedDownloadedItem = item } label: {
+                Image(systemName: item.status == .paused ? "pause.circle.fill" : "arrow.down.circle.fill")
+            }
+            .accessibilityLabel(LanguageManager.shared.localizedString("downloads"))
+        } else if currentResource.kind != .video || showsVideoDownloadControls {
+            Button { downloadCurrentMedia(activateDownloaded: true) } label: {
+                if isDownloading { ProgressView().controlSize(.small) }
+                else { Image(systemName: "arrow.down.circle") }
+            }
+            .disabled(isDownloading)
+            .accessibilityLabel(LanguageManager.shared.localizedString("download"))
+            .accessibilityIdentifier("media.web.download")
+        }
     }
 
     private func storePlaybackContext() {
@@ -1744,7 +1766,7 @@ struct WebResourceMediaPlayerView: View {
                     media = try await resolver.resolve()
                 } else { throw CocoaError(.fileReadUnsupportedScheme) }
                 try Task.checkCancellation()
-                let asset = await WebResourceMediaService.asset(for: media, webView: sourceWebView)
+                let asset = await WebResourceMediaService.asset(for: media, webView: sourceWebView, cacheForPlayback: true)
                 try Task.checkCancellation()
                 guard episodeRequestID == requestID else { return }
                 // Publish the new episode metadata before constructing the
@@ -1801,29 +1823,13 @@ struct WebResourceMediaPlayerView: View {
                 playbackError = error.localizedDescription; isPreparing = false; return
             }
         } else {
-            asset = selectedResource != nil ? await WebResourceMediaService.asset(for: currentResource, webView: sourceWebView)
+            asset = selectedResource != nil ? await WebResourceMediaService.asset(for: currentResource, webView: sourceWebView, cacheForPlayback: true)
                 : await assetProvider()
         }
         guard !Task.isCancelled, playbackRequestID == requestID, MediaSession.shared.ownsPreparation(reservation) else { return }
-        if !systemPlayer, souloStartAt != nil || !VideoPlaybackPreferences.usesSystemPlayer() {
-            // An explicit WebKit handoff starts the chosen decoder directly.
-            // Warming AVPlayer first duplicates HLS setup and delays switching.
-            directSouloSource = sourceForPlayback(asset: asset, pageURL: pageURL)
-            hasPreparedPlayer = true
-            isPreparing = false
-            return
-        }
-        directSouloSource = nil
-        // AVPlayerItem resolves the asset during playback. A separate isPlayable
-        // load duplicates remote HLS setup and delays the first frame.
-        MediaSession.shared.open(url: resolvedLocalURL ?? currentResource.url, title: currentResource.title, pageURL: pageURL,
-            asset: asset, webView: sourceWebView, reservation: reservation,
-            downloadSource: sourceForPlayback(asset: asset, pageURL: pageURL), startAt: souloStartAt,
-            autoplay: souloStartAt == nil ? true : souloPlaying)
-        if !useYouTubeWebPlayback {
-            hasPreparedPlayer = true
-            isPreparing = false
-        }
+        directSouloSource = sourceForPlayback(asset: asset, pageURL: pageURL)
+        hasPreparedPlayer = true
+        isPreparing = false
     }
 
     private func retryPlayback() {

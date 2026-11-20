@@ -34,6 +34,7 @@ struct DownloadManagerContentView: View {
     var embeddedInLibrary = false
     @State private var newTask = false
     @State private var previewItem: BrowserDownloadItem?
+    @State private var extensionPackage: BrowserDownloadItem?
     @State private var playingDownload: BrowserDownloadItem?
     @State private var shareItem: BrowserDownloadItem?
     @State private var showDownloadsFolder = false
@@ -171,6 +172,9 @@ struct DownloadManagerContentView: View {
         .sheet(item: $shareItem) { item in
             DownloadShareSheet(items: [item.localURL])
         }
+        .sheet(item: $extensionPackage) { item in
+            LocalWebExtensionInstallView(url: item.localURL)
+        }
         .modifier(DownloadMediaNavigation(preview: $previewItem, playing: $playingDownload, kinds: fileKinds))
         .fileImporter(isPresented: $showDownloadsFolder, allowedContentTypes: [.data]) { result in
             Task {
@@ -219,7 +223,8 @@ struct DownloadManagerContentView: View {
         HStack(spacing: 12) {
             if canPreview(item) {
                 Button {
-                    previewItem = item
+                    if item.localURL.pathExtension.lowercased() == "crx" { extensionPackage = item }
+                    else { previewItem = item }
                 } label: {
                     downloadSummary(item)
                         .frame(minHeight: 44)
@@ -629,7 +634,7 @@ struct LocalDocumentContent: View {
                 TorrentFilePlaybackView(id: torrentTarget.id, file: torrentTarget.file)
             } else if fileKind == nil, isPlayableMedia {
                 // Resolve the file before mounting a player. Starting AVPlayer
-                // speculatively flashes the wrong engine and can overlap VLC.
+                // speculatively flashes the wrong engine and can overlap the previous decoder.
                 ProgressView()
             } else if fileKind == .video || fileKind == .audio {
                 FileMediaPlaybackView(url: url)

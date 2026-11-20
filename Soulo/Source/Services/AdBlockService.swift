@@ -3,6 +3,15 @@ import WebKit
 struct AdBlockService {
     static let hidingScriptPrefix = "/* SouloAdHiding v2 */"
 
+    static func isMTYYBottomAdRedirect(_ url: URL, from source: URL?) -> Bool {
+        guard let sourceHost = source?.host?.lowercased(),
+              sourceHost == "mtyy5.com" || sourceHost.hasSuffix(".mtyy5.com"),
+              url.scheme == "https", url.port == 902, url.path == "/cc/1244",
+              let host = url.host?.lowercased(), host.hasSuffix("1244c.hcxftcl.com") else { return false }
+        let prefix = host.dropLast("1244c.hcxftcl.com".count)
+        return !prefix.isEmpty && prefix.allSatisfy(\.isASCII) && prefix.allSatisfy(\.isNumber)
+    }
+
     static var defaultBuiltInRules: [BuiltInAdRule] {
         let adDomains = [
             // Google Ads
@@ -72,6 +81,15 @@ struct AdBlockService {
         rules.append(BuiltInAdRule(id: "pbpbw-click-ad-loader", kind: .network,
             pattern: #"^https?://(www\.)?pbpbw\.com/assets/chunks/site-config\.js([?]|$)"#,
             resourceTypes: ["script"]))
+        rules.append(BuiltInAdRule(id: "mtyy-mobile-bottom-ad", kind: .network,
+            pattern: #"^https://[0-9]+1244c\.hcxftcl\.com:902/d/1244([?]|$)"#,
+            domains: ["mtyy5.com"], resourceTypes: ["script"]))
+        rules.append(BuiltInAdRule(id: "mtyy-bottom-ad-loader", kind: .network,
+            pattern: #"^https://[0-9]+1244g\.nf65hwr\.com:902/sc/1244([?]|$)"#,
+            domains: ["mtyy5.com"], resourceTypes: ["script"]))
+        rules.append(BuiltInAdRule(id: "mtyy-bottom-ad-tiles", kind: .cosmetic,
+            pattern: #"div:empty[style^="position:fixed; bottom:"][style*="z-index:100;display:block;width:9.6vw;height:7.96875vw;"][style*="opacity:0.01"]"#,
+            domains: ["mtyy5.com"]))
         rules += adPatterns.map { BuiltInAdRule(id: "pattern:" + $0, kind: .network, pattern: $0, resourceTypes: ["script", "image", "raw"]) }
         let selectors = [
             ".adsbygoogle",
@@ -1047,6 +1065,7 @@ struct AdBlockService {
                 document.documentElement.toggleAttribute('data-soulo-native-ads-disabled', !adBlockConfig().cosmeticEnabled || shouldDisableAdBlock());
                 applyStaticStyles();
                 restoreUnmatchedAds();
+                updateMTYYBottomAdSpacing();
                 refreshMosaics();
                 if (shouldDisableAdBlock()) return;
                 // Keep visible targets stable while the user marks them. The

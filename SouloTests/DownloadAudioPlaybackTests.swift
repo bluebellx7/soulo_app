@@ -33,6 +33,6 @@ import AVFoundation
         XCTAssertNil(session.error)
         XCTAssertTrue(session.playing)
         XCTAssertGreaterThan(session.elapsed, 0.3)
-        XCTAssertEqual(session.soulo == nil, VideoPlaybackPreferences.usesSystemPlayer())
+        XCTAssertNotNil(session.soulo)
     }
 }

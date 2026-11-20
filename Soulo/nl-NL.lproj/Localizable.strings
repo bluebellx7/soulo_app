@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Alle bladwijzers wissen?";
 "settings" = "Instellingen";
 "platform_management" = "Platformbeheer";
+"home_quick_search" = "Snel zoeken op de startpagina";
 "region_korea" = "Korea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "In het cachegeheugen opgeslagen bronnen en paginabezoeken van de afgelopen drie dagen worden verwijderd. Cookies en aanmeldingen worden bewaard.";
 "enter_fullscreen" = "Volledig scherm";
 "exit_fullscreen" = "Sluit Volledig scherm af";
-"fullscreen_exit_hint" = "Tik voor bedieningselementen, trek omlaag om af te sluiten";
+"exit_fullscreen_short" = "Afsluiten";
+"fullscreen_exit_hint" = "Tik voor het menu, veeg omhoog om af te sluiten";
 "restore_browser_toolbar" = "Werkbalk herstellen";
 "floating_more_detach" = "Maak de knop Meer los";
 "floating_more_snap" = "Maak de knop Meer vast aan de rand";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Gedeeltelijk ondersteund";
 "userscript_docs_partial_desc" = "Meldingen verschijnen op de pagina; bron-API’s geven Promise terug. cookie vereist GM_cookie; cookies worden niet automatisch verstuurd.";
 "userscript_docs_unsupported_title" = "Momenteel niet ondersteund";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in-isolatie en desktopfuncties die WKWebView niet biedt.";
+"userscript_docs_network_webrequest" = "GM_webRequest kan Fetch- en XMLHttpRequest-verzoeken van de hoofdpagina annuleren of omleiden binnen dezelfde oorsprong.";
+"userscript_docs_unsupported_desc" = "GM_audio vereist demping van het hele tabblad en toegang tot de audiostatus. De openbare API van WKWebView ondersteunt dit beperkt.\n@sandbox kiest de uitvoeringsomgeving. Soulo voert gebruikersscripts momenteel in de omgeving van de pagina uit.";
 "userscript_docs_metadata_title" = "Metagegevens";
 "userscript_docs_metadata_identity" = "Voor mensen leesbare scriptnaam en optionele beschrijving weergegeven vóór de installatie en in scriptdetails.";
 "userscript_docs_metadata_version" = "Gebruik een stabiele, unieke naamruimte en verhoog de versie wanneer het gebundelde script verandert.";

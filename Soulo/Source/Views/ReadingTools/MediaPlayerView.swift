@@ -515,7 +515,6 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
         private var sharedHost: SharedVideoFullscreenHost?
         private var presentedOptions: FileVideoOptions?
         private var presentationRetry: Task<Void, Never>?
-        private var handingOff = false
         func synchronize(_ host: Host) {
             guard selection?.wrappedValue == true else { dismiss(); return }
             if let sharedHost, sharedHost.owner == ownerID {
@@ -523,7 +522,6 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
                 return
             }
             guard let window = SharedVideoFullscreenHost.window(for: host) else { return }
-            handingOff = false
             sharedHost = SharedVideoFullscreenHost.present(owner: ownerID, in: window, content: AnyView(content()),
                 identifier: "media.fullscreen.player",
                 landscape: VideoOrientation.fullscreenLandscape(video: MediaSession.shared.videoIsLandscape, scene: window.windowScene),
@@ -543,14 +541,6 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
         private func content() -> NativeFullscreenContent {
             var actions = options
             if let original = options {
-                actions?.selectPlayer = { [weak self] system, time, playing in
-                    guard system != original.usesSystem else { return }
-                    original.fullscreenChanged?(true)
-                    self?.handingOff = true
-                    if let self { self.sharedHost?.beginHandoff(owner: self.ownerID) }
-                    self?.selection?.wrappedValue = false
-                    original.selectPlayer(system, time, playing)
-                }
                 if let playlist = original.playlist {
                     var value = playlist
                     value.select = { id in
@@ -569,15 +559,14 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
         }
         func dismiss() {
             presentationRetry?.cancel(); presentationRetry = nil
-            guard !handingOff else { return }
             sharedHost?.release(owner: ownerID)
         }
         private func finish(reason: VideoFullscreenDismissal) {
-            sharedHost = nil; presentedOptions = nil; handingOff = false
+            sharedHost = nil; presentedOptions = nil
             MediaSession.shared.endTemporaryRate()
             options?.fullscreenChanged?(false)
             selection?.wrappedValue = false; onDismiss?()
-            if reason == .closePlayback || options?.fullscreenOnly == true { options?.closePlayback?() }
+            if reason == .closePlayback || options?.fullscreenOnly == true { options?.closePlayback?(reason) }
         }
     }
 }
@@ -591,27 +580,37 @@ private struct NativeFullscreenContent: View {
     @StateObject private var controls = VideoControlsVisibility()
     @State private var buffering = false
     @State private var retryTask: Task<Void, Never>?
+    @State private var automaticRetryURL: URL?
     private var waitingForPlayback: Bool {
         retryTask != nil || (session.isPlaybackRequested && session.error == nil && (buffering
+            || session.playbackStalled
             || session.webMediaContext?.resource.kind == .video && session.pictureInPicture.surface?.playerLayer.isReadyForDisplay != true))
     }
 
-    private func retryPlayback() {
+    private func retryPlayback(automatic: Bool = false) {
         guard retryTask == nil, let source = session.playbackTransferSource(), let url = session.url else { return }
         let title = session.title, page = session.pageURL, reservation = session.reservePreparation()
-        let context = source.webMediaContext
-        let resource = context?.resource
+        let intent = session.playbackIntentRevision
         retryTask = Task { @MainActor in
             defer { retryTask = nil }
-            let asset: AVURLAsset
-            if let resource { asset = await WebResourceMediaService.asset(for: resource, webView: source.webView) }
-            else { asset = source.asset }
-            guard !Task.isCancelled, session.ownsPreparation(reservation) else { return }
-            let fresh = DownloadPlaybackSource(asset: asset, pageURL: source.pageURL, webView: source.webView, persistPosition: source.persistsPosition)
-            fresh.resourceLease = source.resourceLease; fresh.webMediaContext = context
-            session.open(url: url, title: title, pageURL: page, asset: asset, webView: source.webView,
-                reservation: reservation, persistPosition: source.persistsPosition, downloadSource: fresh,
-                startAt: 0, autoplay: true)
+            let retrySource: DownloadPlaybackSource
+            if !automatic, let context = source.webMediaContext {
+                let asset = await WebResourceMediaService.asset(for: context.resource, webView: source.webView, cacheForPlayback: true)
+                let fresh = DownloadPlaybackSource(asset: asset, pageURL: source.pageURL, webView: source.webView,
+                    persistPosition: source.persistsPosition, downloadAsset: source.downloadAsset)
+                fresh.resourceLease = source.resourceLease; fresh.webMediaContext = context
+                retrySource = fresh
+            } else {
+                // Recreate the player item without depending on the originating
+                // web page or refreshing credentials for an in-flight stream.
+                retrySource = source
+            }
+            guard !Task.isCancelled, session.ownsPreparation(reservation),
+                  !automatic || (session.playbackIntentRevision == intent && session.isPlaybackRequested && session.playbackStalled) else { return }
+            let position = session.duration > 0 ? session.elapsed : nil
+            session.open(url: url, title: title, pageURL: page, asset: retrySource.asset, webView: source.webView,
+                reservation: reservation, persistPosition: source.persistsPosition, downloadSource: retrySource,
+                startAt: position, autoplay: true, initialRate: session.rate)
         }
     }
     @State private var audioGroup: AVMediaSelectionGroup?
@@ -624,15 +623,31 @@ private struct NativeFullscreenContent: View {
             .overlay { NativeVideoHoldSpeedFeedback() }
             .modifier(VideoFullscreenChrome(visibility: controls, title: session.title,
                 elapsed: session.seekPreview ?? session.elapsed, duration: session.duration, rate: session.rate,
-                playing: session.playing, buffering: waitingForPlayback, error: retryTask == nil ? (session.error ?? session.startupWarning) : nil,
-                identifier: "media.native", closeIdentifier: "media.fullscreen.close", options: options, retry: retryPlayback, subtitlePlayer: session.player,
+                playing: session.playing, buffering: waitingForPlayback,
+                error: retryTask == nil ? (session.error ?? session.startupWarning ?? (session.playbackStalled ? ToolText.text("media_playback_stalled") : nil)) : nil,
+                identifier: "media.native", closeIdentifier: "media.fullscreen.close", options: options, videoLoading: session.videoLoading,
+                cacheProgress: session.videoCacheProgress, retry: { retryPlayback() }, subtitlePlayer: session.player,
                 close: close, exitFullscreen: exitFullscreen, toggle: session.toggle, seek: session.seek, setRate: { _ = session.setRate($0) },
                 holdBegan: session.beginTemporaryRate, holdEnded: session.endTemporaryRate) {
-                    if let audioGroup { trackMenu(audioGroup, title: ToolText.text("media_audio_tracks"), selected: $selectedAudio) }
-                    if let subtitleGroup { trackMenu(subtitleGroup, title: ToolText.text("media_subtitles"), selected: $selectedSubtitle) }
-                    Toggle(ToolText.text("loop"), isOn: $session.loop)
-                    Toggle(ToolText.text("media_mirror"), isOn: $session.mirrored)
+                    if let audioGroup {
+                        trackMenu(audioGroup, title: ToolText.text("media_audio_tracks"), symbol: "waveform", selected: $selectedAudio)
+                    }
+                    if let subtitleGroup {
+                        trackMenu(subtitleGroup, title: ToolText.text("media_subtitles"), symbol: "captions.bubble", selected: $selectedSubtitle)
+                    }
+                    Toggle(isOn: $session.loop) {
+                        FullscreenVideoMenuLabel(title: ToolText.text("loop"), symbol: "repeat.1")
+                    }
+                    Toggle(isOn: $session.mirrored) {
+                        FullscreenVideoMenuLabel(title: ToolText.text("media_mirror"), symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right")
+                    }
                 })
+        .onCompatibleChange(of: session.playbackStalled) { _, stalled in
+            guard stalled, session.isPlaybackRequested, options?.playlist?.resolvingID == nil,
+                  let url = session.url, automaticRetryURL != url else { return }
+            automaticRetryURL = url
+            retryPlayback(automatic: true)
+        }
         .onReceive(session.player.publisher(for: \.timeControlStatus)) { status in
             let waiting = status == .waitingToPlayAtSpecifiedRate
             if buffering != waiting { buffering = waiting }
@@ -650,8 +665,8 @@ private struct NativeFullscreenContent: View {
             if let subtitles { selectedSubtitle = subtitles.options.firstIndex { item.currentMediaSelection.selectedMediaOption(in: subtitles)?.isEqual($0) == true } }
         }
     }
-    private func trackMenu(_ group: AVMediaSelectionGroup, title: String, selected: Binding<Int?>) -> some View {
-        Menu(title) {
+    private func trackMenu(_ group: AVMediaSelectionGroup, title: String, symbol: String, selected: Binding<Int?>) -> some View {
+        Menu {
             if group.allowsEmptySelection {
                 Button {
                     session.player.currentItem?.select(nil, in: group); selected.wrappedValue = nil; controls.show()
@@ -669,7 +684,7 @@ private struct NativeFullscreenContent: View {
                     else { Text(group.options[index].displayName) }
                 }
             }
-        }
+        } label: { FullscreenVideoMenuLabel(title: title, symbol: symbol) }
     }
 }
 
@@ -677,7 +692,6 @@ struct MediaControls: View {
     @ObservedObject var session = MediaSession.shared
     @ObservedObject private var pip = MediaSession.shared.pictureInPicture
     var fullScreen: (() -> Void)? = nil
-    var playerOptions: FileVideoOptions? = nil
     var body: some View {
         VStack(spacing: 20) {
             if session.hasVideo {
@@ -742,9 +756,6 @@ struct MediaControls: View {
                     CompactIconLabel(systemImage: "goforward.15")
                 }
                 Spacer()
-                if let playerOptions {
-                    MediaPlayerMenu(options: playerOptions, playbackState: { (session.elapsed, session.playing) })
-                }
                 Button {
                     session.loop.toggle()
                 } label: {
@@ -780,11 +791,11 @@ struct MediaControls: View {
 /// webpage playback, without exposing a compact player between orientations.
 struct FullscreenMediaPlaybackContent: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(VideoPlaybackPreferences.defaultPlayerKey) private var defaultPlayer = "soulo"
+    var resumesExistingSession = false
     @ObservedObject private var session = MediaSession.shared
     var body: some View {
         MediaPlaybackContent(restoredSoulo: session.soulo, initialFullscreen: true, fullscreenOnly: true,
-            initialSystemPlayer: defaultPlayer == "system", onFullscreenClose: { dismiss() })
+            initialSystemPlayer: resumesExistingSession && session.soulo == nil, onFullscreenClose: { dismiss() })
             .toolbar(.hidden, for: .navigationBar)
     }
 }
@@ -797,27 +808,25 @@ struct MediaPlayerPage: View {
             if let context = session.webMediaContext {
                 WebResourceMediaPlayerView(resource: context.resource, pageURL: context.pageURL,
                     sourceWebView: context.sourceWebView,
-                    assetProvider: { await WebResourceMediaService.asset(for: context.resource, webView: context.sourceWebView) },
+                    assetProvider: { await WebResourceMediaService.asset(for: context.resource, webView: context.sourceWebView, cacheForPlayback: true) },
                     downloadAction: { try? await WebResourceDownloadService.shared.download(context.resource,
                         pageURL: context.resource.sourcePageURL ?? context.pageURL, webView: context.sourceWebView) },
                     souloStartAt: session.elapsed, souloPlaying: session.isPlaybackRequested, episodeList: context.episodeList,
-                    systemPlayer: session.soulo == nil, restoredContext: context, embedded: true)
+                    restoredContext: context, embedded: true)
             } else if let url = session.url, url.isFileURL {
                 FileMediaPlaybackView(url: url, initialSystemPlayer: session.soulo == nil)
             } else if let playback = session.soulo, let source = playback.sourceURL {
                 MatroskaPlayerView(url: source, title: session.title, options: restoredOptions, startsFullscreen: true)
-            } else { FullscreenMediaPlaybackContent() }
+            } else { FullscreenMediaPlaybackContent(resumesExistingSession: true) }
         }
         .navigationTitle(session.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
     }
     private var restoredOptions: FileVideoOptions {
-        var result = FileVideoOptions(usesSystem: false, systemAvailable: session.souloSystemAvailable) { system, _, _ in
-            if system { session.restoreSystemFromSoulo() }
-        }
+        var result = FileVideoOptions(usesSystem: false, systemAvailable: session.souloSystemAvailable)
         result.shareURL = session.url
-        result.closePlayback = { dismiss() }
+        result.closePlayback = { _ in dismiss() }
         result.fullscreenOnly = true
         if session.hasVideo, session.pictureInPicture.supported {
             result.requestPictureInPicture = { _, _ in session.restoreSystemFromSoulo(pictureInPicture: true) }
@@ -1278,6 +1287,7 @@ private struct ExtendedMediaTransfer {
     let prepared: SouloMediaPlaybackSource
     let time: Double
     let playing: Bool
+    var rate: Float? = nil
 }
 
 private struct PendingSouloPlayback {
@@ -1293,6 +1303,7 @@ struct MediaPlaybackContent: View {
     var airPlayRequested: Binding<Bool>?
     var initialSouloPlayback: (time: Double, playing: Bool)?
     var initialSouloSource: DownloadPlaybackSource?
+    var initialRate: Float?
     var restoredSoulo: MatroskaPlayback?
     var initialFullscreen = false
     var fullscreenOnly = false
@@ -1301,12 +1312,10 @@ struct MediaPlaybackContent: View {
     var initialTitle: String?
     var ownsExplicitSource = false
     var externalPlaylist: FileVideoPlaylist?
-    var playerSelection: Binding<Bool>?
     var onFullscreenClose: (() -> Void)?
     var downloadAction: (() -> Void)?
     var downloadIsVideo = true
     @AppStorage(VideoPlaybackPreferences.showsWebDownloadControlsKey) private var showsVideoDownloadControls = true
-    @AppStorage(VideoPlaybackPreferences.defaultPlayerKey) private var defaultPlayer = "soulo"
     @ObservedObject private var session = MediaSession.shared
     @ObservedObject private var pip = MediaSession.shared.pictureInPicture
     @StateObject private var controls = VideoControlsVisibility()
@@ -1352,17 +1361,12 @@ struct MediaPlaybackContent: View {
             videoOptions.fullscreenOnly = fullscreenOnly || videoOptions.fullscreenOnly
             return videoOptions
         }
-        let source = session.playbackTransferSource()
-        let available = source.map { ["http", "https", "file"].contains($0.asset.url.scheme?.lowercased()) } ?? false
-        var result = FileVideoOptions(usesSystem: true, systemAvailable: true, souloAvailable: available,
-                                     playlist: externalPlaylist) { system, time, _ in
-            if !system { switchToSoulo(time: time, playing: session.isPlaybackRequested) }
-        }
+        var result = FileVideoOptions(usesSystem: true, systemAvailable: true, playlist: externalPlaylist)
         result.fullscreenChanged = { preserveFullscreen = $0 }
         result.shareURL = session.url
         result.showsEpisodesOnAppear = initialEpisodes
         result.fullscreenOnly = fullscreenOnly
-        result.closePlayback = onFullscreenClose
+        if let onFullscreenClose { result.closePlayback = { _ in onFullscreenClose() } }
         result.airPlayPresentation = airPlayRequested ?? $ownAirPlayRequest
         result.download = downloadAction
         result.downloadIsVideo = downloadIsVideo
@@ -1381,7 +1385,8 @@ struct MediaPlaybackContent: View {
         let intentRevision = session.playbackIntentRevision
         let explicitSource = initialSouloSource != nil, item = session.player.currentItem
         guard explicitSource || item != nil else { return }
-        let originalURL = explicitSource ? source.asset.url : (session.url ?? source.asset.url)
+        let explicitURL = source.asset.url.isFileURL ? source.asset.url : (source.webMediaContext?.resource.url ?? source.asset.url)
+        let originalURL = explicitSource ? explicitURL : (session.url ?? source.asset.url)
         let title = explicitSource ? (initialTitle ?? source.pageURL?.host ?? source.asset.url.lastPathComponent) : session.title
         switchTask = Task { @MainActor in
             defer {
@@ -1393,17 +1398,22 @@ struct MediaPlaybackContent: View {
             }
             do {
                 let prepared = try await SouloMediaPlaybackSource.prepare(native: source, originalURL: originalURL)
-                let context = await VideoPlaybackRequestContext.load(url: prepared.url, pageURL: source.pageURL, webView: source.webView)
+                let usesCache = HLSPlaybackBridge.usesLocalBridge(source.asset) || ProgressiveVideoPlaybackBridge.transfer(for: source.asset) != nil
+                let context = await VideoPlaybackRequestContext.load(url: prepared.url, pageURL: usesCache ? nil : source.pageURL,
+                    webView: usesCache ? nil : source.webView)
                 try Task.checkCancellation()
                 guard pendingSouloPlayback?.id == request.id else { return }
                 guard explicitSource || session.player.currentItem === item else { pendingSouloPlayback = nil; return }
                 // Keep the asset/cache/authentication context alive before the
                 // native session releases it, including private playback leases.
                 let next = ExtendedMediaTransfer(source: source, originalURL: originalURL, title: title,
-                                                  context: context, prepared: prepared, time: request.time,
-                                                  playing: session.playbackIntentRevision == intentRevision ? request.playing : session.isPlaybackRequested)
-                session.stop(deactivateAudioSession: false)
+                                                  context: context, prepared: prepared,
+                                                  time: explicitSource ? request.time : session.elapsed,
+                                                  playing: session.playbackIntentRevision == intentRevision ? request.playing : session.isPlaybackRequested,
+                                                  rate: explicitSource ? initialRate : session.rate)
                 pendingSouloPlayback = nil
+                // The replacement stops the native session when it opens,
+                // keeping its source leased until the new view takes ownership.
                 transfer = next
             } catch is CancellationError { }
             catch {
@@ -1422,18 +1432,15 @@ struct MediaPlaybackContent: View {
         switchTask?.cancel()
         switchToSoulo(time: initial.time, playing: initial.playing)
     }
-    private func applyPreferredPlayer() {
+    private func applyAutomaticPlayback() {
         guard !ownsExplicitSource, !appliedInitialPlayer, !initialSystemPlayer, videoOptions == nil,
-              initialSouloPlayback == nil, defaultPlayer != "system", session.playbackTransferSource() != nil else { return }
+              initialSouloPlayback == nil, session.playbackTransferSource() != nil else { return }
         appliedInitialPlayer = true
         switchToSoulo(time: session.elapsed, playing: session.isPlaybackRequested)
     }
 
     private func souloOptions(_ transfer: ExtendedMediaTransfer) -> FileVideoOptions {
-        var result = FileVideoOptions(usesSystem: false, systemAvailable: true, playlist: externalPlaylist) { system, time, playing in
-            guard system else { return }
-            restoreSystem(transfer, time: time, playing: playing)
-        }
+        var result = FileVideoOptions(usesSystem: false, systemAvailable: true, playlist: externalPlaylist)
         result.requestAirPlay = { time, playing in
             (airPlayRequested ?? $ownAirPlayRequest).wrappedValue = true
             restoreSystem(transfer, time: time, playing: playing)
@@ -1445,7 +1452,7 @@ struct MediaPlaybackContent: View {
             }
         }
         result.fullscreenChanged = { preserveFullscreen = $0 }
-        result.closePlayback = onFullscreenClose
+        if let onFullscreenClose { result.closePlayback = { _ in onFullscreenClose() } }
         result.fullscreenOnly = fullscreenOnly
         result.shareURL = transfer.originalURL
         result.download = downloadAction
@@ -1457,7 +1464,7 @@ struct MediaPlaybackContent: View {
         session.open(url: transfer.originalURL, title: transfer.title, pageURL: transfer.source.pageURL,
                      asset: transfer.source.asset, webView: transfer.source.webView,
                      persistPosition: transfer.source.persistsPosition, downloadSource: transfer.source,
-                     startAt: time, autoplay: playing)
+                     startAt: time, autoplay: playing, initialRate: session.soulo?.rate ?? session.rate)
         self.transfer = nil
         // Present the destination immediately; resolving HLS metadata must not
         // expose a portrait preview between two landscape players.
@@ -1467,8 +1474,8 @@ struct MediaPlaybackContent: View {
     private var playbackControls: some View {
         VStack(spacing: 6) {
             VideoPlaybackControls(elapsed: session.elapsed, duration: session.duration, rate: session.rate,
-                playing: session.playing, identifier: "media.native", options: options,
-                showEpisodes: showEpisodes ?? { episodesVisible = true }, expand: fullscreen,
+                playing: session.playing, identifier: "media.native", options: options, videoLoading: session.videoLoading,
+                cacheProgress: session.videoCacheProgress, showEpisodes: showEpisodes ?? { episodesVisible = true }, expand: fullscreen,
                 interactionChanged: controls.interaction, seek: session.seek, setRate: { _ = session.setRate($0) })
             if let error = session.error ?? session.startupWarning { VideoPlaybackStatus(message: error, identifier: "media.native.status").foregroundStyle(.secondary) }
         }.padding(20).background(Color(UIColor.secondarySystemGroupedBackground))
@@ -1484,7 +1491,7 @@ struct MediaPlaybackContent: View {
                 MatroskaPlayerView(url: transfer.prepared.url, resourceLease: transfer.prepared,
                                    requestContext: transfer.context, title: transfer.title,
                                    persistPosition: transfer.source.persistsPosition, startAt: transfer.time,
-                                   autoplay: transfer.playing, options: souloOptions(transfer), startsFullscreen: preserveFullscreen)
+                                   autoplay: transfer.playing, initialRate: transfer.rate, options: souloOptions(transfer), startsFullscreen: preserveFullscreen)
                     .navigationTitle(transfer.title)
             } else {
                 VStack(spacing: 0) {
@@ -1517,12 +1524,6 @@ struct MediaPlaybackContent: View {
             get: { pip.errorMessage != nil }, set: { if !$0 { pip.dismissError() } }
         )) { Button(ToolText.text("done")) { pip.dismissError() } } message: { Text(pip.errorMessage ?? "") }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                if transfer == nil, let options, options.usesSystem {
-                    Button("Soulo") { options.selectPlayer(false, session.elapsed, session.playing) }
-                        .accessibilityIdentifier("media.switch.soulo")
-                }
-            }
             ToolbarItem(placement: .primaryAction) {
                 if transfer == nil {
                     Menu {
@@ -1586,12 +1587,11 @@ struct MediaPlaybackContent: View {
                 appliedInitialPlayer = true; fullscreen()
             }
             applyExplicitSouloSource()
-            applyPreferredPlayer()
+            applyAutomaticPlayback()
             startPendingSouloPlayback()
         }
-        .onCompatibleChange(of: transfer != nil, initial: true) { _, soulo in playerSelection?.wrappedValue = !soulo }
         .task(id: initialSouloSource.map(ObjectIdentifier.init)) { applyExplicitSouloSource() }
-        .onCompatibleChange(of: session.url) { _, _ in if isVisible { applyPreferredPlayer() } }
+        .onCompatibleChange(of: session.url) { _, _ in if isVisible { applyAutomaticPlayback() } }
         .onCompatibleChange(of: session.hasVideo, initial: true) { _, hasVideo in
             guard hasVideo, (isVisible || showingFullScreen || preserveFullscreen), !appliedInitialPlayer else { return }
             guard !ownsExplicitSource || initialSouloSource != nil else { return }
@@ -1601,7 +1601,7 @@ struct MediaPlaybackContent: View {
                 return
             }
             guard initialSouloPlayback == nil || initialSouloSource != nil else { return }
-            let initial = initialSouloPlayback ?? (videoOptions == nil && defaultPlayer != "system"
+            let initial = initialSouloPlayback ?? (videoOptions == nil
                 ? (time: session.elapsed, playing: session.isPlaybackRequested) : nil)
             guard let initial else { return }
             appliedInitialPlayer = true

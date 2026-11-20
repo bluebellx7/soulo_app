@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "フィードバックを試す";
 
-"media_start_timeout" = "再生が始まりません。ネットワークを確認するか、プレーヤーを切り替えてください。";
+"media_start_timeout" = "再生が始まりません。ネットワークをご確認ください。";
+"media_load_complete" = "読み込み完了";
+"media_playback_stalled" = "再生が止まりました。";
 
 "wallpaper_appearance_hint" = "ライトとダークの背景を個別に設定できます。アプリの外観に合わせて自動で切り替わります。";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "ダウンロードとファイル";
 "storage_cache_group" = "キャッシュと一時ファイル";
+"storage_video_cache" = "動画キャッシュ";
 "storage_saved_group" = "保存済みコンテンツ";
 
 "storage_clear_offline_media_warning" = "この場所のオフライン動画と関連ファイル項目をすべて削除します。未完了のファイル・動画のダウンロード、再生、書き出しを停止します。";

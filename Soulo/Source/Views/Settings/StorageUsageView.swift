@@ -16,7 +16,7 @@ enum StorageUsageGroup: String, CaseIterable, Identifiable {
         switch self {
         case .websites: [.webData, .websiteStorage]
         case .files: [.downloads, .downloadTasks]
-        case .cache: [.tabSnapshots, .favicons, .wallpaperCache, .otherCaches, .temporaryFiles, .ruleCache]
+        case .cache: [.tabSnapshots, .favicons, .wallpaperCache, .videoPlaybackCache, .otherCaches, .temporaryFiles, .ruleCache]
         case .saved: [.wallpapers, .readingData, .backups, .filterRules, .extensions, .personalData, .sharedData]
         case .other: [.otherData]
         }
@@ -309,7 +309,7 @@ private struct StorageManagementDestination: View {
         case .readingData: ReadingStorageView(onOpenInBrowser: onOpenInBrowser)
         case .wallpaperCache, .otherCaches, .temporaryFiles, .ruleCache, .extensions, .personalData, .sharedData, .otherData, .downloadTasks:
             AdditionalStorageView(category: category, onOpenInBrowser: onOpenInBrowser)
-        case .tabSnapshots, .favicons: EmptyView()
+        case .tabSnapshots, .favicons, .videoPlaybackCache: EmptyView()
         }
     }
 }
@@ -327,7 +327,7 @@ private struct ReadingStorageView: View {
 }
 
 extension StorageUsageCategory {
-    var hasManagementPage: Bool { ![.tabSnapshots, .favicons].contains(self) }
+    var hasManagementPage: Bool { ![.tabSnapshots, .favicons, .videoPlaybackCache].contains(self) }
     @MainActor var title: String {
         switch self {
         case .webData: FeatureText.text("Website cache")
@@ -342,6 +342,7 @@ extension StorageUsageCategory {
         case .extensions: LanguageManager.shared.localizedString("userscripts")
         case .ruleCache: LanguageManager.shared.localizedString("ad_block_subscription_rules")
         case .wallpaperCache: FeatureText.text("Wallpaper cache")
+        case .videoPlaybackCache: ToolText.text("storage_video_cache")
         case .otherCaches: FeatureText.text("Other caches")
         case .temporaryFiles: FeatureText.text("Temporary files")
         case .downloadTasks: FeatureText.text("Download task data")

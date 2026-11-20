@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Limpar todos os favoritos?";
 "settings" = "Configurações";
 "platform_management" = "Gerenciar Plataformas";
+"home_quick_search" = "Pesquisa rápida no início";
 "region_korea" = "Coreia";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "O cache e as páginas visitadas nos últimos 3 dias serão removidos. Cookies e logins serão mantidos.";
 "enter_fullscreen" = "Tela cheia";
 "exit_fullscreen" = "Sair da Tela Cheia";
-"fullscreen_exit_hint" = "Toque para controles; puxe para sair";
+"exit_fullscreen_short" = "Sair";
+"fullscreen_exit_hint" = "Toque para abrir o menu, deslize para cima para sair";
 "restore_browser_toolbar" = "Restaurar barra de ferramentas";
 "floating_more_detach" = "Desafixar botão Mais";
 "floating_more_snap" = "Fixar botão Mais na borda";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Parcialmente suportado";
 "userscript_docs_partial_desc" = "As notificações ficam na página; APIs de recursos retornam Promise. cookie exige GM_cookie; cookies não são enviados automaticamente.";
 "userscript_docs_unsupported_title" = "Atualmente não suportado";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, isolamento sandbox/run-in e funções de desktop indisponíveis no WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest permite cancelar ou redirecionar para a mesma origem as solicitações Fetch e XMLHttpRequest da página principal.";
+"userscript_docs_unsupported_desc" = "GM_audio precisa silenciar a aba inteira e consultar o estado do áudio. A API pública do WKWebView oferece suporte limitado.\n@sandbox seleciona o ambiente de execução. O Soulo executa os scripts de usuário no ambiente da página.";
 "userscript_docs_metadata_title" = "Metadados";
 "userscript_docs_metadata_identity" = "Nome do script legível e descrição opcional mostrados antes da instalação e nos detalhes do script.";
 "userscript_docs_metadata_version" = "Use um namespace estável e exclusivo e aumente a versão sempre que o script incluído for alterado.";

@@ -7,3 +7,7 @@ MOBI files: https://github.com/bfabiszewski/libmobi, `tests/samples`: `sample-ob
 Other test content (TXT, EPUB, WAV, PDF, MOBI, Print Replica AZW4) is authored/generated inside `ReadingToolsTests.swift`; the EPUB contains a deliberately blocked script.
 
 `playback-h264-aac.mp4` is an 8-second generated test pattern with silent AAC audio, created using FFmpeg `testsrc2` and `anullsrc`. It verifies local H.264/AAC playback, seek and resume, without third-party media.
+
+`playback-vp9-opus.webm` is a five-second FFmpeg test pattern with a sine-wave Opus track for extended-decoder playback and seeking over HTTP Range.
+
+`torrent-stream-h264-aac.mkv` contains the same encoded samples as the MP4 torrent fixture, copied into Matroska without re-encoding.

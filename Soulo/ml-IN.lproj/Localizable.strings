@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "എല്ലാ ബുക്ക്‌മാർക്കുകളും മായ്‌ക്കണോ?";
 "settings" = "ക്രമീകരണങ്ങൾ";
 "platform_management" = "പ്ലാറ്റ്ഫോം മാനേജ്മെൻ്റ്";
+"home_quick_search" = "ഹോമിൽ നിന്നുള്ള ദ്രുത തിരയൽ";
 "region_korea" = "കൊറിയ";
 "platform_naver" = "നാവർ";
 "platform_daum" = "ഡാം";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "കഴിഞ്ഞ 3 ദിവസത്തെ കാഷെ ചെയ്‌ത ഉറവിടങ്ങളും പേജ് സന്ദർശനങ്ങളും നീക്കം ചെയ്യപ്പെടും. കുക്കികളും സൈൻ-ഇന്നുകളും സൂക്ഷിക്കും.";
 "enter_fullscreen" = "പൂർണ്ണ സ്ക്രീൻ";
 "exit_fullscreen" = "പൂർണ്ണ സ്ക്രീനിൽ നിന്ന് പുറത്തുകടക്കുക";
-"fullscreen_exit_hint" = "നിയന്ത്രണങ്ങൾക്കായി ടാപ്പ് ചെയ്യുക, പുറത്തുകടക്കാൻ താഴേക്ക് വലിക്കുക";
+"exit_fullscreen_short" = "പുറത്തുകടക്കുക";
+"fullscreen_exit_hint" = "മെനു തുറക്കാൻ ടാപ്പ് ചെയ്യുക, പുറത്തുകടക്കാൻ മുകളിലേക്ക് സ്വൈപ്പ് ചെയ്യുക";
 "restore_browser_toolbar" = "ടൂൾബാർ പുനഃസ്ഥാപിക്കുക";
 "floating_more_detach" = "കൂടുതൽ ബട്ടൺ വേർപെടുത്തുക";
 "floating_more_snap" = "അരികിലേക്ക് കൂടുതൽ ബട്ടൺ സ്നാപ്പ് ചെയ്യുക";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "ഭാഗികമായി പിന്തുണച്ചു";
 "userscript_docs_partial_desc" = "അറിയിപ്പുകൾ പേജിലാണ്; റിസോഴ്‌സ് APIകൾ Promise നൽകുന്നു. cookie ഓപ്ഷന് GM_cookie അനുമതി വേണം; കുക്കികൾ സ്വയം അയയ്ക്കില്ല.";
 "userscript_docs_unsupported_title" = "നിലവിൽ പിന്തുണയ്ക്കുന്നില്ല";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in ഒറ്റപ്പെടുത്തൽ, WKWebView നൽകാത്ത ഡെസ്‌ക്‌ടോപ്പ് പ്രവർത്തനങ്ങൾ.";
+"userscript_docs_network_webrequest" = "പ്രധാന പേജിലെ Fetch, XMLHttpRequest അഭ്യർഥനകൾ റദ്ദാക്കാനോ അതേ ഉറവിടത്തിലേക്ക് തിരിച്ചുവിടാനോ GM_webRequest ഉപയോഗിക്കാം.";
+"userscript_docs_unsupported_desc" = "GM_audio-യ്ക്ക് ടാബ് മുഴുവൻ നിശ്ശബ്ദമാക്കാനും ഓഡിയോ നില അറിയാനും കഴിയണം. WKWebView-യുടെ പൊതുവായ API-യിൽ ഇവയ്ക്കുള്ള പിന്തുണ പരിമിതമാണ്.\n@sandbox സ്ക്രിപ്റ്റിന്റെ പ്രവർത്തനപരിസരം തിരഞ്ഞെടുക്കുന്നു. Soulo ഇപ്പോൾ ഉപയോക്തൃ സ്ക്രിപ്റ്റുകൾ പേജിന്റെ പരിസരത്തിൽ പ്രവർത്തിപ്പിക്കുന്നു.";
 "userscript_docs_metadata_title" = "മെറ്റാഡാറ്റ";
 "userscript_docs_metadata_identity" = "മനുഷ്യർക്ക് വായിക്കാനാകുന്ന സ്ക്രിപ്റ്റ് നാമവും ഓപ്ഷണൽ വിവരണവും ഇൻസ്റ്റാളേഷന് മുമ്പും സ്ക്രിപ്റ്റ് വിശദാംശങ്ങളിലും കാണിച്ചിരിക്കുന്നു.";
 "userscript_docs_metadata_version" = "ബണ്ടിൽ ചെയ്‌ത സ്‌ക്രിപ്‌റ്റ് മാറുമ്പോഴെല്ലാം സ്ഥിരവും അതുല്യവുമായ നെയിംസ്‌പെയ്‌സ് ഉപയോഗിക്കുകയും പതിപ്പ് വർദ്ധിപ്പിക്കുകയും ചെയ്യുക.";

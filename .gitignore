@@ -12,6 +12,7 @@ build/
 *.ipa
 *.dSYM.zip
 *.dSYM
+!ThirdParty/SouloDecoder/Artifacts/SouloDecoder.xcframework/*/dSYMs/SouloDecoder.framework.dSYM/
 
 # macOS
 .DS_Store

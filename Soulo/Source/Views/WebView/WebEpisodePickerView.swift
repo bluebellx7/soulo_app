@@ -164,10 +164,10 @@ struct WebEpisodePickerView: View {
             .onCompatibleChange(of: showsVideoDownloadControls) { _, visible in
                 if !visible { isSelecting = false; selectedIDs.removeAll() }
             }
-            .sheet(item: $selectedMedia) { media in
+            .fullScreenCover(item: $selectedMedia) { media in
                 WebResourceMediaPlayerView(resource: media, pageURL: media.sourcePageURL ?? viewModel.currentURL,
                     sourceWebView: viewModel.webView,
-                    assetProvider: { await WebResourceMediaService.asset(for: media, webView: viewModel.webView) },
+                    assetProvider: { await WebResourceMediaService.asset(for: media, webView: viewModel.webView, cacheForPlayback: true) },
                     downloadAction: {
                         do {
                             return try await WebResourceDownloadService.shared.download(media,

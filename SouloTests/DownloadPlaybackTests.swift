@@ -2,6 +2,7 @@ import XCTest
 import AVFoundation
 import WebKit
 import UIKit
+import SwiftUI
 import CryptoKit
 import CommonCrypto
 @testable import Soulo
@@ -66,7 +67,7 @@ final class DownloadPlaybackTests: XCTestCase {
         attachment.name = "mtyy-real-sample-download"; attachment.lifetime = .keepAlways; add(attachment)
     }
 
-    func testDecoratedHLSSegmentsPlayAndDownloadAsRealVideo() async throws {
+    private func decoratedHLSFixture() async throws -> (DownloadPlaybackHTTPFixture, WebMediaResource) {
         let segment = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment0", withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
         let bytes = try Data(contentsOf: segment)
         let prefix = Data([137,80,78,71,13,10,26,10]) + Data(repeating: 0, count: 61)
@@ -77,10 +78,387 @@ final class DownloadPlaybackTests: XCTestCase {
         let playlist = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:2.022,\nsegment.ts\n#EXT-X-ENDLIST\n"
         let server = try DownloadPlaybackHTTPFixture(files: ["/video.m3u8": Data(playlist.utf8), "/segment.ts": payload],
             responseHeaders: ["/segment.ts": ["Content-Type": "image/png"]])
-        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let root = try await server.start(); server.releaseDownloads()
+        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("video.m3u8"), title: "Decorated TS", posterURL: nil, delivery: .hls)
+        return (server, resource)
+    }
+
+    func testHLSPlaybackMeasuresOriginTransfer() async throws {
+        let (server, resource) = try await decoratedHLSFixture()
+        defer { server.stop() }
+        let asset = await WebResourceMediaService.asset(for: resource, webView: nil)
+        XCTAssertNotEqual(asset.url, resource.url)
+        let player = AVPlayer(playerItem: AVPlayerItem(asset: asset))
+        player.play()
+        defer { player.pause(); player.replaceCurrentItem(with: nil) }
+        try await waitFor("The bridge must report traffic from its origin connection") {
+            if case .rate(let bytes) = HLSPlaybackBridge.loadingStatus(asset) { return bytes > 0 }
+            return false
+        }
+        try await waitFor("The measured rate must clear once transfers stop") { HLSPlaybackBridge.loadingStatus(asset) == nil }
+    }
+
+    func testHLSBridgePrefetchesAndRetriesNextSegment() async throws {
+        let folder = "ReadingFixtures/HLSFragments"
+        let first = try Data(contentsOf: XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment0", withExtension: "ts", subdirectory: folder)))
+        let second = try Data(contentsOf: XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment1", withExtension: "ts", subdirectory: folder)))
+        let prefix = Data([137,80,78,71,13,10,26,10]) + Data(repeating: 0, count: 61)
+        let playlist = "#EXTM3U\n#EXT-X-TARGETDURATION:3\n#EXTINF:2.022,\nfirst.ts\n#EXTINF:2.022,\nnext.ts\n#EXT-X-ENDLIST\n"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/video.m3u8": Data(playlist.utf8), "/first.ts": prefix + first, "/next.ts": second],
+            initialServiceFailures: ["/next.ts": 1])
+        let root = try await server.start()
+        defer { server.stop() }
+        let url = root.appendingPathComponent("video.m3u8")
+        let resource = WebMediaResource(kind: .video, url: url, title: "HLS lookahead", posterURL: nil, delivery: .hls)
+        let asset = await WebResourceMediaService.asset(for: resource, webView: nil)
+        XCTAssertTrue(HLSPlaybackBridge.usesLocalBridge(asset))
+        let (manifest, _) = try await URLSession.shared.data(from: asset.url)
+        let names = String(decoding: manifest, as: UTF8.self).split(separator: "\n").filter { !$0.hasPrefix("#") }
+        XCTAssertEqual(names.count, 2)
+        let directory = asset.url.deletingLastPathComponent()
+        let firstName = try XCTUnwrap(names.first)
+        let nextName = try XCTUnwrap(names.last)
+        let (opening, _) = try await URLSession.shared.data(from: directory.appendingPathComponent(String(firstName)))
+        XCTAssertEqual(opening, first)
+        func nextRequests() -> Int { server.receivedRequests.filter { $0.path == "/next.ts" }.count }
+        try await waitFor("The bridge should fetch and retry the next segment before the decoder asks") { nextRequests() == 2 }
+        let (warmed, _) = try await URLSession.shared.data(from: directory.appendingPathComponent(String(nextName)))
+        XCTAssertEqual(warmed, second)
+        XCTAssertEqual(nextRequests(), 2, "The decoder should reuse the prefetched segment")
+    }
+
+    func testProgressiveCacheAdmissionUsesAvailableSpaceInsteadOfFixedSize() async throws {
+        let largeLength: Int64 = 1_280 * 1024 * 1024
+        let server = try DownloadPlaybackHTTPFixture(files: ["/large.mp4": Data([0]), "/oversized.mp4": Data([0])],
+            responseHeaders: ["/large.mp4": ["Content-Range": "bytes 0-0/\(largeLength)"],
+                              "/oversized.mp4": ["Content-Range": "bytes 0-0/\(Int64.max)"]])
+        let root = try await server.start()
+        defer { server.stop() }
+
+        func asset(_ path: String) async -> AVURLAsset? {
+            let url = root.appendingPathComponent(path)
+            let resource = WebMediaResource(kind: .video, url: url, title: path, posterURL: nil)
+            let context = VideoPlaybackRequestContext(url: url, referrer: nil, userAgent: "Soulo Cache QA", cookies: [])
+            return await ProgressiveVideoPlaybackBridge.asset(for: resource, context: context)
+        }
+
+        // Advertise the file size with a one-byte probe so the test needs no large fixture or allocation.
+        let available = try StorageUsageLocations.current.caches.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+        try XCTSkipUnless((available.volumeAvailableCapacityForImportantUsage ?? 0) > 2 * largeLength, "Requires space to reserve a large playback cache")
+        let large = await asset("large.mp4")
+        let cache = try XCTUnwrap(large, "Available disk space must admit a video above the old per-video and total caps")
+        var request = URLRequest(url: cache.url); request.httpMethod = "HEAD"
+        let (_, response) = try await URLSession.shared.data(for: request)
+        XCTAssertEqual(response.expectedContentLength, largeLength)
+        let oversized = await asset("oversized.mp4")
+        XCTAssertNil(oversized, "An object larger than the volume must use ordinary streaming without a disk reservation")
+    }
+
+    func testClosingVideoRangeLoaderCancelsPendingAndRejectsLateRequests() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: ["/clip.mp4": Data(repeating: 1, count: 1024)],
+            heldPaths: ["/clip.mp4"])
+        let url = try await server.start().appendingPathComponent("clip.mp4")
+        defer { server.stop() }
+        let loader = VideoRangeLoader(context: VideoPlaybackRequestContext(url: url, referrer: nil,
+            userAgent: "Soulo Cache QA", cookies: []))
+        defer { loader.stop() }
+        let pending = Task { try await loader.read(0..<128) }
+        defer { pending.cancel() }
+        try await waitFor("The initial range must still be in flight when the cache closes") {
+            server.receivedRequests.contains { $0.headers["range"] == "bytes=0-127" }
+        }
+        loader.stop()
+        do {
+            _ = try await pending.value
+            XCTFail("Stopping the cache must cancel its active request")
+        } catch let error as URLError {
+            XCTAssertEqual(error.code, .cancelled)
+        }
+        do {
+            _ = try await loader.read(128..<256)
+            XCTFail("Late prefetch work must be rejected after the cache closes")
+        } catch is CancellationError {
+            XCTAssertFalse(server.receivedRequests.contains { $0.headers["range"] == "bytes=128-255" })
+        }
+    }
+
+    func testProgressivePlaybackCompletesCacheAndProtectsItDuringCleanup() async throws {
+        let clip = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "torrent-stream-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let bytes = try Data(contentsOf: clip)
+        let firstChunk = 512 * 1024
+        XCTAssertGreaterThan(bytes.count, firstChunk)
+        let server = try DownloadPlaybackHTTPFixture(files: ["/video.mp4": bytes], maximumRangeLength: 192 * 1024,
+            holdRequest: { request in request.headers["range"]?.hasPrefix("bytes=\(firstChunk)-") == true })
+        let root = try await server.start()
+        defer { server.stop() }
+        let url = root.appendingPathComponent("video.mp4")
+        let resource = WebMediaResource(kind: .video, url: url, title: "Cached video", posterURL: nil)
+        var asset: AVURLAsset? = await WebResourceMediaService.asset(for: resource, webView: nil, cacheForPlayback: true)
+        let cacheURL = try XCTUnwrap(asset?.url)
+        let transfer = try XCTUnwrap(asset.flatMap { ProgressiveVideoPlaybackBridge.transfer(for: $0) })
+        XCTAssertNil(transfer.coverage.fileFraction, "The one-byte admission probe is not written to the playback cache")
+        XCTAssertNotEqual(cacheURL, url)
+        var request = URLRequest(url: cacheURL)
+        request.setValue("bytes=0-127", forHTTPHeaderField: "Range")
+        let (opening, _) = try await URLSession.shared.data(for: request)
+        XCTAssertEqual(opening, Data(bytes.prefix(128)))
+        XCTAssertEqual(try XCTUnwrap(transfer.coverage.fileFraction), Double(firstChunk) / Double(bytes.count), accuracy: 0.000001)
+        XCTAssertFalse(transfer.coverage.isComplete)
+        XCTAssertTrue(transfer.coverage.ranges.isEmpty, "File offsets provide no position on a compressed video's timeline")
+        server.releaseDownloads()
+        try await waitFor("The remaining video must cache without decoder requests") { transfer.status == .complete }
+        XCTAssertEqual(transfer.coverage.fileFraction, 1)
+        let report = try await StorageUsageService.clear(.videoPlaybackCache)
+        XCTAssertTrue(report.retainedCategories.contains(.videoPlaybackCache))
+        let inventory = await StorageUsageService.inventory(forceRefresh: true)
+        XCTAssertGreaterThan(inventory.records.first { $0.category == .videoPlaybackCache }?.bytes ?? 0, 0)
+        server.stop()
+        let (offline, _) = try await URLSession.shared.data(from: cacheURL)
+        XCTAssertEqual(offline, bytes)
+        let requests = server.receivedRequests.filter { $0.path == "/video.mp4" }.compactMap { $0.headers["range"] }
+        XCTAssertEqual(requests.count, Set(requests).count, "Playback and prefetch share origin ranges")
+        asset = nil
+        try await waitFor("Closing the playback asset must remove its cache") {
+            let root = StorageUsageLocations.current.caches.appendingPathComponent(VideoPlaybackCacheDirectory.name)
+            return (try? FileManager.default.contentsOfDirectory(atPath: root.path).isEmpty) == true
+        }
+    }
+
+    func testFiniteHLSPlaybackPrefetchesTheFullRendition() async throws {
+        var files: [String: Data] = [:]
+        var manifest = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+        for index in 0..<4 {
+            let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment\(index)", withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
+            files["/segment\(index).ts"] = try Data(contentsOf: url)
+            manifest += "#EXTINF:2.022,\nsegment\(index).ts\n"
+        }
+        files["/video.m3u8"] = Data((manifest + "#EXT-X-ENDLIST\n").utf8)
+        let server = try DownloadPlaybackHTTPFixture(files: files, heldPaths: ["/segment1.ts"])
+        let root = try await server.start()
+        defer { server.stop() }
+        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("video.m3u8"), title: "Finite HLS", posterURL: nil, delivery: .hls)
+        let asset = await WebResourceMediaService.asset(for: resource, webView: nil, cacheForPlayback: true)
+        XCTAssertTrue(HLSPlaybackBridge.usesLocalBridge(asset))
+        XCTAssertTrue(HLSPlaybackBridge.canCacheEntireVideo(asset))
+        let transfer = try XCTUnwrap(HLSPlaybackBridge.transfer(for: asset))
+        XCTAssertTrue(transfer.coverage.ranges.isEmpty)
+        let (playlist, _) = try await URLSession.shared.data(from: asset.url)
+        let segmentNames = String(decoding: playlist, as: UTF8.self).split(separator: "\n").filter { !$0.hasPrefix("#") }
+        XCTAssertEqual(segmentNames.count, 4)
+        let directory = asset.url.deletingLastPathComponent()
+        let first = try XCTUnwrap(segmentNames.first)
+        _ = try await URLSession.shared.data(from: directory.appendingPathComponent(String(first)))
+        XCTAssertEqual(transfer.coverage.ranges, [0..<2.022])
+        XCTAssertFalse(transfer.coverage.isComplete, "A held segment must remain out of the available timeline")
+        server.releaseDownloads()
+        try await waitFor("Every finite segment must cache after the first playback request") { HLSPlaybackBridge.loadingStatus(asset) == .complete }
+        XCTAssertTrue(transfer.coverage.isComplete)
+        server.stop()
+        for (index, segment) in segmentNames.enumerated() {
+            let (bytes, _) = try await URLSession.shared.data(from: directory.appendingPathComponent(String(segment)))
+            XCTAssertEqual(bytes, files["/segment\(index).ts"])
+        }
+        try await checkSeekingCachedHLS(asset, resource: resource)
+    }
+
+    func testFiniteHLSDoesNotCacheAPartialSegment() async throws {
+        let manifest = """
+        #EXTM3U
+        #EXT-X-VERSION:3
+        #EXT-X-TARGETDURATION:3
+        #EXTINF:2.022,
+        full.ts
+        #EXTINF:2.022,
+        partial.ts
+        #EXT-X-ENDLIST
+        """
+        let folder = "ReadingFixtures/HLSFragments"
+        let fullURL = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment0", withExtension: "ts", subdirectory: folder))
+        let secondURL = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment1", withExtension: "ts", subdirectory: folder))
+        let full = try Data(contentsOf: fullURL)
+        let second = try Data(contentsOf: secondURL)
+        let partial = Data(second.prefix(second.count / 2))
+        let server = try DownloadPlaybackHTTPFixture(files: ["/video.m3u8": Data(manifest.utf8), "/full.ts": full, "/partial.ts": partial],
+            responseHeaders: ["/full.ts": ["Content-Range": "bytes 0-\(full.count - 1)/\(full.count)"],
+                              "/partial.ts": ["Content-Range": "bytes 0-\(partial.count - 1)/\(second.count)"]])
+        let root = try await server.start()
+        defer { server.stop() }
+        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("video.m3u8"), title: "Partial HLS", posterURL: nil, delivery: .hls)
+        let asset = await WebResourceMediaService.asset(for: resource, webView: nil, cacheForPlayback: true)
+        let transfer = try XCTUnwrap(HLSPlaybackBridge.transfer(for: asset))
+        let (playlist, _) = try await URLSession.shared.data(from: asset.url)
+        let names = String(decoding: playlist, as: UTF8.self).split(separator: "\n").filter { !$0.hasPrefix("#") }
+        XCTAssertEqual(names.count, 2)
+        let directory = asset.url.deletingLastPathComponent()
+        let first = directory.appendingPathComponent(String(try XCTUnwrap(names.first)))
+        let last = directory.appendingPathComponent(String(try XCTUnwrap(names.last)))
+        let (cached, _) = try await URLSession.shared.data(from: first)
+        XCTAssertEqual(cached, full, "A 206 response that contains the whole segment can be cached")
+        if let (_, response) = try? await URLSession.shared.data(from: last) {
+            let status = try XCTUnwrap((response as? HTTPURLResponse)?.statusCode)
+            XCTAssertFalse((200...299).contains(status), "An incomplete segment must not be served as playable data")
+        }
+        XCTAssertEqual(transfer.coverage.ranges, [0..<2.022])
+        XCTAssertFalse(transfer.coverage.isComplete)
+    }
+
+    func testFiniteHLSDoesNotBridgeAPartialPlaylist() async throws {
+        let manifest = Data("#EXTM3U\n#EXT-X-TARGETDURATION:3\n#EXTINF:2,\nsegment.ts\n#EXT-X-ENDLIST\n".utf8)
+        let server = try DownloadPlaybackHTTPFixture(files: ["/video.m3u8": manifest],
+            responseHeaders: ["/video.m3u8": ["Content-Range": "bytes 0-\(manifest.count - 1)/\(manifest.count + 1)"]])
+        let root = try await server.start()
+        defer { server.stop() }
+        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("video.m3u8"), title: "Partial playlist", posterURL: nil, delivery: .hls)
+        let asset = await WebResourceMediaService.asset(for: resource, webView: nil, cacheForPlayback: true)
+        XCTAssertEqual(asset.url, resource.url)
+        XCTAssertFalse(HLSPlaybackBridge.usesLocalBridge(asset))
+    }
+
+    func testFiniteHLSCanCacheALargeSegment() async throws {
+        let manifest = Data("#EXTM3U\n#EXT-X-TARGETDURATION:3\n#EXTINF:2,\nsegment.ts\n#EXT-X-ENDLIST\n".utf8)
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment0", withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
+        let packets = try Data(contentsOf: url)
+        var segment = Data()
+        while segment.count <= 32 * 1024 * 1024 { segment.append(packets) }
+        let server = try DownloadPlaybackHTTPFixture(files: ["/video.m3u8": manifest, "/segment.ts": segment])
+        let root = try await server.start()
+        defer { server.stop() }
+        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("video.m3u8"), title: "Large segment", posterURL: nil, delivery: .hls)
+        let asset = await WebResourceMediaService.asset(for: resource, webView: nil, cacheForPlayback: true)
+        let transfer = try XCTUnwrap(HLSPlaybackBridge.transfer(for: asset))
+        let (playlist, _) = try await URLSession.shared.data(from: asset.url)
+        let name = try XCTUnwrap(String(decoding: playlist, as: UTF8.self).split(separator: "\n").first { !$0.hasPrefix("#") })
+        var request = URLRequest(url: asset.url.deletingLastPathComponent().appendingPathComponent(String(name)))
+        request.setValue("bytes=0-127", forHTTPHeaderField: "Range")
+        let (cached, response) = try await URLSession.shared.data(for: request)
+        XCTAssertEqual((response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Range"), "bytes 0-127/\(segment.count)")
+        XCTAssertEqual(cached, packets.prefix(128))
+        XCTAssertEqual(transfer.coverage.ranges, [0..<2])
+        XCTAssertTrue(transfer.coverage.isComplete)
+    }
+
+    private func checkSeekingCachedHLS(_ asset: AVURLAsset, resource: WebMediaResource) async throws {
+        let session = MediaSession.shared
+        let oldRate = session.rate
+        defer { session.stop(); session.setRate(oldRate) }
+        let source = DownloadPlaybackSource(asset: asset, pageURL: nil, webView: nil, persistPosition: false)
+        source.webMediaContext = WebMediaPlaybackContext(resource: resource, pageURL: nil, sourceWebView: nil, episodeList: nil)
+        session.open(url: resource.url, asset: asset, persistPosition: false, downloadSource: source, initialRate: 1)
+        try await waitFor("System playback did not start from the local HLS cache") { session.player.currentTime().seconds > 0.2 }
+        let item = try XCTUnwrap(session.player.currentItem)
+        session.seek(4.2)
+        try await waitFor("System playback must advance after seeking with the origin offline") {
+            session.player.currentTime().seconds > 4.5 && session.player.timeControlStatus == .playing
+        }
+        XCTAssertTrue(session.player.currentItem === item)
+        XCTAssertNil(session.error)
+        session.stop()
+
+        let prepared = try await SouloMediaPlaybackSource.prepare(native: source, originalURL: resource.url)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        let controller = UIViewController()
+        window.rootViewController = controller; window.makeKeyAndVisible()
+        let playback = MatroskaPlayback()
+        playback.attach(controller.view)
+        defer { playback.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        playback.open(prepared.url, resourceLease: prepared, originalURL: resource.url, initialRate: 1)
+        try await waitFor("Soulo playback did not start from the local HLS cache") {
+            (playback.player?.currentTime ?? 0) > 0.2 && (playback.player?.decodedFrameCount ?? 0) > 0
+        }
+        let decoder = try XCTUnwrap(playback.player)
+        playback.seek(4.2)
+        try await waitFor("Soulo playback must advance after seeking with the origin offline") {
+            (playback.player?.currentTime ?? 0) > 4.5 && playback.playing
+        }
+        XCTAssertTrue(playback.player === decoder)
+        XCTAssertNil(playback.error)
+    }
+
+    func testAdaptiveHLSCachesTheRequestedRenditionFromASeek() async throws {
+        let master = "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=300000\nlow.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=900000\nhigh.m3u8\n"
+        var files = ["/master.m3u8": Data(master.utf8)]
+        for quality in ["low", "high"] {
+            var manifest = "#EXTM3U\n#EXT-X-TARGETDURATION:3\n"
+            for index in 0..<4 {
+                let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment\(index)", withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
+                let name = quality + String(index) + ".ts"
+                files["/" + name] = try Data(contentsOf: url)
+                manifest += "#EXTINF:2.022,\n" + name + "\n"
+            }
+            files["/" + quality + ".m3u8"] = Data((manifest + "#EXT-X-ENDLIST\n").utf8)
+        }
+        let server = try DownloadPlaybackHTTPFixture(files: files, heldPaths: ["/high3.ts"])
+        let root = try await server.start()
+        defer { server.stop() }
+        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("master.m3u8"),
+            title: "Adaptive HLS", posterURL: nil, delivery: .hls)
+        let asset = await WebResourceMediaService.asset(for: resource, webView: nil, cacheForPlayback: true)
+        let transfer = try XCTUnwrap(HLSPlaybackBridge.transfer(for: asset))
+        let directory = asset.url.deletingLastPathComponent()
+        func entries(_ url: URL) async throws -> [String] {
+            let (body, _) = try await URLSession.shared.data(from: url)
+            return String(decoding: body, as: UTF8.self).split(separator: "\n").filter { !$0.hasPrefix("#") }.map(String.init)
+        }
+        let variants = try await entries(asset.url)
+        XCTAssertEqual(variants.count, 2)
+        let high = try await entries(directory.appendingPathComponent(try XCTUnwrap(variants.last)))
+        guard high.count == 4 else { return XCTFail("Expected four media segments") }
+        _ = try await URLSession.shared.data(from: directory.appendingPathComponent(high[2]))
+        XCTAssertEqual(transfer.coverage.ranges, [(2.022 * 2)..<(2.022 * 3)])
+        XCTAssertFalse(transfer.coverage.isComplete)
+        server.releaseDownloads()
+        try await waitFor("Only the selected rendition must reach completion") { transfer.coverage.isComplete }
+        server.stop()
+        for (index, name) in high.enumerated() {
+            let (body, _) = try await URLSession.shared.data(from: directory.appendingPathComponent(name))
+            XCTAssertEqual(body, files["/high\(index).ts"])
+        }
+    }
+
+    func testFragmentedHLSWaitsForInitializationBeforeReportingCacheCoverage() async throws {
+        let manifest = """
+        #EXTM3U
+        #EXT-X-VERSION:7
+        #EXT-X-TARGETDURATION:3
+        #EXT-X-MAP:URI="init.m4s"
+        #EXTINF:2.000,
+        first.m4s
+        #EXT-X-ENDLIST
+        """
+        let folder = "ReadingFixtures/ExtensionMedia/DASH"
+        let initialization = try Data(contentsOf: XCTUnwrap(Bundle(for: Self.self).url(forResource: "init-stream0", withExtension: "m4s", subdirectory: folder)))
+        let fragment = try Data(contentsOf: XCTUnwrap(Bundle(for: Self.self).url(forResource: "chunk-stream0-00001", withExtension: "m4s", subdirectory: folder)))
+        let server = try DownloadPlaybackHTTPFixture(files: ["/video.m3u8": Data(manifest.utf8),
+            "/init.m4s": initialization, "/first.m4s": fragment], heldPaths: ["/init.m4s"],
+            responseHeaders: ["/init.m4s": ["Content-Type": "video/mp4"], "/first.m4s": ["Content-Type": "video/mp4"]])
+        let root = try await server.start()
+        defer { server.stop() }
+        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("video.m3u8"), title: "Fragmented", posterURL: nil, delivery: .hls)
+        let asset = await WebResourceMediaService.asset(for: resource, webView: nil, cacheForPlayback: true)
+        let transfer = try XCTUnwrap(HLSPlaybackBridge.transfer(for: asset))
+        let (body, _) = try await URLSession.shared.data(from: asset.url)
+        let lines = String(decoding: body, as: UTF8.self).split(separator: "\n")
+        let directory = asset.url.deletingLastPathComponent()
+        let first = try XCTUnwrap(lines.first { !$0.hasPrefix("#") })
+        let map = try XCTUnwrap(lines.first { $0.hasPrefix("#EXT-X-MAP:") }?.split(separator: "\"").dropFirst().first)
+        let (cachedFragment, _) = try await URLSession.shared.data(from: directory.appendingPathComponent(String(first)))
+        XCTAssertEqual(cachedFragment, fragment)
+        XCTAssertTrue(transfer.coverage.ranges.isEmpty)
+        XCTAssertFalse(transfer.coverage.isComplete)
+        server.releaseDownloads()
+        try await waitFor("Initialization and media must both be cached") { transfer.coverage.isComplete }
+        server.stop()
+        let (cachedInitialization, _) = try await URLSession.shared.data(from: directory.appendingPathComponent(String(map)))
+        XCTAssertEqual(cachedInitialization, initialization)
+        XCTAssertEqual(transfer.coverage.ranges, [0..<2])
+    }
+
+    func testDecoratedHLSSegmentsPlayAndDownloadAsRealVideo() async throws {
+        let (server, resource) = try await decoratedHLSFixture()
+        defer { server.stop() }
         let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
         let web = WKWebView(frame: .zero, configuration: config)
-        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("video.m3u8"), title: "Decorated TS", posterURL: nil, delivery: .hls)
         let asset = await WebResourceMediaService.asset(for: resource, webView: web)
         XCTAssertNotEqual(asset.url, resource.url, "Only verified decorated segments need a playback bridge")
         let item = AVPlayerItem(asset: asset), output = AVPlayerItemVideoOutput(pixelBufferAttributes: nil)
@@ -100,8 +478,12 @@ final class DownloadPlaybackTests: XCTestCase {
         let downloaded = AVURLAsset(url: file)
         let duration = try await downloaded.load(.duration)
         let tracks = try await downloaded.loadTracks(withMediaType: .video)
+        let audio = try await downloaded.loadTracks(withMediaType: .audio)
         XCTAssertGreaterThan(duration.seconds, 1)
-        XCTAssertFalse(tracks.isEmpty)
+        XCTAssertEqual(tracks.count, 1)
+        XCTAssertEqual(audio.count, 1)
+        let lateFrame = try await AVAssetImageGenerator(asset: downloaded).image(at: CMTimeMultiplyByFloat64(duration, multiplier: 0.75))
+        XCTAssertGreaterThan(lateFrame.image.width, 0)
     }
 
     func testScopedHLSDownloadSessionPreservesConfiguredRequestContext() async throws {
@@ -345,11 +727,51 @@ final class DownloadPlaybackTests: XCTestCase {
         defer { playback.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
         playback.open(url, requestContext: context)
         try await waitFor("Authenticated video must decode through the Soulo player") {
-            playback.elapsed > 0.3 && (playback.player?.media?.statistics.displayedPictures ?? 0) > 0
+            playback.elapsed > 0.3 && (playback.player?.decodedFrameCount ?? 0) > 0
         }
         XCTAssertNil(playback.error)
         XCTAssertGreaterThan(playback.player?.videoSize.width ?? 0, 0)
     }
+    func testExtendedPlaybackKeepsWebCookiesScopedAcrossRedirects() async throws {
+        let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-vp9-opus", withExtension: "webm",
+                                                         subdirectory: "ReadingFixtures"))
+        let bytes = try Data(contentsOf: file)
+        let cases = [
+            (entry: "/private/host.webm", host: "localhost", target: "/private/clip.webm"),
+            (entry: "/private/path.webm", host: "127.0.0.1", target: "/public/clip.webm"),
+        ]
+        let server = try DownloadPlaybackHTTPFixture(
+            files: Dictionary(uniqueKeysWithValues: cases.map { ($0.target, bytes) }),
+            redirects: Dictionary(uniqueKeysWithValues: cases.map { ($0.entry, (host: $0.host, path: $0.target)) }))
+        let base = try await server.start()
+        defer { server.stop() }
+        server.releaseDownloads()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene), controller = UIViewController()
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        let playback = MatroskaPlayback()
+        playback.attach(controller.view)
+        defer { playback.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [.domain: "127.0.0.1", .path: "/private", .name: "soulo_session",
+                                                           .value: "local-fixture"]))
+        for sample in cases {
+            let url = try XCTUnwrap(URL(string: sample.entry, relativeTo: base)?.absoluteURL)
+            let context = VideoPlaybackRequestContext(url: url, referrer: nil, userAgent: "SouloTransferQA", cookies: [cookie])
+            playback.open(url, requestContext: context)
+            try await waitFor("Redirected WebM must continue decoding") {
+                playback.elapsed > 0.3 && (playback.player?.decodedFrameCount ?? 0) > 0
+            }
+            XCTAssertTrue(playback.player is ExtendedPlaybackDecoder)
+            let initial = try XCTUnwrap(server.receivedRequests.first(where: { $0.path == sample.entry }))
+            XCTAssertEqual(initial.headers["cookie"], "soulo_session=local-fixture")
+            let redirected = server.receivedRequests.filter { $0.path == sample.target }
+            XCTAssertFalse(redirected.isEmpty)
+            XCTAssertTrue(redirected.allSatisfy { $0.headers["cookie"] == nil })
+        }
+    }
+
     private func waitFor(_ message: String, _ condition: () -> Bool) async throws {
         for _ in 0..<250 {
             if condition() { return }
@@ -442,12 +864,12 @@ final class DownloadPlaybackTests: XCTestCase {
             playback.open(prepared.url, resourceLease: prepared)
             print("OFFLINE_HLS_DIAGNOSTIC attempt=\(attempt) rate=\(playback.rate)")
             try await waitFor("Offline encrypted playback did not produce frames (open \(attempt))") {
-                playback.elapsed > 0.5 && (playback.player?.media?.statistics.displayedPictures ?? 0) > 2
+                playback.elapsed > 0.5 && (playback.player?.decodedFrameCount ?? 0) > 2
             }
-            let frames = playback.player?.media?.statistics.displayedPictures ?? 0
+            let frames = playback.player?.decodedFrameCount ?? 0
             playback.seek(4.5)
             try await waitFor("Seeking offline encrypted media did not decode new frames") {
-                playback.elapsed > 4.8 && (playback.player?.media?.statistics.displayedPictures ?? 0) > frames
+                playback.elapsed > 4.8 && (playback.player?.decodedFrameCount ?? 0) > frames
             }
             XCTAssertNil(playback.error)
             playback.stop()
@@ -566,7 +988,7 @@ final class DownloadPlaybackTests: XCTestCase {
         defer { playback.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
         playback.open(prepared.url, resourceLease: prepared, persistPosition: false)
         try await waitFor("The existing device download must decode video in Soulo") {
-            playback.elapsed > 0.5 && (playback.player?.media?.statistics.displayedPictures ?? 0) > 2
+            playback.elapsed > 0.5 && (playback.player?.decodedFrameCount ?? 0) > 2
         }
         XCTAssertNil(playback.error)
         let shot = XCTAttachment(image: UIGraphicsImageRenderer(bounds: controller.view.bounds).image { _ in
@@ -729,7 +1151,7 @@ final class DownloadPlaybackTests: XCTestCase {
                 defer { playback.stop() }
                 playback.open(prepared.url, resourceLease: prepared)
                 try await waitFor("A finished or migrated encrypted HLS must decode without its origin") {
-                    playback.elapsed > 0.5 && (playback.player?.media?.statistics.displayedPictures ?? 0) > 2
+                    playback.elapsed > 0.5 && (playback.player?.decodedFrameCount ?? 0) > 2
                 }
                 XCTAssertNil(playback.error)
                 playback.stop()
@@ -764,17 +1186,23 @@ final class DownloadPlaybackTests: XCTestCase {
     private func checkHLSFinalization(cancel: Bool) async throws {
         let fixture = try encryptedPackage()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
-        // Segment-normalization probing adds a manifest read before the native
-        // download. Hold the later offline verification, not its initial load.
-        let server = try DownloadPlaybackHTTPFixture(files: fixture.files, holdAfterRequestCount: ["/media.m3u8": 4])
+        // Offline verification uses the source playlist as its referrer. The
+        // preflight uses the containing page and AVFoundation can read the
+        // playlist a different number of times depending on the OS.
+        let isOfflineRead: @Sendable (DownloadPlaybackHTTPFixture.ReceivedRequest) -> Bool = { request in
+            guard request.path == "/media.m3u8", let host = request.headers["host"] else { return false }
+            return request.headers["referer"] == "http://\(host)/media.m3u8"
+        }
+        let server = try DownloadPlaybackHTTPFixture(files: fixture.files, holdRequest: isOfflineRead)
         let origin = try await server.start(); defer { server.stop() }
+        let pageURL = origin.appendingPathComponent("page.html")
         let resource = WebMediaResource(kind: .video, url: origin.appendingPathComponent("media.m3u8"),
-                                       title: "Encrypted offline download", posterURL: nil, delivery: .hls)
+                                       title: "Encrypted offline download", posterURL: nil, delivery: .hls, sourcePageURL: pageURL)
         let service = StreamingMediaDownloadService.shared, manager = DownloadManagerService.shared
         let oldCompletion = service.backgroundEventsCompletionHandler
         defer { service.backgroundEventsCompletionHandler = oldCompletion }
         let download = Task { try await service.downloadHLS(resource: resource,
-            preferredFilename: "Encrypted offline download.mp4", pageURL: nil, webView: WKWebView()) }
+            preferredFilename: "Encrypted offline download.mp4", pageURL: pageURL, webView: WKWebView()) }
         let watchdog = Task {
             do { try await Task.sleep(for: .seconds(40)) } catch { return }
             if let item = manager.activeDownload(for: resource.url) { service.cancel(itemID: item.id) }
@@ -786,7 +1214,7 @@ final class DownloadPlaybackTests: XCTestCase {
             }
         }
         try await waitFor("HLS did not reach its offline material preparation") {
-            service.hasPendingHLSFinalization && server.receivedRequests.filter { $0.path == "/media.m3u8" }.count >= 4
+            service.hasPendingHLSFinalization && server.receivedRequests.contains(where: isOfflineRead)
         }
         let item = try XCTUnwrap(manager.activeDownload(for: resource.url))
         let package = try OfflineHLSReference.packageURL(for: item.localURL)
@@ -902,6 +1330,92 @@ final class DownloadPlaybackTests: XCTestCase {
         try await waitFor("Released HLS cache was not removed") { !FileManager.default.fileExists(atPath: package.path) }
     }
 
+    func testHLSDownloadCacheRemainsLeasedAfterAutomaticPlayerTakesOver() async throws {
+        let session = MediaSession.shared
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac",
+            withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let asset = AVURLAsset(url: video)
+        let downloadAsset = AVURLAsset(url: video)
+        let package = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".movpkg")
+        try FileManager.default.createDirectory(at: package, withIntermediateDirectories: true)
+        defer { session.stop(); try? FileManager.default.removeItem(at: package) }
+
+        var source: DownloadPlaybackSource? = DownloadPlaybackSource(asset: asset, pageURL: nil,
+            webView: nil, persistPosition: false, downloadAsset: downloadAsset)
+        weak var retained = source
+        session.open(url: video, asset: asset, persistPosition: false, downloadSource: source, autoplay: false)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        do {
+            let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+            window.rootViewController = UIHostingController(rootView: MediaPlaybackContent())
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+            try await waitFor("Soulo did not take over the download's prepared asset") {
+                session.soulo?.preparedPlaybackSource?.native === retained
+            }
+            XCTAssertNotNil(retained)
+            XCTAssertNil(session.player.currentItem)
+            XCTAssertTrue(session.deferDownloadPackageRemoval(for: downloadAsset, at: package))
+            source = nil
+            XCTAssertTrue(FileManager.default.fileExists(atPath: package.path))
+        }
+        session.stop()
+        try await waitFor("The automatic player did not release its download cache") {
+            retained == nil && !FileManager.default.fileExists(atPath: package.path)
+        }
+    }
+
+    func testPlayingAnActiveMP4DownloadReadsVerifiedRangesWithoutContactingTheOrigin() async throws {
+        let clip = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "torrent-stream-h264-aac",
+            withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let bytes = try Data(contentsOf: clip)
+        let path = "/shared-video.mp4"
+        let server = try DownloadPlaybackHTTPFixture(files: [path: bytes],
+            responseHeaders: [path: ["ETag": "\"soulo-shared-video\""]], holdRequest: { request in
+                guard let range = request.headers["range"], let offset = Int(range.dropFirst(6).split(separator: "-").first ?? "") else { return false }
+                return offset > bytes.count / 2
+            })
+        let url = try await server.start().appendingPathComponent("shared-video.mp4")
+        defer { server.stop() }
+        let manager = DownloadManagerService.shared
+        let download = Task { try await WebResourceDownloadService.shared.download(url) }
+        defer {
+            download.cancel()
+            if let item = manager.downloads.first(where: { $0.sourceURLString == url.absoluteString }) {
+                manager.delete(item); try? FileManager.default.removeItem(at: item.localURL)
+            }
+        }
+        try await waitFor("Verified segments must be usable before the download finishes") {
+            guard let item = manager.activeDownload(for: url) else { return false }
+            return item.receivedBytes >= 256 * 1024 && item.progress < 1
+        }
+        let item = try XCTUnwrap(manager.activeDownload(for: url))
+        let source = try XCTUnwrap(manager.playbackSource(for: item.id))
+        XCTAssertNotEqual(source.asset.url, url)
+        let range = 4_096..<16_384
+        var request = URLRequest(url: source.asset.url)
+        request.setValue("bytes=\(range.lowerBound)-\(range.upperBound - 1)", forHTTPHeaderField: "Range")
+        let prefixReads = server.receivedRequests.filter { $0.headers["range"]?.hasPrefix("bytes=0-") == true }.count
+        for _ in 0..<2 {
+            let (portion, _) = try await URLSession.shared.data(for: request)
+            XCTAssertEqual(portion, bytes.subdata(in: range))
+        }
+        XCTAssertEqual(server.receivedRequests.filter { $0.headers["range"]?.hasPrefix("bytes=0-") == true }.count, prefixReads)
+        XCTAssertFalse(server.receivedRequests.contains { $0.headers["range"] == request.value(forHTTPHeaderField: "Range") })
+
+        BackgroundDownloadService.shared.pause(id: item.id)
+        try await waitFor("A segmented download must pause") { manager.downloads.first(where: { $0.id == item.id })?.status == .paused }
+        let (paused, _) = try await URLSession.shared.data(for: request)
+        XCTAssertEqual(paused, bytes.subdata(in: range))
+        BackgroundDownloadService.shared.resume(id: item.id)
+        server.releaseDownloads()
+        let finished = try await download.value
+        XCTAssertEqual(try Data(contentsOf: finished), bytes)
+        server.stop()
+        let (offline, _) = try await URLSession.shared.data(for: request)
+        XCTAssertEqual(offline, bytes.subdata(in: range))
+    }
+
     func testAuthenticatedMP4PlaysAndDownloadContinuesToComplete() async throws {
         let bytes = try videoFixture()
         let server = try DownloadPlaybackHTTPFixture(files: ["/clip.mp4": bytes], requiredCookie: "downloadPlayback=allowed")
@@ -951,6 +1465,105 @@ final class DownloadPlaybackTests: XCTestCase {
 
     func testHLSPlaybackCompletesWithIndependentDownloadAsset() async throws {
         try await checkConcurrentHLS(authenticated: false)
+    }
+
+    func testOnlineFullscreenKeepsPlayingThroughShortHLSDelay() async throws {
+        try await checkFullscreenWithHeldSegment(expectsReconnect: false)
+    }
+
+    func testOnlineFullscreenReconnectsAtTheStallPosition() async throws {
+        try await checkFullscreenWithHeldSegment(expectsReconnect: true)
+    }
+
+    private func checkFullscreenWithHeldSegment(expectsReconnect: Bool) async throws {
+        var files: [String: Data] = [:]
+        var playlist = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+        for index in 0..<4 {
+            let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment\(index)", withExtension: "ts",
+                subdirectory: "ReadingFixtures/HLSFragments"))
+            files["/segment\(index).ts"] = try Data(contentsOf: fixture)
+            playlist += "#EXTINF:2.022,\nsegment\(index).ts\n"
+        }
+        files["/video.m3u8"] = Data((playlist + "#EXT-X-ENDLIST\n").utf8)
+        for usesSystem in [true, false] {
+            try await checkFullscreenWithHeldSegment(files: files, usesSystem: usesSystem, expectsReconnect: expectsReconnect)
+        }
+    }
+
+    private func checkFullscreenWithHeldSegment(files: [String: Data], usesSystem: Bool, expectsReconnect: Bool) async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: files, heldPaths: ["/segment3.ts"])
+        let root = try await server.start()
+        defer { server.stop() }
+        let url = root.appendingPathComponent("video.m3u8")
+        let session = MediaSession.shared
+        let oldRate = session.rate, oldLoop = session.loop
+        let playbackRate: Float = expectsReconnect ? 1.25 : 1
+        session.loop = false
+        session.setRate(1)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        defer {
+            window.rootViewController?.dismiss(animated: false)
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+            session.stop(); session.setRate(oldRate); session.loop = oldLoop
+        }
+
+        let host: UIHostingController<AnyView>
+        if usesSystem {
+            let source = DownloadPlaybackSource(asset: AVURLAsset(url: url), pageURL: root, webView: nil, persistPosition: false)
+            let resource = WebMediaResource(kind: .video, url: url, title: "Stalled HLS", posterURL: nil, delivery: .hls)
+            source.webMediaContext = WebMediaPlaybackContext(resource: resource, pageURL: root, sourceWebView: nil, episodeList: nil)
+            session.open(url: url, asset: source.asset, persistPosition: false, downloadSource: source, initialRate: playbackRate)
+            host = UIHostingController(rootView: AnyView(MediaPlaybackContent(initialFullscreen: true, fullscreenOnly: true, initialSystemPlayer: true)))
+        } else {
+            host = UIHostingController(rootView: AnyView(MatroskaPlayerView(url: url, persistPosition: false,
+                initialRate: playbackRate, startsFullscreen: true)))
+        }
+        func decoder() -> AnyObject? {
+            if usesSystem { return session.player.currentItem }
+            return session.soulo?.player
+        }
+        func position() -> Double {
+            if usesSystem { return session.player.currentTime().seconds }
+            return (session.soulo?.player?.currentTime ?? 0)
+        }
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        try await waitFor("Video must play before the origin holds its last segment") {
+            host.presentedViewController != nil && position() > 3
+        }
+        let originalDecoder = try XCTUnwrap(decoder())
+        XCTAssertNotEqual(usesSystem ? session.videoLoading : session.soulo?.videoLoading, .complete)
+        if usesSystem { XCTAssertEqual(session.player.currentItem?.preferredForwardBufferDuration, 30) }
+        if !expectsReconnect {
+            try await waitFor("The player must request the origin's held segment before the outage is released") {
+                server.receivedRequests.contains { $0.path == "/segment3.ts" }
+            }
+            let start = ContinuousClock.now, startPosition = position()
+            try await Task.sleep(for: .seconds(1))
+            XCTAssertGreaterThan(position(), startPosition + 0.4, "Buffered video must keep playing while the next segment is held")
+            server.releaseDownloads()
+            try await waitFor("Playback must cross the delayed segment without reconnecting") { position() > 6.2 }
+            XCTAssertLessThan(start.duration(to: .now), .seconds(4.5))
+            XCTAssertTrue(decoder() === originalDecoder)
+            XCTAssertNil(session.error)
+            return
+        }
+        try await waitFor("A mid-video stall must reconnect in the same fullscreen player") {
+            guard let current = decoder() else { return false }
+            return current !== originalDecoder
+        }
+        XCTAssertNotNil(host.presentedViewController)
+        server.releaseDownloads()
+        try await waitFor("Reconnection must seek back to the stalled position") {
+            position() > 0.2
+        }
+        XCTAssertGreaterThan(position(), 3, "Reconnection must not start the video again")
+        try await waitFor("Playback must reach the recovered segment") {
+            position() > 6.2
+        }
+        XCTAssertNil(session.error)
+        XCTAssertEqual(session.rate, playbackRate)
     }
 
     func testPrivateAuthenticatedHLSPlaysAcrossPauseResumeAndCompletes() async throws {

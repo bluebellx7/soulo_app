@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Effacer tous les favoris ?";
 "settings" = "Paramètres";
 "platform_management" = "Gestion de la plateforme";
+"home_quick_search" = "Recherche rapide à l’accueil";
 "region_korea" = "Corée";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Les ressources mises en cache et les visites de pages des 3 derniers jours seront supprimées. Les cookies et les connexions seront conservés.";
 "enter_fullscreen" = "Plein écran";
 "exit_fullscreen" = "Quitter le plein écran";
-"fullscreen_exit_hint" = "Appuyez pour les commandes, tirez vers le bas pour quitter";
+"exit_fullscreen_short" = "Quitter";
+"fullscreen_exit_hint" = "Touchez pour ouvrir le menu, balayez vers le haut pour quitter";
 "restore_browser_toolbar" = "Restaurer la barre d'outils";
 "floating_more_detach" = "Détacher le bouton Plus";
 "floating_more_snap" = "Enclencher le bouton Plus sur le bord";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Partiellement pris en charge";
 "userscript_docs_partial_desc" = "Les notifications restent dans la page ; les API de ressources renvoient des Promise. cookie exige GM_cookie ; aucun cookie n’est envoyé automatiquement.";
 "userscript_docs_unsupported_title" = "Non pris en charge actuellement";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, l’isolation sandbox/run-in et les fonctions de bureau indisponibles dans WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest peut annuler les requêtes Fetch et XMLHttpRequest de la page principale ou les rediriger vers la même origine.";
+"userscript_docs_unsupported_desc" = "GM_audio nécessite de couper le son de tout l’onglet et de lire son état audio. L’API publique de WKWebView offre une prise en charge limitée.\n@sandbox sélectionne un environnement d’exécution. Soulo exécute actuellement les scripts utilisateur dans l’environnement de la page.";
 "userscript_docs_metadata_title" = "Métadonnées";
 "userscript_docs_metadata_identity" = "Nom du script lisible par l'homme et description facultative affichée avant l'installation et dans les détails du script.";
 "userscript_docs_metadata_version" = "Utilisez un espace de noms stable et unique et incrémentez la version chaque fois que le script fourni change.";

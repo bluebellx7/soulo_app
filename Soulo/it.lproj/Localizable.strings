@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Cancellare tutti i segnalibri?";
 "settings" = "Impostazioni";
 "platform_management" = "Gestione Piattaforme";
+"home_quick_search" = "Ricerca rapida dalla home";
 "region_korea" = "Corea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "La cache e le pagine visitate negli ultimi 3 giorni verranno eliminate. Cookie e accessi saranno mantenuti.";
 "enter_fullscreen" = "Schermo intero";
 "exit_fullscreen" = "Esci da schermo intero";
-"fullscreen_exit_hint" = "Tocca per i controlli, trascina per uscire";
+"exit_fullscreen_short" = "Esci";
+"fullscreen_exit_hint" = "Tocca per aprire il menu, scorri verso l’alto per uscire";
 "restore_browser_toolbar" = "Ripristina barra strumenti";
 "floating_more_detach" = "Sgancia il pulsante Altro";
 "floating_more_snap" = "Aggancia il pulsante Altro al bordo";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Parzialmente supportato";
 "userscript_docs_partial_desc" = "Le notifiche restano nella pagina; le API delle risorse restituiscono Promise. cookie richiede GM_cookie; i cookie non vengono inviati automaticamente.";
 "userscript_docs_unsupported_title" = "Attualmente non supportato";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, isolamento sandbox/run-in e funzioni desktop non disponibili in WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest può annullare o reindirizzare alla stessa origine le richieste Fetch e XMLHttpRequest della pagina principale.";
+"userscript_docs_unsupported_desc" = "GM_audio richiede di silenziare l’intera scheda e di leggerne lo stato audio. L’API pubblica di WKWebView offre un supporto limitato.\n@sandbox seleziona l’ambiente di esecuzione. Soulo esegue gli script utente nell’ambiente della pagina.";
 "userscript_docs_metadata_title" = "Metadati";
 "userscript_docs_metadata_identity" = "Nome dello script leggibile e descrizione opzionale mostrati prima dell'installazione e nei dettagli dello script.";
 "userscript_docs_metadata_version" = "Utilizza uno spazio dei nomi stabile e univoco e incrementa la versione ogni volta che lo script in bundle cambia.";

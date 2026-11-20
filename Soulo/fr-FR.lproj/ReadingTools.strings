@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Tester le retour";
 
-"media_start_timeout" = "La lecture n’a pas démarré. Vérifiez le réseau ou changez de lecteur.";
+"media_start_timeout" = "La lecture n’a pas démarré. Vérifiez le réseau.";
+"media_load_complete" = "Chargement terminé";
+"media_playback_stalled" = "La lecture s’est interrompue.";
 
 "wallpaper_appearance_hint" = "Choisissez un arrière-plan pour l’apparence claire et un autre pour la sombre. Ils changent automatiquement avec l’app.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Téléchargements et fichiers";
 "storage_cache_group" = "Cache et fichiers temporaires";
+"storage_video_cache" = "Cache vidéo";
 "storage_saved_group" = "Contenu enregistré";
 
 "storage_clear_offline_media_warning" = "Supprime toutes les vidéos hors ligne ici et leurs entrées de fichier. Les téléchargements de fichiers/vidéos inachevés, la lecture et les exports seront arrêtés.";

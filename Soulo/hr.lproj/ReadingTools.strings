@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Isprobaj povratnu informaciju";
 
-"media_start_timeout" = "Reprodukcija nije započela. Provjerite mrežu ili promijenite reproduktor.";
+"media_start_timeout" = "Reprodukcija nije započela. Provjerite mrežu.";
+"media_load_complete" = "Učitavanje dovršeno";
+"media_playback_stalled" = "Reprodukcija je zastala.";
 
 "wallpaper_appearance_hint" = "Postavite zasebne pozadine za svijetli i tamni izgled. Automatski se mijenjaju s aplikacijom.";
 
@@ -556,6 +558,7 @@
 
 "storage_files_group" = "Preuzimanja i datoteke";
 "storage_cache_group" = "Predmemorija i privremene datoteke";
+"storage_video_cache" = "Predmemorija videozapisa";
 "storage_saved_group" = "Spremljeni sadržaj";
 
 "storage_clear_offline_media_warning" = "Briše sve izvanmrežne videozapise ovdje i njihove zapise datoteka. Nedovršena preuzimanja datoteka/videozapisa, reprodukcija i izvozi zaustavit će se.";

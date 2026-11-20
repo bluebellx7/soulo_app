@@ -24,7 +24,7 @@ struct WebVideoPlaybackRequest: Identifiable {
     let time: Double
     var orientation: WebVideoFullscreenOrientation?
     var playing = true
-    var systemPlayer = false
+    var rate: Float?
     var showsEpisodes = false
     var fullscreen = true
 }

@@ -7,7 +7,7 @@ enum WebVideoOrientationRuntime {
     @MainActor static func script() -> String {
         let label = (try? JSONSerialization.data(withJSONObject: [ToolText.text("video_fullscreen"), ToolText.text("video_speed"), LanguageManager.shared.localizedString("download"), ToolText.text("video_tools"), ToolText.text("episodes"), ToolText.text("video_tools_collapse"), LanguageManager.shared.localizedString("settings")]))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[\"Fullscreen\"]"
-        return "window.__souloVideoToolsEnabled=\(VideoPlaybackPreferences.showsTools());window.__souloVideoDownloadControlsVisible=\(VideoPlaybackPreferences.showsWebDownloadControls());\n" + WebOverlayControlsRuntime.source + "\n" + source + WebVideoHoldSpeedRuntime.source + "\nwindow.__souloVideoHoldSpeed.setRate(\(VideoPlaybackPreferences.holdSpeed()));\nwindow.__souloVideoOrientation.setLabels(\(label));\nwindow.__souloVideoOrientation.setToolsEnabled(\(VideoPlaybackPreferences.showsTools()));\nwindow.__souloVideoOrientation.setPrefersSoulo(\(!VideoPlaybackPreferences.usesSystemPlayer()));window.__souloVideoOrientation.setDownloadControlsVisible(\(VideoPlaybackPreferences.showsWebDownloadControls()));"
+        return "window.__souloVideoToolsEnabled=\(VideoPlaybackPreferences.showsTools());window.__souloVideoDownloadControlsVisible=\(VideoPlaybackPreferences.showsWebDownloadControls());\n" + WebOverlayControlsRuntime.source + "\n" + source + WebVideoHoldSpeedRuntime.source + "\nwindow.__souloVideoHoldSpeed.setRate(\(VideoPlaybackPreferences.holdSpeed()));\nwindow.__souloVideoOrientation.setLabels(\(label));\nwindow.__souloVideoOrientation.setToolsEnabled(\(VideoPlaybackPreferences.showsTools()));\nwindow.__souloVideoOrientation.setDownloadControlsVisible(\(VideoPlaybackPreferences.showsWebDownloadControls()));"
     }
 
     // Inject into every frame in an isolated world, so cross-origin embedded
@@ -19,7 +19,7 @@ enum WebVideoOrientationRuntime {
       const nativeFullscreenVideos = new WeakSet();
       const overlay = window.__souloOverlayControls, controlSize = 40;
       let labels = ['Fullscreen', 'Speed', 'Download', 'Video tools', 'Episodes', 'Close', 'Settings'], frame = 0, scanTimer = 0, active = null, expandedGroup = null, toolsEnabled = window.__souloVideoToolsEnabled !== false;
-      let bottomControls = {needed:false}, episodesAvailable = false, prefersSoulo = false, downloadControlsVisible = window.__souloVideoDownloadControlsVisible !== false;
+      let bottomControls = {needed:false}, episodesAvailable = false, downloadControlsVisible = window.__souloVideoDownloadControlsVisible !== false;
       let reportedViewportScale = null;
       let fallback = null, inlineControlsSeen = false;
       // Document-only placement. Nothing is written to page/native storage.
@@ -91,12 +91,44 @@ enum WebVideoOrientationRuntime {
       }
       function finish(action = 'end') {
         if (!active) return;
+        const failed = action === 'failed' ? active.onFailure : null;
         clearTimeout(active.timeout);
         active.cleanup?.();
         if(active.documentControls!==undefined)active.video.controls=active.documentControls;
-        send(action, active.token); active = null; schedule();
+        send(failed ? 'end' : action, active.token); active = null; schedule();
+        failed?.();
       }
       let documentFullscreenVideo = null;
+      let fullscreenViewport = null;
+      function restoreFullscreenViewport() {
+        if (!fullscreenViewport) return;
+        const {meta,original,applied,created} = fullscreenViewport;
+        fullscreenViewport = null;
+        if (meta.getAttribute('content') !== applied) return;
+        if (created) meta.remove();
+        else if (original === null) meta.removeAttribute('content');
+        else meta.setAttribute('content',original);
+      }
+      function updateFullscreenViewport() {
+        // A framed player and its containing document can both participate
+        // in fullscreen layout. Restore each document's own settings on exit.
+        const element = document.fullscreenElement;
+        if (!element) { restoreFullscreenViewport(); return; }
+        if (fullscreenViewport || !document.head) return;
+        if (!element.matches('video,iframe') && !element.querySelector('video,iframe')
+            && ![...videos].some(isFullscreen)) return;
+        const existing = document.querySelector('meta[name="viewport" i]');
+        const meta = existing || document.createElement('meta');
+        const original = meta.getAttribute('content');
+        const content = original || '';
+        const fit = /\bviewport-fit\s*=\s*[^,;\s]*/i;
+        const applied = fit.test(content) ? content.replace(fit,'viewport-fit=cover')
+          : content ? content + ', viewport-fit=cover' : 'viewport-fit=cover';
+        if (applied === original) return;
+        fullscreenViewport = {meta,original,applied,created:!existing};
+        meta.setAttribute('content',applied);
+        if (!existing) { meta.name = 'viewport'; document.head.append(meta); }
+      }
       function fullscreenChanged(event) {
         if(event && ['webkitbeginfullscreen','webkitendfullscreen','webkitpresentationmodechanged'].includes(event.type)
             && !event.isTrusted)return;
@@ -104,6 +136,10 @@ enum WebVideoOrientationRuntime {
         if(video instanceof HTMLVideoElement) {
           if(event.type==='webkitbeginfullscreen')nativeFullscreenVideos.add(video);
           if(event.type==='webkitendfullscreen')nativeFullscreenVideos.delete(video);
+        }
+        if(event?.type==='fullscreenchange') {
+          updateFullscreenViewport();
+          schedule();
         }
         if(event?.type==='fullscreenchange' && !active) {
           const current=[...videos].filter(video=>isFullscreen(video))
@@ -143,10 +179,10 @@ enum WebVideoOrientationRuntime {
           }
         } else if (active.began) finish();
       }
-      function enterFullscreen(video) {
-        if (active) return;
+      function enterFullscreen(video, onFailure = null) {
+        if (active || isFullscreen(video)) return;
         const token = globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36);
-        active = {video, token, began:false, timeout:setTimeout(() => { if (active?.token === token) finish('failed'); }, 5000)};
+        active = {video, token, onFailure, began:false, timeout:setTimeout(() => { if (active?.token === token) finish('failed'); }, 5000)};
         let playbackReady = !video.paused;
         const failed = () => { if (active?.token === token && !active.began) finish('failed'); };
         const request = () => {
@@ -209,6 +245,13 @@ enum WebVideoOrientationRuntime {
         frame = 0;
         if(!toolsEnabled){reportBottomControls(false);return;}
         prune();
+        if (document.fullscreenElement) {
+          finishControlDrag(); collapse();
+          controls.forEach(button => setStyleIfChanged(button,'display','none'));
+          if(fallback?.group)setStyleIfChanged(fallback.group,'display','none');
+          reportBottomControls(false);
+          return;
+        }
         const viewport = overlay.metrics(), styles = new Map(), updates = [];
         let needsClearance = false;
         // Read all geometry first. Interleaving a floating control's writes with
@@ -487,7 +530,7 @@ enum WebVideoOrientationRuntime {
           event.preventDefault(); event.stopImmediatePropagation();
           if (!event.isTrusted || !video.isConnected) return;
           collapse();
-          send('fullscreenPlayer',button.dataset.souloMediaID,{landscape:true,system:!prefersSoulo,play:true});
+          send('fullscreenPlayer',button.dataset.souloMediaID,{landscape:true,play:true});
         };
         const download = document.createElement('button'); download.type = 'button'; download.style.cssText = controlStyle;
         download.setAttribute('data-video-download','');
@@ -587,7 +630,7 @@ enum WebVideoOrientationRuntime {
           schedule();
         }, 150);
       });
-      window.__souloVideoOrientation = {setPrefersSoulo(value){prefersSoulo=value===true;},setFallbackTarget(token,label,placementID) {
+      window.__souloVideoOrientation = {setFallbackTarget(token,label,placementID) {
         if(!token || inlineControlsSeen) { fallback?.group?.remove();fallback=null;return false; }
         if(fallback?.token!==token) { fallback?.group?.remove();fallback={token,label:label||labels[0],anchored:null,group:null}; }
         fallback.placementID=placementID||'';
@@ -669,7 +712,7 @@ enum WebVideoOrientationRuntime {
             if(document.exitFullscreen)await document.exitFullscreen();
             else document.webkitExitFullscreen?.();
           }
-          return {time:Number.isFinite(time) ? time : 0,playing};
+          return {time:Number.isFinite(time) ? time : 0,playing,rate:video.playbackRate};
         }
         return null;
       }, async setRate(token, rate) {
@@ -684,8 +727,8 @@ enum WebVideoOrientationRuntime {
         return false;
       }};
       document.addEventListener('fullscreenchange', fullscreenChanged);
-      window.addEventListener('pagehide', () => { finishControlDrag();reportBottomControls(false); collapse(); finish(); });
-      window.addEventListener('pageshow', () => { schedule(); send('ready',''); });
+      window.addEventListener('pagehide', () => { restoreFullscreenViewport(); finishControlDrag();reportBottomControls(false); collapse(); finish(); });
+      window.addEventListener('pageshow', () => { updateFullscreenViewport(); schedule(); send('ready',''); });
       const collapseOutside = event => {
         if (expandedGroup && !event.composedPath().includes(expandedGroup)) collapse();
       };
@@ -705,6 +748,7 @@ enum WebVideoOrientationRuntime {
       document.addEventListener('loadedmetadata', schedule, true);
       document.addEventListener('play', schedule, true);
       scan();
+      updateFullscreenViewport();
       send('ready','');
     })();
     """#

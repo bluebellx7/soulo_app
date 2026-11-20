@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "תצוגה מקדימה של משוב";
 
-"media_start_timeout" = "הניגון לא התחיל. בדקו את הרשת או החליפו נגן.";
+"media_start_timeout" = "הניגון לא התחיל. בדקו את הרשת.";
+"media_load_complete" = "הטעינה הושלמה";
+"media_playback_stalled" = "הניגון נתקע.";
 
 "wallpaper_appearance_hint" = "אפשר להגדיר רקע נפרד למראה בהיר וכהה. הרקעים מתחלפים אוטומטית עם מראה האפליקציה.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "הורדות וקבצים";
 "storage_cache_group" = "מטמון וקבצים זמניים";
+"storage_video_cache" = "מטמון וידאו";
 "storage_saved_group" = "תוכן שמור";
 
 "storage_clear_offline_media_warning" = "מחיקת כל סרטוני האופליין כאן ורשומות הקבצים שלהם. הורדות קבצים/וידאו שלא הושלמו, הפעלה וייצוא יופסקו.";

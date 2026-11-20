@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Obrisati sve oznake?";
 "settings" = "postavke";
 "platform_management" = "Upravljanje platformom";
+"home_quick_search" = "Brzo pretraživanje na početnoj";
 "region_korea" = "Koreja";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Predmemorirani resursi i posjeti stranicama u zadnja 3 dana bit će uklonjeni. Kolačići i prijave će se zadržati.";
 "enter_fullscreen" = "Cijeli zaslon";
 "exit_fullscreen" = "Izađi iz cijelog zaslona";
-"fullscreen_exit_hint" = "Dodirnite za kontrole, povucite prema dolje za izlaz";
+"exit_fullscreen_short" = "Izađi";
+"fullscreen_exit_hint" = "Dodirnite za izbornik, povucite prema gore za izlaz";
 "restore_browser_toolbar" = "Vrati alatnu traku";
 "floating_more_detach" = "Gumb Odvoji više";
 "floating_more_snap" = "Pričvrstite gumb Više na rub";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Djelomično podržano";
 "userscript_docs_partial_desc" = "Obavijesti su na stranici; API-ji resursa vraćaju Promise. cookie zahtijeva GM_cookie; kolačići se ne šalju automatski.";
 "userscript_docs_unsupported_title" = "Trenutno nije podržano";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolacija sandbox/run-in i stolne funkcije nedostupne u WKWebViewu.";
+"userscript_docs_network_webrequest" = "GM_webRequest može otkazati zahtjeve Fetch i XMLHttpRequest glavne stranice ili ih preusmjeriti unutar istog izvora.";
+"userscript_docs_unsupported_desc" = "GM_audio zahtijeva utišavanje cijele kartice i očitavanje stanja zvuka. Javni API WKWebViewa to podržava u ograničenoj mjeri.\n@sandbox odabire okruženje skripte. Korisničke skripte u Soulu trenutno se izvode u okruženju stranice.";
 "userscript_docs_metadata_title" = "Metapodaci";
 "userscript_docs_metadata_identity" = "Čovjeku čitljiv naziv skripte i izborni opis prikazan prije instalacije i u detaljima skripte.";
 "userscript_docs_metadata_version" = "Upotrijebite stabilan, jedinstveni imenski prostor i povećavajte verziju svaki put kada se skripta u paketu promijeni.";

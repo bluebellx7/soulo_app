@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Ștergeți toate marcajele?";
 "settings" = "Setări";
 "platform_management" = "Managementul platformei";
+"home_quick_search" = "Căutare rapidă pe pagina de pornire";
 "region_korea" = "Coreea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Resursele memorate în cache și vizitele de pagină din ultimele 3 zile vor fi eliminate. Cookie-urile și conectările vor fi păstrate.";
 "enter_fullscreen" = "Ecran complet";
 "exit_fullscreen" = "Ieșiți din ecranul complet";
-"fullscreen_exit_hint" = "Atingeți pentru comenzi, trageți în jos pentru a ieși";
+"exit_fullscreen_short" = "Ieșire";
+"fullscreen_exit_hint" = "Atingeți pentru meniu, glisați în sus pentru a ieși";
 "restore_browser_toolbar" = "Restaurați bara de instrumente";
 "floating_more_detach" = "Butonul Detașează mai multe";
 "floating_more_snap" = "Fixați butonul Mai mult pe margine";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Susținut parțial";
 "userscript_docs_partial_desc" = "Notificările rămân în pagină; API-urile de resurse returnează Promise. cookie necesită GM_cookie; cookie-urile nu se trimit automat.";
 "userscript_docs_unsupported_title" = "Nu este acceptat momentan";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolarea sandbox/run-in și funcții desktop indisponibile în WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest poate anula solicitările Fetch și XMLHttpRequest din pagina principală sau le poate redirecționa către aceeași origine.";
+"userscript_docs_unsupported_desc" = "GM_audio necesită oprirea sunetului pentru întreaga filă și citirea stării audio. API-ul public WKWebView oferă suport limitat.\n@sandbox selectează mediul de execuție. Soulo rulează în prezent scripturile de utilizator în mediul paginii.";
 "userscript_docs_metadata_title" = "Metadate";
 "userscript_docs_metadata_identity" = "Numele scriptului care poate fi citit de om și descrierea opțională sunt afișate înainte de instalare și în detaliile scriptului.";
 "userscript_docs_metadata_version" = "Folosiți un spațiu de nume stabil și unic și creșteți versiunea ori de câte ori se modifică scriptul inclus.";

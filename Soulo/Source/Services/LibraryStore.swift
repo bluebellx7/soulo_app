@@ -83,7 +83,7 @@ final class LibraryStore {
         // written before folders and browsing history were introduced.
         let legacy = try ModelContainer(
             for: SearchHistoryItem.self, BookmarkItem.self, BookmarkFolder.self,
-            configurations: ModelConfiguration(url: url)
+            configurations: ModelConfiguration(url: url, cloudKitDatabase: .none)
         )
         let source = ModelContext(legacy)
         do {

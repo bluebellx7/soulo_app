@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "確認清除所有收藏？";
 "settings" = "設定";
 "platform_management" = "平台管理";
+"home_quick_search" = "首頁快速搜尋";
 "region_korea" = "韓國";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -173,7 +174,8 @@
 "privacy_clear_cache_confirm_message" = "將清除網頁快取與最近 3 天的網頁瀏覽記錄，但保留 Cookie 與登入狀態。";
 "enter_fullscreen" = "全螢幕";
 "exit_fullscreen" = "退出全螢幕";
-"fullscreen_exit_hint" = "輕點展開，下拉退出";
+"exit_fullscreen_short" = "退出全螢幕";
+"fullscreen_exit_hint" = "輕點展開，向上滑動退出";
 "restore_browser_toolbar" = "顯示工具列";
 "floating_more_detach" = "退出吸附";
 "floating_more_snap" = "吸附到螢幕邊緣";
@@ -673,7 +675,8 @@
 "userscript_docs_partial_title" = "部分支持";
 "userscript_docs_partial_desc" = "通知在網頁內顯示；資源介面回傳 Promise。cookie 參數需 GM_cookie 權限，請求不會自動傳送 Cookie。";
 "userscript_docs_unsupported_title" = "目前不支援";
-"userscript_docs_unsupported_desc" = "GM_webRequest、GM_audio、sandbox/run-in 隔離，以及 WKWebView 不具備的桌面特性。";
+"userscript_docs_network_webrequest" = "GM_webRequest 可取消主框架發出的 Fetch 和 XMLHttpRequest 請求，也可將請求重新導向至同源位址。";
+"userscript_docs_unsupported_desc" = "GM_audio 需要控制整個分頁的靜音，並讀取發聲狀態。WKWebView 的公開介面涵蓋範圍有限。\n@sandbox 用於選擇指令碼的執行環境。Soulo 目前在網頁環境執行使用者指令碼。";
 "userscript_docs_metadata_title" = "元數據";
 "userscript_docs_metadata_identity" = "在安裝之前和腳本詳細資訊中顯示人類可讀的腳本名稱和可選描述。";
 "userscript_docs_metadata_version" = "使用穩定、唯一的命名空間，並在捆綁腳本發生變更時增加版本。";

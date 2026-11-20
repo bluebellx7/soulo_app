@@ -1,4 +1,4 @@
-• Inställningarna har ordnats om. Förhandsvisa verktygsfältet på startsidan när du byter stil, ändrar ordningen på knapparna eller drar fältet på plats.
-• När återställning vid omstart är aktiverad öppnar Soulo startsidan eller webbsidan du senast tittade på.
-• Webbläsarens menyer är lättare att läsa. Du kan visa ett dolt verktygsfält igen via menyn Mer.
-• Nätverksförfrågningar och uppdateringskontroller för användarskript har förbättrats.
+• Förbättrad övergång till helskärm, buffring och meny för uppspelningshastighet för onlinevideor.
+• Förbättrad igenkänning av magnetlänkar och sökning efter andra deltagare för BitTorrent-nedladdningar.
+• Användarskript kan använda GM_webRequest för att avbryta Fetch- och XHR-förfrågningar från huvudramen eller omdirigera dem till samma ursprung.
+• Förbättrad kompatibilitet med webbläsartillägg, bland annat filnamn vid hämtning och inläsning av sidor utanför skärmen.

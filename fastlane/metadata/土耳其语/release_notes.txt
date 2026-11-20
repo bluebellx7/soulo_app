@@ -1,4 +1,4 @@
-• Ayarlar yeniden düzenlendi. Ana sayfa araç çubuğunu önizlerken stilini değiştirebilir, düğmeleri sıralayabilir veya çubuğu istediğiniz yere sürükleyebilirsiniz.
-• Yeniden başlatmada geri yükleme açıksa Soulo, ana sayfayı veya en son görüntülediğiniz web sayfasını açar.
-• Tarayıcı menüleri daha okunaklı. Gizlenen araç çubuğunu Daha Fazla menüsünden yeniden gösterebilirsiniz.
-• Kullanıcı betiklerinin ağ istekleri ve güncelleme denetimleri iyileştirildi.
+• Çevrimiçi videolarda tam ekrana geçiş, arabelleğe alma ve oynatma hızı menüsü iyileştirildi.
+• BitTorrent indirmelerinde magnet bağlantılarını tanıma ve eş keşfi iyileştirildi.
+• Kullanıcı betikleri GM_webRequest ile ana çerçevenin Fetch ve XHR isteklerini iptal edebilir veya aynı kaynağa yönlendirebilir.
+• İndirilen dosyaların adlandırılması ve ekran dışı sayfaların yüklenmesi dahil olmak üzere tarayıcı uzantılarının uyumluluğu iyileştirildi.

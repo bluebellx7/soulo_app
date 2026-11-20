@@ -609,6 +609,7 @@ import UIKit
 
 }
 
+#if DEBUG
 extension WebMediaPlaybackBridgeTests {
     func testLiveMovieDirectoryCompatibilityAudit() async throws {
         guard let raw = ProcessInfo.processInfo.environment["SOULO_SITE_AUDIT_JSON"],
@@ -743,7 +744,7 @@ extension WebMediaPlaybackBridgeTests {
                 var soulo = false
                 for _ in 0..<playbackTicks {
                     try await Task.sleep(for: .milliseconds(250))
-                    if (playback.player?.media?.statistics.displayedPictures ?? 0) > 0 { soulo = true; break }
+                    if (playback.player?.decodedFrameCount ?? 0) > 0 { soulo = true; break }
                     if playback.error != nil { break }
                 }
                 row["souloFirstFrame"] = soulo; row["souloError"] = playback.error ?? playback.startupWarning ?? ""
@@ -764,6 +765,7 @@ extension WebMediaPlaybackBridgeTests {
         XCTAssertEqual(rows.count, sites.count)
     }
 }
+#endif
 
 extension WebMediaPlaybackBridgeTests {
     func testConfiguredVideoCanStartBeforeDOMVideoWithoutAcceptingArbitraryURLs() async throws {

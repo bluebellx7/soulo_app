@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "ਕੀ ਸਾਰੇ ਬੁੱਕਮਾਰਕ ਸਾਫ਼ ਕਰਨੇ ਹਨ?";
 "settings" = "ਸੈਟਿੰਗਾਂ";
 "platform_management" = "ਪਲੇਟਫਾਰਮ ਪ੍ਰਬੰਧਨ";
+"home_quick_search" = "ਮੁੱਖ ਪੰਨੇ ਤੋਂ ਤੁਰੰਤ ਖੋਜ";
 "region_korea" = "ਕੋਰੀਆ";
 "platform_naver" = "ਨੇਵਰ";
 "platform_daum" = "ਦੌਮ";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "ਪਿਛਲੇ 3 ਦਿਨਾਂ ਤੋਂ ਕੈਸ਼ ਕੀਤੇ ਸਰੋਤ ਅਤੇ ਪੰਨਾ ਵਿਜ਼ਿਟਾਂ ਨੂੰ ਹਟਾ ਦਿੱਤਾ ਜਾਵੇਗਾ। ਕੂਕੀਜ਼ ਅਤੇ ਸਾਈਨ-ਇਨ ਰੱਖੇ ਜਾਣਗੇ।";
 "enter_fullscreen" = "ਪੂਰੀ ਸਕ੍ਰੀਨ";
 "exit_fullscreen" = "ਪੂਰੀ ਸਕ੍ਰੀਨ ਤੋਂ ਬਾਹਰ ਜਾਓ";
-"fullscreen_exit_hint" = "ਨਿਯੰਤਰਣ ਲਈ ਟੈਪ ਕਰੋ, ਬਾਹਰ ਜਾਣ ਲਈ ਹੇਠਾਂ ਖਿੱਚੋ";
+"exit_fullscreen_short" = "ਬਾਹਰ ਜਾਓ";
+"fullscreen_exit_hint" = "ਮੀਨੂ ਲਈ ਟੈਪ ਕਰੋ, ਬਾਹਰ ਜਾਣ ਲਈ ਉੱਪਰ ਵੱਲ ਸਵਾਈਪ ਕਰੋ";
 "restore_browser_toolbar" = "ਟੂਲਬਾਰ ਰੀਸਟੋਰ ਕਰੋ";
 "floating_more_detach" = "ਹੋਰ ਬਟਨ ਨੂੰ ਵੱਖ ਕਰੋ";
 "floating_more_snap" = "ਕਿਨਾਰੇ ਲਈ ਹੋਰ ਬਟਨ ਨੂੰ ਸਨੈਪ ਕਰੋ";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "ਅੰਸ਼ਕ ਤੌਰ 'ਤੇ ਸਮਰਥਿਤ ਹੈ";
 "userscript_docs_partial_desc" = "ਸੂਚਨਾਵਾਂ ਪੰਨੇ ਵਿੱਚ ਦਿਖਦੀਆਂ ਹਨ; ਰਿਸੋਰਸ API Promise ਵਾਪਸ ਕਰਦੇ ਹਨ। cookie ਲਈ GM_cookie ਇਜਾਜ਼ਤ ਲੋੜੀਂਦੀ ਹੈ; ਕੂਕੀ ਆਪਣੇ ਆਪ ਨਹੀਂ ਭੇਜੇ ਜਾਂਦੇ।";
 "userscript_docs_unsupported_title" = "ਫਿਲਹਾਲ ਸਮਰਥਿਤ ਨਹੀਂ ਹੈ";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in ਵੱਖਰਾਪਣ ਅਤੇ WKWebView ਵਿੱਚ ਨਾ ਮਿਲਣ ਵਾਲੀਆਂ ਡੈਸਕਟਾਪ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ।";
+"userscript_docs_network_webrequest" = "GM_webRequest ਮੁੱਖ ਪੰਨੇ ਦੀਆਂ Fetch ਅਤੇ XMLHttpRequest ਬੇਨਤੀਆਂ ਨੂੰ ਰੱਦ ਕਰ ਸਕਦਾ ਹੈ ਜਾਂ ਉਸੇ ਮੂਲ ਵੱਲ ਰੀਡਾਇਰੈਕਟ ਕਰ ਸਕਦਾ ਹੈ।";
+"userscript_docs_unsupported_desc" = "GM_audio ਲਈ ਪੂਰੀ ਟੈਬ ਦੀ ਆਵਾਜ਼ ਬੰਦ ਕਰਨ ਅਤੇ ਆਡੀਓ ਦੀ ਸਥਿਤੀ ਪੜ੍ਹਨ ਦੀ ਲੋੜ ਹੈ। WKWebView ਦੇ ਜਨਤਕ API ਵਿੱਚ ਇਸ ਦੀ ਸਹਾਇਤਾ ਸੀਮਤ ਹੈ।\n@sandbox ਸਕ੍ਰਿਪਟ ਦਾ ਮਾਹੌਲ ਚੁਣਦਾ ਹੈ। Soulo ਹੁਣ ਵਰਤੋਂਕਾਰ ਸਕ੍ਰਿਪਟਾਂ ਨੂੰ ਪੰਨੇ ਦੇ ਮਾਹੌਲ ਵਿੱਚ ਚਲਾਉਂਦਾ ਹੈ।";
 "userscript_docs_metadata_title" = "ਮੈਟਾਡਾਟਾ";
 "userscript_docs_metadata_identity" = "ਮਨੁੱਖੀ-ਪੜ੍ਹਨਯੋਗ ਸਕ੍ਰਿਪਟ ਨਾਮ ਅਤੇ ਵਿਕਲਪਿਕ ਵਰਣਨ ਇੰਸਟਾਲੇਸ਼ਨ ਤੋਂ ਪਹਿਲਾਂ ਅਤੇ ਸਕ੍ਰਿਪਟ ਵੇਰਵਿਆਂ ਵਿੱਚ ਦਿਖਾਇਆ ਗਿਆ ਹੈ।";
 "userscript_docs_metadata_version" = "ਇੱਕ ਸਥਿਰ, ਵਿਲੱਖਣ ਨੇਮਸਪੇਸ ਦੀ ਵਰਤੋਂ ਕਰੋ ਅਤੇ ਜਦੋਂ ਵੀ ਬੰਡਲ ਸਕ੍ਰਿਪਟ ਬਦਲਦੀ ਹੈ ਤਾਂ ਸੰਸਕਰਣ ਨੂੰ ਵਧਾਓ।";

@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Rensa alla bokmärken?";
 "settings" = "Inställningar";
 "platform_management" = "Platform Management";
+"home_quick_search" = "Snabbsökning på startsidan";
 "region_korea" = "Korea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Cachade resurser och sidbesök från de senaste 3 dagarna kommer att tas bort. Cookies och inloggningar kommer att sparas.";
 "enter_fullscreen" = "Helskärm";
 "exit_fullscreen" = "Avsluta helskärm";
-"fullscreen_exit_hint" = "Tryck för kontroller, dra nedåt för att avsluta";
+"exit_fullscreen_short" = "Avsluta";
+"fullscreen_exit_hint" = "Tryck för menyn, svep uppåt för att avsluta";
 "restore_browser_toolbar" = "Återställ verktygsfältet";
 "floating_more_detach" = "Koppla bort mer-knappen";
 "floating_more_snap" = "Fäst Mer-knappen i kanten";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Delvis stödd";
 "userscript_docs_partial_desc" = "Aviseringar visas på sidan; resurs-API:er returnerar Promise. cookie kräver GM_cookie; cookies skickas inte automatiskt.";
 "userscript_docs_unsupported_title" = "Stöds inte för närvarande";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in-isolering och skrivbordsfunktioner som WKWebView saknar.";
+"userscript_docs_network_webrequest" = "GM_webRequest kan avbryta Fetch- och XMLHttpRequest-förfrågningar från huvudsidan eller omdirigera dem inom samma ursprung.";
+"userscript_docs_unsupported_desc" = "GM_audio kräver ljudavstängning för hela fliken och åtkomst till ljudstatus. WKWebViews offentliga API har begränsat stöd.\n@sandbox väljer skriptets miljö. Soulo kör för närvarande användarskript i sidans miljö.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Människoläsbart skriptnamn och valfri beskrivning visas före installation och i skriptdetaljer.";
 "userscript_docs_metadata_version" = "Använd ett stabilt, unikt namnutrymme och öka versionen närhelst det medföljande skriptet ändras.";

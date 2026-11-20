@@ -1,4 +1,4 @@
-• Átrendeztük a beállításokat. Az élő előnézetben módosíthatod a kezdőlap eszköztárának stílusát, átrendezheted a gombokat, és a helyére húzhatod az eszköztárat.
-• Ha az újraindításkori visszaállítás be van kapcsolva, a Soulo a kezdőlapot vagy a legutóbb megtekintett weboldalt nyitja meg.
-• A böngésző menüi könnyebben olvashatók. A Továbbiak menüben újra megjelenítheted az elrejtett eszköztárat.
-• Javítottuk a felhasználói szkriptek hálózati kéréseit és frissítéskeresését.
+• Javult az online videók teljes képernyőre váltása, pufferelése és lejátszási sebességmenüje.
+• Javult a magnet linkek felismerése és a partnerek keresése a BitTorrent-letöltéseknél.
+• A felhasználói szkriptek GM_webRequest segítségével megszakíthatják a fő keret Fetch és XHR kéréseit, vagy azonos eredeten belül átirányíthatják őket.
+• Javult a böngészőbővítmények kompatibilitása, többek között a letöltött fájlok elnevezése és a képernyőn kívüli oldalak betöltése.

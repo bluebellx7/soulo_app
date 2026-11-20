@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "అన్ని బుక్‌మార్క్‌లను క్లియర్ చేయాలా?";
 "settings" = "సెట్టింగ్‌లు";
 "platform_management" = "వేదిక నిర్వహణ";
+"home_quick_search" = "హోమ్‌లో త్వరిత శోధన";
 "region_korea" = "కొరియా";
 "platform_naver" = "నావెర్";
 "platform_daum" = "డామ్";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "గత 3 రోజుల నుండి కాష్ చేసిన వనరులు మరియు పేజీ సందర్శనలు తీసివేయబడతాయి. కుక్కీలు మరియు సైన్-ఇన్‌లు ఉంచబడతాయి.";
 "enter_fullscreen" = "పూర్తి స్క్రీన్";
 "exit_fullscreen" = "పూర్తి స్క్రీన్ నుండి నిష్క్రమించండి";
-"fullscreen_exit_hint" = "నియంత్రణల కోసం నొక్కండి, నిష్క్రమించడానికి క్రిందికి లాగండి";
+"exit_fullscreen_short" = "నిష్క్రమించు";
+"fullscreen_exit_hint" = "మెనూ కోసం నొక్కండి, నిష్క్రమించడానికి పైకి స్వైప్ చేయండి";
 "restore_browser_toolbar" = "టూల్‌బార్‌ని పునరుద్ధరించండి";
 "floating_more_detach" = "మరిన్ని బటన్‌ను వేరు చేయండి";
 "floating_more_snap" = "అంచుకు మరిన్ని బటన్‌ను స్నాప్ చేయండి";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "పాక్షికంగా మద్దతు ఇచ్చింది";
 "userscript_docs_partial_desc" = "నోటిఫికేషన్‌లు పేజీలో కనిపిస్తాయి; రిసోర్స్ APIలు Promise ఇస్తాయి. cookie ఎంపికకు GM_cookie అనుమతి అవసరం; కుకీలు ఆటోమేటిక్‌గా పంపబడవు.";
 "userscript_docs_unsupported_title" = "ప్రస్తుతం మద్దతు లేదు";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in వేరుచేయడం మరియు WKWebViewలో లేని డెస్క్‌టాప్ లక్షణాలు.";
+"userscript_docs_network_webrequest" = "GM_webRequest ప్రధాన పేజీలోని Fetch, XMLHttpRequest అభ్యర్థనలను రద్దు చేయగలదు లేదా అదే మూలానికి మళ్లించగలదు.";
+"userscript_docs_unsupported_desc" = "GM_audio కోసం మొత్తం ట్యాబ్ శబ్దాన్ని ఆపడం, ఆడియో స్థితిని తెలుసుకోవడం అవసరం. WKWebView పబ్లిక్ APIలో దీనికి పరిమిత మద్దతు ఉంది.\n@sandbox స్క్రిప్ట్ నడిచే వాతావరణాన్ని ఎంచుకుంటుంది. Soulo ప్రస్తుతం యూజర్ స్క్రిప్ట్‌లను పేజీ వాతావరణంలో నడుపుతుంది.";
 "userscript_docs_metadata_title" = "మెటాడేటా";
 "userscript_docs_metadata_identity" = "మానవులు చదవగలిగే స్క్రిప్ట్ పేరు మరియు ఐచ్ఛిక వివరణ ఇన్‌స్టాలేషన్‌కు ముందు మరియు స్క్రిప్ట్ వివరాలలో చూపబడింది.";
 "userscript_docs_metadata_version" = "బండిల్ చేయబడిన స్క్రిప్ట్ మారినప్పుడల్లా స్థిరమైన, ప్రత్యేకమైన నేమ్‌స్పేస్‌ని ఉపయోగించండి మరియు సంస్కరణను పెంచండి.";

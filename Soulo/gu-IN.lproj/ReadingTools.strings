@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "પ્રતિસાદ પૂર્વાવલોકન";
 
-"media_start_timeout" = "પ્લેબૅક શરૂ થયું નથી. નેટવર્ક તપાસો અથવા પ્લેયર બદલો.";
+"media_start_timeout" = "પ્લેબૅક શરૂ થયું નથી. નેટવર્ક તપાસો.";
+"media_load_complete" = "લોડ થઈ ગયું";
+"media_playback_stalled" = "વિડિયો અટકી ગયો છે.";
 
 "wallpaper_appearance_hint" = "લાઇટ અને ડાર્ક દેખાવ માટે અલગ પૃષ્ઠભૂમિ સેટ કરો. તે ઍપના દેખાવ સાથે આપમેળે બદલાશે.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "ડાઉનલોડ અને ફાઇલો";
 "storage_cache_group" = "કૅશ અને અસ્થાયી ફાઇલો";
+"storage_video_cache" = "વિડિયો કૅશ";
 "storage_saved_group" = "સાચવેલી સામગ્રી";
 
 "storage_clear_offline_media_warning" = "અહીંના બધા ઑફલાઇન વિડિયો અને તેમની ફાઇલ નોંધો કાઢી નાખશે. અધૂરા ફાઇલ/વિડિયો ડાઉનલોડ, પ્લેબૅક અને નિકાસ બંધ થશે.";

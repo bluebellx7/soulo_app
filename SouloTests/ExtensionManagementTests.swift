@@ -271,7 +271,7 @@ final class ExtensionManagementTests: XCTestCase {
         defer { service.deleteWebExtension(record.id) }
         let context = try context(record.id), page = try await extensionPage(context)
         let result = try await page.callAsyncJavaScript("""
-        await chrome.offscreen.createDocument({url:'offscreen.html',reasons:['DOM_PARSER'],justification:'Local DOM fixture'});
+        await chrome.offscreen.createDocument({url:chrome.runtime.getURL('offscreen.html'),reasons:['DOM_PARSER'],justification:'Local DOM fixture'});
         const contexts=await chrome.runtime.getContexts({contextTypes:['OFFSCREEN_DOCUMENT']});
         const reply=await chrome.runtime.sendMessage({offscreenProbe:true});
         const binary=await __souloOffscreenBinary({blob:new Blob(['a'.repeat(70000)+'✓'],{type:'text/plain'}),buffer:new Uint8Array([0,128,255]).buffer,nested:{__protoKey:'safe',value:null}});
@@ -304,10 +304,10 @@ final class ExtensionManagementTests: XCTestCase {
         let leakedRole = try await unrelatedPage.evaluateJavaScript("globalThis.__souloOffscreenWorkerReceiver===true") as? Bool
         XCTAssertEqual(leakedRole,false,"Offscreen setup must not leak through a shared content controller into other extension pages")
         let invalidPaths = try await page.callAsyncJavaScript("""
-        const paths=['https://example.com/a.html','../offscreen.html','%2e%2e/offscreen.html','content.js'];
+        const paths=['https://example.com/a.html','webkit-extension://another-extension/offscreen.html','../offscreen.html','%2e%2e/offscreen.html','content.js'];
         return await Promise.all(paths.map(async url=>{try{await chrome.offscreen.createDocument({url,reasons:['DOM_PARSER'],justification:'Invalid path'});return false;}catch(_){return true;}}));
         """, in: nil, contentWorld: .page)
-        XCTAssertEqual(invalidPaths as? [Bool], [true, true, true, true])
+        XCTAssertEqual(invalidPaths as? [Bool], [true, true, true, true, true])
     }
 
     func testInstallationLifecyclePreservesFirstInstallUpdatesAndUninstall() async throws {
@@ -526,6 +526,51 @@ final class ExtensionManagementTests: XCTestCase {
             callbackRan = true; XCTAssertTrue(urls.isEmpty)
         }
         XCTAssertTrue(callbackRan,"A denied site's automatic CORS retry must not open another prompt")
+    }
+
+    func testURLPermissionPromptsStayWithinDeclaredSitesAndCoalesceByOrigin() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = try temporaryRoot()
+        let source = try package(root)
+        let manifestURL = source.appendingPathComponent("manifest.json")
+        var manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+        manifest.removeValue(forKey: "host_permissions")
+        manifest.removeValue(forKey: "content_scripts")
+        manifest["optional_host_permissions"] = ["https://allowed.example/*"]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
+        let service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let record = try await service.installWebExtension(from: source)
+        defer { service.deleteWebExtension(record.id) }
+        let native = try context(record.id), runtime = NativeWebExtensionRuntime.shared
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene), presenter = UIViewController()
+        window.rootViewController = presenter
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        var denied = false
+        let unrelated = try XCTUnwrap(URL(string: "https://unrelated.example/video?private=1"))
+        runtime.webExtensionController(runtime.controller, promptForPermissionToAccess: [unrelated], in: nil, for: native) { granted, _ in
+            denied = true
+            XCTAssertTrue(granted.isEmpty)
+        }
+        XCTAssertTrue(denied)
+        XCTAssertNil(presenter.presentedViewController)
+
+        var replies = 0
+        for path in ["/video?private=1", "/episode?private=2"] {
+            let url = try XCTUnwrap(URL(string: "https://allowed.example" + path))
+            runtime.webExtensionController(runtime.controller, promptForPermissionToAccess: [url], in: nil, for: native) { granted, _ in
+                XCTAssertTrue(granted.isEmpty)
+                replies += 1
+            }
+        }
+        let alert = try XCTUnwrap(presenter.presentedViewController as? UIAlertController)
+        XCTAssertEqual(alert.message?.split(separator: "\n").last, "https://allowed.example/*")
+        XCTAssertNil(alert.presentedViewController)
+        XCTAssertEqual(replies, 0)
+        service.setWebExtensionEnabled(record.id, enabled: false)
+        try await eventually { replies == 2 }
+        XCTAssertTrue(service.webExtensionAccess(record.id).sites.isEmpty)
     }
 
     func testStorageIsAtomicAndFailedPersistenceDoesNotBroadcast() throws {

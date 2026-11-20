@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import ImageIO
 import Photos
@@ -42,6 +43,10 @@ enum WebDownloadFilename {
         pageTitle: String?,
         response: URLResponse? = nil
     ) -> String {
+        if response?.mimeType?.lowercased() == "application/x-bittorrent",
+           (suggested as NSString).pathExtension.lowercased() != "torrent" {
+            return titledFilename((suggested as NSString).deletingPathExtension, fileExtension: "torrent")
+        }
         if let disposition = (response as? HTTPURLResponse)?
             .value(forHTTPHeaderField: "Content-Disposition")?.lowercased(),
            disposition.contains("filename=") || disposition.contains("filename*=") {
@@ -193,7 +198,8 @@ final class WebResourceDownloadService {
             suggestedFilename: suggestedFilename,
             sourceURL: url,
             transport: .background,
-            userScriptPolicy: userScriptPolicy
+            userScriptPolicy: userScriptPolicy,
+            backgroundUsesPersistentCookies: webView?.configuration.websiteDataStore.isPersistent
         )
         onStart?(item.id)
         guard manager.downloads.contains(where: { $0.id == item.id && $0.status == .inProgress }) else {
@@ -202,19 +208,41 @@ final class WebResourceDownloadService {
 
         _ = destinationURL
         let request = await resourceRequest(url, pageURL: pageURL, webView: webView)
-        let nativeVideoExtensions: Set<String> = ["mp4", "m4v", "mov", "3gp", "3g2"]
-        let isNativeVideo = nativeVideoExtensions.contains((suggestedFilename as NSString).pathExtension.lowercased())
-            && ["http", "https"].contains(url.scheme?.lowercased() ?? "")
-        let video = playbackResource ?? (isNativeVideo
-            ? WebMediaResource(kind: .video, url: url, title: suggestedFilename, posterURL: nil) : nil)
-        if isNativeVideo, let resource = video, resource.delivery == .direct, resource.kind == .video {
-            let asset = await WebResourceMediaService.asset(for: resource, webView: webView, preferDownloadedCopy: false)
-            manager.registerPlaybackSource(id: item.id, asset: asset, pageURL: pageURL, webView: webView)
-        }
+        await registerDirectVideoPlayback(for: item, request: request, resource: playbackResource,
+            pageURL: pageURL, webView: webView)
         guard manager.downloads.contains(where: { $0.id == item.id && $0.status == .inProgress }) else {
             throw CancellationError()
         }
         return try await BackgroundDownloadService.shared.start(request: request, item: item)
+    }
+
+    func registerDirectVideoPlayback(
+        for item: BrowserDownloadItem, request: URLRequest, resource: WebMediaResource? = nil,
+        responseMIMEType: String? = nil, pageURL: URL? = nil, webView: WKWebView? = nil
+    ) async {
+        guard item.userScriptPolicy == nil, Self.canDownloadInBackground(request), let url = request.url,
+              request.value(forHTTPHeaderField: "Authorization") == nil else { return }
+        if let resource, resource.kind != .video || resource.delivery != .direct { return }
+        let mimeType = responseMIMEType?.lowercased()
+        guard mimeType != "text/html", mimeType != "application/json" else { return }
+        let extensions = ["mp4", "m4v", "mov", "3gp", "3g2"]
+        let mimeTypes = ["video/mp4", "video/x-m4v", "video/quicktime", "video/3gpp", "video/3gpp2"]
+        let filenameExtension = (item.fileName as NSString).pathExtension.lowercased()
+        guard extensions.contains(filenameExtension) || extensions.contains(url.pathExtension.lowercased())
+            || mimeType.map(mimeTypes.contains) == true else { return }
+
+        let video = resource ?? WebMediaResource(kind: .video, url: url, title: item.fileName, posterURL: nil)
+        var options: [String: Any]
+        if webView == nil, item.backgroundUsesPersistentCookies == true {
+            options = await WebResourceMediaService.networkAssetOptions(for: video, cookieStore: WKWebsiteDataStore.default().httpCookieStore)
+        } else {
+            options = await WebResourceMediaService.networkAssetOptions(for: video, webView: webView)
+        }
+        if let userAgent = request.value(forHTTPHeaderField: "User-Agent"), !userAgent.isEmpty {
+            options[AVURLAssetHTTPUserAgentKey] = userAgent
+        }
+        let asset = AVURLAsset(url: video.url, options: options)
+        DownloadManagerService.shared.registerPlaybackSource(id: item.id, asset: asset, pageURL: pageURL, webView: webView)
     }
 
     func saveImageToPhotos(
@@ -484,6 +512,20 @@ final class WebResourceDownloadService {
             request.setValue(value, forHTTPHeaderField: field)
         }
         request.httpShouldHandleCookies = false
+        return request
+    }
+
+    func restoredBackgroundRequest(for item: BrowserDownloadItem) async -> URLRequest? {
+        guard item.userScriptPolicy == nil, let url = URL(string: item.sourceURLString) else { return nil }
+        var request = await resourceRequest(url, pageURL: nil, webView: nil)
+        guard Self.canDownloadInBackground(request) else { return nil }
+        request.httpShouldHandleCookies = false
+        if item.backgroundUsesPersistentCookies == true {
+            let cookies = await WebKitCookieAccess.cookies(for: url, in: WKWebsiteDataStore.default().httpCookieStore)
+            for (name, value) in HTTPCookie.requestHeaderFields(with: Self.matchingCookies(from: cookies, for: url)) {
+                request.setValue(value, forHTTPHeaderField: name)
+            }
+        }
         return request
     }
 

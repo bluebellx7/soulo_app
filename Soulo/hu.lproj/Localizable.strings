@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Törli az összes könyvjelzőt?";
 "settings" = "Beállítások elemre";
 "platform_management" = "Platformkezelés";
+"home_quick_search" = "Gyorskeresés a kezdőlapon";
 "region_korea" = "Korea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "A gyorsítótárazott erőforrások és az elmúlt 3 nap oldallátogatásai el lesznek távolítva. A cookie-k és a bejelentkezési adatok megmaradnak.";
 "enter_fullscreen" = "Teljes képernyő";
 "exit_fullscreen" = "Lépjen ki a teljes képernyőből";
-"fullscreen_exit_hint" = "Koppintson a kezelőszervekhez, húzza le a kilépéshez";
+"exit_fullscreen_short" = "Kilépés";
+"fullscreen_exit_hint" = "Koppintson a menühöz, húzza felfelé a kilépéshez";
 "restore_browser_toolbar" = "Eszköztár visszaállítása";
 "floating_more_detach" = "Továbbiak leválasztása gomb";
 "floating_more_snap" = "Pattintsa a További gombot a széléhez";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Részben támogatott";
 "userscript_docs_partial_desc" = "Az értesítések az oldalon jelennek meg; az erőforrás-API-k Promise értéket adnak. A cookie GM_cookie-jogot igényel; nincs automatikus sütiküldés.";
 "userscript_docs_unsupported_title" = "Jelenleg nem támogatott";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in-elkülönítés és a WKWebView által nem kínált asztali funkciók.";
+"userscript_docs_network_webrequest" = "A GM_webRequest megszakíthatja a főoldal Fetch és XMLHttpRequest kéréseit, vagy átirányíthatja őket azonos eredeten belül.";
+"userscript_docs_unsupported_desc" = "A GM_audio a teljes lap némítását és a hangállapot lekérdezését igényli. A WKWebView nyilvános API-ja ezeket csak korlátozottan támogatja.\nAz @sandbox kiválasztja a szkript környezetét. A Soulo jelenleg az oldal környezetében futtatja a felhasználói szkripteket.";
 "userscript_docs_metadata_title" = "Metaadatok";
 "userscript_docs_metadata_identity" = "Ember által olvasható szkriptnév és opcionális leírás a telepítés előtt és a szkript részleteiben.";
 "userscript_docs_metadata_version" = "Használjon stabil, egyedi névteret, és növelje a verziót, amikor a kötegelt szkript változik.";

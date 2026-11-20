@@ -412,6 +412,7 @@ extension View {
     func compatiblePopover<Panel: View>(isPresented: Binding<Bool>,
         attachmentAnchor: PopoverAttachmentAnchor = .rect(.bounds), arrowEdge: Edge = .top,
         tracksSourceView: Bool = false, usesAppAppearance: Bool = false,
+        backgroundColor: UIColor? = nil,
         @ViewBuilder content: @escaping () -> Panel) -> AnyView {
         func panel() -> AnyView {
             if usesAppAppearance { return AnyView(content().appPresentationAppearance()) }
@@ -420,7 +421,7 @@ extension View {
         // Keep both OS branches and the potentially large panel type out of
         // the caller's metadata. On device, resolving a deeply nested toolbar
         // type can exhaust the main stack before the popover is even opened.
-        if #available(iOS 16.4, *), !tracksSourceView {
+        if #available(iOS 16.4, *), !tracksSourceView, backgroundColor == nil {
             return AnyView(popover(isPresented: isPresented, attachmentAnchor: attachmentAnchor, arrowEdge: arrowEdge) {
                 panel()
             })
@@ -429,7 +430,7 @@ extension View {
             // geometry after the keyboard or glass toolbar changes its layout.
             // Build the panel only when shown, keeping the anchor mounted.
             return AnyView(background(LegacyContentPopover(isPresented: isPresented, arrowEdge: arrowEdge,
-                usesAppAppearance: usesAppAppearance,
+                usesAppAppearance: usesAppAppearance, backgroundColor: backgroundColor,
                 panel: isPresented.wrappedValue ? panel() : AnyView(EmptyView()))))
         }
     }
@@ -439,6 +440,7 @@ private struct LegacyContentPopover<Panel: View>: UIViewRepresentable {
     @Binding var isPresented: Bool
     let arrowEdge: Edge
     let usesAppAppearance: Bool
+    let backgroundColor: UIColor?
     let panel: Panel
     func makeCoordinator() -> Coordinator { Coordinator() }
     final class Anchor: UIView {
@@ -471,6 +473,7 @@ private struct LegacyContentPopover<Panel: View>: UIViewRepresentable {
         coordinator.interfaceStyle = appScheme.map {
             $0 == .dark ? UIUserInterfaceStyle.dark : .light
         } ?? .unspecified
+        coordinator.backgroundColor = backgroundColor
         coordinator.edge = arrowEdge
         DispatchQueue.main.async { [weak view, weak coordinator] in
             if let view { coordinator?.update(anchor: view) }
@@ -483,6 +486,7 @@ private struct LegacyContentPopover<Panel: View>: UIViewRepresentable {
         var panel = AnyView(EmptyView())
         var edge: Edge = .top
         var interfaceStyle: UIUserInterfaceStyle = .unspecified
+        var backgroundColor: UIColor?
         var host: UIHostingController<AnyView>?
         func update(anchor: UIView) {
             guard isPresented?.wrappedValue == true else { close(); return }
@@ -509,16 +513,32 @@ private struct LegacyContentPopover<Panel: View>: UIViewRepresentable {
                 while let next = presenter?.presentedViewController, !next.isBeingDismissed { presenter = next }
                 guard let presenter, !presenter.isBeingDismissed else { return }
                 host = controller
+                applyBackground(to: controller, anchor: anchor)
                 controller.preferredContentSize = fittingSize(controller, window: window)
                 presenter.present(controller, animated: true)
             }
             if controller.overrideUserInterfaceStyle != interfaceStyle {
                 controller.overrideUserInterfaceStyle = interfaceStyle
             }
+            applyBackground(to: controller, anchor: anchor)
             controller.popoverPresentationController?.sourceRect = anchor.bounds
             let size = fittingSize(controller, window: window)
             if controller.preferredContentSize != size { controller.preferredContentSize = size }
         }
+
+        private func applyBackground(to controller: UIHostingController<AnyView>, anchor: UIView) {
+            guard let backgroundColor, let popover = controller.popoverPresentationController else { return }
+            // An opaque hosting view can be rounded separately from the popover on device.
+            if controller.view.backgroundColor != .clear {
+                controller.view.backgroundColor = .clear
+            }
+            controller.view.isOpaque = false
+            let traits = interfaceStyle == .unspecified ? anchor.traitCollection : UITraitCollection(
+                traitsFrom: [anchor.traitCollection, UITraitCollection(userInterfaceStyle: interfaceStyle)])
+            let color = backgroundColor.resolvedColor(with: traits)
+            if popover.backgroundColor != color { popover.backgroundColor = color }
+        }
+
         private func fittingSize(_ controller: UIHostingController<AnyView>, window: UIWindow) -> CGSize {
             let maximum = CGSize(width: min(400, max(240, window.bounds.width - 32)),
                                  height: max(160, window.bounds.height - window.safeAreaInsets.top - window.safeAreaInsets.bottom - 60))

@@ -179,7 +179,8 @@ final class DownloadManagerService: ObservableObject {
         sourceURL: URL?,
         transport: BrowserDownloadItem.Transport = .webKit,
         userScriptPolicy: UserScriptDownloadPolicy? = nil,
-        hlsUsesPersistentCookies: Bool? = nil
+        hlsUsesPersistentCookies: Bool? = nil,
+        backgroundUsesPersistentCookies: Bool? = nil
     ) -> (BrowserDownloadItem, URL) {
         let fileName = uniqueFilename(for: DownloadFilenameSanitizer.sanitize(suggestedFilename))
         let destination = storageDirectory.appendingPathComponent(fileName)
@@ -199,7 +200,8 @@ final class DownloadManagerService: ObservableObject {
             expectedBytes: 0,
             transport: transport,
             userScriptPolicy: userScriptPolicy,
-            hlsUsesPersistentCookies: hlsUsesPersistentCookies
+            hlsUsesPersistentCookies: hlsUsesPersistentCookies,
+            backgroundUsesPersistentCookies: backgroundUsesPersistentCookies
         )
         downloads.insert(item, at: 0)
         save()

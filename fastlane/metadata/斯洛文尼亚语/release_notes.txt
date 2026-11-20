@@ -1,4 +1,4 @@
-• Nastavitve smo preuredili. Med predogledom orodne vrstice na začetni strani lahko spremenite slog, preuredite gumbe ali povlečete vrstico na želeno mesto.
-• Ko je obnovitev ob ponovnem zagonu vklopljena, Soulo odpre začetno stran ali nazadnje ogledano spletno stran.
-• Meniji brskalnika so bolje berljivi. Skrito orodno vrstico lahko znova prikažete v meniju Več.
-• Izboljšali smo omrežne zahteve in preverjanje posodobitev uporabniških skriptov.
+• Izboljšani so preklop v celozaslonski način, medpomnjenje in meni hitrosti predvajanja spletnih videov.
+• Izboljšana sta prepoznavanje povezav magnet in iskanje odjemalcev za prenose BitTorrent.
+• Uporabniški skripti lahko z GM_webRequest prekličejo zahteve Fetch in XHR glavnega okvira ali jih preusmerijo znotraj istega izvora.
+• Izboljšali smo združljivost razširitev brskalnika, vključno z imeni prenesenih datotek in nalaganjem strani zunaj zaslona.

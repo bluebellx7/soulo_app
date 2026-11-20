@@ -7,7 +7,7 @@ import XCTest
 final class TorrentStreamingTests: XCTestCase {
     @MainActor
     func testUnexpectedDecoderStopPublishesAnErrorAfterItsClockIsReset() async throws {
-        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mkv", subdirectory: "ReadingFixtures"))
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
         let root = UIViewController(); window.rootViewController = root; window.makeKeyAndVisible()
@@ -21,7 +21,7 @@ final class TorrentStreamingTests: XCTestCase {
         XCTAssertGreaterThan(playback.elapsed, 0.5)
         // Simulate the decoder stopping without a public playback.stop().
         // Its zeroed clock must not leave the UI silently stalled forever.
-        playback.player?.stop()
+        playback.player?.stop(retaining: nil)
         for _ in 0..<80 {
             if playback.error != nil, MediaSession.shared.error != nil { break }
             try await Task.sleep(for: .milliseconds(50))
@@ -160,32 +160,32 @@ final class TorrentStreamingTests: XCTestCase {
         defer { playback.stop() }
         for _ in 0..<200 {
             if playback.elapsed > max(1, (startAt ?? 0) + 0.5),
-               (playback.player?.media?.statistics.displayedPictures ?? 0) > 1 { break }
+               (playback.player?.decodedFrameCount ?? 0) > 1 { break }
             try await Task.sleep(for: .milliseconds(100))
         }
-        print("HLS_CLOCK|elapsed=\(playback.elapsed)|duration=\(playback.duration)|time=\(String(describing: playback.player?.time.value))|remaining=\(String(describing: playback.player?.remainingTime?.value))|position=\(playback.player?.position ?? -1)")
+        print("HLS_CLOCK|elapsed=\(playback.elapsed)|duration=\(playback.duration)|decoderTime=\(playback.player?.currentTime ?? -1)")
         XCTAssertNil(playback.error)
         XCTAssertGreaterThan(playback.duration, 6, "A VOD needs a valid seek range")
         let slider = try XCTUnwrap(findTimeline(try XCTUnwrap(window.rootViewController?.view)))
         let displayedTime = slider.value
-        let elapsed = playback.elapsed, frames = playback.player?.media?.statistics.displayedPictures ?? 0
+        let elapsed = playback.elapsed, frames = playback.player?.decodedFrameCount ?? 0
         try await Task.sleep(for: .milliseconds(1100))
         XCTAssertGreaterThan(playback.elapsed, elapsed + 0.5, "Progress must advance with video frames")
-        XCTAssertGreaterThan(playback.player?.media?.statistics.displayedPictures ?? 0, frames)
+        XCTAssertGreaterThan(playback.player?.decodedFrameCount ?? 0, frames)
         XCTAssertGreaterThan(slider.value, displayedTime + 0.5, "The visible timeline must advance with the decoded video")
         XCTAssertEqual(Double(slider.value), playback.elapsed, accuracy: 0.6)
-        let framesBeforeSeek = playback.player?.media?.statistics.displayedPictures ?? 0
+        let framesBeforeSeek = playback.player?.decodedFrameCount ?? 0
         playback.seek(5)
         for _ in 0..<80 {
             if playback.elapsed > 5.3,
-               Double(playback.player?.time.intValue ?? 0) / 1000 > 5.3,
-               (playback.player?.media?.statistics.displayedPictures ?? 0) > framesBeforeSeek { break }
+               (playback.player?.currentTime ?? 0) > 5.3,
+               (playback.player?.decodedFrameCount ?? 0) > framesBeforeSeek { break }
             try await Task.sleep(for: .milliseconds(100))
         }
         XCTAssertGreaterThan(playback.elapsed, 5.3)
-        XCTAssertGreaterThan(Double(playback.player?.time.intValue ?? 0) / 1000, 5.3,
+        XCTAssertGreaterThan((playback.player?.currentTime ?? 0), 5.3,
                              "Seeking must move the decoder clock as well as the displayed time")
-        XCTAssertGreaterThan(playback.player?.media?.statistics.displayedPictures ?? 0, framesBeforeSeek)
+        XCTAssertGreaterThan(playback.player?.decodedFrameCount ?? 0, framesBeforeSeek)
         for _ in 0..<30 {
             if abs(Double(slider.value) - playback.elapsed) < 0.6 { break }
             try await Task.sleep(for: .milliseconds(50))
@@ -228,11 +228,11 @@ final class TorrentStreamingTests: XCTestCase {
         defer { playback.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
         playback.open(prepared.url, resourceLease: prepared)
         for _ in 0..<120 {
-            if playback.elapsed > 1, (playback.player?.media?.statistics.displayedPictures ?? 0) > 2 { break }
+            if playback.elapsed > 1, (playback.player?.decodedFrameCount ?? 0) > 2 { break }
             try await Task.sleep(for: .milliseconds(100))
         }
         XCTAssertNil(playback.error)
-        XCTAssertGreaterThan(playback.player?.media?.statistics.displayedPictures ?? 0, 2)
+        XCTAssertGreaterThan(playback.player?.decodedFrameCount ?? 0, 2)
         XCTAssertGreaterThan(playback.elapsed, 1)
         XCTAssertTrue(originals.allSatisfy { manager.fileExists(atPath: $0.path) })
     }
@@ -242,9 +242,7 @@ final class TorrentStreamingTests: XCTestCase {
         let manager = FileManager.default, root = manager.temporaryDirectory.appendingPathComponent("HLSFolderQA-\(UUID())")
         let package = root.appendingPathComponent("Episode 2.hls", isDirectory: true)
         try manager.createDirectory(at: package, withIntermediateDirectories: true)
-        let defaults = UserDefaults.standard, key = VideoPlaybackPreferences.defaultPlayerKey, saved = defaults.object(forKey: key)
-        defaults.set("soulo", forKey: key)
-        defer { defaults.set(saved, forKey: key); try? manager.removeItem(at: root) }
+        defer { try? manager.removeItem(at: root) }
         var manifest = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-PLAYLIST-TYPE:VOD\n"
         for index in 0..<4 {
             let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment\(index)", withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
@@ -268,7 +266,7 @@ final class TorrentStreamingTests: XCTestCase {
         }
         for _ in 0..<120 {
             if let playback = surface(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window)?.playback,
-               playback.elapsed > 0.5, (playback.player?.media?.statistics.displayedPictures ?? 0) > 2 { break }
+               playback.elapsed > 0.5, (playback.player?.decodedFrameCount ?? 0) > 2 { break }
             try await Task.sleep(for: .milliseconds(100))
         }
         let foundPlayback = surface(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window)?.playback
@@ -281,7 +279,7 @@ final class TorrentStreamingTests: XCTestCase {
         defer { playback.stop() }
         XCTAssertNil(playback.error)
         XCTAssertGreaterThan(playback.elapsed, 0.5)
-        XCTAssertGreaterThan(playback.player?.media?.statistics.displayedPictures ?? 0, 2)
+        XCTAssertGreaterThan(playback.player?.decodedFrameCount ?? 0, 2)
         XCTAssertGreaterThan(playback.duration, 6)
     }
 
@@ -299,11 +297,11 @@ final class TorrentStreamingTests: XCTestCase {
     }
 
     @MainActor
-    func testMP4UsesSouloByDefaultForFilesAndDownloadPlayback() async throws {
+    func testMP4AutomaticallyUsesSouloForFilesAndDownloadPlaybackDespiteOldPreference() async throws {
         let defaults = UserDefaults.standard
-        let keys = [VideoPlaybackPreferences.defaultPlayerKey, "media.file.systemPlayer"]
+        let keys = ["video.defaultPlayer", "media.file.systemPlayer"]
         let saved = keys.map { defaults.object(forKey: $0) }
-        defaults.removeObject(forKey: keys[0]); defaults.set(true, forKey: keys[1])
+        defaults.set("system", forKey: keys[0]); defaults.set(true, forKey: keys[1])
         defer { for (key, value) in zip(keys, saved) { defaults.set(value, forKey: key) } }
         let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
         let server = try DownloadPlaybackHTTPFixture(files: ["/clip.mp4": Data(contentsOf: file)])
@@ -316,7 +314,7 @@ final class TorrentStreamingTests: XCTestCase {
             let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
             window.rootViewController = UIHostingController(rootView: NavigationStack {
                 if url.isFileURL { LocalDocumentContent(url: url) }
-                else { MediaPlaybackContent() }
+                else { FullscreenMediaPlaybackContent() }
             })
             window.makeKeyAndVisible()
             if !url.isFileURL { MediaSession.shared.open(url: url, persistPosition: false) }
@@ -331,7 +329,7 @@ final class TorrentStreamingTests: XCTestCase {
             }
             for _ in 0..<120 {
                 playback = find(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window)
-                if (playback?.player?.media?.statistics.displayedPictures ?? 0) > 2 { break }
+                if (playback?.player?.decodedFrameCount ?? 0) > 2 { break }
                 try await Task.sleep(for: .milliseconds(100))
             }
             if playback == nil {
@@ -340,7 +338,7 @@ final class TorrentStreamingTests: XCTestCase {
                 let attachment = XCTAttachment(image: shot); attachment.name = "MP4 playback hierarchy"; attachment.lifetime = .keepAlways; add(attachment)
             }
             let decoder = try XCTUnwrap(playback, "Both file and download paths must mount Soulo by default")
-            XCTAssertGreaterThan(decoder.player?.media?.statistics.displayedPictures ?? 0, 2)
+            XCTAssertGreaterThan(decoder.player?.decodedFrameCount ?? 0, 2)
             XCTAssertTrue(decoder.playing, "Switching before AVPlayer's first frame must preserve autoplay")
             XCTAssertNil(MediaSession.shared.player.currentItem)
             func findSlider(_ view: UIView) -> UISlider? {
@@ -366,12 +364,11 @@ final class TorrentStreamingTests: XCTestCase {
 
     @MainActor
     func testFileMusicKeepsPlayingAfterNavigationAndAutomaticallyAdvancesInBothModes() async throws {
-        let defaults = UserDefaults.standard, modeKey = VideoPlaybackPreferences.defaultPlayerKey
-        let mode = defaults.object(forKey: modeKey), oldRate = defaults.object(forKey: "media.rate")
+        let defaults = UserDefaults.standard, oldRate = UserDefaults.standard.object(forKey: "media.rate")
         defaults.set(1.0, forKey: "media.rate")
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("MusicQueue-\(UUID())")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        defer { MediaSession.shared.stop(); defaults.set(mode, forKey: modeKey); defaults.set(oldRate, forKey: "media.rate"); try? FileManager.default.removeItem(at: root) }
+        defer { MediaSession.shared.stop(); defaults.set(oldRate, forKey: "media.rate"); try? FileManager.default.removeItem(at: root) }
         let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 8000, channels: 1))
         let urls = [root.appendingPathComponent("2.wav"), root.appendingPathComponent("10.wav")]
         for (index, file) in urls.enumerated() {
@@ -383,9 +380,12 @@ final class TorrentStreamingTests: XCTestCase {
         XCTAssertEqual(FileVideoEpisodes.localURLs(in: root, audio: true).map(\.lastPathComponent), ["2.wav", "10.wav"])
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         for engine in ["soulo", "system"] {
-            MediaSession.shared.stop(); defaults.set(engine, forKey: modeKey)
+            MediaSession.shared.stop()
             let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
-            let host = UIHostingController(rootView: AnyView(NavigationStack { LocalDocumentContent(url: urls[0]) }))
+            let host = UIHostingController(rootView: AnyView(NavigationStack {
+                if engine == "system" { FileMediaPlaybackView(url: urls[0], initialSystemPlayer: true) }
+                else { LocalDocumentContent(url: urls[0]) }
+            }))
             window.rootViewController = host; window.makeKeyAndVisible()
             defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
             for _ in 0..<80 {
@@ -410,9 +410,6 @@ final class TorrentStreamingTests: XCTestCase {
 
     @MainActor
     func testAudioFileUsesSharedSouloModeAndAdvancingTimeline() async throws {
-        let defaults = UserDefaults.standard, key = VideoPlaybackPreferences.defaultPlayerKey
-        let saved = defaults.object(forKey: key)
-        defaults.set("soulo", forKey: key)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("wav")
         let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 8_000, channels: 1))
         let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 80_000))
@@ -431,7 +428,7 @@ final class TorrentStreamingTests: XCTestCase {
         defer {
             playback?.stop(); MediaSession.shared.stop()
             window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
-            defaults.set(saved, forKey: key); try? FileManager.default.removeItem(at: url)
+            try? FileManager.default.removeItem(at: url)
         }
         for _ in 0..<80 {
             playback = find(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window)
@@ -447,11 +444,6 @@ final class TorrentStreamingTests: XCTestCase {
 
     @MainActor
     func testCompletedHEVCFileOpensFullscreenDecodesAndClosesPlayback() async throws {
-        let defaults = UserDefaults.standard, key = VideoPlaybackPreferences.defaultPlayerKey
-        let savedPlayer = defaults.object(forKey: key)
-        defaults.set("soulo", forKey: key)
-        defer { defaults.set(savedPlayer, forKey: key) }
-
         let url: URL
         if let offline = ProcessInfo.processInfo.environment["SOULO_DEVICE_OFFLINE_DOWNLOAD_QA"] {
             url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -487,7 +479,7 @@ final class TorrentStreamingTests: XCTestCase {
         }
         for _ in 0..<160 {
             playback = find(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window, MatroskaVideoSurface.self)?.playback
-            if (playback?.player?.media?.statistics.displayedPictures ?? 0) > 3 { break }
+            if (playback?.player?.decodedFrameCount ?? 0) > 3 { break }
             try await Task.sleep(for: .milliseconds(100))
         }
         let decoder = try XCTUnwrap(playback, "A completed HEVC file must use the extended decoder through the actual file preview")
@@ -498,7 +490,7 @@ final class TorrentStreamingTests: XCTestCase {
         capture("Connected phone original file preview")
         XCTAssertNil(decoder.error)
         XCTAssertFalse(decoder.buffering, "Visible playing video must not keep showing a loading indicator")
-        XCTAssertGreaterThan(decoder.player?.media?.statistics.displayedPictures ?? 0, 3, "Audio progress alone does not prove that the file preview has video")
+        XCTAssertGreaterThan(decoder.player?.decodedFrameCount ?? 0, 3, "Audio progress alone does not prove that the file preview has video")
         XCTAssertGreaterThan(decoder.player?.videoSize.width ?? 0, 0)
         XCTAssertNil(MediaSession.shared.player.currentItem, "The incompatible MP4 must not be left playing only its audio through AVPlayer")
         func button(_ identifier: String, in root: UIView) -> UIButton? {
@@ -506,8 +498,8 @@ final class TorrentStreamingTests: XCTestCase {
             for child in root.subviews { if let match = button(identifier, in: child) { return match } }
             return nil
         }
-        let drawable = try XCTUnwrap(decoder.player?.drawable as? UIView)
-        let previewFrames = decoder.player?.media?.statistics.displayedPictures ?? 0
+        let drawable = decoder.drawable
+        let previewFrames = decoder.player?.decodedFrameCount ?? 0
         let activeHost = try XCTUnwrap(SharedVideoFullscreenHost.current(in: window))
         let fullscreen = try XCTUnwrap(activeHost.screen, "Files must open directly in fullscreen without a preview page")
         XCTAssertEqual(fullscreen.modalPresentationStyle, .overFullScreen)
@@ -515,7 +507,7 @@ final class TorrentStreamingTests: XCTestCase {
         activeHost.setLandscape(true)
         for _ in 0..<100 {
             if drawable.isDescendant(of: fullscreen.view),
-               (decoder.player?.media?.statistics.displayedPictures ?? 0) > previewFrames { break }
+               (decoder.player?.decodedFrameCount ?? 0) > previewFrames { break }
             try await Task.sleep(for: .milliseconds(50))
         }
         XCTAssertTrue(drawable.isDescendant(of: fullscreen.view), "Fullscreen must display the active video surface")
@@ -532,7 +524,7 @@ final class TorrentStreamingTests: XCTestCase {
         XCTAssertEqual(videoFrame.midY, fullscreen.view.bounds.midY, accuracy: 2)
         XCTAssertLessThanOrEqual(videoFrame.width, fullscreen.view.bounds.width + 2)
         XCTAssertLessThanOrEqual(videoFrame.height, fullscreen.view.bounds.height + 2)
-        let fullscreenFrames = decoder.player?.media?.statistics.displayedPictures ?? 0
+        let fullscreenFrames = decoder.player?.decodedFrameCount ?? 0
         XCTAssertGreaterThan(fullscreenFrames, previewFrames, "Video frames must continue in fullscreen")
         capture("Connected phone original video fullscreen")
         if ProcessInfo.processInfo.environment["SOULO_DEVICE_VISUAL_HOLD"] == "1" {
@@ -544,7 +536,7 @@ final class TorrentStreamingTests: XCTestCase {
             try await Task.sleep(for: .seconds(8))
             if !decoder.playing { decoder.togglePlayback() }
         }
-        XCTAssertTrue((decoder.player?.drawable as? UIView) === drawable, "Entering fullscreen must preserve the active video output")
+        XCTAssertTrue(decoder.drawable === drawable, "Entering fullscreen must preserve the active video output")
         let close = try XCTUnwrap(button("media.mkv.fullscreen.close", in: fullscreen.view))
         close.sendActions(for: .touchUpInside)
         for _ in 0..<100 {
@@ -553,6 +545,7 @@ final class TorrentStreamingTests: XCTestCase {
         }
         XCTAssertNil(SharedVideoFullscreenHost.current(in: window))
         XCTAssertFalse(decoder.playing, "Closing fullscreen must stop playback without returning to a preview player")
+        XCTAssertFalse(decoder.isPlaybackRequested, "Closing fullscreen must cancel playback intent")
 
     }
 
@@ -706,11 +699,11 @@ final class TorrentStreamingTests: XCTestCase {
         }
         XCTAssertGreaterThanOrEqual(playback.elapsed, 0.9, "A paused player handoff must restore its position")
         XCTAssertFalse(playback.playing)
-        XCTAssertFalse(playback.buffering, "Paused VLC media can report .buffering even after its seek has finished")
+        XCTAssertFalse(playback.buffering, "The paused timeline must settle after a seek")
         let rotatedSurface = UIView(frame: CGRect(x: 0, y: 0, width: 700, height: 350))
         controller.view.addSubview(rotatedSurface)
         playback.attach(rotatedSurface)
-        let frame = try XCTUnwrap(playback.player?.drawable as? UIView).frame
+        let frame = playback.drawable.frame
         let size = try XCTUnwrap(playback.player).videoSize
         XCTAssertEqual(frame.width / frame.height, size.width / size.height, accuracy: 0.01,
                        "Rotating a paused video must preserve its display ratio without restarting playback")
@@ -748,6 +741,43 @@ final class TorrentStreamingTests: XCTestCase {
     }
 
     @MainActor
+    func testVP9OpusStreamsAndDecodesAfterSeek() async throws {
+        let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-vp9-opus", withExtension: "webm",
+                                                         subdirectory: "ReadingFixtures"))
+        let bytes = try Data(contentsOf: file)
+        let server = try await TorrentStreamServer.start(size: Int64(bytes.count), name: file.lastPathComponent) { offset, count in
+            bytes.subdata(in: Int(offset)..<min(bytes.count, Int(offset) + count))
+        }
+        defer { server.stop() }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        let controller = UIViewController()
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        let playback = MatroskaPlayback()
+        playback.attach(controller.view)
+        defer { playback.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+
+        playback.open(server.url)
+        for _ in 0..<80 {
+            if playback.elapsed > 0.3, (playback.player?.decodedFrameCount ?? 0) > 2 { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let decoder = try XCTUnwrap(playback.player as? ExtendedPlaybackDecoder)
+        XCTAssertNil(playback.error)
+        XCTAssertGreaterThan(decoder.decodedFrameCount, 2)
+        XCTAssertEqual(playback.tracks.filter { $0.kind == .audio }.count, 1)
+        let frames = decoder.decodedFrameCount
+        playback.seek(3)
+        for _ in 0..<60 {
+            if decoder.currentTime > 3.15, decoder.decodedFrameCount > frames { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertGreaterThan(decoder.currentTime, 3.15)
+        XCTAssertGreaterThan(decoder.decodedFrameCount, frames)
+    }
+
+    @MainActor
     func testHEV1MP4UsesExtendedDecoderAndPlaysThroughTheTorrentStream() async throws {
         let fixture = "playback-hevc-hev1"
         let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: fixture, withExtension: "mp4", subdirectory: "ReadingFixtures"))
@@ -766,16 +796,14 @@ final class TorrentStreamingTests: XCTestCase {
         defer { playback.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
         playback.open(server.url)
         for _ in 0..<100 {
-            if playback.elapsed > 0.5, (playback.player?.media?.statistics.displayedPictures ?? 0) > 0 { break }
+            if playback.elapsed > 0.5, (playback.player?.decodedFrameCount ?? 0) > 0 { break }
             try await Task.sleep(for: .milliseconds(100))
         }
         XCTAssertNil(playback.error)
-        XCTAssertGreaterThan(playback.elapsed, 0.5, "\(fixture): state=\(String(describing: playback.player?.state.rawValue)), duration=\(playback.duration), position=\(playback.player?.position ?? 0)")
+        XCTAssertGreaterThan(playback.elapsed, 0.5, "\(fixture): state=\(String(describing: playback.player?.state.rawValue)), duration=\(playback.duration), decoderTime=\(playback.player?.currentTime ?? 0)")
         XCTAssertGreaterThan(playback.player?.videoSize.width ?? 0, 0)
-        let stats = try XCTUnwrap(playback.player?.media?.statistics)
-        XCTAssertGreaterThan(stats.decodedVideo, 0)
-        XCTAssertGreaterThan(stats.displayedPictures, 0, "Audio progress alone does not prove HEVC video playback")
-        print("HEVC_ACTUAL_FRAMES|decoded=\(stats.decodedVideo)|displayed=\(stats.displayedPictures)")
+        XCTAssertTrue(playback.player is ExtendedPlaybackDecoder)
+        XCTAssertGreaterThan(playback.player?.decodedFrameCount ?? 0, 0, "Audio progress alone does not prove HEVC video playback")
     }
 
     @MainActor

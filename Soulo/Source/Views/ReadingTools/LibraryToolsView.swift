@@ -36,6 +36,7 @@ struct LibraryFilesView: View {
     @State private var archive: LocalFile?
     @State private var book: LibraryBook?
     @State private var preview: LocalFile?
+    @State private var extensionPackage: LocalFile?
     @State private var openedDirectory: LocalFile?
     @State private var showTransfer = false
     @State private var showMedia = false
@@ -266,6 +267,9 @@ struct LibraryFilesView: View {
         .compatibleNavigationDestination(item: $book) { BookReaderView(book: $0) }
         .compatiblePreviewDestination(item: $preview, isMedia: { [.video, .audio].contains($0.info.kind) }) { file in
             LocalDocumentContent(url: file.url)
+        }
+        .sheet(item: $extensionPackage) { file in
+            LocalWebExtensionInstallView(url: file.url)
         }
         .compatibleNavigationDestination(item: $openedDirectory) { folder in
             LibraryFilesView(directory: folder.url)
@@ -764,7 +768,9 @@ struct LibraryFilesView: View {
             return
         }
         let ext = file.info.fileExtension
-        if ArchiveService.extensions.contains(ext) {
+        if !file.directory, file.url.pathExtension.lowercased() == "crx" {
+            extensionPackage = file
+        } else if ArchiveService.extensions.contains(ext) {
             archive = file
         } else if BookFormat.extensions.contains(ext) && !file.url.pathExtension.isEmpty {
             Task {

@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Wypróbuj informację zwrotną";
 
-"media_start_timeout" = "Odtwarzanie nie rozpoczęło się. Sprawdź sieć lub zmień odtwarzacz.";
+"media_start_timeout" = "Odtwarzanie nie rozpoczęło się. Sprawdź sieć.";
+"media_load_complete" = "Wczytano";
+"media_playback_stalled" = "Odtwarzanie się zatrzymało.";
 
 "wallpaper_appearance_hint" = "Ustaw osobne tła dla jasnego i ciemnego wyglądu. Będą zmieniać się automatycznie wraz z aplikacją.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Pobrane pliki";
 "storage_cache_group" = "Pamięć podręczna i pliki tymczasowe";
+"storage_video_cache" = "Pamięć podręczna wideo";
 "storage_saved_group" = "Zapisana zawartość";
 
 "storage_clear_offline_media_warning" = "Usuwa wszystkie filmy offline w tym miejscu i ich wpisy plików. Niedokończone pobieranie plików/filmów, odtwarzanie i eksport zostaną zatrzymane.";

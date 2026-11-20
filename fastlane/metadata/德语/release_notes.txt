@@ -1,4 +1,4 @@
-• Die Einstellungen wurden neu geordnet. In der Vorschau kannst du das Design der Startseiten-Symbolleiste ändern, ihre Tasten sortieren und sie an die gewünschte Stelle ziehen.
-• Bei aktivierter Wiederherstellung öffnet Soulo nach dem Neustart die Startseite oder die zuletzt besuchte Webseite.
-• Browsermenüs sind besser lesbar. Über das Menü „Mehr“ kannst du eine ausgeblendete Symbolleiste wieder einblenden.
-• Netzwerkanfragen und Updateprüfungen für Benutzerskripte wurden verbessert.
+• Verbesserte Vollbildwechsel, Pufferung und Auswahl der Wiedergabegeschwindigkeit bei Onlinevideos.
+• Magnet-Links werden besser erkannt und Peers für BitTorrent-Downloads leichter gefunden.
+• Benutzerskripte können mit GM_webRequest Fetch- und XHR-Anfragen des Hauptrahmens abbrechen oder innerhalb desselben Ursprungs umleiten.
+• Verbesserte Kompatibilität mit Browsererweiterungen, unter anderem bei Download-Dateinamen und beim Laden von Seiten außerhalb der sichtbaren Ansicht.

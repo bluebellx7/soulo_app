@@ -1,0 +1,4 @@
+module SouloHLSMux {
+    header "SouloHLSMux.h"
+    export *
+}

@@ -363,7 +363,8 @@ final class StorageUsageServiceTests: XCTestCase {
             XCTAssertGreaterThan(record.bytes, 0, category.rawValue)
             XCTAssertFalse(record.isEstimated)
         }
-        XCTAssertEqual(StorageUsageCategory.allCases.filter(\.canClear), [.webData, .tabSnapshots, .favicons, .wallpaperCache, .otherCaches, .temporaryFiles, .ruleCache, .downloadTasks])
+        XCTAssertEqual(StorageUsageCategory.allCases.filter(\.canClear), [.webData, .tabSnapshots, .favicons, .wallpaperCache,
+            .videoPlaybackCache, .otherCaches, .temporaryFiles, .ruleCache, .downloadTasks])
         for category: StorageUsageCategory in [.wallpapers, .downloads, .readingData, .backups, .filterRules] {
             XCTAssertThrowsError(try StorageUsageService.clearDiskCache(category, locations: locations))
         }

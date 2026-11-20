@@ -18,6 +18,7 @@ struct TorrentDownloadJob: Codable, Identifiable, Equatable {
     var resumeAfterSystemPause: Bool? = nil
     var verifiedFileBytes: [Int64]? = nil
     var isActive: Bool { [.metadata, .starting, .downloading].contains(state) }
+    var canChangeSelection: Bool { [.selection, .paused, .failed].contains(state) }
     var priorities: [Bool] { files.map { selected.contains($0.index) && !$0.pad } }
     var selectedBytes: Int64 { files.filter { selected.contains($0.index) && !$0.pad }.reduce(0) { $0 + $1.size } }
 
@@ -155,7 +156,6 @@ final class TorrentDownloadService: ObservableObject {
         work(&jobs[i]); persist()
     }
     func create(data: Data?, magnet: String?, openExisting: Bool = false) async throws -> UUID {
-        guard jobs.count < 200 else { throw TorrentTaskError.limit }
         let metadata: TorrentMetadata
         if let data { metadata = try await worker.inspect(data: data) }
         else if let magnet { metadata = try await worker.inspect(magnet: magnet) }
@@ -165,6 +165,7 @@ final class TorrentDownloadService: ObservableObject {
             if openExisting { return existing.id }
             throw TorrentTaskError.duplicate
         }
+        guard jobs.count < 200 else { throw TorrentTaskError.limit }
         let name = metadata.name.isEmpty ? "Torrent " + String(metadata.hash.prefix(8)) : metadata.name
         let (item, destination) = manager.beginDownload(suggestedFilename: name, sourceURL: magnet.flatMap(URL.init(string:)), transport: .torrent)
         do {
@@ -185,7 +186,7 @@ final class TorrentDownloadService: ObservableObject {
         }
     }
     func select(_ id: UUID, indices: Set<Int>) {
-        guard let job = job(id), !job.isActive && job.state != .finished else { return }
+        guard let job = job(id), job.canChangeSelection else { return }
         let valid = Set(job.files.filter { !$0.pad }.map(\.index))
         mutate(id) { $0.selected = indices.intersection(valid) }
     }

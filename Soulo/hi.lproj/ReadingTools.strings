@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "प्रतिक्रिया का प्रीव्यू";
 
-"media_start_timeout" = "प्लेबैक शुरू नहीं हुआ। नेटवर्क जाँचें या प्लेयर बदलें।";
+"media_start_timeout" = "प्लेबैक शुरू नहीं हुआ। नेटवर्क जाँचें।";
+"media_load_complete" = "लोड हो गया";
+"media_playback_stalled" = "वीडियो रुक गया है।";
 
 "wallpaper_appearance_hint" = "हल्के और गहरे रंग के लिए अलग पृष्ठभूमि चुनें। ऐप की थीम बदलने पर ये अपने आप बदल जाएँगी।";
 
@@ -556,6 +558,7 @@
 
 "storage_files_group" = "डाउनलोड और फ़ाइलें";
 "storage_cache_group" = "कैश और अस्थायी फ़ाइलें";
+"storage_video_cache" = "वीडियो कैश";
 "storage_saved_group" = "सहेजी गई सामग्री";
 
 "storage_clear_offline_media_warning" = "यहाँ के सभी ऑफ़लाइन वीडियो और उनकी फ़ाइल प्रविष्टियाँ मिटेंगी। अधूरे फ़ाइल/वीडियो डाउनलोड, प्लेबैक और निर्यात रुकेंगे।";

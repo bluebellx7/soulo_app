@@ -313,6 +313,66 @@ final class DeviceIntegrationUITests: XCTestCase {
         }
     }
 
+    func testFullscreenUsesMoreMenuAndExitsByShortcutOrUpwardSwipe() async throws {
+        guard #available(iOS 16.4, *) else { throw XCTSkip("URL-driven UI automation requires iOS 16.4") }
+        continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/fullscreen": Data("<meta name='viewport' content='width=device-width,initial-scale=1'><style>body{min-height:200vh}h1{position:sticky;top:0}</style><h1>Fullscreen menu fixture</h1>".utf8)
+        ])
+        let root = try await server.start()
+        defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-is_incognito", "YES", "-icloud_sync_enabled", "NO",
+            "-review.requestedOnce", "YES", "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO",
+            "-privacy_https_upgrade_enabled", "NO", "-browser_more_menu_actions",
+            "(home,reload,back,forward,fullscreen,desktopMode,darkMode,tabs,share,copyLink,bookmark,library)"]
+        app.launch()
+        defer { app.terminate() }
+        app.open(root.appendingPathComponent("fullscreen"))
+        XCTAssertTrue(app.webViews.staticTexts["Fullscreen menu fixture"].firstMatch.waitForExistence(timeout: 10))
+
+        let more = app.buttons["browser.more"].firstMatch
+        let handle = app.buttons["fullscreen.handle"].firstMatch
+        let fullscreen = app.buttons["browser.moreMenu.fullscreen"].firstMatch
+        let library = app.buttons["browser.moreMenu.library"].firstMatch
+        let appFrame = app.frame
+
+        func enterFullscreen() {
+            XCTAssertTrue(more.waitForExistence(timeout: 5))
+            more.tap()
+            XCTAssertTrue(fullscreen.waitForExistence(timeout: 5))
+            XCTAssertEqual(fullscreen.label, "Full Screen")
+            fullscreen.tap()
+            XCTAssertTrue(handle.waitForExistence(timeout: 5))
+        }
+
+        enterFullscreen()
+        let handleFrame = handle.frame
+        XCTAssertGreaterThan(handleFrame.midY, appFrame.minY + appFrame.height * 0.75)
+        handle.tap()
+        XCTAssertTrue(library.waitForExistence(timeout: 5))
+        XCTAssertEqual(fullscreen.label, "Exit Full Screen")
+        XCTAssertLessThan(app.popovers.firstMatch.frame.maxY, handleFrame.midY)
+        let menuScreenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        menuScreenshot.name = "fullscreen-more-menu"
+        menuScreenshot.lifetime = .keepAlways
+        add(menuScreenshot)
+        fullscreen.tap()
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+
+        enterFullscreen()
+        XCTAssertTrue(handle.waitForNonExistence(timeout: 5))
+        let lowerPage = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.92))
+        lowerPage.press(forDuration: 0.05, thenDragTo: lowerPage.withOffset(CGVector(dx: 0, dy: -68)),
+            withVelocity: .slow, thenHoldForDuration: 0)
+        XCTAssertTrue(handle.exists)
+        let start = handle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -44)))
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.webViews.staticTexts["Fullscreen menu fixture"].firstMatch.exists)
+    }
+
     func testMoreShortcutTogglesBrowserToolbarInBothDirections() async throws {
         guard #available(iOS 16.4, *) else { throw XCTSkip("URL-driven UI automation requires iOS 16.4") }
         continueAfterFailure = false
@@ -713,6 +773,7 @@ final class DeviceIntegrationUITests: XCTestCase {
         let base = try await server.start(); server.releaseDownloads(); defer { server.stop() }
         let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
         app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-wallpaper_source", "gradient", "-keep_screen_awake", "YES", "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES", "-is_incognito", "NO", "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO"]
+        if fullscreen { app.launchArguments += ["-video.showsWebTools", "YES", "-video.takeOverWebPlayers", "NO"] }
         app.launchEnvironment["SOULO_ACCEPTANCE_PROBE"] = "1"
         app.launchEnvironment["SOULO_ACCEPTANCE_PLAYER"] = "1"
         app.launchEnvironment["SOULO_ACCEPTANCE_PLAYER_MEDIA"] = base.appendingPathComponent("touch.mp4").absoluteString
@@ -772,6 +833,9 @@ final class DeviceIntegrationUITests: XCTestCase {
             try await Task.sleep(for: .milliseconds(100))
         }
         XCTAssertEqual(state()["fullscreen"] as? Bool, true, String(describing: state()))
+        XCTAssertFalse(app.buttons["Video tools"].firstMatch.exists)
+        let fullShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        fullShot.name = "original-faststream-fullscreen"; fullShot.lifetime = .keepAlways; add(fullShot)
         try tapControl("full")
         for _ in 0..<50 {
             if state()["fullscreen"] as? Bool == false { break }

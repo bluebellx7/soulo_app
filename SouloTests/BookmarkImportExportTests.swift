@@ -147,7 +147,7 @@ final class BookmarkImportExportTests: XCTestCase {
         let date = Date(timeIntervalSince1970: 1680000000)
         try autoreleasepool {
             let old = try ModelContainer(for: LegacyBookmarks.BookmarkItem.self,
-                configurations: ModelConfiguration(url: url))
+                configurations: ModelConfiguration(url: url, cloudKitDatabase: .none))
             let item = LegacyBookmarks.BookmarkItem(title: "旧收藏", urlString: "https://existing.example/?a=1&b=2")
             item.id = id; item.dateAdded = date; item.platformName = "Example"
             item.faviconData = Data([1, 2, 3])

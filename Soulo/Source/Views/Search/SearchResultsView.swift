@@ -261,13 +261,16 @@ struct SearchResultsView: View {
                 return
             }
 
-            // Restore last selected group and select first platform
-            if !lastGroupID.isEmpty,
-               let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }) {
-                if searchVM.selectedGroupID != group.id { searchVM.selectCustomGroup(group) }
-                else { synchronizeSelectedPlatformAfterStoreChange() }
-            } else if !lastRegion.isEmpty, let region = PlatformRegion(rawValue: lastRegion) {
-                searchVM.selectRegion(region)
+            // Home quick search carries an explicit platform with its request.
+            // Restore the group default for the usual browser entry points.
+            if searchVM.externalSearchRequestID != searchVM.searchID {
+                if !lastGroupID.isEmpty,
+                   let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }) {
+                    if searchVM.selectedGroupID != group.id { searchVM.selectCustomGroup(group) }
+                    else { synchronizeSelectedPlatformAfterStoreChange() }
+                } else if !lastRegion.isEmpty, let region = PlatformRegion(rawValue: lastRegion) {
+                    searchVM.selectRegion(region)
+                }
             }
 
             if searchVM.searchID != lastSearchID && !searchVM.currentKeyword.isEmpty {
@@ -402,7 +405,6 @@ struct SearchResultsView: View {
                                 if !pageReady { pageReady = true }
                                 recordCurrentPageVisit(from: activeTab.webViewModel)
                             },
-                            topSafeAreaInset: geo.safeAreaInsets.top,
                             bottomSafeAreaInset: geo.safeAreaInsets.bottom,
                             platformPicker: BrowserPlatformPickerContext(scope: searchVM.selectedSearchScope,
                                 selectedPlatformID: searchVM.selectedPlatform?.id, onSelect: selectPlatformFromPanel,

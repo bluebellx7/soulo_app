@@ -61,6 +61,27 @@ struct WebExtensionVersionSnapshot: Codable, Equatable {
     }
 }
 
+struct WebExtensionInstallationFailure: LocalizedError {
+    enum Stage: Equatable {
+        case package, manifest, context, background(String?), save
+    }
+
+    let stage: Stage
+    let underlying: Error
+
+    var errorDescription: String? {
+        let label: String
+        switch stage {
+        case .package: label = "CRX / XPI / ZIP"
+        case .manifest: label = "manifest.json"
+        case .context: label = AppLocalization.string("extension_diagnostics")
+        case let .background(path): label = path ?? "JavaScript"
+        case .save: label = AppLocalization.string("save_failed")
+        }
+        return label + "\n" + underlying.localizedDescription
+    }
+}
+
 struct WebExtensionInstallPreview: Identifiable {
     let id: UUID
     let resourceURL: URL

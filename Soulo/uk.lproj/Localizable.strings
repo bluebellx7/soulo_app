@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Видалити всі закладки?";
 "settings" = "Налаштування";
 "platform_management" = "Platform Management";
+"home_quick_search" = "Швидкий пошук на головній";
 "region_korea" = "Корея";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Кешовані ресурси та відвідування сторінок за останні 3 дні буде видалено. Файли cookie та входи будуть збережені.";
 "enter_fullscreen" = "Повний екран";
 "exit_fullscreen" = "Вийти з повного екрана";
-"fullscreen_exit_hint" = "Торкніться для керування, потягніть вниз, щоб вийти";
+"exit_fullscreen_short" = "Вийти";
+"fullscreen_exit_hint" = "Торкніться для відкриття меню, проведіть угору, щоб вийти";
 "restore_browser_toolbar" = "Відновити панель інструментів";
 "floating_more_detach" = "Кнопка «Від’єднати більше».";
 "floating_more_snap" = "Прив’яжіть кнопку «Ще» до краю";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Частково підтримується";
 "userscript_docs_partial_desc" = "Сповіщення залишаються на сторінці; API ресурсів повертають Promise. cookie потребує GM_cookie; cookies не надсилаються автоматично.";
 "userscript_docs_unsupported_title" = "Зараз не підтримується";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, ізоляція sandbox/run-in і функції настільного браузера, недоступні у WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest може скасовувати запити Fetch і XMLHttpRequest основного фрейму або перенаправляти їх у межах того самого джерела.";
+"userscript_docs_unsupported_desc" = "GM_audio потребує вимкнення звуку в усій вкладці та читання його стану. Публічний API WKWebView надає обмежену підтримку.\n@sandbox вибирає середовище виконання. Зараз Soulo запускає користувацькі скрипти в середовищі сторінки.";
 "userscript_docs_metadata_title" = "Метадані";
 "userscript_docs_metadata_identity" = "Зрозуміла назва сценарію та необов’язковий опис відображаються перед установкою та в деталях сценарію.";
 "userscript_docs_metadata_version" = "Використовуйте стабільний унікальний простір імен і збільшуйте версію кожного разу, коли змінюється пакетний сценарій.";

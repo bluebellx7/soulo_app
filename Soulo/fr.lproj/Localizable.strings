@@ -56,6 +56,7 @@
 "confirm_clear_bookmarks" = "Supprimer tous les favoris ?";
 "settings" = "Paramètres";
 "platform_management" = "Gestion des plateformes";
+"home_quick_search" = "Recherche rapide à l’accueil";
 "region_korea" = "Corée";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -293,7 +294,8 @@
 
 "enter_fullscreen" = "Plein écran";
 "exit_fullscreen" = "Quitter le plein écran";
-"fullscreen_exit_hint" = "Touchez pour les commandes, tirez pour quitter";
+"exit_fullscreen_short" = "Quitter";
+"fullscreen_exit_hint" = "Touchez pour ouvrir le menu, balayez vers le haut pour quitter";
 "restore_browser_toolbar" = "Restaurer la barre d’outils";
 "floating_more_detach" = "Détacher le bouton Plus";
 "floating_more_snap" = "Ancrer le bouton Plus au bord";

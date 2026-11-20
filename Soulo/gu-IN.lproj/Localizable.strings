@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "બધા બુકમાર્ક્સ સાફ કરીએ?";
 "settings" = "સેટિંગ્સ";
 "platform_management" = "પ્લેટફોર્મ મેનેજમેન્ટ";
+"home_quick_search" = "હોમ પરથી ઝડપી શોધ";
 "region_korea" = "કોરિયા";
 "platform_naver" = "નેવર";
 "platform_daum" = "દૌમ";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "છેલ્લા 3 દિવસથી કેશ્ડ સંસાધનો અને પૃષ્ઠ મુલાકાતો દૂર કરવામાં આવશે. કૂકીઝ અને સાઇન-ઇન રાખવામાં આવશે.";
 "enter_fullscreen" = "પૂર્ણ સ્ક્રીન";
 "exit_fullscreen" = "પૂર્ણ સ્ક્રીનમાંથી બહાર નીકળો";
-"fullscreen_exit_hint" = "નિયંત્રણો માટે ટૅપ કરો, બહાર નીકળવા માટે નીચે ખેંચો";
+"exit_fullscreen_short" = "બહાર નીકળો";
+"fullscreen_exit_hint" = "મેનૂ માટે ટૅપ કરો, બહાર નીકળવા ઉપર સ્વાઇપ કરો";
 "restore_browser_toolbar" = "ટૂલબારને પુનઃસ્થાપિત કરો";
 "floating_more_detach" = "વધુ બટનને અલગ કરો";
 "floating_more_snap" = "ધાર પર વધુ બટન સ્નેપ કરો";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "આંશિક રીતે સપોર્ટેડ";
 "userscript_docs_partial_desc" = "સૂચનાઓ પૃષ્ઠમાં દેખાય છે; રિસોર્સ API Promise આપે છે. cookie વિકલ્પ માટે GM_cookie પરવાનગી જરૂરી છે; કુકી આપમેળે મોકલાતી નથી.";
 "userscript_docs_unsupported_title" = "હાલમાં સમર્થિત નથી";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in અલગાવ અને WKWebView માં ઉપલબ્ધ ન હોય તેવી ડેસ્કટૉપ સુવિધાઓ.";
+"userscript_docs_network_webrequest" = "GM_webRequest મુખ્ય પૃષ્ઠની Fetch અને XMLHttpRequest વિનંતીઓ રદ કરી શકે છે અથવા તે જ મૂળ પર રીડાયરેક્ટ કરી શકે છે.";
+"userscript_docs_unsupported_desc" = "GM_audio માટે આખા ટૅબનો અવાજ બંધ કરવાનું અને તેની ઑડિયો સ્થિતિ વાંચવાનું જરૂરી છે. WKWebViewની જાહેર APIમાં આ માટે મર્યાદિત સપોર્ટ છે.\n@sandbox સ્ક્રિપ્ટનું વાતાવરણ પસંદ કરે છે. Soulo હાલમાં વપરાશકર્તા સ્ક્રિપ્ટોને પેજના વાતાવરણમાં ચલાવે છે.";
 "userscript_docs_metadata_title" = "મેટાડેટા";
 "userscript_docs_metadata_identity" = "માનવ વાંચી શકાય તેવું સ્ક્રિપ્ટ નામ અને વૈકલ્પિક વર્ણન ઇન્સ્ટોલેશન પહેલાં અને સ્ક્રિપ્ટ વિગતોમાં દર્શાવવામાં આવ્યું છે.";
 "userscript_docs_metadata_version" = "સ્થિર, અનન્ય નેમસ્પેસનો ઉપયોગ કરો અને જ્યારે પણ બંડલ કરેલ સ્ક્રિપ્ટ બદલાય ત્યારે વર્ઝનમાં વધારો કરો.";

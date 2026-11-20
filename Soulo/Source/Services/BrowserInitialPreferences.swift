@@ -2,6 +2,7 @@ import Foundation
 
 enum PlatformBarPreferences {
     static let visibilityKey = "show_platform_bar"
+    static let homeQuickSearchKey = "home_quick_search"
     static func isVisible(in defaults: UserDefaults = .standard) -> Bool {
         defaults.object(forKey: visibilityKey) == nil || defaults.bool(forKey: visibilityKey)
     }

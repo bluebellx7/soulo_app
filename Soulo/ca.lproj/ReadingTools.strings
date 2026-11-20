@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Previsualitza la resposta";
 
-"media_start_timeout" = "La reproducció no ha començat. Comprova la xarxa o canvia de reproductor.";
+"media_start_timeout" = "La reproducció no ha començat. Comprova la xarxa.";
+"media_load_complete" = "Càrrega completada";
+"media_playback_stalled" = "La reproducció s’ha aturat.";
 
 "wallpaper_appearance_hint" = "Tria un fons per a l’aspecte clar i un altre per al fosc. Canvien automàticament amb l’app.";
 
@@ -556,6 +558,7 @@
 
 "storage_files_group" = "Baixades i fitxers";
 "storage_cache_group" = "Memòria cau i temporals";
+"storage_video_cache" = "Memòria cau de vídeo";
 "storage_saved_group" = "Contingut desat";
 
 "storage_clear_offline_media_warning" = "Suprimeix tots els vídeos fora de línia d’aquí i les seves entrades de fitxer. S’aturaran les baixades de fitxers/vídeos inacabades, la reproducció i les exportacions.";

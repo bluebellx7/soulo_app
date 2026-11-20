@@ -27,6 +27,7 @@ struct BuiltInUserScriptDefinition {
             downloadURL: metadata.downloadURL,
             requiredURLs: metadata.requiredURLs,
             resources: metadata.resources,
+            runInContexts: metadata.runInContexts,
             storedValues: existing?.storedValues ?? [:],
             isBuiltIn: true,
             injectionTime: metadata.injectionTime,

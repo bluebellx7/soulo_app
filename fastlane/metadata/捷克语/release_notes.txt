@@ -1,4 +1,4 @@
-• Přeuspořádali jsme nastavení. Panel nástrojů na domovské stránce má živý náhled, volbu stylu, změnu pořadí tlačítek a volné umístění přetažením.
-• Po zapnutí obnovy při spuštění se Soulo vrátí na domovskou nebo naposledy prohlíženou stránku.
-• Zlepšili jsme kontrast nabídek prohlížeče. Skrytý panel nástrojů můžete znovu zobrazit z nabídky Další.
-• Vylepšili jsme síťové požadavky a kontrolu aktualizací uživatelských skriptů.
+• Vylepšené přepínání na celou obrazovku, načítání do vyrovnávací paměti a nabídka rychlosti u online videí.
+• Lepší rozpoznávání odkazů magnet a vyhledávání protějšků pro stahování přes BitTorrent.
+• Uživatelské skripty mohou pomocí GM_webRequest rušit požadavky Fetch a XHR hlavního rámce nebo je přesměrovat v rámci stejného původu.
+• Vylepšili jsme kompatibilitu rozšíření prohlížeče, včetně názvů stahovaných souborů a načítání stránek mimo obrazovku.

@@ -62,6 +62,32 @@ final class ExtensionAuditTests: XCTestCase {
         }
     }
 
+    func testDeclaredSidePanelUsesNativePopupAndCompatibilityScriptParses() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        for file in ["panel.html", "publisher.html"] {
+            try Data("<html><body>Fixture</body></html>".utf8).write(to: root.appendingPathComponent(file))
+        }
+        let url = root.appendingPathComponent("manifest.json")
+        func preparedPopup(_ action: [String: Any]) throws -> String? {
+            try JSONSerialization.data(withJSONObject: [
+                "manifest_version": 3, "name": "Panel fixture", "version": "1.0",
+                "action": action, "side_panel": ["default_path": "/panel.html"],
+                "permissions": ["sidePanel", "downloads", "offscreen", "proxy"]
+            ] as [String: Any]).write(to: url)
+            try WebExtensionPackagePreparer.installCompatibilityLayer(in: root)
+            let result = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+            return (result["action"] as? [String: Any])?["default_popup"] as? String
+        }
+        XCTAssertEqual(try preparedPopup([:]), "panel.html")
+        XCTAssertEqual(try preparedPopup(["default_popup": "publisher.html"]), "publisher.html")
+        let javascript = try String(contentsOf: root.appendingPathComponent("__soulo_webextension_compatibility.js"), encoding: .utf8)
+        let context = try XCTUnwrap(JSContext())
+        context.evaluateScript(javascript)
+        XCTAssertNil(context.exception)
+    }
+
     func testNativeI18nBindingsSupportDetachedProxyAndCallbackCallsWithoutChangingResults() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("""
@@ -177,6 +203,15 @@ final class ExtensionAuditTests: XCTestCase {
         var console = {error:function(){},log:function(){}};
         var __reject = false;
         var __apiReplies = [];
+        var lifecycleHandlers = [];
+        function addEventListener(type, callback, options) {
+          if(type === 'pagehide') lifecycleHandlers.push({callback:callback, once:options && options.once});
+        }
+        function hideDocument() {
+          var handlers=lifecycleHandlers;
+          lifecycleHandlers=handlers.filter(function(handler){return !handler.once;});
+          handlers.forEach(function(handler){handler.callback();});
+        }
         var webkit = {messageHandlers:{
           souloUserScriptAPI:{postMessage:function(payload){
             if (__reject) return Promise.reject(new Error('Storage rejected'));
@@ -481,10 +516,13 @@ final class ExtensionAuditTests: XCTestCase {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let source = try package(root: root)
+        try Data(#"'use strict'; importScripts(`./helper.js`); importScripts('/extra.js'); globalThis.__workerAnswer=helperAnswer+extra;"#.utf8)
+            .write(to: source.appendingPathComponent("background/worker.js"))
+        try Data("var extra=1;".utf8).write(to: source.appendingPathComponent("extra.js"))
         let prepared = try WebExtensionPackagePreparer.prepare(sourceURL: source, in: root.appendingPathComponent("installed"))
         let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: prepared.appendingPathComponent("manifest.json"))) as? [String: Any])
         let scripts = try XCTUnwrap((manifest["background"] as? [String: Any])?["scripts"] as? [String])
-        XCTAssertEqual(Array(scripts.suffix(2)), ["background/helper.js", "background/worker.js"])
+        XCTAssertEqual(Array(scripts.suffix(3)), ["background/helper.js", "extra.js", "background/worker.js"])
         let context = try XCTUnwrap(JSContext())
         let resolve: @convention(block) (String, String) -> String = { path, base in
             URL(string: path, relativeTo: URL(string: base))?.absoluteURL.absoluteString ?? ""
@@ -493,7 +531,25 @@ final class ExtensionAuditTests: XCTestCase {
         context.evaluateScript("function URL(path,base){this.href=__resolve(path,base)};var chrome={runtime:{getURL:path=>'webkit-extension://fixture/'+path}};var console={error:function(){}};")
         for path in scripts { context.evaluateScript(try String(contentsOf: prepared.appendingPathComponent(path), encoding: .utf8)) }
         XCTAssertNil(context.exception)
-        XCTAssertEqual(context.evaluateScript("globalThis.__workerAnswer")?.toInt32(), 42)
+        XCTAssertEqual(context.evaluateScript("globalThis.__workerAnswer")?.toInt32(), 43)
+    }
+
+    func testClassicWorkerWithDynamicImportsOrWorkerEventsKeepsItsWorkerEntry() throws {
+        for source in [
+            #"importScripts('./helper.js'); globalThis['importScripts'](nextScript);"#,
+            #"importScripts('./helper.js'); self.addEventListener('fetch', handler);"#
+        ] {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let package = try package(root: root)
+            try Data(source.utf8).write(to: package.appendingPathComponent("background/worker.js"))
+            let prepared = try WebExtensionPackagePreparer.prepare(sourceURL: package, in: root.appendingPathComponent("installed"))
+            let data = try Data(contentsOf: prepared.appendingPathComponent("manifest.json"))
+            let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            let background = try XCTUnwrap(manifest["background"] as? [String: Any])
+            XCTAssertNotNil(background["service_worker"])
+            XCTAssertNil(background["scripts"])
+        }
     }
 
     func testManifestResourceTraversalCannotModifyFilesOutsideThePackage() throws {
@@ -1023,11 +1079,12 @@ extension ExtensionAuditTests {
         defer { try? FileManager.default.removeItem(at: root) }
         let manifest: [String: Any] = ["manifest_version": 3, "name": "External message fixture", "version": "1.0", "permissions": ["storage"],
             "host_permissions": ["http://localhost/*"],
-            "background": ["scripts": ["background.js"], "persistent": false],
+            "background": ["service_worker": "background.js"],
             "externally_connectable": ["matches": ["http://localhost:*/*"]]]
         try JSONSerialization.data(withJSONObject: manifest).write(to: package.appendingPathComponent("manifest.json"))
-        try Data("chrome.runtime.onMessageExternal.addListener((message,sender,reply)=>{reply({pong:message.ping});});chrome.storage.local.set({ready:true});".utf8)
+        try Data(#"importScripts(`./reply.js`); chrome.runtime.onMessageExternal.addListener((message,sender,reply)=>{reply(makeReply(message));});chrome.storage.local.set({ready:true});"#.utf8)
             .write(to: package.appendingPathComponent("background.js"))
+        try Data("function makeReply(message){return {pong:message.ping};}".utf8).write(to: package.appendingPathComponent("reply.js"))
         try Data("<html><body id='ready'>Extension peer</body></html>".utf8).write(to: package.appendingPathComponent("peer.html"))
         let service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
         let record = try await service.installWebExtension(from: package)
@@ -1196,5 +1253,21 @@ extension ExtensionAuditTests {
         XCTAssertEqual(js.evaluateScript("endCalls")?.toInt32(),1)
         XCTAssertEqual(js.evaluateScript("failedType")?.toString(),"timeout")
         XCTAssertEqual(js.evaluateScript("Object.keys(window.__souloUserScriptNetworkReceivers).length")?.toInt32(),0)
+
+        js.evaluateScript("""
+        var hideAborts=0, nativeAbortRequests=0;
+        webkit.messageHandlers.souloUserScriptXHR.postMessage=function(message){
+          if(message.action==='abort'){nativeAbortRequests++;return Promise.resolve(true);}
+          return new Promise(function(){});
+        };
+        function beginRequest(){
+          GM.xmlHttpRequest({url:'https://transport.example/held',onabort:function(){hideAborts++;}}).catch(function(){});
+        }
+        beginRequest();hideDocument();
+        beginRequest();hideDocument();
+        """)
+        XCTAssertEqual(js.evaluateScript("hideAborts")?.toInt32(), 2)
+        XCTAssertEqual(js.evaluateScript("nativeAbortRequests")?.toInt32(), 2)
+        XCTAssertEqual(js.evaluateScript("Object.keys(window.__souloUserScriptNetworkReceivers).length")?.toInt32(), 0)
     }
 }

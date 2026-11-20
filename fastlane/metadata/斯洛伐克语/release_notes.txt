@@ -1,4 +1,4 @@
-• Nastavenia sme preusporiadali. V živom náhľade môžete meniť štýl panela nástrojov na domovskej stránke, poradie tlačidiel aj polohu panela potiahnutím.
-• Keď je obnovenie pri opätovnom spustení zapnuté, Soulo otvorí domovskú alebo naposledy zobrazenú webovú stránku.
-• Ponuky prehliadača sú čitateľnejšie. Skrytý panel nástrojov môžete znova zobraziť z ponuky Viac.
-• Zlepšili sme sieťové požiadavky a kontrolu aktualizácií používateľských skriptov.
+• Vylepšené prepínanie na celú obrazovku, načítavanie do vyrovnávacej pamäte a ponuka rýchlosti pri online videách.
+• Vylepšené rozpoznávanie odkazov magnet a vyhľadávanie partnerov pri sťahovaní cez BitTorrent.
+• Používateľské skripty môžu pomocou GM_webRequest zrušiť požiadavky Fetch a XHR hlavného rámca alebo ich presmerovať na rovnaký zdroj.
+• Zlepšili sme kompatibilitu rozšírení prehliadača vrátane názvov sťahovaných súborov a načítavania stránok mimo obrazovky.

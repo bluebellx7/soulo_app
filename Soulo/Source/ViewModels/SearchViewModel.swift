@@ -46,6 +46,7 @@ class SearchViewModel: ObservableObject {
         set { if input.isLoadingSuggestions != newValue { input.isLoadingSuggestions = newValue } }
     }
     private var suggestionTask: Task<Void, Never>?
+    private var homeAutocompleteEnabled = true
     private var suggestionRequestID = UUID()
     private let suggestionProvider: @Sendable (String, PlatformRegion) async -> [String]
     private var suggestCancellables = Set<AnyCancellable>()
@@ -87,7 +88,7 @@ class SearchViewModel: ObservableObject {
         // - empty
         // - URL (user is pasting a link)
         // - text matches the last submitted search (user just arrived at results page)
-        guard !edit.isComposing, !trimmed.isEmpty,
+        guard isSearching || homeAutocompleteEnabled, !edit.isComposing, !trimmed.isEmpty,
               !trimmed.isValidURL,
               trimmed != currentKeyword
         else {
@@ -113,6 +114,14 @@ class SearchViewModel: ObservableObject {
             self.suggestions = results
             self.isLoadingSuggestions = false
         }
+    }
+
+    func setHomeAutocompleteEnabled(_ enabled: Bool) {
+        let wasEnabled = homeAutocompleteEnabled
+        homeAutocompleteEnabled = enabled
+        guard !isSearching else { return }
+        if !enabled { clearSuggestions() }
+        else if !wasEnabled { fetchSuggestions(for: input.edit, region: selectedRegion) }
     }
 
     func clearSuggestions() {
@@ -171,19 +180,21 @@ class SearchViewModel: ObservableObject {
         tabManager: TabManager,
         preferredRegion: PlatformRegion?,
         customGroup: CustomGroup?,
+        platform: SearchPlatform? = nil,
         context: NSManagedObjectContext? = nil
     ) -> Bool {
         guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               let tab = tabManager.prepareTabForHomeSearch() else { return false }
 
         prepareForHomeSearch(preferredRegion: preferredRegion, customGroup: customGroup)
-        performSearch(context: context)
+        performSearch(context: context, platform: platform)
         // Reserve the tab before SwiftUI starts loading, so another submission
         // cannot mistake a pending search for an unused blank tab.
         if let index = tabManager.tabs.firstIndex(where: { $0.id == tab.id }) {
             tabManager.tabs[index].keyword = currentKeyword
             tabManager.tabs[index].platform = selectedPlatform
         }
+        if platform != nil { externalSearchRequestID = searchID }
         return true
     }
 
@@ -202,7 +213,7 @@ class SearchViewModel: ObservableObject {
         return true
     }
 
-    func performSearch(context: NSManagedObjectContext? = nil) {
+    func performSearch(context: NSManagedObjectContext? = nil, platform: SearchPlatform? = nil) {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
@@ -220,7 +231,7 @@ class SearchViewModel: ObservableObject {
         }
 
         let available = availableSearchPlatforms
-        selectedPlatform = available.first(where: { $0.id == selectedPlatform?.id }) ?? available.first
+        selectedPlatform = platform ?? available.first(where: { $0.id == selectedPlatform?.id }) ?? available.first
 
         if !isIncognito, var platform = selectedPlatform {
             platform.recordUse()

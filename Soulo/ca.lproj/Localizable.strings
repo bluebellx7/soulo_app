@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Esborrar totes les adreces d'interès?";
 "settings" = "Configuració";
 "platform_management" = "Gestió de la plataforma";
+"home_quick_search" = "Cerca ràpida a l’inici";
 "region_korea" = "Corea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Els recursos emmagatzemats a la memòria cau i les visites a la pàgina dels darrers 3 dies s'eliminaran. Es mantindran les galetes i els inicis de sessió.";
 "enter_fullscreen" = "Pantalla completa";
 "exit_fullscreen" = "Sortir de pantalla completa";
-"fullscreen_exit_hint" = "Toqueu per als controls, tireu cap avall per sortir";
+"exit_fullscreen_short" = "Surt";
+"fullscreen_exit_hint" = "Toqueu per obrir el menú, llisqueu amunt per sortir";
 "restore_browser_toolbar" = "Barra d'eines de restauració";
 "floating_more_detach" = "Botó Separa més";
 "floating_more_snap" = "Fixa el botó Més a la vora";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Suport parcialment";
 "userscript_docs_partial_desc" = "Les notificacions són dins la pàgina; les API de recursos retornen Promise. L’opció cookie requereix GM_cookie; no s’envien galetes automàticament.";
 "userscript_docs_unsupported_title" = "Actualment no s'admet";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, l’aïllament sandbox/run-in i funcions d’escriptori no disponibles a WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest permet cancel·lar i redirigir al mateix origen les sol·licituds Fetch i XMLHttpRequest de la pàgina principal.";
+"userscript_docs_unsupported_desc" = "GM_audio necessita silenciar tota la pestanya i consultar l’estat de l’àudio. L’API pública de WKWebView té un abast limitat.\n@sandbox tria l’entorn del script. Soulo executa els scripts d’usuari a l’entorn de la pàgina.";
 "userscript_docs_metadata_title" = "Metadades";
 "userscript_docs_metadata_identity" = "El nom de l'script llegible per l'home i la descripció opcional es mostren abans de la instal·lació i als detalls de l'script.";
 "userscript_docs_metadata_version" = "Utilitzeu un espai de noms únic i estable i incrementeu la versió sempre que canviï l'script inclòs.";

@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Feedback testen";
 
-"media_start_timeout" = "Die Wiedergabe hat nicht begonnen. Prüfe das Netzwerk oder wechsle den Player.";
+"media_start_timeout" = "Die Wiedergabe hat nicht begonnen. Prüfe das Netzwerk.";
+"media_load_complete" = "Vollständig geladen";
+"media_playback_stalled" = "Die Wiedergabe stockt.";
 
 "wallpaper_appearance_hint" = "Wähle eigene Hintergründe für das helle und dunkle Erscheinungsbild. Sie wechseln automatisch mit der App.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Downloads und Dateien";
 "storage_cache_group" = "Cache und temporäre Dateien";
+"storage_video_cache" = "Video-Cache";
 "storage_saved_group" = "Gespeicherte Inhalte";
 
 "storage_clear_offline_media_warning" = "Löscht alle Offlinevideos hier und ihre Dateieinträge. Unfertige Datei-/Videodownloads, Wiedergabe und Exporte werden gestoppt.";

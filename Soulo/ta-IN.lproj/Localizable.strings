@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "எல்லா புக்மார்க்குகளையும் அழிக்கவா?";
 "settings" = "அமைப்புகள்";
 "platform_management" = "மேடை மேலாண்மை";
+"home_quick_search" = "முகப்பில் விரைவுத் தேடல்";
 "region_korea" = "கொரியா";
 "platform_naver" = "நேவர்";
 "platform_daum" = "டாம்";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "கடந்த 3 நாட்களில் இருந்து தற்காலிகமாக சேமிக்கப்பட்ட ஆதாரங்கள் மற்றும் பக்க வருகைகள் அகற்றப்படும். குக்கீகள் மற்றும் உள்நுழைவுகள் வைக்கப்படும்.";
 "enter_fullscreen" = "முழுத்திரை";
 "exit_fullscreen" = "முழுத்திரையிலிருந்து வெளியேறு";
-"fullscreen_exit_hint" = "கட்டுப்பாடுகளுக்கு தட்டவும், வெளியேற கீழே இழுக்கவும்";
+"exit_fullscreen_short" = "வெளியேறு";
+"fullscreen_exit_hint" = "மெனுவைத் திறக்கத் தட்டவும், வெளியேற மேலே ஸ்வைப் செய்யவும்";
 "restore_browser_toolbar" = "கருவிப்பட்டியை மீட்டமை";
 "floating_more_detach" = "மேலும் துண்டிக்கவும் பொத்தானை";
 "floating_more_snap" = "மேலும் பட்டனை விளிம்பில் எடுக்கவும்";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "ஓரளவு ஆதரிக்கப்பட்டது";
 "userscript_docs_partial_desc" = "அறிவிப்புகள் பக்கத்தில் காட்டப்படும்; வள APIகள் Promise தரும். cookie விருப்பத்திற்கு GM_cookie அனுமதி தேவை; குக்கிகள் தானாக அனுப்பப்படாது.";
 "userscript_docs_unsupported_title" = "தற்போது ஆதரிக்கப்படவில்லை";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in தனிமைப்படுத்தல் மற்றும் WKWebView வழங்காத கணினி அம்சங்கள்.";
+"userscript_docs_network_webrequest" = "முதன்மைப் பக்கத்தின் Fetch மற்றும் XMLHttpRequest கோரிக்கைகளை ரத்துசெய்ய அல்லது அதே மூலத்துக்கு வழிமாற்ற GM_webRequest உதவுகிறது.";
+"userscript_docs_unsupported_desc" = "GM_audio-க்கு தாவல் முழுவதையும் ஒலியடக்கவும் ஒலி நிலையை அறியவும் வசதி தேவை. WKWebView-இன் பொது API-யில் இதற்கான ஆதரவு குறைவு.\n@sandbox ஸ்கிரிப்ட் இயங்கும் சூழலைத் தேர்ந்தெடுக்கிறது. Soulo தற்போது பயனர் ஸ்கிரிப்டுகளை பக்கத்தின் சூழலில் இயக்குகிறது.";
 "userscript_docs_metadata_title" = "மெட்டாடேட்டா";
 "userscript_docs_metadata_identity" = "மனிதர்கள் படிக்கக்கூடிய ஸ்கிரிப்ட் பெயர் மற்றும் விருப்ப விவரம் நிறுவலுக்கு முன் மற்றும் ஸ்கிரிப்ட் விவரங்களில் காட்டப்பட்டுள்ளது.";
 "userscript_docs_metadata_version" = "தொகுக்கப்பட்ட ஸ்கிரிப்ட் மாறும்போதெல்லாம், நிலையான, தனித்துவமான பெயர்வெளியைப் பயன்படுத்தவும் மற்றும் பதிப்பை அதிகரிக்கவும்.";

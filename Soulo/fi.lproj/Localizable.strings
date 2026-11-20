@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Poistetaanko kaikki kirjanmerkit?";
 "settings" = "Asetukset";
 "platform_management" = "Alustan hallinta";
+"home_quick_search" = "Pikahaku etusivulla";
 "region_korea" = "Korea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Välimuistissa olevat resurssit ja sivuvierailut kolmen viime päivän ajalta poistetaan. Evästeet ja kirjautumiset säilytetään.";
 "enter_fullscreen" = "Koko näyttö";
 "exit_fullscreen" = "Poistu koko näytön tilasta";
-"fullscreen_exit_hint" = "Napauta nähdäksesi säätimet, vedä alas poistuaksesi";
+"exit_fullscreen_short" = "Poistu";
+"fullscreen_exit_hint" = "Avaa valikko napauttamalla, poistu pyyhkäisemällä ylös";
 "restore_browser_toolbar" = "Palauta työkalupalkki";
 "floating_more_detach" = "Irrota lisää -painike";
 "floating_more_snap" = "Napsauta Lisää-painike reunaan";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Osittain tuettu";
 "userscript_docs_partial_desc" = "Ilmoitukset näkyvät sivulla; resurssirajapinnat palauttavat Promise-arvon. cookie vaatii GM_cookie-oikeuden; evästeitä ei lähetetä automaattisesti.";
 "userscript_docs_unsupported_title" = "Ei tällä hetkellä tuettu";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in-eristys ja työpöytätoiminnot, joita WKWebView ei tarjoa.";
+"userscript_docs_network_webrequest" = "GM_webRequest voi perua pääsivun Fetch- ja XMLHttpRequest-pyynnöt tai ohjata ne saman alkuperän osoitteeseen.";
+"userscript_docs_unsupported_desc" = "GM_audio tarvitsee koko välilehden mykistyksen ja tiedon äänen tilasta. WKWebView’n julkinen rajapinta tukee näitä rajallisesti.\n@sandbox valitsee skriptin suoritusympäristön. Soulo ajaa käyttäjäskriptit tällä hetkellä sivun ympäristössä.";
 "userscript_docs_metadata_title" = "Metatiedot";
 "userscript_docs_metadata_identity" = "Ihmisten luettavissa oleva komentosarjan nimi ja valinnainen kuvaus näkyvät ennen asennusta ja komentosarjan tiedoissa.";
 "userscript_docs_metadata_version" = "Käytä vakaata, ainutlaatuista nimiavaruutta ja lisää versiota aina, kun niputettu komentosarja muuttuu.";

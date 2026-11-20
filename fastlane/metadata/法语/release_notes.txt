@@ -1,4 +1,4 @@
-• Les réglages ont été réorganisés. Prévisualisez la barre d’outils de l’accueil, changez son style, réordonnez ses boutons et placez-la où vous voulez.
-• Si la restauration au redémarrage est activée, Soulo revient à l’accueil ou à la dernière page consultée.
-• Le contraste des menus du navigateur a été amélioré. Le menu Plus permet de réafficher la barre d’outils masquée.
-• Les requêtes réseau et la recherche de mises à jour des scripts utilisateur ont été améliorées.
+• Amélioration du passage en plein écran, de la mise en mémoire tampon et du menu de vitesse de lecture des vidéos en ligne.
+• Meilleure reconnaissance des liens magnet et meilleure détection des pairs pour les téléchargements BitTorrent.
+• Les scripts utilisateur peuvent utiliser GM_webRequest pour annuler des requêtes Fetch et XHR du cadre principal ou les rediriger vers la même origine.
+• Compatibilité améliorée des extensions du navigateur, notamment pour les noms des fichiers téléchargés et le chargement de pages hors écran.

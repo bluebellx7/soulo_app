@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Xóa tất cả dấu trang?";
 "settings" = "Cài đặt";
 "platform_management" = "Quản lý nền tảng";
+"home_quick_search" = "Tìm nhanh từ trang chủ";
 "region_korea" = "Hàn Quốc";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Bộ nhớ đệm và lịch sử truy cập 3 ngày gần nhất sẽ bị xóa. Cookie và trạng thái đăng nhập được giữ lại.";
 "enter_fullscreen" = "Toàn màn hình";
 "exit_fullscreen" = "Thoát toàn màn hình";
-"fullscreen_exit_hint" = "Chạm để mở điều khiển, kéo xuống để thoát";
+"exit_fullscreen_short" = "Thoát";
+"fullscreen_exit_hint" = "Chạm để mở menu, vuốt lên để thoát";
 "restore_browser_toolbar" = "Khôi phục thanh công cụ";
 "floating_more_detach" = "Bỏ ghim nút Thêm";
 "floating_more_snap" = "Ghim nút Thêm vào cạnh";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Được hỗ trợ một phần";
 "userscript_docs_partial_desc" = "Thông báo hiển thị trong trang; API tài nguyên trả về Promise. cookie cần quyền GM_cookie; cookie không được gửi tự động.";
 "userscript_docs_unsupported_title" = "Hiện không được hỗ trợ";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, cách ly sandbox/run-in và tính năng máy tính không có trong WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest có thể hủy yêu cầu Fetch và XMLHttpRequest của khung chính hoặc chuyển hướng chúng trong cùng một nguồn gốc.";
+"userscript_docs_unsupported_desc" = "GM_audio cần tắt tiếng toàn bộ thẻ và đọc trạng thái âm thanh. API công khai của WKWebView chỉ hỗ trợ ở mức hạn chế.\n@sandbox chọn môi trường chạy tập lệnh. Soulo hiện chạy tập lệnh người dùng trong môi trường của trang.";
 "userscript_docs_metadata_title" = "Siêu dữ liệu";
 "userscript_docs_metadata_identity" = "Tên tập lệnh mà con người có thể đọc được và mô tả tùy chọn được hiển thị trước khi cài đặt và trong chi tiết tập lệnh.";
 "userscript_docs_metadata_version" = "Sử dụng một không gian tên ổn định, duy nhất và tăng phiên bản bất cứ khi nào tập lệnh đi kèm thay đổi.";

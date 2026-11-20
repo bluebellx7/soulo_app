@@ -1,4 +1,4 @@
-• Postavke su preuređene. Pregledajte alatnu traku početne stranice, promijenite stil, presložite gumbe i povucite traku na željeno mjesto.
-• Ako uključite vraćanje pri ponovnom pokretanju, Soulo se vraća na početnu ili posljednju pregledanu stranicu.
-• Poboljšan je kontrast izbornika preglednika. Skrivenu alatnu traku možete ponovno prikazati putem izbornika Više.
-• Poboljšani su mrežni zahtjevi i provjera ažuriranja korisničkih skripti.
+• Poboljšani su prebacivanje na cijeli zaslon, međuspremanje i izbornik brzine za mrežne videozapise.
+• Poboljšano je prepoznavanje magnet poveznica i pronalaženje drugih korisnika za BitTorrent preuzimanja.
+• Korisničke skripte mogu koristiti GM_webRequest za otkazivanje zahtjeva Fetch i XHR glavnog okvira ili njihovo preusmjeravanje na isti izvor.
+• Poboljšana je kompatibilnost proširenja preglednika, uključujući nazive preuzetih datoteka i učitavanje stranica izvan zaslona.

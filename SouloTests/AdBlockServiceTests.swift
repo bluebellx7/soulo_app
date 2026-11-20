@@ -41,6 +41,35 @@ final class AdBlockServiceTests: XCTestCase {
         }
     }
 
+    @MainActor func testMTYYDelayedBottomAdRespectsAllowlistAndKeepsNavigation() async throws {
+        for allowed in [false, true] {
+            let web = WKWebView()
+            let page = URL(string: "https://www.mtyy5.com/voddetail/155698.html")!
+            web.loadHTMLString("<nav id='footer'>正常导航</nav><video id='video'></video>", baseURL: page)
+            for _ in 0..<100 {
+                if (try? await web.evaluateJavaScript("!!document.getElementById('footer')")) as? Bool == true { break }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            _ = try await web.evaluateJavaScript(AdBlockService.adHidingScript(allowlistedHosts: allowed ? ["mtyy5.com"] : []) + "\nnull")
+            _ = try await web.evaluateJavaScript("""
+            document.head.insertAdjacentHTML('beforeend', '<style id="rjhtcqjm_style_id">body{padding-bottom:100px!important}</style>');
+            document.body.insertAdjacentHTML('beforeend', '<div id="adTile" style="position:fixed; bottom:0vw; left:0vw; z-index:100;display:block;width:9.6vw;height:7.96875vw;background: #000;opacity:0.01;"></div>');
+            null
+            """)
+            try await Task.sleep(for: .milliseconds(300))
+            let result = try await web.evaluateJavaScript("""
+            [getComputedStyle(document.getElementById('adTile')).display === 'none',
+             getComputedStyle(document.body).paddingBottom === '100px',
+             getComputedStyle(document.getElementById('footer')).display === 'none',
+             getComputedStyle(document.getElementById('video')).display === 'none']
+            """) as? [Bool]
+            XCTAssertEqual(result, [!allowed, allowed, false, false])
+        }
+        let redirect = URL(string: "https://17950700000001244c.hcxftcl.com:902/cc/1244?target=1")!
+        XCTAssertTrue(AdBlockService.isMTYYBottomAdRedirect(redirect, from: URL(string: "https://www.mtyy5.com/voddetail/155698.html")))
+        XCTAssertFalse(AdBlockService.isMTYYBottomAdRedirect(redirect, from: URL(string: "https://other.example/voddetail/155698.html")))
+    }
+
     func testEveryNativeBatchKeepsCloudflareVerificationExceptions() throws {
         for json in AdBlockService.encodedContentRuleLists(batchSize: 2) {
             let data = try XCTUnwrap(json.data(using: .utf8))

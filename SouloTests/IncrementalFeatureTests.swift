@@ -89,13 +89,13 @@ final class IncrementalFeatureTests: XCTestCase {
         playback.open(video, startAt: target, autoplay: false)
         try await wait {
             playback.duration > 0 && playback.player?.isPlaying == false
-                && abs(Double(playback.player?.time.intValue ?? 0) / 1000 - target) < 0.35
+                && abs((playback.player?.currentTime ?? 0) - target) < 0.35
         }
-        let paused = Double(playback.player?.time.intValue ?? 0) / 1000
+        let paused = (playback.player?.currentTime ?? 0)
         try await Task.sleep(for: .milliseconds(350))
-        XCTAssertEqual(Double(playback.player?.time.intValue ?? 0) / 1000, target, accuracy: 0.35,
+        XCTAssertEqual((playback.player?.currentTime ?? 0), target, accuracy: 0.35,
                        "Verify the decoder clock, not just the optimistic progress label")
-        XCTAssertEqual(Double(playback.player?.time.intValue ?? 0) / 1000, paused, accuracy: 0.1,
+        XCTAssertEqual((playback.player?.currentTime ?? 0), paused, accuracy: 0.1,
                        "The transferred video must remain paused")
         XCTAssertFalse(playback.isPlaybackRequested)
         XCTAssertFalse(playback.playing)
@@ -277,16 +277,32 @@ final class IncrementalFeatureTests: XCTestCase {
         let export = try XCTUnwrap(AVAssetExportSession(asset: AVURLAsset(url: video), presetName: AVAssetExportPresetAppleM4A))
         try await export.export(to: audio, as: .m4a)
         let session = MediaSession.shared, oldRate = session.rate
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene), root = UIViewController()
+        window.rootViewController = root; window.makeKeyAndVisible()
         session.stop(); session.setBackgrounded(false); session.setRate(1)
         defer {
             session.setBackgrounded(false); session.stop(); session.setRate(oldRate)
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
             try? FileManager.default.removeItem(at: audio)
         }
         for soulo in [false, true] {
             session.setBackgrounded(false); session.stop()
-            if soulo { MatroskaPlayback().open(audio) } else { session.open(url: audio, persistPosition: false) }
+            if soulo {
+                let playback = MatroskaPlayback()
+                playback.attach(root.view)
+                playback.open(audio)
+            } else {
+                session.open(url: audio, persistPosition: false)
+                session.playerPages += 1
+            }
+            defer { if !soulo { session.playerPages -= 1 } }
             try await wait { session.elapsed > 0.1 && session.playing && !session.hasVideo }
+            session.outputVolumeChanged(0.36)
+            XCTAssertEqual((soulo ? session.soulo?.gestureFeedback : session.gestureFeedback)?.text, "36%")
             session.setBackgrounded(true)
+            session.outputVolumeChanged(0.84)
+            XCTAssertEqual((soulo ? session.soulo?.gestureFeedback : session.gestureFeedback)?.text, "36%")
             let start = session.elapsed
             try await wait { session.elapsed > start + 0.3 }
             XCTAssertTrue(session.isPlaybackRequested, "Background music must continue in both decoder modes")
@@ -301,7 +317,7 @@ final class IncrementalFeatureTests: XCTestCase {
             let url: URL
             var body: some View {
                 MatroskaPlayerView(url: url, persistPosition: false, autoplay: false,
-                    options: FileVideoOptions(usesSystem: false, systemAvailable: compatibility.available, selectPlayer: { _, _, _ in }))
+                    options: FileVideoOptions(usesSystem: false, systemAvailable: compatibility.available))
             }
         }
         let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
@@ -450,7 +466,7 @@ final class IncrementalFeatureTests: XCTestCase {
                 if usesSoulo { playback.open(url, startAt: 2, autoplay: false) }
                 else { session.open(url: url, persistPosition: false, startAt: 2, autoplay: false) }
                 func actualTime() -> Double {
-                    usesSoulo ? Double(playback.player?.time.intValue ?? 0) / 1000 : session.player.currentTime().seconds
+                    usesSoulo ? (playback.player?.currentTime ?? 0) : session.player.currentTime().seconds
                 }
                 for _ in 0..<100 where server.receivedRequests.isEmpty { try await Task.sleep(for: .milliseconds(20)) }
                 XCTAssertFalse(server.receivedRequests.isEmpty, "Hold the actual decoder request before pressing Play")
@@ -469,7 +485,7 @@ final class IncrementalFeatureTests: XCTestCase {
                         try await Task.sleep(for: .milliseconds(50))
                     }
                 } else {
-                    // Pausing while VLC opens a stream can also pause metadata
+                    // Pausing while the decoder opens a stream can also pause metadata
                     // loading. The seek may wait until the next explicit Play.
                     try await Task.sleep(for: .milliseconds(700))
                 }
@@ -846,6 +862,78 @@ extension IncrementalFeatureTests {
         XCTAssertFalse(watch.update(now: 36, requested: true, ready: true))
         XCTAssertFalse(watch.update(now: 60, requested: true, ready: false), "Buffering after playback starts is not a startup failure")
     }
+    func testOnlinePlaybackStallRequiresRequestedPlaybackWithoutProgress() {
+        var watch = VideoProgressWatch()
+        let start = ContinuousClock.now
+        XCTAssertFalse(watch.stalled(at: 10, requested: true, now: start))
+        XCTAssertFalse(watch.stalled(at: 10, requested: true, now: start.advanced(by: .seconds(11))))
+        XCTAssertTrue(watch.stalled(at: 10, requested: true, now: start.advanced(by: .seconds(12))))
+        XCTAssertFalse(watch.stalled(at: 10.5, requested: true, now: start.advanced(by: .seconds(13))))
+        XCTAssertFalse(watch.stalled(at: 10.5, requested: false, now: start.advanced(by: .seconds(40))))
+        XCTAssertFalse(watch.stalled(at: 10.5, requested: true, now: start.advanced(by: .seconds(60))))
+    }
+    func testOnlinePlaybackAllowsActiveBufferingBeforeReconnecting() {
+        var watch = VideoProgressWatch()
+        let start = ContinuousClock.now
+        XCTAssertFalse(watch.stalled(at: 10, requested: true, now: start))
+        XCTAssertFalse(watch.stalled(at: 10, requested: true, receivingData: true, now: start.advanced(by: .seconds(11))))
+        XCTAssertFalse(watch.stalled(at: 10, requested: true, now: start.advanced(by: .seconds(22))))
+        XCTAssertTrue(watch.stalled(at: 10, requested: true, now: start.advanced(by: .seconds(23))))
+        XCTAssertTrue(watch.stalled(at: 10, requested: true, receivingData: true, now: start.advanced(by: .seconds(30))))
+        XCTAssertFalse(watch.stalled(at: 10.5, requested: true, now: start.advanced(by: .seconds(31))))
+    }
+    func testVideoLoadingUsesMeasuredBytesAndRequiresFullBufferCoverage() {
+        var transfer = VideoTransferMeter()
+        let start = ContinuousClock.now
+        XCTAssertNil(transfer.rate(totalBytes: 500, now: start))
+        XCTAssertEqual(transfer.rate(totalBytes: 9500, now: start.advanced(by: .seconds(2))), .rate(4500))
+        XCTAssertNil(transfer.rate(totalBytes: 9500, now: start.advanced(by: .seconds(3))))
+        XCTAssertNil(transfer.rate(totalBytes: 0, now: start.advanced(by: .seconds(4))))
+        XCTAssertNil(transfer.rate(totalBytes: nil, now: start.advanced(by: .seconds(5))))
+
+        func time(_ seconds: Int64) -> CMTime { CMTime(value: seconds, timescale: 1) }
+        let opening = CMTimeRange(start: time(0), end: time(4))
+        let ending = CMTimeRange(start: time(4), end: time(10))
+        XCTAssertTrue(VideoLoadingStatus.coversVideo([ending, opening], duration: time(10)))
+        XCTAssertFalse(VideoLoadingStatus.coversVideo([ending], duration: time(10)))
+        let later = CMTimeRange(start: time(5), end: time(10))
+        XCTAssertFalse(VideoLoadingStatus.coversVideo([opening, later], duration: time(10)))
+        XCTAssertFalse(VideoLoadingStatus.coversVideo([opening, ending], duration: .indefinite))
+    }
+    func testTimelineCachePreservesGapsAndKeepsFileBytesSeparate() {
+        let buffered = CMTimeRange(start: CMTime(value: 15, timescale: 1), duration: CMTime(value: 10, timescale: 1))
+        let cache = VideoCacheCoverage(ranges: [0..<2, 12..<16])
+        let progress = VideoCacheProgress(duration: 20, buffered: [buffered], cache: cache)
+        XCTAssertEqual(progress.timeFractions, [0..<0.1, 0.6..<1])
+        XCTAssertEqual(try XCTUnwrap(progress.coveredFraction), 0.5, accuracy: 0.0001)
+        let fileWithPlaybackBuffer = VideoCacheProgress(duration: 20, buffered: [buffered], cache: .init(fileFraction: 0.8))
+        XCTAssertEqual(fileWithPlaybackBuffer.timeFractions, [0.75..<1])
+        XCTAssertEqual(fileWithPlaybackBuffer.coveredFraction, 0.8)
+        let byteOnly = VideoCacheProgress(duration: 20, cache: .init(fileFraction: 0.4))
+        XCTAssertTrue(byteOnly.timeFractions.isEmpty)
+        XCTAssertEqual(byteOnly.coveredFraction, 0.4)
+        XCTAssertTrue(VideoCacheProgress(duration: .infinity, cache: .init(isComplete: true)).timeFractions.isEmpty)
+        let complete = VideoCacheProgress(duration: 20, cache: .init(isComplete: true))
+        XCTAssertEqual(complete.timeFractions, [0..<1])
+        XCTAssertEqual(complete.coveredFraction, 1)
+        XCTAssertNil(VideoCacheProgress().coveredFraction)
+    }
+
+    @MainActor func testSelectingSupportedVideoRateClearsRateErrorWithoutClearingPlaybackError() {
+        let session = MediaSession()
+        let defaults = UserDefaults.standard, previous = defaults.object(forKey: "media.rate")
+        defer { defaults.set(previous, forKey: "media.rate") }
+        XCTAssertFalse(session.setRate(4))
+        XCTAssertEqual(session.error, ToolText.text("media_rate_unavailable"))
+        XCTAssertTrue(session.setRate(1.5))
+        XCTAssertEqual(session.rate, 1.5)
+        XCTAssertNil(session.error)
+
+        let playbackError = ToolText.text("media_unavailable")
+        session.error = playbackError
+        XCTAssertTrue(session.setRate(1))
+        XCTAssertEqual(session.error, playbackError)
+    }
     @MainActor func testIPadPreviewFitsWindowAndFullscreenDoesNotForceRotation() {
         XCTAssertFalse(VideoOrientation.fullscreenLandscape(video: true, isPad: true, currentLandscape: false))
         XCTAssertTrue(VideoOrientation.fullscreenLandscape(video: false, isPad: true, currentLandscape: true))
@@ -907,7 +995,7 @@ extension IncrementalFeatureTests {
             XCTAssertNil(extended ? playback.error : session.error, "A slow connection must remain recoverable")
             server.releaseDownloads()
             try await wait {
-                extended ? (playback.player?.media?.statistics.displayedPictures ?? 0) > 0 : session.pictureInPicture.surface?.playerLayer.isReadyForDisplay == true
+                extended ? (playback.player?.decodedFrameCount ?? 0) > 0 : session.pictureInPicture.surface?.playerLayer.isReadyForDisplay == true
             }
             try await wait { extended ? playback.startupWarning == nil : session.startupWarning == nil }
             session.outputVolumeChanged(0.42)
@@ -946,7 +1034,7 @@ extension IncrementalFeatureTests {
                 playback.stop(); session.stop()
                 if !extended { session.pictureInPicture.detach(id: attachment); session.playerSurfaces -= 1 }
             }
-            func clock() -> Double { extended ? Double(playback.player?.time.intValue ?? 0) / 1000 : session.player.currentTime().seconds }
+            func clock() -> Double { extended ? (playback.player?.currentTime ?? 0) : session.player.currentTime().seconds }
             try await wait { session.playing && clock() > 0.4 }
             for attempt in 0..<3 {
                 // Exercise both the normal and temporary-speed pause paths.
@@ -959,7 +1047,7 @@ extension IncrementalFeatureTests {
                 XCTAssertFalse(session.playing, "Update the control during the same action, without waiting for a decoder callback")
                 try await Task.sleep(for: .milliseconds(250))
                 let stopped = clock()
-                let displayedPictures = playback.player?.media?.statistics.displayedPictures ?? 0
+                let displayedPictures = playback.player?.decodedFrameCount ?? 0
                 if extended { XCTAssertFalse(playback.player?.isPlaying ?? true) }
                 else { XCTAssertEqual(session.player.timeControlStatus, .paused) }
                 XCTAssertLessThan(stopped - before, 0.45, "Decoded video must stop promptly in \(extended ? "Soulo" : "System")")
@@ -967,7 +1055,7 @@ extension IncrementalFeatureTests {
                 XCTAssertEqual(clock(), stopped, accuracy: 0.1, "Check the decoder clock rather than the displayed timeline")
                 XCTAssertFalse(session.playing)
                 if extended {
-                    XCTAssertLessThanOrEqual((playback.player?.media?.statistics.displayedPictures ?? 0) - displayedPictures, 1,
+                    XCTAssertLessThanOrEqual((playback.player?.decodedFrameCount ?? 0) - displayedPictures, 1,
                         "Rendered frames must stop too; a frozen clock label alone is insufficient")
                 }
                 print("PAUSE QA extended=\(extended) attempt=\(attempt) command=\(commandTime) clockAdvance=\(stopped-before)")
@@ -999,9 +1087,9 @@ extension IncrementalFeatureTests {
             XCTAssertFalse(session.playing)
             server.releaseDownloads()
             try await Task.sleep(for: .milliseconds(900))
-            let clock = extended ? Double(playback.player?.time.intValue ?? 0) / 1000 : session.player.currentTime().seconds
+            let clock = extended ? (playback.player?.currentTime ?? 0) : session.player.currentTime().seconds
             try await Task.sleep(for: .milliseconds(300))
-            XCTAssertEqual(extended ? Double(playback.player?.time.intValue ?? 0) / 1000 : session.player.currentTime().seconds, clock, accuracy: 0.1)
+            XCTAssertEqual(extended ? (playback.player?.currentTime ?? 0) : session.player.currentTime().seconds, clock, accuracy: 0.1)
             XCTAssertFalse(session.isPlaybackRequested); XCTAssertFalse(session.playing)
             if extended { XCTAssertFalse(playback.buffering) }
             session.toggle()

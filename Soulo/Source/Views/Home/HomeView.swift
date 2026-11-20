@@ -2,9 +2,12 @@ import SwiftUI
 import CoreData
 import StoreKit
 
+private let homeSearchViewport = "home.search.viewport"
+
 struct HomeView: View {
     @Environment(\.colorScheme) private var homeColorScheme
     @AppStorage("appearance") private var appAppearance = "system"
+    @AppStorage(PlatformBarPreferences.homeQuickSearchKey) private var homeQuickSearch = false
     private var wallpaperAppearance: WallpaperAppearance {
         // Refresh for trait changes, but never use browser chrome's override
         // to select a different home wallpaper or gradient preset.
@@ -28,6 +31,7 @@ struct HomeView: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var keyboardVisible = false
+    @State private var landscapeIPadWindow = false
     @StateObject private var keyboardContext = BrowserKeyboardContext()
     @State private var reviewTask: Task<Void, Never>?
     @Namespace private var searchBarNamespace
@@ -91,6 +95,15 @@ struct HomeView: View {
                 .mediaPlayerNavigation()
         }
         .background { BrowserKeyboardWindowReader(context: keyboardContext).frame(width: 0, height: 0).allowsHitTesting(false) }
+        .background {
+            if homeQuickSearch && UIDevice.current.userInterfaceIdiom == .pad {
+                ViewWindowReader { window in
+                    let size = window?.bounds.size ?? .zero
+                    landscapeIPadWindow = size.width > size.height
+                }
+                .allowsHitTesting(false)
+            }
+        }
         .focusedSceneValue(\.souloBrowserKeyboardActions,
             BrowserKeyboardActions(enabled: keyboardCommandsEnabled,
                 canPerform: { keyboardContext.canPerform },
@@ -527,12 +540,11 @@ struct HomeView: View {
                 ScrollView {
                     SearchLandingLayout(viewportHeight: max(0, geometry.size.height - 32),
                         headingGap: displayedHomeSubtitle.isEmpty ? (verticalSizeClass == .compact ? 8 : 12) : (verticalSizeClass == .compact ? 12 : 24),
-                        detailsGap: verticalSizeClass == .compact ? 12 : 16, searchOffsetRatio: -0.5) {
+                        detailsGap: verticalSizeClass == .compact ? 12 : 16,
+                        searchOffsetRatio: homeQuickSearch && landscapeIPadWindow && keyboardVisible ? -1.5 : -0.5) {
                         homeHeading.padding(.horizontal, 24)
                         VStack(spacing: 12) {
-                            homeSearchField
-                                .accessibilityElement(children: .contain)
-                                .accessibilityIdentifier("home.search.field")
+                            homeSearchField(width: min(600, max(0, geometry.size.width - 56)), viewportHeight: geometry.size.height)
                                 .zIndex(1)
                             if showsHomeToolbar(.belowSearch) {
                                 homeToolbarStrip(width: max(0, min(geometry.size.width - 32, 526)))
@@ -545,6 +557,7 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                 }
+                .coordinateSpace(name: homeSearchViewport)
                 .scrollDismissesKeyboard(.interactively)
                 .accessibilityIdentifier("home.search.area")
             }
@@ -605,8 +618,11 @@ struct HomeView: View {
         }
     }
 
-    private var homeSearchField: some View {
-            SearchBarView(
+    private func homeSearchField(width: CGFloat, viewportHeight: CGFloat) -> some View {
+        let region = PlatformRegion(rawValue: lastRegion) ?? searchVM.selectedRegion
+        let group = platformStore.customGroups.first { $0.id.uuidString == lastGroupID }
+        let scope = group.map { SearchGroupScope.custom($0.id) } ?? .region(region)
+        return SearchBarView(
                 input: searchVM.input,
                 isIncognito: searchVM.isIncognito,
                 isRecording: speechService.isRecording,
@@ -614,8 +630,8 @@ struct HomeView: View {
                 onMicTap: { showVoiceInput = true },
                 onIncognitoTap: { togglePrivateModeFromSearchBar() },
                 onScanTap: { showScanner = true },
-                selectedRegion: PlatformRegion(rawValue: lastRegion) ?? searchVM.selectedRegion,
-                selectedGroupID: UUID(uuidString: lastGroupID),
+                selectedRegion: region,
+                selectedGroupID: group?.id,
                 onRegionSelect: { region in
                     lastRegion = region.rawValue
                     lastGroupID = ""
@@ -629,17 +645,27 @@ struct HomeView: View {
                 onPlatformManagementTap: { showPlatformManagement = true }
             )
             .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
-            .frame(maxWidth: 600)
-            .padding(.horizontal, 28)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("home.search.field")
 
+            .frame(width: width)
             .overlay(alignment: .bottom) {
-                SearchAutocompleteOverlay(input: searchVM.input, darkVariant: true,
-                maximumWidth: 600, horizontalPadding: 28, topPadding: 8,
-                onSelect: { suggestion in
-                    searchVM.searchText = suggestion
-                    performSearch()
-                }, onFill: { searchVM.searchText = $0 })
+                if homeQuickSearch {
+                    HomeQuickSearchOverlay(input: searchVM.input, width: width, viewportHeight: viewportHeight,
+                        rowLimit: landscapeIPadWindow ? 4 : 3,
+                        platformPicker: BrowserPlatformPickerContext(scope: scope, selectedPlatformID: nil,
+                            onSelect: searchFromHomePlatform, onManage: { showPlatformManagement = true }))
+                } else {
+                    SearchAutocompleteOverlay(input: searchVM.input, darkVariant: true, maximumWidth: width,
+                        horizontalPadding: 0, topPadding: 8, onSelect: { suggestion in
+                            searchVM.searchText = suggestion
+                            performSearch()
+                        }, onFill: { searchVM.searchText = $0 })
+                }
             }
+            .padding(.horizontal, 28)
+            .onAppear { searchVM.setHomeAutocompleteEnabled(!homeQuickSearch) }
+            .onCompatibleChange(of: homeQuickSearch) { _, enabled in searchVM.setHomeAutocompleteEnabled(!enabled) }
     }
 
     private var homeSearchDetails: some View {
@@ -1023,6 +1049,24 @@ struct HomeView: View {
         )
     }
 
+    private func searchFromHomePlatform(_ scope: SearchGroupScope, _ platform: SearchPlatform) {
+        let region: PlatformRegion?
+        let group: CustomGroup?
+        switch scope {
+        case .region(let selectedRegion):
+            region = selectedRegion
+            group = nil
+        case .custom(let id):
+            guard let selectedGroup = platformStore.customGroups.first(where: { $0.id == id }) else { return }
+            region = nil
+            group = selectedGroup
+        }
+        guard searchVM.performHomeSearch(tabManager: tabManager, preferredRegion: region,
+            customGroup: group, platform: platform, context: modelContext) else { return }
+        lastRegion = region?.rawValue ?? ""
+        lastGroupID = group?.id.uuidString ?? ""
+    }
+
     private func togglePrivateModeFromSearchBar() {
         let isEnteringPrivateMode = !searchVM.isIncognito
         searchVM.setPrivateBrowsing(isEnteringPrivateMode, tabManager: tabManager)
@@ -1105,6 +1149,45 @@ private struct HomeActivityView: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+private struct HomeQuickSearchOverlay: View {
+    @ObservedObject var input: SearchInputState
+    let width: CGFloat
+    let viewportHeight: CGFloat
+    let rowLimit: Int
+    let platformPicker: BrowserPlatformPickerContext
+    @State private var dismissedText: String?
+    @State private var anchorY: CGFloat?
+
+    private var showsPlatforms: Bool {
+        guard input.isEditing, !input.edit.isComposing,
+              input.text != dismissedText else { return false }
+        if case .search? = BrowserNavigationResolver.classify(input.text) { return true }
+        return false
+    }
+
+    var body: some View {
+        let gap: CGFloat = 8
+        let availableHeight = anchorY.map { max(0, viewportHeight - $0 - gap) } ?? 0
+        let isVisible = showsPlatforms && availableHeight > BrowserPlatformPanel.inlineChromeHeight
+        Color.clear.frame(height: 0)
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(homeSearchViewport)).minY } action: { anchorY = $0 }
+            .overlay(alignment: .top) {
+                if isVisible {
+                    BrowserPlatformPanel(context: platformPicker, inlineWidth: width, inlineHeight: availableHeight,
+                        inlineRowLimit: rowLimit,
+                        onSelect: platformPicker.onSelect,
+                        onManage: { platformPicker.onManage?() }, onClose: { dismissedText = input.text })
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
+                        .accessibilityIdentifier("home.quick-search.platforms")
+                        .padding(.top, gap)
+                }
+            }
+            .zIndex(100)
+            .allowsHitTesting(isVisible)
+            .onCompatibleChange(of: input.text) { _, _ in dismissedText = nil }
+    }
 }
 
 /// Anchor the field itself, so branding and the number of rows below it cannot

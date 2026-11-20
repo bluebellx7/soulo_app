@@ -2,11 +2,24 @@ import Foundation
 import Network
 
 enum TorrentMediaFile {
-    static let extensions: Set<String> = ["mp4", "m4v", "mov", "mkv", "mp3", "m4a", "aac", "wav", "flac", "aiff", "caf"]
+    static let extensions: Set<String> = [
+        "mp4", "m4v", "mov", "mkv", "webm", "avi", "flv", "wmv", "m2ts", "mts", "ogv",
+        "mp3", "m4a", "aac", "wav", "flac", "aiff", "caf", "ogg", "opus", "mka", "ape", "wma",
+    ]
     static func supports(_ path: String) -> Bool { extensions.contains((path as NSString).pathExtension.lowercased()) }
     static func contentType(_ path: String) -> String {
         switch (path as NSString).pathExtension.lowercased() {
         case "mkv": "video/x-matroska"
+        case "webm": "video/webm"
+        case "avi": "video/x-msvideo"
+        case "flv": "video/x-flv"
+        case "wmv": "video/x-ms-wmv"
+        case "m2ts", "mts": "video/mp2t"
+        case "ogv": "video/ogg"
+        case "ogg", "opus": "audio/ogg"
+        case "mka": "audio/x-matroska"
+        case "wma": "audio/x-ms-wma"
+        case "ape": "audio/ape"
         case "mp3": "audio/mpeg"
         case "m4a", "aac": "audio/mp4"
         case "wav": "audio/wav"

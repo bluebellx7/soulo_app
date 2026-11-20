@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Wyczyścić wszystkie zakładki?";
 "settings" = "Ustawienia";
 "platform_management" = "Zarządzanie platformą";
+"home_quick_search" = "Szybkie wyszukiwanie na starcie";
 "region_korea" = "Korea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Zasoby zapisane w pamięci podręcznej i odwiedziny stron z ostatnich 3 dni zostaną usunięte. Pliki cookie i dane logowania będą przechowywane.";
 "enter_fullscreen" = "Pełny ekran";
 "exit_fullscreen" = "Wyjdź z pełnego ekranu";
-"fullscreen_exit_hint" = "Stuknij, aby włączyć sterowanie, pociągnij w dół, aby wyjść";
+"exit_fullscreen_short" = "Wyjdź";
+"fullscreen_exit_hint" = "Stuknij, aby otworzyć menu, przesuń w górę, aby wyjść";
 "restore_browser_toolbar" = "Przywróć pasek narzędzi";
 "floating_more_detach" = "Odłącz przycisk Więcej";
 "floating_more_snap" = "Przyciągnij przycisk Więcej do krawędzi";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Częściowo obsługiwane";
 "userscript_docs_partial_desc" = "Powiadomienia pozostają na stronie; API zasobów zwracają Promise. cookie wymaga GM_cookie; pliki cookie nie są wysyłane automatycznie.";
 "userscript_docs_unsupported_title" = "Obecnie nieobsługiwane";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolacja sandbox/run-in i funkcje pulpitu niedostępne w WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest może anulować żądania Fetch i XMLHttpRequest ze strony głównej lub przekierowywać je w obrębie tego samego źródła.";
+"userscript_docs_unsupported_desc" = "GM_audio wymaga wyciszenia całej karty i odczytu stanu dźwięku. Publiczny interfejs WKWebView obsługuje te funkcje w ograniczonym zakresie.\n@sandbox wybiera środowisko skryptu. Soulo uruchamia obecnie skrypty użytkownika w środowisku strony.";
 "userscript_docs_metadata_title" = "Metadane";
 "userscript_docs_metadata_identity" = "Czytelna dla człowieka nazwa skryptu i opcjonalny opis wyświetlane przed instalacją oraz w szczegółach skryptu.";
 "userscript_docs_metadata_version" = "Użyj stabilnej, unikalnej przestrzeni nazw i zwiększaj wersję za każdym razem, gdy zmienia się dołączony skrypt.";

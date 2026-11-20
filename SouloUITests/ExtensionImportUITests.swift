@@ -104,6 +104,34 @@ final class ExtensionImportUITests: XCTestCase {
         checkPicker(app, label: "Choose File or Folder…")
     }
 
+    func testFilesCRXOpensPermissionReviewBeforeInstalling() throws {
+        guard #available(iOS 18.4, *),
+              let filename = ProcessInfo.processInfo.environment["SOULO_CRX_FILE_QA"] else {
+            throw XCTSkip("Opt-in user-supplied CRX in the app's Downloads folder")
+        }
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-icloud_sync_enabled", "NO", "-files.gridView", "NO"]
+        app.launch()
+        defer { app.terminate() }
+        app.open(URL(string: "soulo://files")!)
+        let file = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", filename + ",")).firstMatch
+        XCTAssertTrue(file.waitForExistence(timeout: 12), app.debugDescription)
+        file.tap()
+        let install = app.buttons["extensions.review-install"]
+        XCTAssertTrue(install.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(app.navigationBars["Permissions"].exists)
+        app.navigationBars["Permissions"].buttons["Cancel"].tap()
+        XCTAssertTrue(install.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(file.isHittable)
+        file.tap()
+        XCTAssertTrue(install.waitForExistence(timeout: 10), app.debugDescription)
+        install.tap()
+        XCTAssertTrue(install.waitForNonExistence(timeout: 20), app.debugDescription)
+        XCTAssertFalse(app.alerts["Extension Could Not Be Installed"].exists)
+        XCTAssertTrue(file.isHittable)
+    }
+
     func testUserScriptFilePickerOpensRepeatedly() {
         let app = openInstallPage(); defer { app.terminate() }
         checkPicker(app, label: "Choose Script…")

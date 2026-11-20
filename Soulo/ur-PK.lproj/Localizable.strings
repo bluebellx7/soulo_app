@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "تمام بک مارکس صاف کریں؟";
 "settings" = "ترتیبات";
 "platform_management" = "پلیٹ فارم مینجمنٹ";
+"home_quick_search" = "ہوم صفحے سے فوری تلاش";
 "region_korea" = "کوریا";
 "platform_naver" = "ناور";
 "platform_daum" = "داؤم";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "پچھلے 3 دنوں سے کیش کردہ وسائل اور صفحہ کے وزٹس کو ہٹا دیا جائے گا۔ کوکیز اور سائن ان رکھے جائیں گے۔";
 "enter_fullscreen" = "فل سکرین";
 "exit_fullscreen" = "فل سکرین سے باہر نکلیں۔";
-"fullscreen_exit_hint" = "کنٹرولز کے لیے تھپتھپائیں، باہر نکلنے کے لیے نیچے کھینچیں۔";
+"exit_fullscreen_short" = "باہر نکلیں";
+"fullscreen_exit_hint" = "مینو کھولنے کے لیے تھپتھپائیں، باہر نکلنے کے لیے اوپر سوائپ کریں۔";
 "restore_browser_toolbar" = "ٹول بار کو بحال کریں۔";
 "floating_more_detach" = "مزید بٹن کو الگ کریں۔";
 "floating_more_snap" = "کنارے پر مزید بٹن کو اسنیپ کریں۔";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "جزوی طور پر حمایت یافتہ";
 "userscript_docs_partial_desc" = "اطلاعات صفحے میں دکھتی ہیں؛ ریسورس API، Promise واپس کرتی ہیں۔ cookie کے لیے GM_cookie اجازت ضروری ہے؛ کُکیاں خودکار طور پر نہیں بھیجی جاتیں۔";
 "userscript_docs_unsupported_title" = "فی الحال تعاون یافتہ نہیں ہے۔";
-"userscript_docs_unsupported_desc" = "GM_webRequest، GM_audio، sandbox/run-in علیحدگی اور WKWebView میں دستیاب نہ ہونے والے ڈیسک ٹاپ رویے۔";
+"userscript_docs_network_webrequest" = "GM_webRequest مرکزی صفحے کی Fetch اور XMLHttpRequest درخواستیں منسوخ کر سکتا ہے یا اسی ماخذ پر منتقل کر سکتا ہے۔";
+"userscript_docs_unsupported_desc" = "GM_audio کو پوری ٹیب کی آواز بند کرنے اور آڈیو کی حالت پڑھنے کی ضرورت ہے۔ WKWebView کا عوامی API اس کی محدود معاونت کرتا ہے۔\n@sandbox اسکرپٹ کا ماحول منتخب کرتا ہے۔ Soulo فی الحال صارف اسکرپٹس کو صفحے کے ماحول میں چلاتا ہے۔";
 "userscript_docs_metadata_title" = "میٹا ڈیٹا";
 "userscript_docs_metadata_identity" = "انسانی پڑھنے کے قابل اسکرپٹ کا نام اور اختیاری تفصیل انسٹالیشن سے پہلے اور اسکرپٹ کی تفصیلات میں دکھائی گئی ہے۔";
 "userscript_docs_metadata_version" = "ایک مستحکم، منفرد نام کی جگہ کا استعمال کریں اور جب بھی بنڈل اسکرپٹ میں تبدیلی آئے تو ورژن میں اضافہ کریں۔";

@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "ಎಲ್ಲಾ ಬುಕ್‌ಮಾರ್ಕ್‌ಗಳನ್ನು ತೆರವುಗೊಳಿಸುವುದೇ?";
 "settings" = "ಸೆಟ್ಟಿಂಗ್‌ಗಳು";
 "platform_management" = "ವೇದಿಕೆ ನಿರ್ವಹಣೆ";
+"home_quick_search" = "ಮುಖಪುಟದಿಂದ ತ್ವರಿತ ಹುಡುಕಾಟ";
 "region_korea" = "ಕೊರಿಯಾ";
 "platform_naver" = "ನೇವರ್";
 "platform_daum" = "ದೌಮ್";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "ಕಳೆದ 3 ದಿನಗಳಿಂದ ಸಂಗ್ರಹಿಸಲಾದ ಸಂಪನ್ಮೂಲಗಳು ಮತ್ತು ಪುಟ ಭೇಟಿಗಳನ್ನು ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ. ಕುಕೀಗಳು ಮತ್ತು ಸೈನ್-ಇನ್‌ಗಳನ್ನು ಇರಿಸಲಾಗುತ್ತದೆ.";
 "enter_fullscreen" = "ಪೂರ್ಣ ಪರದೆ";
 "exit_fullscreen" = "ಪೂರ್ಣ ಪರದೆಯಿಂದ ನಿರ್ಗಮಿಸಿ";
-"fullscreen_exit_hint" = "ನಿಯಂತ್ರಣಗಳಿಗಾಗಿ ಟ್ಯಾಪ್ ಮಾಡಿ, ನಿರ್ಗಮಿಸಲು ಕೆಳಗೆ ಎಳೆಯಿರಿ";
+"exit_fullscreen_short" = "ನಿರ್ಗಮಿಸಿ";
+"fullscreen_exit_hint" = "ಮೆನು ತೆರೆಯಲು ಟ್ಯಾಪ್ ಮಾಡಿ, ನಿರ್ಗಮಿಸಲು ಮೇಲಕ್ಕೆ ಸ್ವೈಪ್ ಮಾಡಿ";
 "restore_browser_toolbar" = "ಟೂಲ್‌ಬಾರ್ ಅನ್ನು ಮರುಸ್ಥಾಪಿಸಿ";
 "floating_more_detach" = "ಇನ್ನಷ್ಟು ಬಟನ್ ಅನ್ನು ಬೇರ್ಪಡಿಸಿ";
 "floating_more_snap" = "ಅಂಚಿಗೆ ಇನ್ನಷ್ಟು ಬಟನ್ ಸ್ನ್ಯಾಪ್ ಮಾಡಿ";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "ಭಾಗಶಃ ಬೆಂಬಲಿತವಾಗಿದೆ";
 "userscript_docs_partial_desc" = "ಅಧಿಸೂಚನೆಗಳು ಪುಟದಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ; ಸಂಪನ್ಮೂಲ API ಗಳು Promise ನೀಡುತ್ತವೆ. cookie ಗೆ GM_cookie ಅನುಮತಿ ಬೇಕು; ಕುಕಿಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಕಳುಹಿಸುವುದಿಲ್ಲ.";
 "userscript_docs_unsupported_title" = "ಪ್ರಸ್ತುತ ಬೆಂಬಲಿತವಾಗಿಲ್ಲ";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in ಪ್ರತ್ಯೇಕತೆ ಮತ್ತು WKWebView ನಲ್ಲಿ ಲಭ್ಯವಿಲ್ಲದ ಡೆಸ್ಕ್‌ಟಾಪ್ ವರ್ತನೆ.";
+"userscript_docs_network_webrequest" = "GM_webRequest ಮುಖ್ಯ ಪುಟದ Fetch ಮತ್ತು XMLHttpRequest ವಿನಂತಿಗಳನ್ನು ರದ್ದುಗೊಳಿಸಬಹುದು ಅಥವಾ ಅದೇ ಮೂಲಕ್ಕೆ ಮರುನಿರ್ದೇಶಿಸಬಹುದು.";
+"userscript_docs_unsupported_desc" = "GM_audio ಗೆ ಸಂಪೂರ್ಣ ಟ್ಯಾಬ್‌ನ ಧ್ವನಿ ನಿಲ್ಲಿಸುವ ಮತ್ತು ಆಡಿಯೊ ಸ್ಥಿತಿ ಓದುವ ಸೌಲಭ್ಯ ಬೇಕು. WKWebView ಸಾರ್ವಜನಿಕ API ಯಲ್ಲಿ ಇದಕ್ಕೆ ಸೀಮಿತ ಬೆಂಬಲವಿದೆ.\n@sandbox ಸ್ಕ್ರಿಪ್ಟ್‌ನ ಪರಿಸರವನ್ನು ಆಯ್ಕೆಮಾಡುತ್ತದೆ. Soulo ಸದ್ಯ ಬಳಕೆದಾರ ಸ್ಕ್ರಿಪ್ಟ್‌ಗಳನ್ನು ಪುಟದ ಪರಿಸರದಲ್ಲೇ ಚಲಾಯಿಸುತ್ತದೆ.";
 "userscript_docs_metadata_title" = "ಮೆಟಾಡೇಟಾ";
 "userscript_docs_metadata_identity" = "ಮಾನವ-ಓದಬಲ್ಲ ಸ್ಕ್ರಿಪ್ಟ್ ಹೆಸರು ಮತ್ತು ಐಚ್ಛಿಕ ವಿವರಣೆಯನ್ನು ಅನುಸ್ಥಾಪನೆಯ ಮೊದಲು ಮತ್ತು ಸ್ಕ್ರಿಪ್ಟ್ ವಿವರಗಳಲ್ಲಿ ತೋರಿಸಲಾಗಿದೆ.";
 "userscript_docs_metadata_version" = "ಸ್ಥಿರವಾದ, ವಿಶಿಷ್ಟವಾದ ನೇಮ್‌ಸ್ಪೇಸ್ ಅನ್ನು ಬಳಸಿ ಮತ್ತು ಬಂಡಲ್ ಮಾಡಿದ ಸ್ಕ್ರಿಪ್ಟ್ ಬದಲಾದಾಗ ಆವೃತ್ತಿಯನ್ನು ಹೆಚ್ಚಿಸಿ.";

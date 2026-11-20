@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "ล้างบุ๊กมาร์กทั้งหมด?";
 "settings" = "การตั้งค่า";
 "platform_management" = "จัดการแพลตฟอร์ม";
+"home_quick_search" = "ค้นหาด่วนจากหน้าหลัก";
 "region_korea" = "เกาหลี";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "แคชและประวัติการเข้าชม 3 วันที่ผ่านมาจะถูกลบ โดยยังคงคุกกี้และสถานะการเข้าสู่ระบบไว้";
 "enter_fullscreen" = "เต็มหน้าจอ";
 "exit_fullscreen" = "ออกจากโหมดเต็มหน้าจอ";
-"fullscreen_exit_hint" = "แตะเพื่อดูเมนู ดึงลงเพื่อออก";
+"exit_fullscreen_short" = "ออกเต็มจอ";
+"fullscreen_exit_hint" = "แตะเพื่อเปิดเมนู ปัดขึ้นเพื่อออก";
 "restore_browser_toolbar" = "คืนค่าแถบเครื่องมือ";
 "floating_more_detach" = "เลิกยึดปุ่มเพิ่มเติม";
 "floating_more_snap" = "ยึดปุ่มเพิ่มเติมไว้ที่ขอบ";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "รองรับได้บางส่วน";
 "userscript_docs_partial_desc" = "การแจ้งเตือนอยู่ในหน้าเว็บ และ API ทรัพยากรคืนค่า Promise ตัวเลือก cookie ต้องมีสิทธิ์ GM_cookie และไม่ส่งคุกกี้อัตโนมัติ";
 "userscript_docs_unsupported_title" = "ยังไม่รองรับในขณะนี้";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, การแยก sandbox/run-in และพฤติกรรมเดสก์ท็อปที่ WKWebView ไม่มี";
+"userscript_docs_network_webrequest" = "GM_webRequest สามารถยกเลิกคำขอ Fetch และ XMLHttpRequest จากเฟรมหลัก หรือเปลี่ยนเส้นทางภายในต้นทางเดียวกัน";
+"userscript_docs_unsupported_desc" = "GM_audio ต้องปิดเสียงทั้งแท็บและอ่านสถานะเสียงได้ API สาธารณะของ WKWebView รองรับได้จำกัด\n@sandbox ใช้เลือกสภาพแวดล้อมการทำงานของสคริปต์ ปัจจุบัน Soulo เรียกใช้สคริปต์ผู้ใช้ในสภาพแวดล้อมของหน้าเว็บ";
 "userscript_docs_metadata_title" = "ข้อมูลเมตา";
 "userscript_docs_metadata_identity" = "ชื่อสคริปต์ที่มนุษย์สามารถอ่านได้และคำอธิบายเพิ่มเติมที่แสดงก่อนการติดตั้งและในรายละเอียดสคริปต์";
 "userscript_docs_metadata_version" = "ใช้เนมสเปซที่เสถียรและไม่ซ้ำกัน และเพิ่มเวอร์ชันทุกครั้งที่มีการเปลี่ยนแปลงสคริปต์ที่รวมกลุ่ม";

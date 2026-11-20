@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "প্রতিক্রিয়া প্রিভিউ";
 
-"media_start_timeout" = "প্লেব্যাক শুরু হয়নি। নেটওয়ার্ক পরীক্ষা করুন বা প্লেয়ার বদলান।";
+"media_start_timeout" = "প্লেব্যাক শুরু হয়নি। নেটওয়ার্ক পরীক্ষা করুন।";
+"media_load_complete" = "লোড সম্পন্ন";
+"media_playback_stalled" = "ভিডিও চালানো থেমে গেছে।";
 
 "wallpaper_appearance_hint" = "হালকা ও গাঢ় থিমের জন্য আলাদা পটভূমি ঠিক করুন। অ্যাপের থিম বদলালে এগুলিও বদলাবে।";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "ডাউনলোড ও ফাইল";
 "storage_cache_group" = "ক্যাশ ও অস্থায়ী ফাইল";
+"storage_video_cache" = "ভিডিও ক্যাশ";
 "storage_saved_group" = "সংরক্ষিত বিষয়বস্তু";
 
 "storage_clear_offline_media_warning" = "এখানকার সব অফলাইন ভিডিও ও তাদের ফাইলের তথ্য মুছে যাবে। অসম্পূর্ণ ফাইল/ভিডিও ডাউনলোড, প্লেব্যাক ও এক্সপোর্ট বন্ধ হবে।";

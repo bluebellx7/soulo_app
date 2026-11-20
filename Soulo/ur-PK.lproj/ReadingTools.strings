@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "ردعمل کا پیش منظر";
 
-"media_start_timeout" = "پلے بیک شروع نہیں ہوا۔ نیٹ ورک چیک کریں یا پلیئر تبدیل کریں۔";
+"media_start_timeout" = "پلے بیک شروع نہیں ہوا۔ نیٹ ورک چیک کریں۔";
+"media_load_complete" = "لوڈنگ مکمل";
+"media_playback_stalled" = "ویڈیو چلنا رک گئی ہے۔";
 
 "wallpaper_appearance_hint" = "ہلکی اور گہری تھیم کے لیے الگ پس منظر مقرر کریں۔ یہ ایپ کی تھیم کے ساتھ خود بخود بدل جائیں گے۔";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "ڈاؤن لوڈز اور فائلیں";
 "storage_cache_group" = "کیش اور عارضی فائلیں";
+"storage_video_cache" = "ویڈیو کیش";
 "storage_saved_group" = "محفوظ مواد";
 
 "storage_clear_offline_media_warning" = "یہاں کی تمام آف لائن ویڈیوز اور ان کے فائل اندراجات حذف ہوں گے۔ نامکمل فائل/ویڈیو ڈاؤن لوڈ، پلے بیک اور برآمد رک جائیں گے۔";

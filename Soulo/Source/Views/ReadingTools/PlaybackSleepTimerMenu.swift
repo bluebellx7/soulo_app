@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct PlaybackSleepTimerMenu: View {
+    var fullscreen = false
     @ObservedObject private var timer = MediaSession.shared.sleepTimer
     var body: some View {
         Menu {
@@ -16,8 +17,10 @@ struct PlaybackSleepTimerMenu: View {
                 Button(LanguageManager.shared.localizedString("cancel"), role: .destructive) { timer.cancel() }
             }
         } label: {
-            Label(FeatureText.text("Sleep timer"), systemImage: timer.isActive ? "moon.zzz.fill" : "moon.zzz")
-                .frame(minWidth: 44, minHeight: 44)
+            let title = FeatureText.text("Sleep timer")
+            let symbol = timer.isActive ? "moon.zzz.fill" : "moon.zzz"
+            if fullscreen { FullscreenVideoMenuLabel(title: title, symbol: symbol) }
+            else { Label(title, systemImage: symbol).frame(minWidth: 44, minHeight: 44) }
         }
         .accessibilityIdentifier("media.sleep-timer")
         .accessibilityValue(timer.stopsAfterCurrentItem ? FeatureText.text("After this item") : timer.deadline?.formatted(date: .omitted, time: .shortened) ?? "")

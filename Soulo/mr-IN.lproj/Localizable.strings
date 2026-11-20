@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "सर्व बुकमार्क साफ करायचे?";
 "settings" = "सेटिंग्ज";
 "platform_management" = "प्लॅटफॉर्म व्यवस्थापन";
+"home_quick_search" = "मुखपृष्ठावरून झटपट शोध";
 "region_korea" = "कोरिया";
 "platform_naver" = "नेव्हर";
 "platform_daum" = "डौम";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "मागील 3 दिवसातील कॅश्ड संसाधने आणि पृष्ठ भेटी काढून टाकल्या जातील. कुकीज आणि साइन-इन ठेवले जातील.";
 "enter_fullscreen" = "पूर्ण स्क्रीन";
 "exit_fullscreen" = "पूर्ण स्क्रीनमधून बाहेर पडा";
-"fullscreen_exit_hint" = "नियंत्रणांसाठी टॅप करा, बाहेर पडण्यासाठी खाली खेचा";
+"exit_fullscreen_short" = "बाहेर पडा";
+"fullscreen_exit_hint" = "मेनूसाठी टॅप करा, बाहेर पडण्यासाठी वर स्वाइप करा";
 "restore_browser_toolbar" = "टूलबार पुनर्संचयित करा";
 "floating_more_detach" = "आणखी बटण वेगळे करा";
 "floating_more_snap" = "काठावर आणखी बटण स्नॅप करा";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "अंशतः समर्थित";
 "userscript_docs_partial_desc" = "सूचना पृष्ठात दिसतात; रिसोर्स API Promise देतात. cookie साठी GM_cookie परवानगी लागते; कुकी आपोआप पाठवल्या जात नाहीत.";
 "userscript_docs_unsupported_title" = "सध्या समर्थित नाही";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in विभाजन आणि WKWebView मध्ये उपलब्ध नसलेली डेस्कटॉप वैशिष्ट्ये.";
+"userscript_docs_network_webrequest" = "GM_webRequest मुख्य पृष्ठावरील Fetch आणि XMLHttpRequest विनंत्या रद्द करू शकते किंवा त्याच मूळावर पुनर्निर्देशित करू शकते.";
+"userscript_docs_unsupported_desc" = "GM_audio साठी संपूर्ण टॅबचा आवाज बंद करणे आणि ऑडिओची स्थिती वाचणे आवश्यक आहे. WKWebView च्या सार्वजनिक API मध्ये यासाठी मर्यादित समर्थन आहे.\n@sandbox स्क्रिप्टचे वातावरण निवडतो. Soulo सध्या वापरकर्ता स्क्रिप्ट पृष्ठाच्या वातावरणात चालवतो.";
 "userscript_docs_metadata_title" = "मेटाडेटा";
 "userscript_docs_metadata_identity" = "मानवी-वाचनीय स्क्रिप्टचे नाव आणि पर्यायी वर्णन इंस्टॉलेशनपूर्वी आणि स्क्रिप्ट तपशीलांमध्ये दर्शविले आहे.";
 "userscript_docs_metadata_version" = "एक स्थिर, अनन्य नेमस्पेस वापरा आणि बंडल स्क्रिप्ट बदलल्यावर आवृत्ती वाढवा.";

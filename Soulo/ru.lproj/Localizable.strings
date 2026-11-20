@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Очистить все закладки?";
 "settings" = "Настройки";
 "platform_management" = "Управление платформами";
+"home_quick_search" = "Быстрый поиск на главной";
 "region_korea" = "Корея";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Кэш и посещения страниц за последние 3 дня будут удалены. Cookie и вход в аккаунты сохранятся.";
 "enter_fullscreen" = "Полный экран";
 "exit_fullscreen" = "Выйти из полноэкранного режима";
-"fullscreen_exit_hint" = "Нажмите для меню, потяните вниз для выхода";
+"exit_fullscreen_short" = "Выйти";
+"fullscreen_exit_hint" = "Коснитесь для открытия меню, смахните вверх для выхода";
 "restore_browser_toolbar" = "Восстановить панель инструментов";
 "floating_more_detach" = "Открепить кнопку «Ещё»";
 "floating_more_snap" = "Закрепить кнопку «Ещё» у края";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Частично поддерживается";
 "userscript_docs_partial_desc" = "Уведомления показываются на странице; API ресурсов возвращают Promise. Параметр cookie требует GM_cookie; cookies не отправляются автоматически.";
 "userscript_docs_unsupported_title" = "В настоящее время не поддерживается";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, изоляция sandbox/run-in и функции настольного браузера, недоступные в WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest может отменять запросы Fetch и XMLHttpRequest основного фрейма или перенаправлять их в пределах того же источника.";
+"userscript_docs_unsupported_desc" = "GM_audio требует отключать звук во всей вкладке и получать его состояние. Публичный API WKWebView поддерживает это лишь частично.\n@sandbox выбирает среду выполнения скрипта. Сейчас Soulo запускает пользовательские скрипты в среде страницы.";
 "userscript_docs_metadata_title" = "Метаданные";
 "userscript_docs_metadata_identity" = "Понятное для человека имя сценария и дополнительное описание, отображаемое перед установкой и в деталях сценария.";
 "userscript_docs_metadata_version" = "Используйте стабильное уникальное пространство имен и увеличивайте версию при каждом изменении встроенного сценария.";

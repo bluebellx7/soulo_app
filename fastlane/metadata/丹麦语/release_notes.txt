@@ -1,4 +1,4 @@
-• Indstillingerne er blevet omorganiseret. Se ændringerne med det samme, når du vælger stil, flytter knapper eller trækker startsidens værktøjslinje på plads.
-• Med gendannelse ved genstart slået til åbner Soulo startsiden eller den senest viste webside.
-• Browsermenuerne har bedre kontrast. Du kan vise en skjult værktøjslinje igen via menuen Mere.
-• Netværksanmodninger og søgning efter opdateringer til brugerscripts er forbedret.
+• Forbedret skift til fuld skærm, buffering og hastighedsmenu for onlinevideoer.
+• Forbedret genkendelse af magnetlinks og søgning efter peers til BitTorrent-downloads.
+• Brugerscripts kan bruge GM_webRequest til at annullere eller omdirigere hovedrammens Fetch- og XHR-anmodninger inden for samme oprindelse.
+• Bedre kompatibilitet med browserudvidelser, herunder filnavne ved download og indlæsning af sider uden for skærmen.

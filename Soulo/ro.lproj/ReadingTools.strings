@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Testează feedbackul";
 
-"media_start_timeout" = "Redarea nu a început. Verifică rețeaua sau schimbă playerul.";
+"media_start_timeout" = "Redarea nu a început. Verifică rețeaua.";
+"media_load_complete" = "Încărcare finalizată";
+"media_playback_stalled" = "Redarea s-a blocat.";
 
 "wallpaper_appearance_hint" = "Alege fundaluri separate pentru aspectul luminos și întunecat. Se schimbă automat odată cu aplicația.";
 
@@ -556,6 +558,7 @@
 
 "storage_files_group" = "Descărcări și fișiere";
 "storage_cache_group" = "Cache și fișiere temporare";
+"storage_video_cache" = "Memorie cache video";
 "storage_saved_group" = "Conținut salvat";
 
 "storage_clear_offline_media_warning" = "Șterge toate videoclipurile offline de aici și înregistrările lor de fișiere. Descărcările de fișiere/video neterminate, redarea și exporturile se vor opri.";

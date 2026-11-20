@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Testar resposta";
 
-"media_start_timeout" = "A reprodução não começou. Verifique a rede ou mude de reprodutor.";
+"media_start_timeout" = "A reprodução não começou. Verifique a rede.";
+"media_load_complete" = "Carregamento concluído";
+"media_playback_stalled" = "A reprodução parou.";
 
 "wallpaper_appearance_hint" = "Defina fundos separados para o aspeto claro e escuro. Mudam automaticamente com a aplicação.";
 
@@ -556,6 +558,7 @@
 
 "storage_files_group" = "Transferências e ficheiros";
 "storage_cache_group" = "Cache e ficheiros temporários";
+"storage_video_cache" = "Cache de vídeo";
 "storage_saved_group" = "Conteúdo guardado";
 
 "storage_clear_offline_media_warning" = "Apaga todos os vídeos offline deste local e as respetivas entradas de ficheiro. As transferências de ficheiros/vídeos incompletas, a reprodução e as exportações serão interrompidas.";

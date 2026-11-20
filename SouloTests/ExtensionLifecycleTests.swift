@@ -498,6 +498,64 @@ import SwiftUI
         facts["cacheMergedFile"] = try await inspect(try XCTUnwrap(probe.files.dropFirst(2).first, "The actual cache-capture FFmpeg checkbox must export a merged file"))
     }
 
+    func testExtensionBackgroundFilenameSuggestionReachesNativeDownload() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let package = root.appendingPathComponent("package")
+        try FileManager.default.createDirectory(at: package, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data(#"{"manifest_version":3,"name":"Filename fixture","version":"1.0","permissions":["downloads"],"background":{"scripts":["background.js"],"persistent":false}}"#.utf8)
+            .write(to: package.appendingPathComponent("manifest.json"))
+        try Data(#"""
+        chrome.downloads.onDeterminingFilename.addListener((item,suggest)=>{
+          if(item.byExtensionId!==chrome.runtime.id)return;
+          setTimeout(()=>suggest({filename:'renamed-'+item.filename}),30);
+          return true;
+        });
+        chrome.runtime.onMessage.addListener((message,sender,reply)=>{
+          if(message==='filename-listener-ready')reply(chrome.downloads.onDeterminingFilename.hasListeners());
+        });
+        """#.utf8).write(to: package.appendingPathComponent("background.js"))
+        try Data("<body id='ready'>Filename fixture</body>".utf8).write(to: package.appendingPathComponent("page.html"))
+        let service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let record = try await service.installWebExtension(from: package)
+        defer { service.deleteWebExtension(record.id) }
+        let context = try XCTUnwrap(NativeWebExtensionRuntime.shared.controller.extensionContexts.first { $0.uniqueIdentifier == record.id.uuidString })
+        let page = WKWebView(frame: .zero, configuration: try XCTUnwrap(context.webViewConfiguration))
+        page.load(URLRequest(url: context.baseURL.appendingPathComponent("page.html")))
+        defer { page.stopLoading() }
+        for _ in 0..<100 {
+            if (try? await page.evaluateJavaScript("!!document.getElementById('ready')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(30))
+        }
+        let name = "qa-\(UUID().uuidString).txt"
+        let body = Data("Actual downloaded bytes".utf8)
+        let fixture = try DownloadPlaybackHTTPFixture(files: ["/"+name: body])
+        let address = try await fixture.start()
+        fixture.releaseDownloads()
+        defer { fixture.stop() }
+        defer {
+            for item in DownloadManagerService.shared.downloads where item.fileName == name || item.fileName == "renamed-"+name {
+                DownloadManagerService.shared.delete(item)
+            }
+        }
+        let reply = try await page.callAsyncJavaScript(#"""
+          const ready=await chrome.runtime.sendMessage('filename-listener-ready');
+          return {ready,id:await chrome.downloads.download({url,filename})};
+          """#, arguments: ["url": address.appendingPathComponent(name).absoluteString, "filename":name],
+          in: nil, contentWorld: .page) as? [String: Any]
+        XCTAssertEqual(reply?["ready"] as? Bool, true)
+        XCTAssertNotNil(reply?["id"] as? Int)
+        for _ in 0..<140 {
+            if let item = DownloadManagerService.shared.downloads.first(where: { $0.fileName == "renamed-"+name && $0.status == .finished }) {
+                XCTAssertEqual(try Data(contentsOf: item.localURL), body)
+                return
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTFail("The background filename suggestion did not reach the saved file")
+    }
+
     func testGenericBlobAndDataDownloadsKeepBytesAndNativeErrorCallbacks() async throws {
         guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
         let previousPrivacy = UserDefaults.standard.object(forKey: "is_incognito")
@@ -740,16 +798,62 @@ import SwiftUI
         XCTAssertEqual(injected("main").first?["result"] as? Int, 100)
         XCTAssertEqual((injected("heldPort").first?["result"] as? [String: Any])?["echo"] as? Int, 45)
         XCTAssertEqual(injected("noReceiver").first?["result"] as? Bool, true)
+
+        _ = try await connectionOnlyPeer.evaluateJavaScript("""
+        chrome.runtime.onUserScriptMessage.addListener(message=>{globalThis.lastIgnoredUserScriptMessage=message.value;});true;
+        """)
+        _ = try await peer.evaluateJavaScript("""
+        chrome.runtime.onUserScriptMessage.removeListener(globalThis.userScriptReceiver);
+        globalThis.delayedUserScriptReceiver=message=>{
+          if(message.hold){globalThis.isHoldingUserScriptMessage=true;return true;}
+          if(message.ignore)return;
+          return new Promise(resolve=>setTimeout(()=>resolve(message.value),200));
+        };
+        chrome.runtime.onUserScriptMessage.addListener(globalThis.delayedUserScriptReceiver);true;
+        """)
+        let messageWorld = WKContentWorld.world(name: "Soulo.UserScripts.\(record.id.uuidString).8:messages:script-src 'self' 'wasm-unsafe-eval'")
+        let delayed = try await web.callAsyncJavaScript("return await chrome.runtime.sendMessage({value:47});",
+            arguments: [:], in: nil, contentWorld: messageWorld)
+        XCTAssertEqual(delayed as? Int, 47, "A listener that omits a reply cannot beat a delayed real response")
+        let ignored = try await connectionOnlyPeer.evaluateJavaScript("globalThis.lastIgnoredUserScriptMessage")
+        XCTAssertEqual(ignored as? Int, 47, "The same message reached both receiver contexts")
+        let unanswered = try await web.callAsyncJavaScript("return (await chrome.runtime.sendMessage({ignore:true})) == null;",
+            arguments: [:], in: nil, contentWorld: messageWorld)
+        XCTAssertEqual(unanswered as? Bool, true, "A message can finish without a value when every receiver declines")
+
+        func holdReply() async throws -> Bool {
+            _ = try await peer.evaluateJavaScript("globalThis.isHoldingUserScriptMessage=false;true;")
+            _ = try await web.evaluateCompatibleJavaScript("""
+            globalThis.pendingReplyError='';
+            chrome.runtime.sendMessage({hold:true}).catch(error=>{globalThis.pendingReplyError=String(error.message||error);});true;
+            """, in: nil, contentWorld: messageWorld)
+            for _ in 0..<100 {
+                if (try? await peer.evaluateJavaScript("globalThis.isHoldingUserScriptMessage===true")) as? Bool == true { return true }
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            return false
+        }
+        func messageCondition(_ expression: String) async throws -> Bool {
+            for _ in 0..<100 {
+                if (try? await web.evaluateCompatibleJavaScript(expression, in: nil, contentWorld: messageWorld)) as? Bool == true { return true }
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            return false
+        }
+        let holdingReply = try await holdReply()
+        XCTAssertTrue(holdingReply, "The receiver must hold an in-flight request when permission changes")
         var connectionRevoked = grantedAccess; connectionRevoked.deniedSites["http://127.0.0.1/*"] = .distantFuture
         runtime.applyAccess(connectionRevoked, id: record.id)
-        let messageWorld = WKContentWorld.world(name: "Soulo.UserScripts.\(record.id.uuidString).8:messages:script-src 'self' 'wasm-unsafe-eval'")
-        var wasRevoked = false
-        for _ in 0..<100 {
-            if (try? await web.evaluateCompatibleJavaScript("globalThis.portWasRevoked===true", in: nil, contentWorld: messageWorld)) as? Bool == true { wasRevoked = true; break }
-            try await Task.sleep(for: .milliseconds(10))
-        }
-        XCTAssertTrue(wasRevoked, "Revoking host access must disconnect the live user-script port before navigation")
+        let wasRevoked = try await messageCondition("globalThis.portWasRevoked===true && /revoked/i.test(globalThis.pendingReplyError)")
+        XCTAssertTrue(wasRevoked, "Revoking host access must disconnect the port and reject a pending reply immediately")
         runtime.applyAccess(grantedAccess, id: record.id)
+        for _ in 0..<2 {
+            let held = try await holdReply()
+            XCTAssertTrue(held)
+            _ = try await web.evaluateJavaScript("dispatchEvent(new PageTransitionEvent('pagehide', {persisted:true}));true;")
+            let closed = try await messageCondition("/document was closed/i.test(globalThis.pendingReplyError)")
+            XCTAssertTrue(closed, "A document retained in the back-forward cache must cancel new messages on every pagehide")
+        }
         try await load("page-excluded")
         let excludedInjected = try await web.evaluateJavaScript("!!document.documentElement.dataset.isolatedFixture") as? Bool
         XCTAssertEqual(excludedInjected,false)
@@ -1602,10 +1706,55 @@ import SwiftUI
     }
 
     func testTYTYRealPackageWebsiteMessagingProxyAndDownloadSwitch() async throws {
+        try await verifyTYTYPackage(named: "tyty-compatibility-qa.crx", version: "0.6.6")
+    }
+
+    func testTYTY067RealPackageWebsiteMessagingProxyAndDownloadSwitch() async throws {
+        try await verifyTYTYPackage(named: "tyty-0.6.7-compatibility-qa.crx", version: "0.6.7")
+    }
+
+    func testTYTY067UpdatesLegacy066EntryAndKeepsAccess() async throws {
         guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let package = documents.appendingPathComponent("tyty-compatibility-qa.crx")
-        guard FileManager.default.fileExists(atPath: package.path) else { throw XCTSkip("Opt-in user-supplied TYTY 0.6.6 package") }
+        let older = documents.appendingPathComponent("tyty-compatibility-qa.crx")
+        let newer = documents.appendingPathComponent("tyty-0.6.7-compatibility-qa.crx")
+        guard [older, newer].allSatisfy({ FileManager.default.fileExists(atPath: $0.path) }) else {
+            throw XCTSkip("Opt-in user-supplied TYTY packages")
+        }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let originalService = BrowserExtensionService(extensionRoot: root)
+        let first = try await originalService.previewWebExtension(from: older)
+        var access = first.access
+        access.setPermission("cookies", allowed: false)
+        var record = try await originalService.installWebExtension(first, access: access)
+        originalService.setWebExtensionEnabled(record.id, enabled: false)
+        record.isEnabled = false
+        record.packageIdentity = nil
+        // Older versions saved local CRX imports without a package identity.
+        let storeURL = root.appendingPathComponent("extensions.json")
+        var store = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: storeURL)) as? [String: Any])
+        store["webExtensions"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode([record]))
+        try JSONSerialization.data(withJSONObject: store).write(to: storeURL)
+
+        let restoredService = BrowserExtensionService(extensionRoot: root)
+        defer { restoredService.deleteWebExtension(record.id) }
+        let preview = try await restoredService.previewWebExtension(from: newer)
+        XCTAssertEqual(preview.replacingID, record.id)
+        XCTAssertEqual(preview.access, access)
+        let updated = try await restoredService.installWebExtension(preview, access: preview.access)
+        XCTAssertEqual(restoredService.webExtensions.map(\.id), [record.id])
+        XCTAssertEqual(updated.version, "0.6.7")
+        XCTAssertEqual(updated.previousVersion?.version, "0.6.6")
+        XCTAssertFalse(updated.isEnabled)
+        XCTAssertFalse(restoredService.webExtensionAccess(updated.id).allowsPermission("cookies"))
+    }
+
+    private func verifyTYTYPackage(named filename: String, version: String) async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let package = documents.appendingPathComponent(filename)
+        guard FileManager.default.fileExists(atPath: package.path) else { throw XCTSkip("Opt-in user-supplied TYTY \(version) package") }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let service = BrowserExtensionService(extensionRoot: root)
@@ -1616,11 +1765,6 @@ import SwiftUI
         let first = try Data(contentsOf: worker)
         try WebExtensionPackagePreparer.installCompatibilityLayer(in: preview.resourceURL)
         XCTAssertEqual(try Data(contentsOf: worker), first)
-        let library = preview.resourceURL.appendingPathComponent("lib/jsencrypt.min.js")
-        let logger = "addEventListener('error',e=>chrome.storage.local.set({__souloQAError:String(e.message)}));addEventListener('unhandledrejection',e=>chrome.storage.local.set({__souloQAError:String(e.reason)}));"
-        try Data((logger + String(contentsOf: library, encoding: .utf8)).utf8).write(to: library)
-        try Data("<html><body id='ready'>TYTY native verification</body></html>".utf8)
-            .write(to: preview.resourceURL.appendingPathComponent("peer.html"))
         let record = try await service.installWebExtension(preview, access: preview.access)
         defer { service.deleteWebExtension(record.id) }
         let runtime = NativeWebExtensionRuntime.shared
@@ -1631,14 +1775,16 @@ import SwiftUI
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
         let peer = WKWebView(frame: CGRect(x: 0, y: 0, width: 600, height: 600), configuration: try XCTUnwrap(context.webViewConfiguration))
         window.rootViewController?.view.addSubview(peer)
-        peer.load(URLRequest(url: context.baseURL.appendingPathComponent("peer.html")))
+        peer.load(URLRequest(url: context.baseURL.appendingPathComponent("popup/popup.html")))
+        let displayedVersion = "document.getElementById('version')?.textContent.trim()"
         for _ in 0..<100 {
-            if (try? await peer.evaluateJavaScript("!!document.getElementById('ready') && typeof chrome !== 'undefined'")) as? Bool == true { break }
+            if let value = (try? await peer.evaluateJavaScript(displayedVersion)) as? String,
+               value.hasSuffix(version) { break }
             try await Task.sleep(for: .milliseconds(50))
         }
         defer { peer.stopLoading() }
-        let backgroundLog = try await peer.callAsyncJavaScript("return await chrome.storage.local.get('__souloQAError');", arguments: [:], in: nil, contentWorld: .page) as? [String: Any]
-        XCTAssertNil(backgroundLog?["__souloQAError"], String(describing: backgroundLog))
+        let popupVersion = try await peer.evaluateJavaScript(displayedVersion) as? String
+        XCTAssertTrue(popupVersion?.hasSuffix(version) == true)
         let server = try DownloadPlaybackHTTPFixture(files: ["/external.html": Data("<html><body id='ready'>TYTY website API</body></html>".utf8), "/echo": Data("local-fixture-ok".utf8)])
         let address = try await server.start(); server.releaseDownloads(); defer { server.stop() }
         var components = try XCTUnwrap(URLComponents(url: address.appendingPathComponent("external.html"), resolvingAgainstBaseURL: false)); components.host = "localhost"
@@ -1674,7 +1820,7 @@ import SwiftUI
         }
         let pong = try await send("ping")
         XCTAssertEqual((pong["data"] as? [String: Any])?["pong"] as? String, "pong")
-        XCTAssertEqual((pong["data"] as? [String: Any])?["version"] as? String, "0.6.6")
+        XCTAssertEqual((pong["data"] as? [String: Any])?["version"] as? String, version)
         let response = try await send("proxyHttpRequest", payload: ["url": address.appendingPathComponent("echo").absoluteString])
         XCTAssertEqual((response["data"] as? [String: Any])?["status"] as? Int, 200)
         XCTAssertEqual((response["data"] as? [String: Any])?["body"] as? String, "local-fixture-ok")
@@ -1877,6 +2023,95 @@ import SwiftUI
         XCTAssertNotNil(service.webExtensionErrors[record.id])
         service.deleteWebExtension(record.id)
         XCTAssertNil(service.webExtensionErrors[record.id])
+    }
+
+    func testInterruptedUpdateRestoresThePreviousNativeContext() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("package")
+        let store = root.appendingPathComponent("store")
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        let manifest = source.appendingPathComponent("manifest.json")
+        func writeManifest(version: String) throws {
+            let values: [String: Any] = ["manifest_version": 3, "name": "Update rollback fixture", "version": version,
+                "background": ["scripts": ["background.js"], "persistent": false]]
+            try JSONSerialization.data(withJSONObject: values).write(to: manifest)
+        }
+        try Data("globalThis.backgroundReady = true;".utf8).write(to: source.appendingPathComponent("background.js"))
+        try writeManifest(version: "1.0")
+        let service = BrowserExtensionService(extensionRoot: store)
+        let previous = try await service.installWebExtension(from: source)
+        defer { service.deleteWebExtension(previous.id) }
+        func assertPreviousVersionIsRunning() throws {
+            XCTAssertEqual(service.webExtensions, [previous])
+            let runtime = NativeWebExtensionRuntime.shared
+            let context = try XCTUnwrap(runtime.controller.extensionContexts.first { $0.uniqueIdentifier == previous.id.uuidString })
+            XCTAssertEqual(context.webExtension.version, previous.version)
+            XCTAssertNil(service.webExtensionErrors[previous.id])
+        }
+        try writeManifest(version: "2.0")
+        let canceledPreview = try await service.previewWebExtension(from: source, replacing: previous.id)
+        let canceledUpdate = Task { try await service.installWebExtension(canceledPreview, access: canceledPreview.access) }
+        for _ in 0..<100 {
+            if service.loadingWebExtensions.contains(previous.id) { break }
+            await Task.yield()
+        }
+        XCTAssertTrue(service.loadingWebExtensions.contains(previous.id))
+        canceledUpdate.cancel()
+        do {
+            _ = try await canceledUpdate.value
+            XCTFail("A canceled update must preserve the active version")
+        } catch is CancellationError {}
+        try assertPreviousVersionIsRunning()
+
+        let update = try await service.previewWebExtension(from: source, replacing: previous.id)
+        let index = store.appendingPathComponent("extensions.json")
+        let backup = root.appendingPathComponent("index-backup.json")
+        try FileManager.default.moveItem(at: index, to: backup)
+        defer {
+            try? FileManager.default.removeItem(at: index)
+            try? FileManager.default.moveItem(at: backup, to: index)
+        }
+        try FileManager.default.createDirectory(at: index, withIntermediateDirectories: false)
+        do {
+            _ = try await service.installWebExtension(update, access: update.access)
+            XCTFail("A failed save must not commit the update")
+        } catch let failure as WebExtensionInstallationFailure {
+            XCTAssertEqual(failure.stage, .save)
+        }
+        try assertPreviousVersionIsRunning()
+    }
+
+    func testConcurrentInstallsOfTheSamePackageRegisterOneExtension() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let package = root.appendingPathComponent("package")
+        try FileManager.default.createDirectory(at: package, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data(#"{"manifest_version":3,"name":"Concurrent install fixture","version":"1.0","background":{"scripts":["background.js"],"persistent":false}}"#.utf8)
+            .write(to: package.appendingPathComponent("manifest.json"))
+        try Data("globalThis.backgroundReady = true;".utf8).write(to: package.appendingPathComponent("background.js"))
+
+        let source = try XCTUnwrap(URL(string: "https://example.test/extension.crx"))
+        let service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let first = try await service.previewWebExtension(from: package, sourceURL: source)
+        let second = try await service.previewWebExtension(from: package, sourceURL: source)
+        defer {
+            service.discardWebExtensionPreview(first)
+            service.discardWebExtensionPreview(second)
+            for record in service.webExtensions { service.deleteWebExtension(record.id) }
+        }
+        let firstInstall = Task { try await service.installWebExtension(first, access: first.access) }
+        let secondInstall = Task { try await service.installWebExtension(second, access: second.access) }
+        let results = await [firstInstall.result, secondInstall.result]
+        let installed = results.compactMap { try? $0.get() }
+        XCTAssertEqual(installed.count, 1)
+        XCTAssertEqual(service.webExtensions, installed)
+        XCTAssertEqual(results.filter { result in
+            if case .failure(let error) = result { return error is CancellationError }
+            return false
+        }.count, 1)
     }
 
     func testUserScriptUpdateKeepsValuesAndOffStateThenDeleteRemovesAccess() throws {

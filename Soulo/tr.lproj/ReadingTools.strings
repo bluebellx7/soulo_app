@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Geri Bildirimi Dene";
 
-"media_start_timeout" = "Oynatma başlamadı. Ağı kontrol edin veya oynatıcıyı değiştirin.";
+"media_start_timeout" = "Oynatma başlamadı. Ağı kontrol edin.";
+"media_load_complete" = "Yükleme tamamlandı";
+"media_playback_stalled" = "Oynatma takıldı.";
 
 "wallpaper_appearance_hint" = "Açık ve koyu görünüm için ayrı arka planlar seçin. Uygulamayla birlikte otomatik değişirler.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "İndirmeler ve dosyalar";
 "storage_cache_group" = "Önbellek ve geçici dosyalar";
+"storage_video_cache" = "Video önbelleği";
 "storage_saved_group" = "Kaydedilen içerik";
 
 "storage_clear_offline_media_warning" = "Buradaki tüm çevrimdışı videoları ve dosya kayıtlarını siler. Tamamlanmamış dosya/video indirmeleri, oynatma ve dışa aktarma durdurulur.";

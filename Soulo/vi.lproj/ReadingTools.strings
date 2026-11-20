@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Thử phản hồi";
 
-"media_start_timeout" = "Chưa bắt đầu phát. Hãy kiểm tra mạng hoặc đổi trình phát.";
+"media_start_timeout" = "Chưa bắt đầu phát. Hãy kiểm tra mạng.";
+"media_load_complete" = "Đã tải xong";
+"media_playback_stalled" = "Phát video bị gián đoạn.";
 
 "wallpaper_appearance_hint" = "Đặt nền riêng cho giao diện sáng và tối. Nền tự động thay đổi theo giao diện ứng dụng.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Tệp tải xuống và tệp";
 "storage_cache_group" = "Bộ nhớ đệm và tệp tạm";
+"storage_video_cache" = "Bộ nhớ đệm video";
 "storage_saved_group" = "Nội dung đã lưu";
 
 "storage_clear_offline_media_warning" = "Xóa mọi video ngoại tuyến ở đây và các mục tệp liên quan. Các lượt tải tệp/video chưa hoàn tất, phát lại và xuất sẽ dừng.";

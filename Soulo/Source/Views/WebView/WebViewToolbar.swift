@@ -190,6 +190,7 @@ struct WebViewToolbar: View {
     var onHideToolbar: (() -> Void)?
     var onOpenSettings: (() -> Void)?
     var isFullscreen: Bool = false
+    var showsFullscreenExitHint: Bool = false
     var onToggleFullscreen: (() -> Void)?
     var onOpenSafariCompatibility: (() -> Void)?
     var onOpenDefaultBrowser: (() -> Void)?
@@ -238,7 +239,7 @@ struct WebViewToolbar: View {
     }
 
     private var toolbarSurface: AnyView {
-        if showsOnlyMore { return moreMenu }
+        if isFullscreen || showsOnlyMore { return moreMenu }
         if #available(iOS 26.0, *) {
             return AnyView(GlassEffectContainer(spacing: 4) { toolbarContent })
         }
@@ -580,7 +581,9 @@ struct WebViewToolbar: View {
     private var moreMenuLauncher: AnyView {
         AnyView(
             Group {
-                if showsOnlyMore,
+                if isFullscreen {
+                    fullscreenMoreButton
+                } else if showsOnlyMore,
                    let onFloatingMoreDragChanged,
                    let onFloatingMoreDragEnded {
                     NativeMoreMenuButton(
@@ -603,25 +606,67 @@ struct WebViewToolbar: View {
         )
     }
 
+    private var fullscreenMoreButton: some View {
+        Button(action: presentMoreMenu) {
+            VStack(spacing: 5) {
+                Capsule()
+                    .fill(.white.opacity(showsFullscreenExitHint || showMoreMenu ? 0.94 : 0.72))
+                    .frame(width: FullscreenHandleLayout.indicatorSize.width,
+                           height: FullscreenHandleLayout.indicatorSize.height)
+
+                if showsFullscreenExitHint {
+                    Text(LanguageManager.shared.localizedString("fullscreen_exit_hint"))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.94))
+                        .lineLimit(1)
+                        .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                }
+            }
+            .padding(.horizontal, showsFullscreenExitHint ? 13 : 10)
+            .padding(.vertical, 8)
+            .background(.black.opacity(showsFullscreenExitHint || showMoreMenu ? 0.58 : 0.28), in: Capsule())
+            .overlay(Capsule().stroke(.white.opacity(0.13), lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.2), radius: 7, y: 3)
+            .frame(minWidth: FullscreenHandleLayout.minimumHitSize.width,
+                   minHeight: FullscreenHandleLayout.minimumHitSize.height)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(DragGesture(minimumDistance: 10).onEnded { value in
+            if FullscreenExitGesture.shouldExit(translation: value.translation) {
+                onToggleFullscreen?()
+            }
+        })
+        .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
+        .accessibilityHint(LanguageManager.shared.localizedString("fullscreen_exit_hint"))
+    }
+
     private var moreMenuPresentation: AnyView {
         AnyView(moreMenuLauncher
-            .compatiblePopover(isPresented: $showMoreMenu, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom,
-                tracksSourceView: true, usesAppAppearance: true) {
+            .compatiblePopover(isPresented: $showMoreMenu, attachmentAnchor: .rect(.bounds),
+                arrowEdge: .bottom,
+                tracksSourceView: true, usesAppAppearance: true, backgroundColor: .systemBackground) {
                 moreMenuPopoverContent
             }
-            .accessibilityIdentifier("browser.more")
+            .accessibilityIdentifier(isFullscreen ? "fullscreen.handle" : "browser.more")
             .id(menuAnchorGeneration)
 
         )
     }
 
     private var moreMenuPopoverContent: AnyView {
-        let panel = showMoreSiteInformation ? AnyView(siteInformationPanel) : AnyView(moreMenuPanel)
+        let panel: AnyView
+        if showMoreSiteInformation {
+            panel = AnyView(siteInformationPanel)
+        } else {
+            panel = AnyView(ViewThatFits(in: .vertical) {
+                moreMenuPanel
+                ScrollView { moreMenuPanel }
+            })
+        }
+        // The UIKit popover draws the background for both the panel and its arrow.
         return AnyView(panel
-            .background(MoreMenuDismissalObserver(onDismiss: completeMoreMenuAction))
-            .compatiblePopoverAdaptation()
-            .compatiblePresentationBackground(.ultraThinMaterial)
-            .compatiblePresentationCornerRadius(26))
+            .background(MoreMenuDismissalObserver(onDismiss: completeMoreMenuAction)))
     }
 
     private var moreMenuSheets: AnyView {
@@ -686,7 +731,7 @@ struct WebViewToolbar: View {
             .contentShape(Circle())
     }
 
-    private var moreMenuPanel: some View {
+    var moreMenuPanel: some View {
         VStack(spacing: 0) {
             moreMenuActionRow(
                 "settings",
@@ -732,7 +777,15 @@ struct WebViewToolbar: View {
             moreMenuDivider
             moreMenuShortcutGrid
 
-            if showsOnlyMore {
+            if isFullscreen && !toolbarConfiguration.moreActions.contains(.fullscreen) {
+                moreMenuDivider
+                moreMenuActionRow("exit_fullscreen", systemImage: toolbarSymbol(for: .fullscreen)) {
+                    performToolbarAction(.fullscreen)
+                }
+                .accessibilityIdentifier("browser.moreMenu.fullscreen")
+            }
+
+            if isFullscreen || showsOnlyMore {
                 moreMenuDivider
                 hiddenToolbarAddressRow
             }
@@ -1036,7 +1089,9 @@ struct WebViewToolbar: View {
                     isEnabled: isToolbarActionEnabled(action),
                     isActive: toolbarActionIsActive(action),
                     activeColor: action == .bookmark ? .systemOrange : AppTheme.uiAccent,
-                    localizedTitle: moreMenuShortcutTitle(for: action)
+                    localizedTitle: moreMenuShortcutTitle(for: action),
+                    displayTitle: action == .fullscreen && isFullscreen
+                        ? LanguageManager.shared.localizedString("exit_fullscreen_short") : nil
                 ) { performToolbarAction(action) }
                 .accessibilityIdentifier("browser.moreMenu." + action.rawValue)
                 .accessibilityAddTraits(.isButton)
@@ -1049,7 +1104,8 @@ struct WebViewToolbar: View {
     }
 
     private var toolbarVisibilityAction: (() -> Void)? {
-        showsOnlyMore ? onRestoreToolbar : onHideToolbar
+        guard !isFullscreen else { return nil }
+        return showsOnlyMore ? onRestoreToolbar : onHideToolbar
     }
 
     private func moreMenuShortcutTitle(for action: BrowserToolbarAction) -> String {
@@ -1131,13 +1187,14 @@ struct WebViewToolbar: View {
         isActive: Bool = false,
         activeColor: UIColor = AppTheme.uiAccent,
         localizedTitle: String? = nil,
+        displayTitle: String? = nil,
         action: @escaping () -> Void
     ) -> some View {
         let title = localizedTitle ?? LanguageManager.shared.localizedString(titleKey)
         return Button {
             performMoreMenuAction(action)
         } label: {
-            BrowserMoreShortcutLabel(symbol: systemImage, title: title,
+            BrowserMoreShortcutLabel(symbol: systemImage, title: displayTitle ?? title,
                 tabCount: titleKey == "browser_tabs" ? tabManager?.tabCount ?? 0 : nil,
                 tint: isActive ? Color(uiColor: activeColor) : .primary)
                 .frame(width: 74)
@@ -1395,7 +1452,7 @@ struct WebViewToolbar: View {
     }
 
     private func isToolbarActionEnabled(_ action: BrowserToolbarAction) -> Bool {
-        if action.requiresPage && viewModel.currentURL == nil { return false }
+        if action.requiresPage && viewModel.currentURL == nil && !(action == .fullscreen && isFullscreen) { return false }
         return switch action {
         case .none: true
         case .home: onGoHome != nil

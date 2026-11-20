@@ -71,6 +71,14 @@ enum WebAdOverlayCleanup {
 
     static let source = filteredModalCleanup + #"""
 
+    function updateMTYYBottomAdSpacing() {
+      if (!/(^|\.)mtyy5\.com$/.test(location.hostname)) return;
+      const sheet = document.querySelector('head > style#rjhtcqjm_style_id')?.sheet;
+      if (!sheet) return;
+      const hidden = adBlockConfig().cosmeticEnabled && !shouldDisableAdBlock() && !pageExceptionMatches(['elemhide']);
+      if (sheet.disabled !== hidden) sheet.disabled = hidden;
+    }
+
     const playerAdClosers = new WeakMap();
     function dismissFilteredPlayerAds() {
       if (!/(^|\.)xgcartoon\.com$/.test(location.hostname)) return;

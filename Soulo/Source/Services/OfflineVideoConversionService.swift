@@ -1,7 +1,7 @@
 import AVFoundation
 import CommonCrypto
 import Foundation
-import JavaScriptCore
+import SouloHLSMux
 
 enum OfflineVideoConversionError: LocalizedError {
     case failed
@@ -119,58 +119,79 @@ enum OfflineVideoConversionError: LocalizedError {
     }
 }
 
-/// Owned by one synchronous worker; JavaScriptCore never receives page scripts,
-/// URLs or the whole movie. Input and output cross the bridge as typed arrays.
+/// One synchronous worker runs the bundled script in an interpreter without JIT.
+/// Only media chunks cross the bridge. The worker owns the destination file.
 private final class HLSMP4Transmuxer {
     struct Info: Sendable { let duration: Double; let audio: Bool }
-    private let context: JSContext
-    private let file: FileHandle
-    private var failure: Error?
-    private var written = 0
+    private final class Output {
+        let file: FileHandle
+        var failure: Error?
+        var written = 0
+
+        init(file: FileHandle) { self.file = file }
+        deinit { try? file.close() }
+
+        static let write: SouloHLSMuxWrite = { context, bytes, count in
+            guard let context, let bytes else { return false }
+            let output = Unmanaged<Output>.fromOpaque(context).takeUnretainedValue()
+            do {
+                try output.file.write(contentsOf: Data(bytes: bytes, count: count))
+                output.written += count
+                return true
+            } catch {
+                output.failure = error
+                return false
+            }
+        }
+    }
+
+    private let engine: OpaquePointer
+    private let output: Output
     private var formats = MPEGTSExportFormats()
 
     private init(output: URL) throws {
-        guard let context = JSContext(), let url = Bundle.main.url(forResource: "mux-7.1.0.min", withExtension: "js") else {
+        guard let url = Bundle.main.url(forResource: "mux-7.1.0.min", withExtension: "js") else {
             throw OfflineVideoConversionError.failed
         }
-        self.context = context
+        let library = try String(contentsOf: url, encoding: .utf8)
         guard FileManager.default.createFile(atPath: output.path, contents: nil) else { throw CocoaError(.fileWriteUnknown) }
-        file = try FileHandle(forWritingTo: output)
-        context.exceptionHandler = { [weak self] _, _ in self?.failure = OfflineVideoConversionError.failed }
-        let write: @convention(block) (JSValue) -> Void = { [weak self] value in
-            guard let self, self.failure == nil else { return }
-            let global = self.context.jsGlobalContextRef!
-            guard let object = JSValueToObject(global, value.jsValueRef, nil),
-                  let bytes = JSObjectGetTypedArrayBytesPtr(global, object, nil) else {
-                self.failure = OfflineVideoConversionError.failed; return
+        let writer = Output(file: try FileHandle(forWritingTo: output))
+        let writerContext = Unmanaged.passUnretained(writer).toOpaque()
+        let handle = library.withCString { script in
+            Self.setupScript.withCString { setup in
+                soulo_hls_mux_create(script, library.utf8.count, setup, Self.setupScript.utf8.count, Output.write, writerContext)
             }
-            let count = JSObjectGetTypedArrayByteLength(global, object, nil)
-            do { try self.file.write(contentsOf: Data(bytes: bytes, count: count)); self.written += count }
-            catch { self.failure = error }
         }
-        context.setObject(write, forKeyedSubscript: "souloWrite" as NSString)
-        context.evaluateScript(try String(contentsOf: url, encoding: .utf8))
-        context.evaluateScript("""
+        guard let handle else { throw OfflineVideoConversionError.failed }
+        self.output = writer
+        engine = handle
+    }
+
+    private static let setupScript = """
             var souloMux = new muxjs.mp4.Transmuxer();
             var souloFirst = true, souloFormat = null, souloSequence = 1;
+            // Read box types directly as FourCC integers.
+            var mvhd = 0x6d766864, tkhd = 0x746b6864, mdhd = 0x6d646864, mfhd = 0x6d666864;
+            var moov = 0x6d6f6f76, trak = 0x7472616b, mdia = 0x6d646961, moof = 0x6d6f6f66;
             function souloNormalize(bytes, initialization) {
                 var view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
                 function boxes(start, end) {
                     while (start + 8 <= end) {
-                        var size = view.getUint32(start), type = '';
+                        var size = view.getUint32(start), type = view.getUint32(start + 4);
                         if (size < 8 || start + size > end) throw new Error('Invalid box');
-                        for (var i = 4; i < 8; i++) type += String.fromCharCode(view.getUint8(start + i));
-                        if (initialization && (type === 'mvhd' || type === 'tkhd' || type === 'mdhd')) {
-                            if (view.getUint8(start + 8) !== 0) throw new Error('Unsupported header');
+                        if (initialization && (type === mvhd || type === tkhd || type === mdhd)) {
+                            var durationOffset = type === tkhd ? 28 : 24;
+                            if (size < durationOffset + 4 || view.getUint8(start + 8) !== 0) throw new Error('Unsupported header');
                             // mux.js uses UINT32_MAX for MSE's unknown duration.
                             // A file must use zero, so AVFoundation derives it from its fragments.
-                            view.setUint32(start + (type === 'tkhd' ? 28 : 24), 0);
-                        } else if (!initialization && type === 'mfhd') {
+                            view.setUint32(start + durationOffset, 0);
+                        } else if (!initialization && type === mfhd) {
                             // Audio and video moofs share a sequence in MSE output.
                             // A single MP4 file needs an increasing sequence across both tracks.
+                            if (size < 16) throw new Error('Invalid fragment header');
                             view.setUint32(start + 12, souloSequence++);
                         }
-                        if (['moov', 'trak', 'mdia', 'moof'].indexOf(type) !== -1) boxes(start + 8, start + size);
+                        if (type === moov || type === trak || type === mdia || type === moof) boxes(start + 8, start + size);
                         start += size;
                     }
                     if (start !== end) throw new Error('Invalid box boundary');
@@ -185,11 +206,9 @@ private final class HLSMP4Transmuxer {
                 if (souloFirst) { souloWrite(souloNormalize(segment.initSegment, true)); souloFirst = false; }
                 souloWrite(souloNormalize(segment.data, false));
             });
-            """)
-        try check()
-    }
+            """
 
-    deinit { try? file.close() }
+    deinit { soulo_hls_mux_destroy(engine) }
 
     static func write(bundle: URL, output: URL, operation: FileOperationProgress, progress: Progress) throws -> Info {
         let mux = try HLSMP4Transmuxer(output: output)
@@ -211,21 +230,20 @@ private final class HLSMP4Transmuxer {
             guard line.range(of: #"^\d{6}\.ts$"#, options: .regularExpression) != nil,
                   index < names.count, sequence <= UInt64.max - UInt64(index) else { throw OfflineVideoConversionError.failed }
             if discontinuity {
-                mux.context.objectForKeyedSubscript("souloMux")?.invokeMethod("setBaseMediaDecodeTime", withArguments: [(elapsed * 90000).rounded()])
+                try mux.check(soulo_hls_mux_set_decode_time(mux.engine, (elapsed * 90000).rounded()))
                 discontinuity = false
             }
             let input = bundle.appendingPathComponent(line)
             guard (try input.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? Int.max) <= 64 * 1024 * 1024 else { throw ReadingToolError.limit }
             try autoreleasepool {
                 try mux.append(input, key: key, iv: try initializationVector(iv, sequence: sequence + UInt64(index)), operation: operation)
-                mux.context.objectForKeyedSubscript("souloMux")?.invokeMethod("flush", withArguments: [])
-                try mux.check()
+                try mux.check(soulo_hls_mux_flush(mux.engine))
             }
             elapsed += durations[index]; index += 1
             progress.completedUnitCount = Int64(index)
         }
-        guard elapsed.isFinite, elapsed > 0, mux.written > 0, mux.formats.hasVideo else { throw OfflineVideoConversionError.failed }
-        try mux.file.synchronize()
+        guard elapsed.isFinite, elapsed > 0, mux.output.written > 0, mux.formats.hasVideo else { throw OfflineVideoConversionError.failed }
+        try mux.output.file.synchronize()
         return Info(duration: elapsed, audio: mux.formats.hasAudio)
     }
 
@@ -280,19 +298,14 @@ private final class HLSMP4Transmuxer {
 
     private func push(_ data: Data) throws {
         try formats.append(data)
-        let global = context.jsGlobalContextRef!
-        let bytes = UnsafeMutableRawPointer.allocate(byteCount: data.count, alignment: 1)
-        data.copyBytes(to: bytes.assumingMemoryBound(to: UInt8.self), count: data.count)
-        var exception: JSValueRef?
-        guard let array = JSObjectMakeTypedArrayWithBytesNoCopy(global, kJSTypedArrayTypeUint8Array, bytes, data.count,
-            { pointer, _ in pointer?.deallocate() }, nil, &exception) else {
-            bytes.deallocate(); throw OfflineVideoConversionError.failed
+        try data.withUnsafeBytes { buffer in
+            try check(soulo_hls_mux_push(engine, buffer.bindMemory(to: UInt8.self).baseAddress, buffer.count))
         }
-        context.objectForKeyedSubscript("souloMux")?.invokeMethod("push", withArguments: [JSValue(jsValueRef: array, in: context)!])
-        try check()
     }
 
-    private func check() throws { if let failure { throw failure } }
+    private func check(_ succeeded: Bool) throws {
+        guard succeeded else { throw output.failure ?? OfflineVideoConversionError.failed }
+    }
 }
 
 /// Read PAT/PMT sections before accepting a segment. Unknown audio/video codecs

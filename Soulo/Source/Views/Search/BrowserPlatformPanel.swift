@@ -10,10 +10,14 @@ struct BrowserPlatformPickerContext {
 /// Browsing the groups is local to this panel. Only choosing a platform commits
 /// the group and navigates, so inspecting another group never replaces the page.
 struct BrowserPlatformPanel: View {
+    static let inlineChromeHeight: CGFloat = 64
     let context: BrowserPlatformPickerContext
     let onSelect: (SearchGroupScope, SearchPlatform) -> Void
     let onManage: () -> Void
     let onClose: () -> Void
+    private let inlineWidth: CGFloat?
+    private let inlineHeight: CGFloat?
+    private let inlineRowLimit: Int
     @ObservedObject private var store = PlatformDataStore.shared
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -21,10 +25,16 @@ struct BrowserPlatformPanel: View {
     @ScaledMetric(relativeTo: .caption) private var rowHeight: CGFloat = 78
 
     init(context: BrowserPlatformPickerContext,
+         inlineWidth: CGFloat? = nil,
+         inlineHeight: CGFloat? = nil,
+         inlineRowLimit: Int = 3,
          onSelect: @escaping (SearchGroupScope, SearchPlatform) -> Void,
          onManage: @escaping () -> Void,
          onClose: @escaping () -> Void) {
         self.context = context; self.onSelect = onSelect; self.onManage = onManage; self.onClose = onClose
+        self.inlineWidth = inlineWidth
+        self.inlineHeight = inlineHeight
+        self.inlineRowLimit = inlineRowLimit
         _scope = State(initialValue: context.scope)
     }
 
@@ -52,7 +62,18 @@ struct BrowserPlatformPanel: View {
 
     var body: some View {
         let items = platforms(in: currentScope)
-        let columns = dynamicTypeSize.isAccessibilitySize ? 2 : 4
+        let columns = dynamicTypeSize.isAccessibilitySize ? 2 : inlineWidth.map { min(7, max(2, Int(($0 - 20) / 72))) } ?? 4
+        let rows = (items.count + columns - 1) / columns
+        let rowSpacing: CGFloat = 6
+        let contentHeight = if inlineWidth != nil {
+            CGFloat(min(rows, inlineRowLimit)) * (rowHeight + rowSpacing)
+        } else {
+            CGFloat(rows) * (rowHeight + rowSpacing) + rowSpacing
+        }
+        let viewportHeight = inlineHeight.map { max(0, $0 - Self.inlineChromeHeight) } ?? .infinity
+        let standardHeightLimit: CGFloat = verticalSizeClass == .compact ? 150 : 320
+        let heightLimit = inlineWidth != nil && inlineRowLimit > 3 ? contentHeight : standardHeightLimit
+        let gridHeight = min(contentHeight, viewportHeight, heightLimit)
         VStack(spacing: 12) {
             HStack {
                 Menu {
@@ -91,23 +112,23 @@ struct BrowserPlatformPanel: View {
             if items.isEmpty {
                 Text(LanguageManager.shared.localizedString("no_platforms_in_group"))
                     .font(.subheadline).foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 88)
+                    .frame(maxWidth: .infinity, minHeight: min(88, viewportHeight))
             } else {
                 ScrollView {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: columns), spacing: 6) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: columns), spacing: rowSpacing) {
                         ForEach(items) { platform in
                             platformButton(platform)
                         }
-                    }.padding(.horizontal, 10).padding(.bottom, 6)
+                    }.padding(.horizontal, 10).padding(.bottom, rowSpacing)
                 }
-                .frame(height: min(CGFloat((items.count + columns - 1) / columns) * (rowHeight + 6) + 6,
-                                   verticalSizeClass == .compact ? 150 : 320))
+                .frame(height: gridHeight)
             }
         }
         .buttonStyle(.plain).padding(.vertical, 6)
-        .frame(minWidth: 240, idealWidth: 320, maxWidth: 320)
+        .frame(minWidth: inlineWidth ?? 240, idealWidth: inlineWidth ?? 320, maxWidth: inlineWidth ?? 320)
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .contain)
+        .onCompatibleChange(of: context.scope) { _, initialScope in scope = initialScope }
     }
 
     private func platformButton(_ platform: SearchPlatform) -> some View {

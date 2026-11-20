@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Kosongkan semua penanda halaman?";
 "settings" = "tetapan";
 "platform_management" = "Pengurusan Platform";
+"home_quick_search" = "Carian Pantas di Laman Utama";
 "region_korea" = "Korea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Sumber cache dan lawatan halaman dari 3 hari lalu akan dialih keluar. Kuki dan log masuk akan disimpan.";
 "enter_fullscreen" = "Skrin Penuh";
 "exit_fullscreen" = "Keluar dari Skrin Penuh";
-"fullscreen_exit_hint" = "Ketik untuk kawalan, tarik ke bawah untuk keluar";
+"exit_fullscreen_short" = "Keluar";
+"fullscreen_exit_hint" = "Ketik untuk membuka menu, leret ke atas untuk keluar";
 "restore_browser_toolbar" = "Pulihkan bar alat";
 "floating_more_detach" = "Tanggalkan butang Lagi";
 "floating_more_snap" = "Tangkap butang Lagi ke tepi";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Sebahagian disokong";
 "userscript_docs_partial_desc" = "Pemberitahuan dipaparkan dalam halaman; API sumber mengembalikan Promise. cookie memerlukan izin GM_cookie; kuki tidak dihantar secara automatik.";
 "userscript_docs_unsupported_title" = "Tidak disokong pada masa ini";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, pengasingan sandbox/run-in dan ciri desktop yang tidak tersedia dalam WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest boleh membatalkan permintaan Fetch dan XMLHttpRequest pada halaman utama atau mengubah halanya ke asal yang sama.";
+"userscript_docs_unsupported_desc" = "GM_audio memerlukan kawalan senyap seluruh tab dan akses kepada status audio. API awam WKWebView menyokongnya secara terhad.\n@sandbox memilih persekitaran skrip. Soulo kini menjalankan skrip pengguna dalam persekitaran halaman.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Nama skrip yang boleh dibaca manusia dan penerangan pilihan ditunjukkan sebelum pemasangan dan dalam butiran skrip.";
 "userscript_docs_metadata_version" = "Gunakan ruang nama yang stabil dan unik dan tingkatkan versi apabila skrip yang digabungkan berubah.";

@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Clear all bookmarks?";
 "settings" = "Settings";
 "platform_management" = "Platform Management";
+"home_quick_search" = "Home Quick Search";
 "region_korea" = "Korea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Cached resources and page visits from the last 3 days will be removed. Cookies and sign-ins will be kept.";
 "enter_fullscreen" = "Full Screen";
 "exit_fullscreen" = "Exit Full Screen";
-"fullscreen_exit_hint" = "Tap for controls, pull down to exit";
+"exit_fullscreen_short" = "Exit";
+"fullscreen_exit_hint" = "Tap for menu, swipe up to exit";
 "restore_browser_toolbar" = "Restore Toolbar";
 "floating_more_detach" = "Detach More button";
 "floating_more_snap" = "Snap More button to edge";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Partially supported";
 "userscript_docs_partial_desc" = "Notifications stay in-page; resource APIs return Promises. The explicit cookie option requires GM_cookie permission; requests do not automatically send cookies.";
 "userscript_docs_unsupported_title" = "Not currently supported";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in isolation, and desktop-specific behavior unavailable in WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest can cancel or redirect main-page Fetch and XMLHttpRequest requests. Redirects stay on the original origin.";
+"userscript_docs_unsupported_desc" = "GM_audio needs tab-wide mute control and audio state. WKWebView’s public API has limited coverage.\n@sandbox selects a script environment. Soulo currently runs userscripts in the page’s JavaScript environment.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Human-readable script name and optional description shown before installation and in script details.";
 "userscript_docs_metadata_version" = "Use a stable, unique namespace and increment the version whenever the bundled script changes.";

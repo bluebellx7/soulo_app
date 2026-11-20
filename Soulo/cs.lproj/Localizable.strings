@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Vymazat všechny záložky?";
 "settings" = "Nastavení";
 "platform_management" = "Správa platformy";
+"home_quick_search" = "Rychlé hledání na úvodní stránce";
 "region_korea" = "Korea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Zdroje uložené v mezipaměti a návštěvy stránek za poslední 3 dny budou odstraněny. Cookies a přihlášení budou zachovány.";
 "enter_fullscreen" = "Celá obrazovka";
 "exit_fullscreen" = "Ukončete celou obrazovku";
-"fullscreen_exit_hint" = "Klepnutím zobrazíte ovládací prvky, tažením dolů ukončíte";
+"exit_fullscreen_short" = "Ukončit";
+"fullscreen_exit_hint" = "Klepnutím otevřete nabídku, přejetím nahoru ukončíte";
 "restore_browser_toolbar" = "Obnovit panel nástrojů";
 "floating_more_detach" = "Tlačítko Odpojit Více";
 "floating_more_snap" = "Přichyťte tlačítko Více k okraji";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Částečně podporováno";
 "userscript_docs_partial_desc" = "Oznámení jsou uvnitř stránky; API zdrojů vracejí Promise. Volba cookie vyžaduje GM_cookie; cookies se automaticky neposílají.";
 "userscript_docs_unsupported_title" = "Aktuálně není podporováno";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolace sandbox/run-in a desktopové funkce nedostupné ve WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest umožňuje zrušit požadavky Fetch a XMLHttpRequest na hlavní stránce a přesměrovat je v rámci stejného původu.";
+"userscript_docs_unsupported_desc" = "GM_audio vyžaduje ztlumení celého panelu a čtení stavu zvuku. Veřejné rozhraní WKWebView je v tomto omezené.\n@sandbox vybírá prostředí skriptu. Soulo nyní spouští uživatelské skripty v prostředí stránky.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Lidsky čitelný název skriptu a volitelný popis zobrazený před instalací a v podrobnostech skriptu.";
 "userscript_docs_metadata_version" = "Používejte stabilní, jedinečný jmenný prostor a zvyšujte verzi, kdykoli se změní dodávaný skript.";

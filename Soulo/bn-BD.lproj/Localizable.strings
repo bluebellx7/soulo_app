@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "সব বুকমার্ক সাফ করবেন?";
 "settings" = "সেটিংস";
 "platform_management" = "প্ল্যাটফর্ম ব্যবস্থাপনা";
+"home_quick_search" = "হোম থেকে দ্রুত অনুসন্ধান";
 "region_korea" = "কোরিয়া";
 "platform_naver" = "নেভার";
 "platform_daum" = "দাউম";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "গত 3 দিনের ক্যাশ করা সম্পদ এবং পৃষ্ঠা পরিদর্শন মুছে ফেলা হবে। কুকিজ এবং সাইন-ইন রাখা হবে।";
 "enter_fullscreen" = "পূর্ণ স্ক্রিন";
 "exit_fullscreen" = "ফুল স্ক্রীন থেকে প্রস্থান করুন";
-"fullscreen_exit_hint" = "নিয়ন্ত্রণের জন্য আলতো চাপুন, প্রস্থান করতে নিচে টানুন";
+"exit_fullscreen_short" = "প্রস্থান";
+"fullscreen_exit_hint" = "মেনু খুলতে ট্যাপ করুন, বের হতে ওপরের দিকে সোয়াইপ করুন";
 "restore_browser_toolbar" = "টুলবার পুনরুদ্ধার করুন";
 "floating_more_detach" = "আরও বোতাম বিচ্ছিন্ন করুন";
 "floating_more_snap" = "প্রান্তে আরও বোতাম স্ন্যাপ করুন";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "আংশিক সমর্থিত";
 "userscript_docs_partial_desc" = "বিজ্ঞপ্তি পৃষ্ঠার ভিতরেই থাকে; রিসোর্স API Promise ফেরত দেয়। cookie বিকল্পে GM_cookie অনুমতি লাগে; স্বয়ংক্রিয়ভাবে কুকি পাঠানো হয় না।";
 "userscript_docs_unsupported_title" = "বর্তমানে সমর্থিত নয়";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in বিচ্ছিন্নতা এবং WKWebView-এ অনুপলব্ধ ডেস্কটপ আচরণ।";
+"userscript_docs_network_webrequest" = "GM_webRequest মূল পৃষ্ঠার Fetch ও XMLHttpRequest অনুরোধ বাতিল করতে অথবা একই উৎসের ঠিকানায় পাঠাতে পারে।";
+"userscript_docs_unsupported_desc" = "GM_audio-এর জন্য পুরো ট্যাব নিঃশব্দ করা ও অডিওর অবস্থা জানা দরকার। WKWebView-এর পাবলিক API-তে এর সমর্থন সীমিত।\n@sandbox স্ক্রিপ্টের পরিবেশ বেছে নেয়। Soulo-র ব্যবহারকারী স্ক্রিপ্ট বর্তমানে ওয়েবপেজের পরিবেশে চলে।";
 "userscript_docs_metadata_title" = "মেটাডেটা";
 "userscript_docs_metadata_identity" = "মানব-পাঠযোগ্য স্ক্রিপ্টের নাম এবং ঐচ্ছিক বিবরণ ইনস্টলেশনের আগে এবং স্ক্রিপ্টের বিবরণে দেখানো হয়েছে।";
 "userscript_docs_metadata_version" = "একটি স্থিতিশীল, অনন্য নামস্থান ব্যবহার করুন এবং যখনই বান্ডিল স্ক্রিপ্ট পরিবর্তন হয় তখন সংস্করণটি বৃদ্ধি করুন।";

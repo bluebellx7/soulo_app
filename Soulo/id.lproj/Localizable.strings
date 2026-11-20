@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Hapus semua bookmark?";
 "settings" = "Pengaturan";
 "platform_management" = "Manajemen Platform";
+"home_quick_search" = "Pencarian Cepat di Beranda";
 "region_korea" = "Korea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Sumber daya yang di-cache dan kunjungan halaman dari 3 hari terakhir akan dihapus. Cookie dan proses masuk akan disimpan.";
 "enter_fullscreen" = "Layar Penuh";
 "exit_fullscreen" = "Keluar dari Layar Penuh";
-"fullscreen_exit_hint" = "Ketuk untuk kontrol, tarik ke bawah untuk keluar";
+"exit_fullscreen_short" = "Keluar";
+"fullscreen_exit_hint" = "Ketuk untuk membuka menu, usap ke atas untuk keluar";
 "restore_browser_toolbar" = "Pulihkan bilah alat";
 "floating_more_detach" = "Lepaskan tombol Lainnya";
 "floating_more_snap" = "Jepret tombol Lainnya ke tepi";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Didukung sebagian";
 "userscript_docs_partial_desc" = "Notifikasi tampil di halaman; API sumber daya mengembalikan Promise. cookie memerlukan izin GM_cookie; cookie tidak dikirim otomatis.";
 "userscript_docs_unsupported_title" = "Saat ini tidak didukung";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, isolasi sandbox/run-in, dan perilaku desktop yang tidak tersedia di WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest dapat membatalkan permintaan Fetch dan XMLHttpRequest pada halaman utama atau mengalihkannya ke origin yang sama.";
+"userscript_docs_unsupported_desc" = "GM_audio perlu membisukan seluruh tab dan membaca status audio. API publik WKWebView hanya mendukungnya secara terbatas.\n@sandbox memilih lingkungan eksekusi skrip. Soulo saat ini menjalankan skrip pengguna di lingkungan halaman.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Nama skrip yang dapat dibaca manusia dan deskripsi opsional ditampilkan sebelum instalasi dan dalam detail skrip.";
 "userscript_docs_metadata_version" = "Gunakan namespace yang stabil dan unik, serta tingkatkan versinya setiap kali skrip yang dibundel berubah.";

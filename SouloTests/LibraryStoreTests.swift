@@ -325,7 +325,7 @@ final class LibraryStoreTests: XCTestCase {
         let favicon = Data(repeating: 17, count: 2 * 1024 * 1024)
         try autoreleasepool {
             let legacy = try ModelContainer(for: SearchHistoryItem.self, BookmarkItem.self, BookmarkFolder.self,
-                configurations: ModelConfiguration(url: legacyURL))
+                configurations: ModelConfiguration(url: legacyURL, cloudKitDatabase: .none))
             let folder = BookmarkFolder(title: "Saved folder")
             folder.id = folderID
             folder.dateAdded = date
@@ -367,7 +367,7 @@ final class LibraryStoreTests: XCTestCase {
             // Verify its records are gone, then simulate a stale source being
             // restored from backup: the migration marker must prevent revival.
             let retired = try ModelContainer(for: SearchHistoryItem.self, BookmarkItem.self, BookmarkFolder.self,
-                configurations: ModelConfiguration(url: legacyURL))
+                configurations: ModelConfiguration(url: legacyURL, cloudKitDatabase: .none))
             XCTAssertEqual(try retired.mainContext.fetchCount(FetchDescriptor<BookmarkItem>()), 0)
             XCTAssertEqual(try retired.mainContext.fetchCount(FetchDescriptor<BookmarkFolder>()), 0)
             XCTAssertEqual(try retired.mainContext.fetchCount(FetchDescriptor<SearchHistoryItem>()), 0)
@@ -397,7 +397,7 @@ final class LibraryStoreTests: XCTestCase {
         try FileManager.default.removeItem(at: legacyURL)
         try autoreleasepool {
             let legacy = try ModelContainer(for: SearchHistoryItem.self, BookmarkItem.self, BookmarkFolder.self,
-                configurations: ModelConfiguration(url: legacyURL))
+                configurations: ModelConfiguration(url: legacyURL, cloudKitDatabase: .none))
             legacy.mainContext.insert(BookmarkItem(title: "Recovered", urlString: "https://example.com/"))
             try legacy.mainContext.save()
         }

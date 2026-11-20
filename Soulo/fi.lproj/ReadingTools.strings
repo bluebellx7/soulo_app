@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Kokeile palautetta";
 
-"media_start_timeout" = "Toisto ei ole alkanut. Tarkista verkkoyhteys tai vaihda soitinta.";
+"media_start_timeout" = "Toisto ei ole alkanut. Tarkista verkkoyhteys.";
+"media_load_complete" = "Lataus valmis";
+"media_playback_stalled" = "Toisto on pysähtynyt.";
 
 "wallpaper_appearance_hint" = "Valitse vaalealle ja tummalle ulkoasulle omat taustat. Ne vaihtuvat automaattisesti sovelluksen mukana.";
 
@@ -556,6 +558,7 @@
 
 "storage_files_group" = "Lataukset ja tiedostot";
 "storage_cache_group" = "Välimuisti ja väliaikaistiedostot";
+"storage_video_cache" = "Videoiden välimuisti";
 "storage_saved_group" = "Tallennettu sisältö";
 
 "storage_clear_offline_media_warning" = "Poistaa kaikki tämän sijainnin offline-videot ja niiden tiedostomerkinnät. Keskeneräiset tiedosto-/videolataukset, toisto ja viennit pysäytetään.";

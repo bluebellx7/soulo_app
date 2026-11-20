@@ -78,19 +78,20 @@ private enum FloatingMoreAttachment: Equatable {
 
 enum FullscreenExitGesture {
     static func shouldExit(translation: CGSize) -> Bool {
-        translation.height >= 28
-            && abs(translation.height) > abs(translation.width) * 1.2
+        -translation.height >= 28
+            && -translation.height > abs(translation.width) * 1.2
     }
 }
 
 enum FullscreenHandleRevealGesture {
     static func shouldReveal(translation: CGSize) -> Bool {
-        translation.height >= 24
-            && abs(translation.height) > abs(translation.width) * 1.2
+        -translation.height >= 24
+            && -translation.height > abs(translation.width) * 1.2
     }
 
-    static func beginsNearTop(startY: CGFloat, maximumStartY: CGFloat) -> Bool {
-        startY >= 0 && startY <= max(maximumStartY, 0)
+    static func beginsNearBottom(startY: CGFloat, viewportHeight: CGFloat, bottomRegionHeight: CGFloat) -> Bool {
+        let distanceFromBottom = viewportHeight - startY
+        return startY >= 0 && distanceFromBottom >= 0 && distanceFromBottom <= bottomRegionHeight
     }
 }
 
@@ -98,6 +99,7 @@ enum FullscreenHandleLayout {
     /// Keep the indicator visually compact while providing a forgiving target.
     static let indicatorSize = CGSize(width: 36, height: 4)
     static let minimumHitSize = CGSize(width: 104, height: 52)
+    static let bottomSpacing: CGFloat = 72
 }
 
 private struct BrowserNavigationConfirmationBar: View {
@@ -210,7 +212,6 @@ struct WebViewContainer: View {
     var onAccessibilityPlatformPage: ((AccessibilityPlatformPagingDirection) -> Bool)? = nil
     var onPageStarted: (() -> Void)? = nil
     var onPageLoaded: (() -> Void)? = nil
-    var topSafeAreaInset: CGFloat = 0
     var bottomSafeAreaInset: CGFloat = 0
     var platformPicker: BrowserPlatformPickerContext? = nil
     @Environment(\.managedObjectContext) private var modelContext
@@ -253,7 +254,8 @@ struct WebViewContainer: View {
     @State private var requestVoiceAfterAddressEditorDismisses = false
     @State private var showFullscreenExitHandle = false
     @State private var showFullscreenExitHint = false
-    @State private var showFullscreenMenu = false
+    @State private var fullscreenControlsPresented = false
+    @State private var browserViewportHeight: CGFloat = 0
     @State private var swipeActionTask: Task<Void, Never>?
     @State private var fullscreenHintDismissTask: Task<Void, Never>?
     @State private var showCaptureOptions = false
@@ -313,7 +315,8 @@ struct WebViewContainer: View {
                     AdBlockPreparedWebView(
                         viewModel: webViewModel,
                         onAccessibilityPlatformPage: onAccessibilityPlatformPage,
-                        obscuredBottomInset: webViewObscuredBottomInset
+                        obscuredBottomInset: webViewObscuredBottomInset,
+                        onFullscreenHandleSwipe: canRevealFullscreenHandle ? revealFullscreenHandleAfterSwipe : nil
                     )
                         .id(webViewModel.runtimeRevision)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -396,18 +399,10 @@ struct WebViewContainer: View {
                     .zIndex(51)
             }
 
-            if isActiveTab && isFullscreen {
-                if showFullscreenMenu {
-                    fullscreenMenuDismissBackdrop
-                        .transition(.opacity)
-                        .zIndex(69.5)
-                }
-
-                if showFullscreenExitHandle {
-                    fullscreenExitHandle
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                        .zIndex(70)
-                }
+            if isActiveTab && isFullscreen && showFullscreenExitHandle {
+                fullscreenExitHandle
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .zIndex(70)
             }
 
             // Toast overlays
@@ -630,11 +625,10 @@ struct WebViewContainer: View {
             }
             showExternalConfirm = false
         }
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { browserViewportHeight = $0 }
         .simultaneousGesture(
             fullscreenHandleRevealGesture,
-            including: isActiveTab && isFullscreen && !showFullscreenExitHandle
-                ? .all
-                : .subviews
+            including: canRevealFullscreenHandle ? .all : .subviews
         )
         .onCompatibleChange(of: webViewModel.isScrollingUp) { _, scrollingUp in
             if isActiveTab {
@@ -940,12 +934,12 @@ struct WebViewContainer: View {
             WebResourceMediaPlayerView(resource: request.resource,
                 pageURL: request.resource.sourcePageURL ?? webViewModel.currentURL,
                 sourceWebView: webViewModel.webView,
-                assetProvider: { await WebResourceMediaService.asset(for: request.resource, webView: webViewModel.webView) },
+                assetProvider: { await WebResourceMediaService.asset(for: request.resource, webView: webViewModel.webView, cacheForPlayback: true) },
                 downloadAction: {
                     try? await WebResourceDownloadService.shared.download(request.resource,
                         pageURL: request.resource.sourcePageURL, webView: webViewModel.webView)
-                }, souloStartAt: request.fullscreen ? request.time : nil, souloPlaying: request.playing, episodeList: webViewModel.episodeList,
-                systemPlayer: request.systemPlayer, showsEpisodes: request.showsEpisodes)
+                }, souloStartAt: request.fullscreen ? request.time : nil, souloPlaying: request.playing, initialRate: request.rate, episodeList: webViewModel.episodeList,
+                showsEpisodes: request.showsEpisodes)
                 .onAppear { videoPlaybackOrientation = request.orientation }
         }
         .fullScreenCover(item: $webViewModel.imagePreview, onDismiss: {
@@ -1286,6 +1280,7 @@ struct WebViewContainer: View {
 
     private func configuredBrowserToolbar(
         showsOnlyMore: Bool = false,
+        isFullscreenMenu: Bool = false,
         onFloatingMoreDragChanged: ((CGSize) -> Void)? = nil,
         onFloatingMoreDragEnded: ((CGSize) -> Void)? = nil
     ) -> some View {
@@ -1316,7 +1311,8 @@ struct WebViewContainer: View {
             onAddressTranslation: { handleAddressTranslationAction() },
             onHideToolbar: { hideToolbar() },
             onOpenSettings: onOpenSettings,
-            isFullscreen: false,
+            isFullscreen: isFullscreenMenu,
+            showsFullscreenExitHint: showFullscreenExitHint,
             onToggleFullscreen: { toggleFullscreen() },
             onOpenSafariCompatibility: { openSafariCompatibilityMode() },
             onOpenDefaultBrowser: { openCurrentPageInDefaultBrowser() },
@@ -1326,6 +1322,10 @@ struct WebViewContainer: View {
             onTranslatePage: { showTranslationSheet = true },
             onSummarizePage: { showSummarySheet = true },
             onMoreMenuPresentationChange: { isPresented in
+                if isFullscreenMenu {
+                    fullscreenControlsPresentationChanged(isPresented)
+                    return
+                }
                 toolbarInteractionLocked = isPresented
                 if isPresented, toolbarMinimized {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) {
@@ -1450,124 +1450,15 @@ struct WebViewContainer: View {
         }
     }
 
+    private var fullscreenHandleBottomInset: CGFloat {
+        max(bottomSafeAreaInset, windowSafeAreaInsets.bottom, 8) + FullscreenHandleLayout.bottomSpacing
+    }
+
     private var fullscreenExitHandle: some View {
-        VStack(spacing: 8) {
-            Button {
-                toggleFullscreenMenu()
-            } label: {
-                VStack(spacing: 5) {
-                    Capsule()
-                        .fill(.white.opacity(showFullscreenExitHint || showFullscreenMenu ? 0.94 : 0.72))
-                        .frame(
-                            width: FullscreenHandleLayout.indicatorSize.width,
-                            height: FullscreenHandleLayout.indicatorSize.height
-                        )
-
-                    if showFullscreenExitHint {
-                        Text(LanguageManager.shared.localizedString("fullscreen_exit_hint"))
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.94))
-                            .lineLimit(1)
-                            .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                    }
-                }
-                .padding(.horizontal, showFullscreenExitHint ? 13 : 10)
-                .padding(.vertical, 8)
-                .background(
-                    .black.opacity(showFullscreenExitHint || showFullscreenMenu ? 0.58 : 0.28),
-                    in: Capsule()
-                )
-                .overlay(
-                    Capsule().stroke(.white.opacity(0.13), lineWidth: 0.5)
-                )
-                .shadow(color: .black.opacity(0.2), radius: 7, y: 3)
-                .frame(
-                    minWidth: FullscreenHandleLayout.minimumHitSize.width,
-                    minHeight: FullscreenHandleLayout.minimumHitSize.height
-                )
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 10)
-                    .onEnded { value in
-                        if FullscreenExitGesture.shouldExit(translation: value.translation) {
-                            exitFullscreen()
-                        }
-                    }
-            )
-            .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
-            .accessibilityHint(LanguageManager.shared.localizedString("fullscreen_exit_hint"))
-            .accessibilityIdentifier("fullscreen.handle")
-
-            if showFullscreenMenu {
-                fullscreenQuickMenu
-                    .transition(
-                        .asymmetric(
-                            insertion: .scale(scale: 0.94, anchor: .top)
-                                .combined(with: .opacity),
-                            removal: .scale(scale: 0.97, anchor: .top)
-                                .combined(with: .opacity)
-                        )
-                    )
-            }
-
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Geometry safe-area values can become zero after the parent enters an
-        // edge-to-edge presentation. Keep the handle below a notch or Dynamic
-        // Island by falling back to the active window's physical safe area.
-        .padding(.top, max(topSafeAreaInset, windowSafeAreaInsets.top, 8) + 4)
-        .padding(.horizontal, 16)
-    }
-
-    private var fullscreenMenuDismissBackdrop: some View {
-        Color.black
-            .opacity(0.08)
-            .contentShape(Rectangle())
-            .ignoresSafeArea()
-            .onTapGesture {
-                closeFullscreenMenu()
-            }
-            .accessibilityHidden(true)
-    }
-
-    private var fullscreenQuickMenu: FullscreenQuickMenu {
-        FullscreenQuickMenu(
-            webViewModel: webViewModel,
-            title: fullscreenDisplayTitle,
-            isBookmarked: isBookmarked,
-            isDesktopMode: tabManager?.isDesktopMode ?? false,
-            canSwitchContentMode: tabManager != nil,
-            onAction: performFullscreenMenuAction
-        )
-    }
-
-    private func performFullscreenMenuAction(_ action: FullscreenQuickMenu.Action) {
-        switch action {
-        case .mobileMode: setFullscreenDesktopMode(false)
-        case .desktopMode: setFullscreenDesktopMode(true)
-        case .exitFullscreen: exitFullscreen()
-        case .close: closeFullscreenMenu()
-        default:
-            closeFullscreenMenu()
-            switch action {
-            case .share: shareCurrentPage()
-            case .copyLink: copyCurrentPageLink()
-            case .bookmark: handleBookmarkToggle()
-            case .library: librarySection = .bookmarks
-            case .home: onGoHome?()
-            case .capture: showCaptureOptions = true
-            case .translate: showTranslationSheet = true
-            case .settings: onOpenSettings?()
-            case .editAddress: presentAddressEditor()
-            case .back: webViewModel.goBack()
-            case .reload: webViewModel.reload()
-            case .forward: webViewModel.goForward()
-            default: break
-            }
-        }
+        configuredBrowserToolbar(isFullscreenMenu: true)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .padding(.bottom, fullscreenHandleBottomInset)
+            .padding(.horizontal, 16)
     }
 
     private func dismissSwipePanel() {
@@ -1622,20 +1513,25 @@ struct WebViewContainer: View {
         }
     }
 
+    private var canRevealFullscreenHandle: Bool {
+        isActiveTab && isFullscreen && !showFullscreenExitHandle
+    }
+
     private var fullscreenHandleRevealGesture: some Gesture {
         DragGesture(minimumDistance: 10, coordinateSpace: .local)
             .onEnded { value in
-                let maximumStartY = max(topSafeAreaInset, windowSafeAreaInsets.top, 8) + 36
-                guard FullscreenHandleRevealGesture.beginsNearTop(
-                    startY: value.startLocation.y,
-                    maximumStartY: maximumStartY
-                ), FullscreenHandleRevealGesture.shouldReveal(
-                    translation: value.translation
-                ) else {
-                    return
-                }
-                revealFullscreenExitHandle()
+                revealFullscreenHandleAfterSwipe(
+                    startY: value.startLocation.y, viewportHeight: browserViewportHeight, translation: value.translation
+                )
             }
+    }
+
+    private func revealFullscreenHandleAfterSwipe(startY: CGFloat, viewportHeight: CGFloat, translation: CGSize) {
+        guard canRevealFullscreenHandle, viewportHeight > 0,
+              FullscreenHandleRevealGesture.shouldReveal(translation: translation),
+              FullscreenHandleRevealGesture.beginsNearBottom(startY: startY, viewportHeight: viewportHeight,
+                  bottomRegionHeight: fullscreenHandleBottomInset + FullscreenHandleLayout.minimumHitSize.height) else { return }
+        revealFullscreenExitHandle()
     }
 
     private func toggleFullscreen() {
@@ -1658,7 +1554,7 @@ struct WebViewContainer: View {
         }
         HapticsManager.light()
         withAnimation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.86)) {
-            showFullscreenMenu = false
+            fullscreenControlsPresented = false
             isFullscreen = false
             toolbarMinimized = false
         }
@@ -1669,7 +1565,7 @@ struct WebViewContainer: View {
         fullscreenHintDismissTask = nil
 
         guard isFullscreen else {
-            showFullscreenMenu = false
+            fullscreenControlsPresented = false
             showFullscreenExitHandle = false
             showFullscreenExitHint = false
             return
@@ -1680,7 +1576,7 @@ struct WebViewContainer: View {
         toolbarMinimized = false
 
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-            showFullscreenMenu = false
+            fullscreenControlsPresented = false
             showFullscreenExitHandle = true
             showFullscreenExitHint = true
         }
@@ -1693,40 +1589,23 @@ struct WebViewContainer: View {
 
         HapticsManager.light()
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-            showFullscreenMenu = false
+            fullscreenControlsPresented = false
             showFullscreenExitHint = false
             showFullscreenExitHandle = true
         }
         scheduleFullscreenHandleDismiss()
     }
 
-    private func toggleFullscreenMenu() {
-        guard isFullscreen, showFullscreenExitHandle else { return }
-        fullscreenHintDismissTask?.cancel()
-        fullscreenHintDismissTask = nil
-        HapticsManager.selection()
-
-        withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.86)) {
+    private func fullscreenControlsPresentationChanged(_ isPresented: Bool) {
+        guard isFullscreen, fullscreenControlsPresented != isPresented else { return }
+        fullscreenControlsPresented = isPresented
+        if isPresented {
+            fullscreenHintDismissTask?.cancel()
+            fullscreenHintDismissTask = nil
             showFullscreenExitHint = false
-            showFullscreenMenu.toggle()
-        }
-
-        if !showFullscreenMenu {
+        } else {
             scheduleFullscreenHandleDismiss()
         }
-    }
-
-    private func closeFullscreenMenu() {
-        guard showFullscreenMenu else { return }
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) {
-            showFullscreenMenu = false
-        }
-        scheduleFullscreenHandleDismiss()
-    }
-
-    private func setFullscreenDesktopMode(_ enabled: Bool) {
-        guard let tabManager, tabManager.isDesktopMode != enabled else { return }
-        tabManager.setDesktopModeEnabled(enabled)
     }
 
     private var fullscreenDisplayTitle: String {
@@ -1740,13 +1619,6 @@ struct WebViewContainer: View {
             return LanguageManager.shared.localizedString("tab_new_tab")
         }
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
-    }
-
-    private func copyCurrentPageLink() {
-        guard let url = webViewModel.currentURL else { return }
-        UIPasteboard.general.url = url
-        HapticsManager.success()
-        NotificationCenter.default.post(name: .linkCopied, object: nil)
     }
 
     private func shareCurrentPage() {
@@ -1828,7 +1700,7 @@ struct WebViewContainer: View {
         fullscreenHintDismissTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 2_400_000_000)
             guard !Task.isCancelled else { return }
-            guard !showFullscreenMenu else { return }
+            guard !fullscreenControlsPresented else { return }
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
                 showFullscreenExitHint = false
                 showFullscreenExitHandle = false

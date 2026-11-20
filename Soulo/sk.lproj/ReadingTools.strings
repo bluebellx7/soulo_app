@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Vyskúšať odozvu";
 
-"media_start_timeout" = "Prehrávanie sa nezačalo. Skontrolujte sieť alebo zmeňte prehrávač.";
+"media_start_timeout" = "Prehrávanie sa nezačalo. Skontrolujte sieť.";
+"media_load_complete" = "Načítané";
+"media_playback_stalled" = "Prehrávanie sa zastavilo.";
 
 "wallpaper_appearance_hint" = "Nastavte samostatné pozadia pre svetlý a tmavý vzhľad. Menia sa automaticky podľa aplikácie.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Sťahovanie a súbory";
 "storage_cache_group" = "Vyrovnávacia pamäť a dočasné súbory";
+"storage_video_cache" = "Vyrovnávacia pamäť videí";
 "storage_saved_group" = "Uložený obsah";
 
 "storage_clear_offline_media_warning" = "Vymaže všetky offline videá na tomto mieste a ich záznamy súborov. Nedokončené sťahovanie súborov/videí, prehrávanie a exporty sa zastavia.";

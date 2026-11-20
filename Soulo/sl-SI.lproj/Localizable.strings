@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Počistiti vse zaznamke?";
 "settings" = "nastavitve";
 "platform_management" = "Upravljanje platforme";
+"home_quick_search" = "Hitro iskanje na domači strani";
 "region_korea" = "Koreja";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Predpomnjeni viri in obiski strani v zadnjih 3 dneh bodo odstranjeni. Piškotki in prijave bodo ohranjeni.";
 "enter_fullscreen" = "Celozaslonsko";
 "exit_fullscreen" = "Izhod iz celotnega zaslona";
-"fullscreen_exit_hint" = "Tapnite za nadzor, povlecite navzdol za izhod";
+"exit_fullscreen_short" = "Izhod";
+"fullscreen_exit_hint" = "Tapnite za meni, podrsajte navzgor za izhod";
 "restore_browser_toolbar" = "Obnovi orodno vrstico";
 "floating_more_detach" = "Odstrani gumb Več";
 "floating_more_snap" = "Pripni gumb Več na rob";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Delno podprto";
 "userscript_docs_partial_desc" = "Obvestila so na strani; API-ji virov vrnejo Promise. cookie zahteva GM_cookie; piškotki se ne pošiljajo samodejno.";
 "userscript_docs_unsupported_title" = "Trenutno ni podprto";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, ločevanje sandbox/run-in in namizne funkcije, ki jih WKWebView ne ponuja.";
+"userscript_docs_network_webrequest" = "GM_webRequest lahko prekliče zahteve Fetch in XMLHttpRequest glavne strani ali jih preusmeri znotraj istega izvora.";
+"userscript_docs_unsupported_desc" = "GM_audio potrebuje utišanje celotnega zavihka in dostop do stanja zvoka. Javni API WKWebView ima omejeno podporo.\n@sandbox izbere okolje izvajanja. Soulo trenutno izvaja uporabniške skripte v okolju strani.";
 "userscript_docs_metadata_title" = "Metapodatki";
 "userscript_docs_metadata_identity" = "Človeku berljivo ime skripta in izbirni opis, prikazan pred namestitvijo in v podrobnostih skripta.";
 "userscript_docs_metadata_version" = "Uporabite stabilen, edinstven imenski prostor in povečajte različico vsakič, ko se skript v paketu spremeni.";

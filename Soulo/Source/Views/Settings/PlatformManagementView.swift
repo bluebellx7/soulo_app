@@ -229,27 +229,29 @@ struct PlatformManagementView: View {
 
     private var autoHidePlatformToggle: some View {
         VStack(alignment: .leading, spacing: 10) {
-        Toggle(ToolText.text("show_platform_bar"), isOn: Binding(
-            get: { showPlatformBar },
-            set: { enabled in
-                showPlatformBar = enabled
-                for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
-                if !enabled { showPlatformBarGuide = true }
+            Toggle(ToolText.text("show_platform_bar"), isOn: Binding(
+                get: { showPlatformBar },
+                set: { enabled in
+                    showPlatformBar = enabled
+                    for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
+                    if !enabled { showPlatformBarGuide = true }
+                }
+            ))
+            .accessibilityIdentifier("platform.show-platform-bar")
+            if showPlatformBar {
+                Divider()
+                Toggle(ToolText.text("auto_hide_platform_bar"), isOn: Binding(
+                    get: { autoHidePlatformBar },
+                    set: { enabled in
+                        autoHidePlatformBar = enabled
+                        for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
+                        if enabled { showAutoHidePlatformHint = true }
+                    }
+                ))
+                .accessibilityIdentifier("platform.auto-hide-platforms")
             }
-        ))
-        .accessibilityIdentifier("platform.show-platform-bar")
-        if showPlatformBar {
-        Divider()
-        Toggle(ToolText.text("auto_hide_platform_bar"), isOn: Binding(
-            get: { autoHidePlatformBar },
-            set: { enabled in
-                autoHidePlatformBar = enabled
-                for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
-                if enabled { showAutoHidePlatformHint = true }
-            }
-        ))
-        .accessibilityIdentifier("platform.auto-hide-platforms")
-        }
+            Divider()
+            HomeQuickSearchToggle()
         }
     }
 
@@ -477,6 +479,15 @@ struct PlatformManagementView: View {
         } else if let region = section.region {
             moveToRegion = RegionWrapper(region: region)
         }
+    }
+}
+
+private struct HomeQuickSearchToggle: View {
+    @AppStorage(PlatformBarPreferences.homeQuickSearchKey) private var enabled = false
+
+    var body: some View {
+        Toggle(LanguageManager.shared.localizedString("home_quick_search"), isOn: $enabled)
+            .accessibilityIdentifier("platform.home-quick-search")
     }
 }
 

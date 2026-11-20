@@ -1,4 +1,4 @@
-// Rebuild only the syntax edits for the pinned TYTY 0.6.6 background. The
+// Rebuild only the syntax edits for supported TYTY background versions. The
 // extension program is parsed, never executed. No npm dependency ships in iOS.
 // Usage: node scripts/generate_tyty_template_patches.mjs WORKER_JS BABEL_DIR [OUTPUT]
 // BABEL_DIR must contain @babel/core 8.1.2 and @babel/plugin-transform-template-literals 8.0.1.
@@ -7,7 +7,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
 
-const [worker, babelDirectory, output = 'Soulo/Resources/UserScripts/tyty-0.6.6-template-patches.json'] = process.argv.slice(2);
+const [worker, babelDirectory, requestedOutput] = process.argv.slice(2);
 if (!worker || !babelDirectory) throw Error('Expected WORKER_JS BABEL_DIR [OUTPUT].');
 const require = createRequire(path.resolve(babelDirectory, 'package.json'));
 const core = require('@babel/core');
@@ -17,9 +17,13 @@ if (core.version !== '8.1.2' || require('@babel/plugin-transform-template-litera
 }
 const source = fs.readFileSync(worker, 'utf8');
 const originalSHA256 = crypto.createHash('sha256').update(source).digest('hex');
-if (originalSHA256 !== '21877195d29dc57a97ab457684674bf9fd4ab50915eb7687919044d1360e1036') {
-  throw Error('This generator only supports the original TYTY 0.6.6 worker.');
-}
+const supportedWorkers = new Map([
+  ['21877195d29dc57a97ab457684674bf9fd4ab50915eb7687919044d1360e1036', '0.6.6'],
+  ['343bc6cb9ef2f5199b0122fb39a58117682cab07c9f7bea0a4632e8006faa50d', '0.6.7'],
+]);
+const version = supportedWorkers.get(originalSHA256);
+if (!version) throw Error('Expected an original TYTY worker from a supported version.');
+const output = requestedOutput ?? `Soulo/Resources/UserScripts/tyty-${version}-template-patches.json`;
 const options = { sourceType: 'script', babelrc: false, configFile: false };
 const ast = core.parseSync(source, options);
 const patches = [];

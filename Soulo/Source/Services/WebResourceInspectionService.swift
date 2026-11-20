@@ -1020,7 +1020,8 @@ enum WebResourceMediaService {
     static func asset(
         for resource: WebMediaResource,
         webView: WKWebView?,
-        preferDownloadedCopy: Bool = true
+        preferDownloadedCopy: Bool = true,
+        cacheForPlayback: Bool = false
     ) async -> AVURLAsset {
         if preferDownloadedCopy,
            let downloaded = DownloadManagerService.shared.finishedDownload(for: resource.url) {
@@ -1036,7 +1037,14 @@ enum WebResourceMediaService {
                 return AVURLAsset(url: downloaded.localURL)
             }
         }
-        if let normalized = await HLSPlaybackBridge.assetIfNeeded(resource: resource, webView: webView) { return normalized }
+        let usePlaybackCache = cacheForPlayback && resource.kind == .video && VideoLoadingStatus.isOnline(resource.url)
+            && !(webView.map { !$0.configuration.websiteDataStore.isPersistent } ?? UserDefaults.standard.bool(forKey: "is_incognito"))
+        if let normalized = await HLSPlaybackBridge.assetIfNeeded(resource: resource, webView: webView, cacheForPlayback: usePlaybackCache) { return normalized }
+        if usePlaybackCache, resource.delivery == .direct {
+            let context = await VideoPlaybackRequestContext.load(url: resource.url,
+                pageURL: resource.sourcePageURL ?? webView?.url, webView: webView)
+            if let asset = await ProgressiveVideoPlaybackBridge.asset(for: resource, context: context) { return asset }
+        }
         let options = await networkAssetOptions(for: resource, webView: webView)
         return AVURLAsset(url: resource.url, options: options)
     }

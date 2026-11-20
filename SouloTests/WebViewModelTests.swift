@@ -729,53 +729,55 @@ final class WebViewModelTests: XCTestCase {
         )
     }
 
-    func testFullscreenExitGestureRequiresAnIntentionalDownwardDrag() {
+    func testFullscreenExitGestureRequiresAnIntentionalUpwardDrag() {
         XCTAssertTrue(
-            FullscreenExitGesture.shouldExit(translation: CGSize(width: 4, height: 34))
+            FullscreenExitGesture.shouldExit(translation: CGSize(width: 4, height: -34))
         )
         XCTAssertFalse(
-            FullscreenExitGesture.shouldExit(translation: CGSize(width: 32, height: 30))
+            FullscreenExitGesture.shouldExit(translation: CGSize(width: 32, height: -30))
         )
         XCTAssertFalse(
-            FullscreenExitGesture.shouldExit(translation: CGSize(width: 2, height: -40))
+            FullscreenExitGesture.shouldExit(translation: CGSize(width: 2, height: 40))
         )
         XCTAssertFalse(
-            FullscreenExitGesture.shouldExit(translation: CGSize(width: 2, height: 20))
+            FullscreenExitGesture.shouldExit(translation: CGSize(width: 2, height: -20))
         )
     }
 
-    func testFullscreenHandleRevealGestureRequiresAnIntentionalDownwardPull() {
+    func testFullscreenHandleRevealGestureRequiresAnIntentionalUpwardSwipeFromTheBottom() {
         XCTAssertTrue(
             FullscreenHandleRevealGesture.shouldReveal(
-                translation: CGSize(width: 3, height: 30)
+                translation: CGSize(width: 3, height: -30)
             )
         )
         XCTAssertFalse(
             FullscreenHandleRevealGesture.shouldReveal(
-                translation: CGSize(width: 28, height: 26)
+                translation: CGSize(width: 28, height: -26)
             )
         )
         XCTAssertFalse(
             FullscreenHandleRevealGesture.shouldReveal(
-                translation: CGSize(width: 2, height: -30)
+                translation: CGSize(width: 2, height: 30)
             )
         )
         XCTAssertFalse(
             FullscreenHandleRevealGesture.shouldReveal(
-                translation: CGSize(width: 2, height: 18)
+                translation: CGSize(width: 2, height: -18)
             )
         )
 
         XCTAssertTrue(
-            FullscreenHandleRevealGesture.beginsNearTop(
-                startY: 42,
-                maximumStartY: 80
+            FullscreenHandleRevealGesture.beginsNearBottom(
+                startY: 760,
+                viewportHeight: 840,
+                bottomRegionHeight: 140
             )
         )
         XCTAssertFalse(
-            FullscreenHandleRevealGesture.beginsNearTop(
-                startY: 120,
-                maximumStartY: 80
+            FullscreenHandleRevealGesture.beginsNearBottom(
+                startY: 420,
+                viewportHeight: 840,
+                bottomRegionHeight: 140
             )
         )
     }

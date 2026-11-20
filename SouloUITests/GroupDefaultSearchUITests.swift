@@ -7,6 +7,98 @@ final class GroupDefaultSearchUITests: XCTestCase {
         let data = try JSONSerialization.data(withJSONObject: value)
         return "<" + data.map { String(format: "%02x", $0) }.joined() + ">"
     }
+
+    func testHomeQuickSearchUsesTappedPlatformAndMatchesSearchWidth() async throws {
+        try await checkHomeQuickSearch(landscape: false)
+    }
+
+    func testLandscapeIPadQuickSearchUsesMoreVerticalSpaceAboveKeyboard() async throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "Requires an iPad")
+        try await checkHomeQuickSearch(landscape: true)
+    }
+
+    private func checkHomeQuickSearch(landscape: Bool) async throws {
+        continueAfterFailure = false
+        XCUIDevice.shared.orientation = landscape ? .landscapeLeft : .portrait
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let page = """
+        <meta name='viewport' content='width=device-width,initial-scale=1'>
+        <h1 id='result'></h1><script>
+        document.getElementById('result').textContent = 'Second platform: ' + new URLSearchParams(location.search).get('q');
+        </script>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/second": Data(page.utf8)])
+        let root = try await server.start()
+        defer { server.stop() }
+        let first = UUID()
+        let target = UUID()
+        let filler = (1...(landscape ? 34 : 22)).map { (UUID(), "Platform \($0)", "first") }
+        let entries = [(first, "First platform", "first")] + filler + [(target, "Second platform", "second")]
+        let platforms: [[String: Any]] = entries.enumerated().map { index, item in
+                ["id": item.0.uuidString, "name": item.1, "iconName": "icon_google",
+                 "searchURLTemplate": root.appendingPathComponent(item.2).absoluteString + "?q=%@",
+                 "homeURL": root.absoluteString, "region": "international", "isBuiltIn": false,
+                 "isVisible": true, "sortOrder": index, "usageCount": 0, "isCustom": true]
+        }
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-platform_management_layout", "list",
+            "-wallpaper_source", "solid", "-icloud_sync_enabled", "NO", "-restore_last_page_on_launch", "NO",
+            "-review.requestedOnce", "YES", "-home_toolbar_actions", "(platforms)",
+            "-privacy_https_upgrade_enabled", "NO", "-platform_config", try argumentData(platforms),
+            "-platform_config_version", "47", "-last_selected_region", "international", "-last_selected_group_id", ""]
+        app.launch()
+        defer { app.terminate() }
+        let platformSettings = app.buttons["home.toolbar.0"]
+        XCTAssertTrue(platformSettings.waitForExistence(timeout: 10), app.debugDescription)
+        platformSettings.tap()
+        let preference = app.switches["platform.home-quick-search"]
+        XCTAssertTrue(preference.waitForExistence(timeout: 5), app.debugDescription)
+        if preference.value as? String == "0" {
+            preference.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        }
+        XCTAssertEqual(preference.value as? String, "1")
+        app.terminate()
+        app.launch()
+
+        let field = app.otherElements["home.search.field"]
+        let query = app.textFields["search.query"].firstMatch
+        let panel = app.otherElements["home.quick-search.platforms"]
+        XCTAssertTrue(query.waitForExistence(timeout: 10))
+        XCTAssertFalse(panel.exists)
+        query.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        let fieldBeforeTyping = field.frame
+        query.typeText("swift tests")
+        XCTAssertTrue(panel.waitForExistence(timeout: 5), app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "home-quick-search-platforms"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        let aligned = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            let panelFrame = panel.frame, fieldFrame = field.frame
+            return abs(panelFrame.minX - fieldFrame.minX) < 2 && abs(panelFrame.maxX - fieldFrame.maxX) < 2
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [aligned], timeout: 3), .completed)
+        XCTAssertGreaterThan(panel.frame.minY, field.frame.maxY)
+        XCTAssertEqual(field.frame.midY, fieldBeforeTyping.midY, accuracy: 2)
+        XCTAssertLessThanOrEqual(panel.frame.maxY, app.keyboards.firstMatch.frame.minY + 2)
+        let grid = panel.scrollViews.firstMatch
+        let firstPlatform = panel.buttons["browser.platform." + first.uuidString]
+        XCTAssertTrue(firstPlatform.isHittable)
+        XCTAssertGreaterThan(grid.frame.height, firstPlatform.frame.height)
+        let rowHeight = firstPlatform.frame.height + 6
+        if landscape {
+            XCTAssertGreaterThan(grid.frame.height, 2 * rowHeight)
+        }
+        XCTAssertLessThanOrEqual(grid.frame.height, (landscape ? 4 : 3) * rowHeight + 2)
+        let targetPlatform = panel.buttons["browser.platform." + target.uuidString]
+        XCTAssertFalse(targetPlatform.isHittable)
+        for _ in 0..<4 where !targetPlatform.isHittable { grid.swipeUp() }
+        XCTAssertTrue(targetPlatform.isHittable, app.debugDescription)
+        targetPlatform.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Second platform: swift tests"].waitForExistence(timeout: 15), app.debugDescription)
+    }
+
     func testOptionalPlatformBarWaitsForTrustedPageTapAndSharesHomeToggle() async throws {
         continueAfterFailure = false
         let search = """
@@ -21,9 +113,12 @@ final class GroupDefaultSearchUITests: XCTestCase {
         },700);</script>
         """
         let detail = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Result fixture</h1><button onclick='history.back()'>Return to results</button>"
-        let server = try DownloadPlaybackHTTPFixture(files: ["/search": Data(search.utf8), "/detail": Data(detail.utf8)])
+        // Keep the configured platform host distinct from the result host.
+        // The bar stays visible on a platform's own domain even after a tap.
+        let server = try DownloadPlaybackHTTPFixture(files: ["/search": Data(search.utf8), "/detail": Data(detail.utf8)],
+                                                     redirects: ["/launch": (host: "localhost", path: "/search")])
         let root = try await server.start(); defer { server.stop() }
-        let platform: [String: Any] = ["id": UUID().uuidString, "name": "Fixture", "iconName": "icon_google", "searchURLTemplate": root.appendingPathComponent("search").absoluteString + "?q=%@", "homeURL": root.absoluteString, "region": "international", "isBuiltIn": false, "isVisible": true, "sortOrder": 0, "usageCount": 0, "isCustom": true]
+        let platform: [String: Any] = ["id": UUID().uuidString, "name": "Fixture", "iconName": "icon_google", "searchURLTemplate": root.appendingPathComponent("launch").absoluteString + "?q=%@", "homeURL": root.absoluteString, "region": "international", "isBuiltIn": false, "isVisible": true, "sortOrder": 0, "usageCount": 0, "isCustom": true]
         let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
         app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "solid", "-icloud_sync_enabled", "NO", "-privacy_https_upgrade_enabled", "NO", "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-platform_config", try argumentData([platform]), "-platform_config_version", "43", "-last_selected_region", "international", "-last_selected_group_id", ""]
         app.launch(); defer { app.terminate() }

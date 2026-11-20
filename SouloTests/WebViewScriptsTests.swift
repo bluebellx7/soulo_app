@@ -2504,6 +2504,188 @@ final class WebViewScriptsTests: XCTestCase {
     }
 
     @MainActor
+    func testUserScriptWebRequestRulesInWKWebView() async throws {
+        let files = ["/page", "/outside", "/fetch-block", "/xhr-block", "/source", "/target", "/keep", "/path-block", "/other-block"]
+        let server = try DownloadPlaybackHTTPFixture(files: Dictionary(uniqueKeysWithValues: files.map { ($0, Data($0.utf8)) }))
+        defer { server.stop() }
+        let origin = try await server.start()
+        let script = UserScriptRecord(
+            name: "Request rule probe",
+            source: #"""
+            window.hits = [];
+            window.registerRules = GM_webRequest;
+            const rules = [
+                {selector: '*-block', action: 'cancel'},
+                {selector: {include: '/keep$/', exclude: ['*keep']}, action: {cancel: true}},
+                {selector: {match: '*://127.0.0.1/*'},
+                 action: {redirect: {from: '/source$', to: '/target'}}}
+            ];
+            GM_webRequest(rules, (action, status, details) => {
+                hits.push([action, status, new URL(details.url).pathname,
+                    details.redirect_url ? new URL(details.redirect_url).pathname : '']);
+            });
+            """#,
+            matchPatterns: ["http://127.0.0.1/*"],
+            excludePatterns: ["http://127.0.0.1/outside"],
+            grants: ["GM_webRequest"],
+            injectionTime: .documentStart
+        )
+        let webView = WKWebView(frame: .zero)
+        let otherScript = UserScriptRecord(
+            name: "Independent request rule",
+            source: "GM_webRequest([{selector: '*other-block', action: 'cancel'}]);",
+            matchPatterns: ["http://127.0.0.1/page"], grants: ["GM_webRequest"], injectionTime: .documentStart
+        )
+        for record in [script, otherScript] {
+            webView.configuration.userContentController.addUserScript(WKUserScript(
+                source: UserScriptRuntime.wrappedSource(for: record, bridgeToken: "request-test"),
+                injectionTime: .atDocumentStart, forMainFrameOnly: true
+            ))
+        }
+        webView.load(URLRequest(url: origin.appendingPathComponent("page")))
+        for _ in 0..<100 {
+            if (try? await evaluate("location.pathname === '/page' && document.readyState === 'complete'", in: webView)) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let raw = try await webView.callAsyncJavaScript(#"""
+            const load = async input => (await fetch(input)).text();
+            const xhr = (path, method = 'GET', body) => new Promise(resolve => {
+                const request = new XMLHttpRequest();
+                const events = [];
+                request.onreadystatechange = () => events.push(request.readyState);
+                request.onload = () => resolve([request.responseText, events]);
+                request.onerror = () => resolve(['error', request.status, events]);
+                request.open(method, path);
+                request.setRequestHeader('X-Rule', 'kept');
+                request.timeout = 2000;
+                request.responseType = 'text';
+                request.send(body);
+            });
+            const result = [];
+            // An invalid re-registration must leave the preceding rules intact.
+            try { registerRules([{selector: '/[/', action: 'cancel'}]); }
+            catch (error) { result.push(error.name); }
+            const controller = new AbortController();
+            controller.abort();
+            try { await fetch('/fetch-block', {signal: controller.signal}); } catch (error) { result.push(error.name); }
+            try { await load('/fetch-block'); } catch (error) { result.push(error.name); }
+            result.push(await xhr('/xhr-block', 'POST', 'canceled body'));
+            result.push(await load(new Request('/source', {headers: {'X-Rule': 'fetch'}})));
+            result.push(await xhr('/source', 'POST', 'payload'));
+            result.push(await load('/keep'));
+            history.pushState({}, '', '/outside');
+            result.push(await load('/path-block'));
+            history.replaceState({}, '', '/page');
+            const pending = new XMLHttpRequest();
+            pending.open('GET', '/path-block');
+            registerRules([], null);
+            result.push(await new Promise(resolve => {
+                pending.onload = () => resolve(pending.responseText);
+                pending.send();
+            }));
+            try { await load('/other-block'); } catch (error) { result.push(error.name); }
+            registerRules([
+                {selector: '*source', action: {redirect: 'http://localhost/target'}},
+                {selector: '*keep', action: {redirect: '/outside'}}
+            ], (action, status, details) => hits.push([action, status, Boolean(details.description)]));
+            result.push(await load('/source'), await load('/keep'));
+            return JSON.stringify({result, hits, pageAPI: typeof window.GM_webRequest});
+            """#, arguments: [:], contentWorld: .page)
+        let result = try XCTUnwrap(raw as? String)
+        XCTAssertEqual(result, #"{"result":["SyntaxError","AbortError","TypeError",["error",0,[1,4]],"/target",["/target",[1,2,3,4]],"/keep","/path-block","/path-block","TypeError","/source","/keep"],"hits":[["cancel","ok","/fetch-block",""],["cancel","ok","/xhr-block",""],["redirect","ok","/source","/target"],["redirect","ok","/source","/target"],["redirect","error",true],["redirect","error",true]],"pageAPI":"undefined"}"#)
+
+        let requests = server.receivedRequests
+        XCTAssertFalse(requests.contains { ["/fetch-block", "/xhr-block", "/outside", "/other-block"].contains($0.path) })
+        XCTAssertEqual(requests.filter { $0.path == "/source" }.count, 1)
+        let redirectedFetch = try XCTUnwrap(requests.first { $0.path == "/target" && $0.method == "GET" })
+        XCTAssertEqual(redirectedFetch.headers["x-rule"], "fetch")
+        let redirectedXHR = try XCTUnwrap(requests.first { $0.path == "/target" && $0.method == "POST" })
+        XCTAssertEqual(redirectedXHR.headers["x-rule"], "kept")
+        XCTAssertEqual(redirectedXHR.body, Data("payload".utf8))
+
+        webView.load(URLRequest(url: origin.appendingPathComponent("outside")))
+        for _ in 0..<100 {
+            if (try? await evaluate("location.pathname === '/outside' && document.readyState === 'complete'", in: webView)) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let outside = try await webView.callAsyncJavaScript("""
+            return typeof registerRules === 'undefined' && await (await fetch('/fetch-block')).text() === '/fetch-block';
+            """, arguments: [:], contentWorld: .page)
+        XCTAssertEqual(outside as? Bool, true)
+    }
+
+    func testUserScriptWebRequestRequiresExplicitGrant() {
+        for grants: [String] in [[], ["none"], ["GM_xmlhttpRequest"], ["none", "GM_webRequest"]] {
+            let script = UserScriptRecord(name: "No request grant", source: "", grants: grants)
+            XCTAssertFalse(script.allowsWebRequest)
+            XCTAssertFalse(UserScriptRuntime.wrappedSource(for: script).contains("__souloBindWebRequest"))
+        }
+        let script = UserScriptRecord(name: "Request grant", source: "", matchPatterns: ["*"], grants: ["GM_webRequest"])
+        XCTAssertTrue(script.allowsWebRequest)
+        XCTAssertTrue(script.unsupportedGrants.isEmpty)
+        let wrapped = UserScriptRuntime.wrappedSource(for: script)
+        XCTAssertTrue(wrapped.contains("__souloBindWebRequest"))
+        XCTAssertFalse(wrapped.contains("var GM_xmlhttpRequest"))
+        assertJavaScriptParses(wrapped)
+    }
+
+    @MainActor
+    func testUserScriptNotificationOptionsAndCompletionInWKWebView() async throws {
+        let webView = WKWebView(frame: .zero)
+        try await loadUserScriptTestPage(webView)
+        _ = try await evaluate("""
+        window.notificationRoots=[];window.openedNotificationURLs=[];
+        const attach=Element.prototype.attachShadow;
+        Element.prototype.attachShadow=function(options){const root=attach.call(this,options);notificationRoots.push(root);return root;};
+        window.open=url=>openedNotificationURLs.push(url);
+        true;
+        """, in: webView)
+        let script = UserScriptRecord(name: "Notifications", source: """
+        window.notificationResult=(async()=>{
+          var done=0, clicks=0;
+          var first=GM.notification({text:'First',tag:'progress',ondone:()=>done++});
+          var second=GM.notification({text:'Second',tag:'progress',title:'Updated',url:'/ignored',
+            image:'data:image/gif;base64,R0lGODlhAQABAAAAACw=',
+            onclick:event=>{event.preventDefault();clicks++;throw Error('fixture');},ondone:()=>done++});
+          var replacement=notificationRoots[1], button=replacement.querySelector('button');
+          var replaced=!notificationRoots[0].host.isConnected && replacement.host.isConnected;
+          var image=button.querySelector('img').src.startsWith('data:image/gif');
+          var heading=button.querySelector('strong').textContent;
+          button.click();button.click();
+          GM_notification('Legacy text','Legacy title','',()=>clicks++);
+          var legacy=notificationRoots[2].querySelector('button');
+          var legacyTitle=legacy.querySelector('strong').textContent;
+          legacy.click();
+          var navigated=GM.notification({text:'Open',url:'/target'});
+          notificationRoots[3].querySelector('button').click();
+          var removed=GM.notification({text:'Removed',timeout:30,ondone:()=>done++});
+          notificationRoots[4].host.remove();
+          var removedOutcome=await removed;
+          var hidden=GM.notification({text:'Hidden',ondone:()=>done++});
+          dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));
+          var outcomes=await Promise.all([first,second,navigated,removedOutcome,hidden]);
+          return {replaced,image,heading,legacyTitle,outcomes,done,clicks,opened:openedNotificationURLs};
+        })();
+        """, matchPatterns: ["*"], grants: ["GM_notification", "GM.notification"])
+        let result: Result<Any?, Error> = await withCheckedContinuation { continuation in
+            UserScriptRuntime.execute(script, on: webView) { continuation.resume(returning: $0) }
+        }
+        if case let .failure(error) = result { throw error }
+        let raw = try await webView.callAsyncJavaScript("""
+        return await Promise.race([window.notificationResult,new Promise((_,reject)=>setTimeout(()=>reject(Error('Notification did not finish')),1500))]);
+        """, arguments: [:], in: nil, contentWorld: .page)
+        let facts = try XCTUnwrap(raw as? [String: Any])
+        XCTAssertEqual(facts["replaced"] as? Bool, true)
+        XCTAssertEqual(facts["image"] as? Bool, true)
+        XCTAssertEqual(facts["heading"] as? String, "Updated")
+        XCTAssertEqual(facts["legacyTitle"] as? String, "Legacy title")
+        XCTAssertEqual(facts["outcomes"] as? [Bool], [false, true, true, false, false])
+        XCTAssertEqual(facts["done"] as? Int, 4)
+        XCTAssertEqual(facts["clicks"] as? Int, 2)
+        XCTAssertEqual(facts["opened"] as? [String], ["https://example.com/target"])
+    }
+
+    @MainActor
     func testExpandedUserScriptDOMStorageAndURLAPIsExecuteInsideWKWebView() async throws {
         let webView = WKWebView(frame: .zero)
         try await loadUserScriptTestPage(webView)
@@ -2519,11 +2701,21 @@ final class WebViewScriptsTests: XCTestCase {
             GM_deleteValues(['count']);
             GM_removeValueChangeListener(__listener);
             var __element = GM_addElement('button', { id: 'soulo-expanded-probe', textContent: 'Ready' });
+            var __events = [], __properties = [];
+            var __hasURLChange = window.onurlchange === null;
+            if (__hasURLChange) window.addEventListener('urlchange', function(event) { __events.push([event.url, event.detail.url]); });
+            window.onurlchange = function(event) { __properties.push([event.url, this === window]); };
+            history.pushState(null, '', '#first');
+            history.replaceState(null, '', '#second');
+            history.replaceState(null, '', '#second');
             globalThis.__expandedResult = {
                 values: __values,
                 keys: GM_listValues(),
                 changes: __changes,
-                elementText: __element.textContent
+                elementText: __element.textContent,
+                supported: __hasURLChange,
+                urlEvents: __events,
+                urlHandlers: __properties
             };
             """,
             matchPatterns: ["*"],
@@ -2547,9 +2739,14 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertEqual(probe["elementText"] as? String, "Ready")
         XCTAssertEqual((probe["changes"] as? [Any])?.count, 1)
         XCTAssertEqual(probe["keys"] as? [String], ["theme"])
-        let bootstrap = UserScriptRuntime.compatibilityBootstrap(bridgeToken: "", script: script)
-        XCTAssertTrue(bootstrap.contains("window.dispatchEvent(new CustomEvent('urlchange'"))
-        XCTAssertTrue(bootstrap.contains("['pushState', 'replaceState']"))
+        XCTAssertEqual(probe["supported"] as? Bool, true)
+        let events = try XCTUnwrap(probe["urlEvents"] as? [[String]])
+        XCTAssertEqual(events.count, 2)
+        XCTAssertTrue(events.allSatisfy { $0.count == 2 && $0[0] == $0[1] })
+        XCTAssertEqual(events.compactMap { $0.first.flatMap { URL(string: $0)?.fragment } }, ["first", "second"])
+        let handlers = try XCTUnwrap(probe["urlHandlers"] as? [[Any]])
+        XCTAssertEqual(handlers.compactMap { $0.first as? String }, events.compactMap(\.first))
+        XCTAssertEqual(handlers.compactMap { $0.last as? Bool }, [true, true])
     }
 
     @MainActor
@@ -2677,6 +2874,43 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertEqual(refreshed.storedValues, existing.storedValues)
         XCTAssertEqual(refreshed.source, definition.source)
         XCTAssertEqual(refreshed.version, definition.metadata.version)
+    }
+
+    @MainActor
+    func testUserScriptRunInFiltersInstalledAndRestoredScripts() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = BrowserExtensionService(extensionRoot: root)
+        let url = try XCTUnwrap(URL(string: "https://example.com/"))
+        func save(_ name: String, _ directives: String) throws -> UserScriptRecord {
+            try service.saveUserScript(id: nil, fallbackName: name, source: """
+            // ==UserScript==
+            // @namespace com.soulo.run-in.\(name)
+            // @match https://example.com/*
+            \(directives)
+            // ==/UserScript==
+            globalThis.runInExample = true;
+            """, explicitPatterns: nil, injectionTime: nil)
+        }
+        let normal = try save("normal", "// @run-in normal-tabs\n// @run-in incognito-tabs")
+        let privateOnly = try save("private", "// @run-in incognito-tabs")
+        let containerOnly = try save("container", "// @run-in container-id-2")
+        let unrestricted = try save("unrestricted", "")
+        let installed = Set(service.scripts(for: url, at: .documentEnd).map(\.id))
+        XCTAssertTrue(installed.isSuperset(of: [normal.id, unrestricted.id]))
+        XCTAssertTrue(installed.isDisjoint(with: [privateOnly.id, containerOnly.id]))
+        XCTAssertTrue(UserScriptRuntime.wrappedSource(for: privateOnly).isEmpty)
+        XCTAssertEqual(normal.runInContexts, ["normal-tabs", "incognito-tabs"])
+
+        let file = root.appendingPathComponent("extensions.json")
+        var store = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        var records = try XCTUnwrap(store["userScripts"] as? [[String: Any]])
+        for index in records.indices { records[index]["runInContexts"] = nil }
+        store["userScripts"] = records
+        try JSONSerialization.data(withJSONObject: store).write(to: file, options: .atomic)
+        let restored = BrowserExtensionService(extensionRoot: root)
+        XCTAssertEqual(restored.userScript(id: privateOnly.id)?.runInContexts, ["incognito-tabs"])
+        XCTAssertEqual(Set(restored.scripts(for: url, at: .documentEnd).map(\.id)), installed)
     }
 
     @MainActor

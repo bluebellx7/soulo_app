@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Pratinjau Umpan Balik";
 
-"media_start_timeout" = "Pemutaran belum dimulai. Periksa jaringan atau ganti pemutar.";
+"media_start_timeout" = "Pemutaran belum dimulai. Periksa jaringan.";
+"media_load_complete" = "Pemuatan selesai";
+"media_playback_stalled" = "Pemutaran terhenti.";
 
 "wallpaper_appearance_hint" = "Atur latar terpisah untuk tampilan terang dan gelap. Latar berganti otomatis mengikuti aplikasi.";
 
@@ -556,6 +558,7 @@
 
 "storage_files_group" = "Unduhan dan file";
 "storage_cache_group" = "Cache dan file sementara";
+"storage_video_cache" = "Cache video";
 "storage_saved_group" = "Konten tersimpan";
 
 "storage_clear_offline_media_warning" = "Menghapus semua video offline di sini beserta entri filenya. Unduhan file/video yang belum selesai, pemutaran, dan ekspor akan dihentikan.";

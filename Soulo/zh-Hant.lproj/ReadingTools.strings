@@ -562,7 +562,9 @@
 
 "gesture_feedback_preview" = "預覽回饋";
 
-"media_start_timeout" = "目前連結尚未播放，請檢查網路或切換播放器。";
+"media_start_timeout" = "目前連結尚未播放，請檢查網路。";
+"media_load_complete" = "載入完成";
+"media_playback_stalled" = "播放卡住了。";
 
 "wallpaper_appearance_hint" = "分別設定淺色和深色外觀使用的背景，切換外觀時自動套用。";
 
@@ -622,6 +624,7 @@
 
 "storage_files_group" = "下載與檔案";
 "storage_cache_group" = "快取與暫存檔";
+"storage_video_cache" = "影片快取";
 "storage_saved_group" = "已儲存內容";
 
 "storage_clear_offline_media_warning" = "將刪除此位置的所有離線影片及關聯檔案項目，並停止未完成的檔案或影片下載、播放和匯出。";

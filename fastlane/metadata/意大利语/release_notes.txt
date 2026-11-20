@@ -1,4 +1,4 @@
-• Abbiamo riorganizzato le impostazioni. Visualizza in anteprima la barra degli strumenti della home mentre cambi stile, riordini i pulsanti o la trascini nella posizione desiderata.
-• Con il ripristino al riavvio attivo, Soulo torna alla home o all’ultima pagina web che stavi visualizzando.
-• I menu del browser sono più leggibili. Puoi mostrare di nuovo la barra degli strumenti nascosta dal menu Altro.
-• Abbiamo migliorato le richieste di rete e la verifica degli aggiornamenti degli script utente.
+• Migliorati il passaggio a schermo intero, il buffering e il menu della velocità di riproduzione dei video online.
+• Migliorati il riconoscimento dei link magnet e la ricerca dei peer per i download BitTorrent.
+• Gli script utente possono usare GM_webRequest per annullare le richieste Fetch e XHR del frame principale o reindirizzarle alla stessa origine.
+• Migliorata la compatibilità con le estensioni del browser, inclusi i nomi dei file scaricati e il caricamento di pagine fuori schermo.

@@ -1,4 +1,4 @@
-• Hem reorganitzat la configuració. Previsualitza la barra d’eines d’inici, canvia’n l’estil, reordena els botons i arrossega-la on vulguis.
-• Si actives la restauració en reiniciar, Soulo torna a l’inici o a la darrera pàgina que estaves visitant.
-• Hem millorat el contrast dels menús del navegador. Pots tornar a mostrar la barra d’eines des del menú Més.
-• Hem millorat les peticions de xarxa i la cerca d’actualitzacions dels scripts d’usuari.
+• S’han millorat el pas a pantalla completa, la memòria intermèdia i el menú de velocitat dels vídeos en línia.
+• S’han millorat el reconeixement dels enllaços magnet i la detecció de parells per a les baixades BitTorrent.
+• Els scripts d’usuari poden fer servir GM_webRequest per cancel·lar o redirigir al mateix origen les sol·licituds Fetch i XHR del marc principal.
+• S'ha millorat la compatibilitat de les extensions del navegador, inclosos els noms dels fitxers baixats i la càrrega de pàgines fora de pantalla.

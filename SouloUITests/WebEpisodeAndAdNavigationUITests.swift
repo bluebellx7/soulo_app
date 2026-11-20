@@ -2,6 +2,79 @@ import XCTest
 import AVFoundation
 
 final class WebEpisodeAndAdNavigationUITests: XCTestCase {
+    @MainActor func testWebsiteElementFullscreenFillsScreenAndHidesSouloVideoTools() async throws {
+        try await checkWebsiteElementFullscreen(embedded: false)
+    }
+
+    @MainActor func testEmbeddedPlayerFullscreenFillsScreenAndHidesSouloVideoTools() async throws {
+        try await checkWebsiteElementFullscreen(embedded: true)
+    }
+
+    @MainActor private func checkWebsiteElementFullscreen(embedded: Bool) async throws {
+        let clip = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let html = """
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Fullscreen viewport</title>
+        <style>
+        body { margin: 0; background: white }
+        main { height: 320px; background: #e04f20; display: grid; place-content: center }
+        video { width: 200px; height: 110px }
+        html:fullscreen main { position: fixed; inset: 0; height: auto }
+        html:fullscreen #enter, html:not(:fullscreen) #exit { display: none }
+        </style>
+        <main>
+          <video src="/clip.mp4" playsinline muted autoplay loop></video>
+          <button id="enter" onclick="document.documentElement.requestFullscreen()">Enter page fullscreen</button>
+          <button id="exit" onclick="document.exitFullscreen()">Exit page fullscreen</button>
+        </main>
+        """
+        var files = ["/page.html": Data(html.utf8), "/clip.mp4": try Data(contentsOf: clip)]
+        if embedded {
+            files["/frame.html"] = Data(html.utf8)
+            files["/page.html"] = Data("""
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <body style="margin:0;background:white">
+            <iframe src="/frame.html" allowfullscreen style="display:block;width:100%;height:380px;border:0"></iframe>
+            </body>
+            """.utf8)
+        }
+        let server = try DownloadPlaybackHTTPFixture(files: files)
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let app = launch(filtering: false, tools: true, takeover: false)
+        defer { app.terminate() }
+        try open(root.appendingPathComponent("page.html"), app: app)
+        let enter = app.buttons["Enter page fullscreen"].firstMatch
+        XCTAssertTrue(enter.waitForExistence(timeout: 15), app.debugDescription)
+        let tools = app.buttons["Video tools"].firstMatch
+        XCTAssertTrue(tools.waitForExistence(timeout: 15), app.debugDescription)
+        enter.tap()
+        let exit = app.buttons["Exit page fullscreen"].firstMatch
+        XCTAssertTrue(exit.waitForExistence(timeout: 10))
+        try await Task.sleep(for: .milliseconds(700))
+
+        continueAfterFailure = true
+        let screen = XCUIScreen.main.screenshot()
+        let attachment = XCTAttachment(screenshot: screen)
+        attachment.name = "website-element-fullscreen-edges"; attachment.lifetime = .keepAlways; add(attachment)
+        let image = try XCTUnwrap(screen.image.cgImage)
+        for y in [0.035, 0.97] {
+            let x = CGFloat(image.width) * 0.23
+            let pixel = try XCTUnwrap(image.cropping(to: CGRect(x: x, y: CGFloat(image.height) * y, width: 1, height: 1)))
+            var rgba = [UInt8](repeating: 0, count: 4)
+            let rendered = rgba.withUnsafeMutableBytes { buffer -> Bool in
+                guard let canvas = CGContext(data: buffer.baseAddress, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                    space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+                canvas.draw(pixel, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+                return true
+            }
+            XCTAssertTrue(rendered && rgba[0] > 160 && rgba[1] < 130 && rgba[2] < 90, "Expected the player at \(y) of the screen, got \(rgba)")
+        }
+        XCTAssertFalse(tools.exists)
+        exit.tap()
+        XCTAssertTrue(enter.waitForExistence(timeout: 10))
+        XCTAssertTrue(tools.waitForExistence(timeout: 5))
+    }
+
     @MainActor func testWebsiteNativeFullscreenStaysWithWebsitePlayer() async throws {
         continueAfterFailure = false
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
@@ -38,6 +111,53 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "website-native-player-not-replaced"; shot.lifetime = .keepAlways; add(shot)
     }
 
+    @MainActor func testWebToolsFullscreenOpensSouloWithThePagePositionAndRate() async throws {
+        continueAfterFailure = false
+        let asset = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let html = """
+        <meta name='viewport' content='width=device-width,initial-scale=1'>
+        <video id='clip' playsinline loop style='width:100%;height:260px'></video>
+        <button id='start'>Start inline playback</button><p id='status'>Waiting</p><p id='native'></p>
+        <script>
+          const video = document.getElementById('clip'), status = document.getElementById('status');
+          let loads = 0, ready = false;
+          video.addEventListener('loadstart', () => loads++);
+          video.src = '/clip.mp4';
+          document.getElementById('start').onclick = () => { video.playbackRate = 0.75; video.play(); };
+          video.addEventListener('timeupdate', () => {
+            if (!ready && video.currentTime > 0.35) { ready = true; status.textContent = 'Inline video is playing'; }
+          });
+          video.addEventListener('pause', () => {
+            if (ready && loads === 1 && video.currentTime > 0.35 && video.playbackRate === 0.75)
+              status.textContent = 'Inline position retained';
+          });
+          video.addEventListener('webkitbeginfullscreen', () => document.getElementById('native').textContent = 'System fullscreen opened');
+        </script>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/page.html": Data(html.utf8), "/clip.mp4": try Data(contentsOf: asset)])
+        let root = try await server.start(); server.releaseDownloads()
+        defer { server.stop(); XCUIDevice.shared.orientation = .portrait }
+        let app = launch(player: "soulo", tools: true, takeover: false)
+        defer { app.terminate() }
+        try open(root.appendingPathComponent("page.html"), app: app)
+        let start = app.webViews.buttons["Start inline playback"].firstMatch
+        XCTAssertTrue(start.waitForExistence(timeout: 15)); start.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Inline video is playing"].firstMatch.waitForExistence(timeout: 8))
+        let tools = app.webViews.buttons["Video tools"].firstMatch
+        XCTAssertTrue(tools.waitForExistence(timeout: 6)); tools.tap()
+        let fullscreen = app.webViews.buttons["Fullscreen"].firstMatch
+        XCTAssertTrue(fullscreen.waitForExistence(timeout: 6)); fullscreen.tap()
+        try requireWebFullscreen(app)
+        let speed = app.buttons["media.file.speed"]
+        if !speed.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
+        XCTAssertTrue(speed.waitForExistence(timeout: 5))
+        XCTAssertEqual(speed.value as? String, "0.75×")
+        let close = app.buttons["media.mkv.fullscreen.close"]
+        XCTAssertTrue(close.exists); close.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Inline position retained"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(app.webViews.staticTexts["System fullscreen opened"].exists)
+    }
+
     @MainActor func testWebVideoTakeoverOptInUsesSelectedPlayer() async throws {
         let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
         let html = """
@@ -51,8 +171,76 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         try open(root.appendingPathComponent("page.html"), app: app)
         let button = app.webViews.buttons["Website fullscreen"].firstMatch
         XCTAssertTrue(button.waitForExistence(timeout: 15)); button.tap()
-        try requireWebFullscreen(app, engine: "soulo")
+        try requireWebFullscreen(app)
         let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "web-video-takeover-enabled"; screenshot.lifetime = .keepAlways; add(screenshot)
+    }
+
+    @MainActor func testFullscreenSpeedMenuOpensAboveItsButton() async throws {
+        continueAfterFailure = false
+        let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let html = """
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <video id="v" src="/clip.mp4" playsinline controls loop style="width:100%;height:260px"></video>
+        <button onclick="v.play();v.webkitEnterFullscreen()">Website fullscreen</button>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/page.html": Data(html.utf8), "/clip.mp4": Data(contentsOf: file)])
+        let root = try await server.start()
+        server.releaseDownloads()
+        defer { server.stop(); XCUIDevice.shared.orientation = .portrait }
+
+        for engine in ["system", "soulo"] {
+            XCUIDevice.shared.orientation = .portrait
+            let app = launch(player: engine, tools: false, takeover: true)
+            defer { app.terminate() }
+            try open(root.appendingPathComponent("page.html"), app: app)
+            let fullscreen = app.webViews.buttons["Website fullscreen"].firstMatch
+            XCTAssertTrue(fullscreen.waitForExistence(timeout: 15), app.debugDescription)
+            fullscreen.tap()
+            try requireWebFullscreen(app)
+
+            let speed = app.buttons["media.file.speed"]
+            if !speed.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
+            XCTAssertTrue(speed.waitForExistence(timeout: 5), app.debugDescription)
+            let play = app.buttons["media.mkv.play"]
+            if play.exists && play.label == "Pause" { play.tap() }
+            let loading = app.staticTexts["media.video.loading"]
+            let completed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                loading.exists && ["Fully loaded", "加载完成"].contains(loading.label)
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [completed], timeout: 5), .completed, app.debugDescription)
+            let prefix = "media.mkv"
+            let cacheLabel = app.staticTexts[prefix + ".timeline.cache"]
+            XCTAssertTrue(cacheLabel.waitForExistence(timeout: 5))
+            XCTAssertTrue(cacheLabel.label.contains(1.0.formatted(.percent.precision(.fractionLength(0)))))
+            let cacheTrack = XCTAttachment(screenshot: app.screenshot())
+            cacheTrack.name = "video-cache-track-" + engine; cacheTrack.lifetime = .keepAlways; add(cacheTrack)
+            let speedButtonFrame = speed.frame
+            XCTAssertGreaterThanOrEqual(loading.frame.minX, speedButtonFrame.maxX)
+            let targetRate = speed.value as? String == "0.75×" ? "1.25" : "0.75"
+            speed.tap()
+
+            let option = app.buttons["media.file.rate.\(targetRate)"]
+            XCTAssertTrue(option.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(option.isHittable, app.debugDescription)
+            XCTAssertLessThanOrEqual(option.frame.maxY, speedButtonFrame.minY, "The speed menu must open above its button in \(engine)")
+            let speedMenu = XCTAttachment(screenshot: app.screenshot())
+            speedMenu.name = "video-speed-menu-" + engine; speedMenu.lifetime = .keepAlways; add(speedMenu)
+            option.tap()
+            XCTAssertTrue(option.waitForNonExistence(timeout: 5))
+            XCTAssertEqual(speed.value as? String, targetRate + "×")
+
+            let timeline = app.sliders[prefix + ".timeline"]
+            XCTAssertEqual(timeline.frame.height, 44, accuracy: 1)
+            let start = timeline.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
+            start.tap()
+            start.press(forDuration: 0.05,
+                thenDragTo: timeline.coordinate(withNormalizedOffset: CGVector(dx: 0.72, dy: 0.5)))
+            let elapsed = app.staticTexts[prefix + ".timeline.elapsed"]
+            let seeked = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                elapsed.label.split(separator: ":").last.flatMap { Int($0) }.map { $0 >= 5 } ?? false
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [seeked], timeout: 5), .completed, app.debugDescription)
+        }
     }
 
     @MainActor func testFullscreenMenusAndRotationWorkInWindowedLayouts() async throws {
@@ -69,7 +257,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         for engine in ["system", "soulo"] {
             let app = launch(player: engine, episodeDock: true); defer { app.terminate() }
             try open(root.appendingPathComponent("page.html"), app: app); openEpisodes(app)
-            app.scrollViews.buttons["01"].firstMatch.tap(); try requireWebFullscreen(app, engine: engine)
+            app.scrollViews.buttons["01"].firstMatch.tap(); try requireWebFullscreen(app)
             func tap(_ id: String) throws {
                 let button = app.buttons[id].firstMatch
                 for _ in 0..<4 {
@@ -82,8 +270,8 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
                 }
                 XCTFail(app.debugDescription); throw URLError(.timedOut)
             }
-            let play = app.buttons[engine == "system" ? "media.native.play" : "media.mkv.play"]
-            if play.exists && play.label == "Pause" { try tap(engine == "system" ? "media.native.play" : "media.mkv.play") }
+            let play = app.buttons["media.mkv.play"]
+            if play.exists && play.label == "Pause" { try tap("media.mkv.play") }
             let canvas = app.descendants(matching: .any).matching(identifier: "media.fullscreen.canvas").firstMatch
             XCTAssertTrue(canvas.waitForExistence(timeout: 5))
             let original = canvas.value as? String ?? "portrait"
@@ -92,7 +280,19 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
                 let rotated = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", expected), object: canvas)
                 XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 6), .completed, app.debugDescription)
                 XCTAssertFalse(app.alerts.firstMatch.exists, "Windowed rotation must not raise a geometry error")
-                try requireWebFullscreen(app, engine: engine)
+                try requireWebFullscreen(app)
+                if expected == "landscape", engine == "system" {
+                    try tap("media.fullscreen.options")
+                    let settings = app.buttons["media.fullscreen.settings"]
+                    XCTAssertTrue(settings.waitForExistence(timeout: 5))
+                    let scroll = app.scrollViews["media.fullscreen.options.scroll"]
+                    if scroll.exists { scroll.swipeUp() }
+                    XCTAssertTrue(settings.isHittable, app.debugDescription)
+                    let shot = XCTAttachment(screenshot: app.screenshot())
+                    shot.name = "fullscreen-options-landscape"; shot.lifetime = .keepAlways; add(shot)
+                    app.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.5)).tap()
+                    XCTAssertTrue(settings.waitForNonExistence(timeout: 5))
+                }
             }
             try tap("media.file.episodes")
             let source = app.buttons["media.file.episodes.source"].firstMatch
@@ -106,6 +306,25 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
             try tap("media.file.episodes.close")
             try tap("media.fullscreen.options")
             XCTAssertTrue(app.buttons["media.fullscreen.settings"].waitForExistence(timeout: 5))
+            let menuRows = ["media.sleep-timer", "media.download", "media.fullscreen.share", "media.fullscreen.settings"]
+                .map { app.buttons[$0].firstMatch }
+            XCTAssertTrue(menuRows.allSatisfy(\.exists), app.debugDescription)
+            let frames = menuRows.map(\.frame)
+            let first = try XCTUnwrap(frames.first)
+            XCTAssertGreaterThanOrEqual(first.height, 43.5)
+            let floatingWindow = app.buttons["media.picture-in-picture"].firstMatch
+            let alignedRows = floatingWindow.exists ? frames + [floatingWindow.frame] : frames
+            for row in alignedRows {
+                XCTAssertEqual(row.minX, first.minX, accuracy: 1)
+                XCTAssertEqual(row.height, first.height, accuracy: 1)
+            }
+            let gaps = zip(frames, frames.dropFirst()).map { $1.minY - $0.maxY }
+            XCTAssertGreaterThanOrEqual(gaps[0], 0)
+            for gap in gaps.dropFirst() { XCTAssertEqual(gap, gaps[0], accuracy: 1) }
+            let settings = app.buttons["media.fullscreen.settings"]
+            let scroll = app.scrollViews["media.fullscreen.options.scroll"]
+            if scroll.exists, !settings.isHittable { scroll.swipeUp() }
+            XCTAssertTrue(settings.isHittable, app.debugDescription)
             let options = XCTAttachment(screenshot: app.screenshot()); options.name = "fullscreen-options-contrast-" + engine; options.lifetime = .keepAlways; add(options)
             app.terminate()
         }
@@ -126,7 +345,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
             tools.tap()
             let full = app.webViews.buttons["Fullscreen"].firstMatch
             XCTAssertTrue(full.waitForExistence(timeout: 8)); full.tap()
-            try requireWebFullscreen(app, engine: engine)
+            try requireWebFullscreen(app)
             let diagnostic = app.staticTexts["media.volume.diagnostics"]
             XCTAssertTrue(diagnostic.waitForExistence(timeout: 10))
             let decoded = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label CONTAINS %@", "frameReady=true"), object: diagnostic)
@@ -146,11 +365,11 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         }
     }
 
-    @MainActor private func requireWebFullscreen(_ app: XCUIApplication, engine: String) throws {
-        let host = app.otherElements[engine == "system" ? "media.fullscreen.player" : "media.mkv.fullscreen.player"].firstMatch
+    @MainActor private func requireWebFullscreen(_ app: XCUIApplication) throws {
+        let host = app.otherElements["media.mkv.fullscreen.player"].firstMatch
         guard host.waitForExistence(timeout: 20) else { XCTFail(app.debugDescription); throw URLError(.timedOut) }
         XCTAssertFalse(app.buttons["media.copy-url"].exists, "Web video has no URL-bearing intermediate page")
-        XCTAssertFalse(app.buttons[engine == "system" ? "media.fullscreen.exit" : "media.mkv.fullscreen.exit"].exists)
+        XCTAssertFalse(app.buttons["media.mkv.fullscreen.exit"].exists)
     }
 
     @MainActor
@@ -1308,9 +1527,9 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
             try open(root.appendingPathComponent("detail.html"), app: app)
             openEpisodes(app)
             app.scrollViews.buttons["Episode 1"].firstMatch.tap()
-            try requireWebFullscreen(app, engine: engine)
-            let closeID = engine == "system" ? "media.fullscreen.close" : "media.mkv.fullscreen.close"
-            let exitID = engine == "system" ? "media.fullscreen.exit" : "media.mkv.fullscreen.exit"
+            try requireWebFullscreen(app)
+            let closeID = "media.mkv.fullscreen.close"
+            let exitID = "media.mkv.fullscreen.exit"
             func reveal(_ id: String) throws -> XCUIElement {
                 let button = app.buttons[id]
                 for _ in 0..<3 {
@@ -1323,7 +1542,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
                 throw URLError(.timedOut)
             }
             func pausePlayback() throws {
-                let id = engine == "system" ? "media.native.play" : "media.mkv.play"
+                let id = "media.mkv.play"
                 for _ in 0..<3 {
                     let play = try reveal(id)
                     if play.label != "Pause" { return }
@@ -1378,7 +1597,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
                     (app.frame.width > app.frame.height) == expected
                 }, object: nil)
                 XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 6), .completed)
-                try requireWebFullscreen(app, engine: engine)
+                try requireWebFullscreen(app)
                 try pausePlayback()
             }
             try reveal(closeID).tap()
@@ -1409,7 +1628,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         let app = launch(player:"system",episodeDock:true);defer{app.terminate()}
         try open(root.appendingPathComponent("detail.html"),app:app);openEpisodes(app)
         app.scrollViews.buttons["Episode 1"].firstMatch.tap()
-        try requireWebFullscreen(app, engine: "system")
+        try requireWebFullscreen(app)
         func openDrawer() {
             let drawer = app.otherElements["media.file.episodes.drawer"].firstMatch
             let button = app.buttons["media.file.episodes"].firstMatch
@@ -1437,7 +1656,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["media.file.episodes.drawer"].waitForNonExistence(timeout: 2), "Selection must close the panel immediately")
         // SwiftUI exposes the spinner as the playback button's accessibility
         // value, rather than a separate progress-indicator element.
-        let centered = app.buttons["media.native.play"].firstMatch
+        let centered = app.buttons["media.mkv.play"].firstMatch
         XCTAssertTrue(centered.waitForExistence(timeout: 3))
         let loadingValue = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != nil AND value != ''"), object: centered)
         XCTAssertEqual(XCTWaiter.wait(for: [loadingValue], timeout: 3), .completed, "The playback button must expose its loading indicator")
@@ -1452,7 +1671,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
-    func testBothPlayersKeepFullscreenWhileSelectingWebEpisodes() async throws {
+    func testAutomaticPlayerKeepsFullscreenWhileSelectingWebEpisodes() async throws {
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
         let data = try Data(contentsOf: fixture)
         let html = """
@@ -1471,7 +1690,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         try open(root.appendingPathComponent("detail.html"), app: app)
         openEpisodes(app)
         app.scrollViews.buttons["Episode 1"].firstMatch.tap()
-        try requireWebFullscreen(app, engine: "soulo")
+        try requireWebFullscreen(app)
         let currentPlay = app.buttons["media.mkv.play"]
         if currentPlay.exists && currentPlay.label == "Pause" { currentPlay.tap() }
         XCUIDevice.shared.orientation = .landscapeLeft
@@ -1485,26 +1704,20 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["media.file.episodes.drawer"].waitForNonExistence(timeout: 8))
         XCTAssertTrue(app.otherElements["media.mkv.fullscreen.player"].firstMatch.exists)
         XCTAssertGreaterThan(app.frame.width, app.frame.height)
-        let modePicker = app.buttons.matching(identifier: "media.file.player").firstMatch
-        if !modePicker.exists {
-            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
-            guard modePicker.waitForExistence(timeout: 3) else { XCTFail(app.debugDescription); return }
-        }
-        modePicker.tap()
-        app.descendants(matching: .any)["media.file.engine.system"].firstMatch.tap()
-        let nativeClose = app.buttons["media.fullscreen.close"]
-        XCTAssertTrue(nativeClose.waitForExistence(timeout: 10), app.debugDescription)
+        if !close.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
+        XCTAssertTrue(close.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(app.buttons["media.file.player"].exists)
         episodes.tap()
         let first = app.buttons["media.file.episode.\(root.appendingPathComponent("first.mp4").absoluteString)"]
         XCTAssertTrue(first.waitForExistence(timeout: 4), app.debugDescription)
         first.tap()
         XCTAssertTrue(app.otherElements["media.file.episodes.drawer"].waitForNonExistence(timeout: 8))
-        XCTAssertTrue(app.otherElements["media.fullscreen.player"].firstMatch.exists)
+        XCTAssertTrue(app.otherElements["media.mkv.fullscreen.player"].firstMatch.exists)
         XCTAssertGreaterThan(app.frame.width, app.frame.height)
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        shot.name = "Web episodes preserve fullscreen in both engines"; shot.lifetime = .keepAlways; add(shot)
-        if !nativeClose.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
-        nativeClose.tap()
+        shot.name = "Web episodes preserve fullscreen"; shot.lifetime = .keepAlways; add(shot)
+        if !close.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
+        close.tap()
         XCTAssertTrue(app.buttons["media.web.close"].waitForNonExistence(timeout: 5),
                       "Closing fullscreen must dismiss the preview page as well")
     }
@@ -1870,7 +2083,7 @@ extension WebEpisodeAndAdNavigationUITests {
             videos.tap()
             let preview = app.buttons["resources.video.play"].firstMatch
             XCTAssertTrue(preview.waitForExistence(timeout: 5)); preview.tap()
-            try requireWebFullscreen(app, engine: engine)
+            try requireWebFullscreen(app)
             let options = app.buttons["media.fullscreen.options"]
             let settings = app.buttons["media.fullscreen.settings"]
             for _ in 0..<4 {
@@ -1909,8 +2122,8 @@ extension WebEpisodeAndAdNavigationUITests {
             XCUIDevice.shared.orientation = .landscapeLeft
             try open(root.appendingPathComponent("detail.html"), app: app)
             openEpisodes(app); app.scrollViews.buttons["Episode 1"].firstMatch.tap()
-            let prefix = engine == "system" ? "media.native" : "media.mkv"
-            try requireWebFullscreen(app, engine: engine)
+            let prefix = "media.mkv"
+            try requireWebFullscreen(app)
             let play = app.buttons[prefix + ".play"]
             for _ in 0..<4 {
                 if !play.exists || !play.isHittable { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() }
@@ -1982,7 +2195,7 @@ extension WebEpisodeAndAdNavigationUITests {
             XCTAssertTrue(feedback.waitForNonExistence(timeout: 3))
             app.activate()
             #endif
-            let close = app.buttons[engine == "system" ? "media.fullscreen.close" : "media.mkv.fullscreen.close"]
+            let close = app.buttons["media.mkv.fullscreen.close"]
             if !close.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() }
             XCTAssertTrue(close.waitForExistence(timeout: 3))
             for _ in 0..<3 {
@@ -1991,6 +2204,8 @@ extension WebEpisodeAndAdNavigationUITests {
                 if close.waitForNonExistence(timeout: 1) { break }
             }
             guard !close.exists else { XCTFail("Fullscreen did not close"); app.terminate(); return }
+            XCTAssertTrue(app.buttons["browser.episodes-order"].waitForExistence(timeout: 5))
+            app.navigationBars["Episodes"].buttons["Done"].tap()
             let tabsButton = app.buttons["browser.tabs"]
             XCTAssertTrue(tabsButton.waitForExistence(timeout: 5))
             let card = app.descendants(matching: .any).matching(identifier: "tabs.card.preview").firstMatch
@@ -2029,9 +2244,9 @@ extension WebEpisodeAndAdNavigationUITests {
             let button = app.webViews.buttons["Fullscreen"].firstMatch
             guard button.waitForExistence(timeout: 15) else { XCTFail(app.debugDescription); app.terminate(); return }
             button.tap()
-            let fullscreen = app.otherElements[engine == "system" ? "media.fullscreen.player" : "media.mkv.fullscreen.player"].firstMatch
+            let fullscreen = app.otherElements["media.mkv.fullscreen.player"].firstMatch
             guard fullscreen.waitForExistence(timeout: 15) else { XCTFail(app.debugDescription); app.terminate(); return }
-            let play = app.buttons[engine == "system" ? "media.native.play" : "media.mkv.play"]
+            let play = app.buttons["media.mkv.play"]
             var started = false
             for _ in 0..<4 {
                 if !play.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
@@ -2051,23 +2266,24 @@ extension WebEpisodeAndAdNavigationUITests {
     }
 }
 
-extension WebEpisodeAndAdNavigationUITests {
-    @MainActor private func longVideoFixtureData() async throws -> Data {
-        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
-        let asset = AVURLAsset(url: fixture), composition = AVMutableComposition()
-        let clipDuration = try await asset.load(.duration)
-        for index in 0..<8 {
-            try await composition.insertTimeRange(CMTimeRange(start: .zero, duration: clipDuration), of: asset,
-                at: CMTimeMultiply(clipDuration, multiplier: Int32(index)))
-        }
-        let longVideo = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
-        defer { try? FileManager.default.removeItem(at: longVideo) }
-        let export = try XCTUnwrap(AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetPassthrough))
-        export.outputURL = longVideo; export.outputFileType = .mp4
-        await withCheckedContinuation { continuation in export.exportAsynchronously { continuation.resume() } }
-        guard export.status == .completed else { throw export.error ?? URLError(.cannotDecodeContentData) }
-        return try Data(contentsOf: longVideo)
+@MainActor func longVideoFixtureData() async throws -> Data {
+    let fixture = try XCTUnwrap(Bundle(for: WebEpisodeAndAdNavigationUITests.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+    let asset = AVURLAsset(url: fixture), composition = AVMutableComposition()
+    let clipDuration = try await asset.load(.duration)
+    for index in 0..<8 {
+        try await composition.insertTimeRange(CMTimeRange(start: .zero, duration: clipDuration), of: asset,
+            at: CMTimeMultiply(clipDuration, multiplier: Int32(index)))
     }
+    let longVideo = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+    defer { try? FileManager.default.removeItem(at: longVideo) }
+    let export = try XCTUnwrap(AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetPassthrough))
+    export.outputURL = longVideo; export.outputFileType = .mp4
+    await withCheckedContinuation { continuation in export.exportAsynchronously { continuation.resume() } }
+    guard export.status == .completed else { throw export.error ?? URLError(.cannotDecodeContentData) }
+    return try Data(contentsOf: longVideo)
+}
+
+extension WebEpisodeAndAdNavigationUITests {
     @MainActor func testInlineVideoNeverAddsAPageCornerPlayButtonAfterPlaybackScrollAndRemoval() async throws {
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
         let html = """
@@ -2128,9 +2344,9 @@ extension WebEpisodeAndAdNavigationUITests {
             let entry = app.buttons["browser.configured-video.play"]
             guard entry.waitForExistence(timeout: 10) else { XCTFail(app.debugDescription); app.terminate(); return }
             entry.tap()
-            let fullscreen = app.otherElements[engine == "system" ? "media.fullscreen.player" : "media.mkv.fullscreen.player"].firstMatch
+            let fullscreen = app.otherElements["media.mkv.fullscreen.player"].firstMatch
             guard fullscreen.waitForExistence(timeout: 15) else { XCTFail(app.debugDescription); app.terminate(); return }
-            let play = app.buttons[engine == "system" ? "media.native.play" : "media.mkv.play"]
+            let play = app.buttons["media.mkv.play"]
             for _ in 0..<4 {
                 if !play.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
                 if play.exists && play.label == "Pause" { break }
@@ -2215,7 +2431,7 @@ extension WebEpisodeAndAdNavigationUITests {
             guard play.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
             play.tap()
         }
-        let fullscreen = app.otherElements["media.fullscreen.player"].firstMatch
+        let fullscreen = app.otherElements["media.mkv.fullscreen.player"].firstMatch
         XCTAssertTrue(fullscreen.waitForExistence(timeout: 20), app.debugDescription)
         XCTAssertTrue(app.buttons["media.file.episodes"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
         let after = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); after.name = "Live movie fullscreen with episodes"; after.lifetime = .keepAlways; add(after)
@@ -2240,9 +2456,9 @@ extension WebEpisodeAndAdNavigationUITests {
             XCTAssertTrue(tools.waitForExistence(timeout: 15)); tools.tap()
             let fullscreen = app.webViews.buttons["Fullscreen"].firstMatch
             XCTAssertTrue(fullscreen.waitForExistence(timeout: 5)); fullscreen.tap()
-            let player = app.otherElements[engine == "system" ? "media.fullscreen.player" : "media.mkv.fullscreen.player"].firstMatch
+            let player = app.otherElements["media.mkv.fullscreen.player"].firstMatch
             guard player.waitForExistence(timeout: 15) else { XCTFail(app.debugDescription); return }
-            let play = app.buttons[engine == "system" ? "media.native.play" : "media.mkv.play"]
+            let play = app.buttons["media.mkv.play"]
             let diagnostic = app.staticTexts["media.volume.diagnostics"]
             func clock() throws -> Double {
                 let value = diagnostic.label.components(separatedBy: "clock=").last?.components(separatedBy: " ").first
@@ -2286,10 +2502,10 @@ extension WebEpisodeAndAdNavigationUITests {
                 let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = engine + "-paused-on-first-tap"; shot.lifetime = .keepAlways; add(shot)
                 center.tap()
             }
-            XCTAssertFalse(app.buttons[engine == "system" ? "media.fullscreen.exit" : "media.mkv.fullscreen.exit"].exists)
+            XCTAssertFalse(app.buttons["media.mkv.fullscreen.exit"].exists)
             if !app.buttons["media.fullscreen.rotate"].exists { backdrop.tap() }
             app.buttons["media.fullscreen.rotate"].tap()
-            try requireWebFullscreen(app, engine: engine)
+            try requireWebFullscreen(app)
             let portraitBackdrop = app.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.4))
             portraitBackdrop.doubleTap()
             if !play.exists { portraitBackdrop.tap() }
@@ -2324,7 +2540,7 @@ extension WebEpisodeAndAdNavigationUITests {
             if box.exists { XCTAssertTrue(box.frame.contains(entry.frame), "Play must stay inside the video box") }
             let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = engine + "-auxiliary-play-on-video-box"; shot.lifetime = .keepAlways; add(shot)
             entry.tap()
-            let full = app.otherElements[engine == "system" ? "media.fullscreen.player" : "media.mkv.fullscreen.player"].firstMatch
+            let full = app.otherElements["media.mkv.fullscreen.player"].firstMatch
             XCTAssertTrue(full.waitForExistence(timeout: 15), app.debugDescription)
             app.terminate()
         }
@@ -2341,7 +2557,7 @@ extension WebEpisodeAndAdNavigationUITests {
             try open(root.appendingPathComponent("stalled.html"), app: app)
             let entry = app.buttons["browser.configured-video.play"]
             XCTAssertTrue(entry.waitForExistence(timeout: 12)); entry.tap()
-            let prefix = engine == "system" ? "media.native" : "media.mkv"
+            let prefix = "media.mkv"
             let status = app.staticTexts[prefix + ".status"]
             XCTAssertTrue(status.waitForExistence(timeout: 20), app.debugDescription)
             let play = app.buttons[prefix + ".play"]

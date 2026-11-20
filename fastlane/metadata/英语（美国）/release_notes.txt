@@ -1,4 +1,4 @@
-• Settings have been reorganized. Preview the Home toolbar as you change its style, reorder buttons, or drag it into place.
-• With restart restoration enabled, Soulo returns to Home or the last web page you were viewing.
-• Browser menus are easier to read. You can show a hidden toolbar again from the More menu.
-• Improved userscript network requests and update checks.
+• Improved fullscreen transitions, buffering, and the playback speed menu for online videos.
+• Improved magnet link recognition and peer discovery for BitTorrent downloads.
+• Userscripts can use GM_webRequest to cancel main-frame Fetch and XHR requests or redirect them to the same origin.
+• Improved browser extension compatibility, including download filenames and loading offscreen pages.

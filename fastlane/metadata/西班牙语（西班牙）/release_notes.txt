@@ -1,4 +1,4 @@
-• Hemos reorganizado los ajustes. Previsualiza la barra de herramientas de inicio mientras cambias su estilo, reordenas los botones o la arrastras a la posición que quieras.
-• Si activas la restauración al reiniciar, Soulo vuelve a Inicio o a la última página que estabas viendo.
-• Los menús del navegador se leen mejor. Puedes volver a mostrar la barra de herramientas oculta desde el menú Más.
-• Hemos mejorado las peticiones de red y la comprobación de actualizaciones de los scripts de usuario.
+• Hemos mejorado el paso a pantalla completa, el almacenamiento en búfer y el menú de velocidad de los vídeos en línea.
+• Hemos mejorado el reconocimiento de enlaces magnet y la búsqueda de pares en las descargas de BitTorrent.
+• Los scripts de usuario pueden usar GM_webRequest para cancelar solicitudes Fetch y XHR del marco principal o redirigirlas al mismo origen.
+• Mejoramos la compatibilidad con las extensiones del navegador, incluidos los nombres de los archivos descargados y la carga de páginas fuera de pantalla.

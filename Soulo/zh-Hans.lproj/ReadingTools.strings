@@ -562,7 +562,9 @@
 
 "gesture_feedback_preview" = "预览反馈";
 
-"media_start_timeout" = "当前链接暂未播放，请检查网络或切换播放器。";
+"media_start_timeout" = "当前链接暂未播放，请检查网络。";
+"media_load_complete" = "加载完成";
+"media_playback_stalled" = "播放卡住了。";
 
 "wallpaper_appearance_hint" = "分别设置浅色和深色外观使用的背景，切换外观时自动应用。";
 
@@ -622,6 +624,7 @@
 
 "storage_files_group" = "下载与文件";
 "storage_cache_group" = "缓存与临时文件";
+"storage_video_cache" = "视频缓存";
 "storage_saved_group" = "已保存内容";
 
 "storage_clear_offline_media_warning" = "将删除此位置的全部离线视频及关联文件条目，并停止未完成的文件或视频下载、播放和导出。";

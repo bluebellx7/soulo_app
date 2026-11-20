@@ -1297,7 +1297,7 @@ final class SettingsNavigationUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "StorageReleasedCleanupFixture.bin")).firstMatch.exists)
     }
 
-    func testLocalMediaOpensDirectFullscreenSystem() throws { try localMediaFullscreen(engine: "system") }
+    func testLocalMediaOpensDirectFullscreenWithLegacySystemPreference() throws { try localMediaFullscreen(engine: "system") }
     func testLocalMediaOpensDirectFullscreenSoulo() throws { try localMediaFullscreen(engine: "soulo") }
     private func localMediaFullscreen(engine: String) throws {
         guard ProcessInfo.processInfo.environment["SOULO_STORAGE_CACHE_FIXTURE"] == "YES" else { throw XCTSkip("Requires isolated local media fixtures") }
@@ -1317,8 +1317,8 @@ final class SettingsNavigationUITests: XCTestCase {
             search.tap(); search.typeText(name)
             let item = app.descendants(matching: .any).matching(identifier: "files.item." + name).firstMatch
             guard item.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }; item.tap()
-            let prefix = engine == "system" ? "media.native" : "media.mkv"
-            let close = app.buttons[engine == "system" ? "media.fullscreen.close" : "media.mkv.fullscreen.close"]
+            let prefix = "media.mkv"
+            let close = app.buttons["media.mkv.fullscreen.close"]
             guard close.waitForExistence(timeout: 20) else { XCTFail(app.debugDescription); return }
             XCTAssertFalse(app.otherElements["media.preview"].exists)
             let play = app.buttons[prefix + ".play"]

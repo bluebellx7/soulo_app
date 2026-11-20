@@ -113,6 +113,10 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate {
         Task { @MainActor in
             _ = TorrentDownloadService.shared
             _ = ED2KDownloadService.shared
+            _ = BackgroundDownloadService.shared
+            if DownloadManagerService.shared.downloads.contains(where: { $0.transport == .hls && $0.status == .inProgress }) {
+                _ = StreamingMediaDownloadService.shared
+            }
             AppQuickActionService.shared.configureShortcuts()
             _ = SeparatedMediaDownloadService.shared
             RetiredStorageCleanup.schedule()

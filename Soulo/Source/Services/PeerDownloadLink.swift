@@ -39,7 +39,13 @@ enum PeerDownloadLink: Equatable {
             return .ed2k(ED2KFileLink(name: name, size: size, hash: parts[4].uppercased(), sources: sources))
         }
         guard let url = URL(string: value), let scheme = url.scheme?.lowercased() else { throw TorrentTaskError.invalid }
-        if scheme == "magnet" { return .magnet(url) }
+        if scheme == "magnet" {
+            // libtorrent expects the lowercase spelling. Preserve the encoded
+            // query because tracker credentials and display names can contain escapes.
+            let address = "magnet" + url.absoluteString.dropFirst("magnet".count)
+            guard let normalized = URL(string: address) else { throw TorrentTaskError.invalid }
+            return .magnet(normalized)
+        }
         guard ["http", "https"].contains(scheme), url.host?.isEmpty == false, url.user == nil, url.password == nil else {
             throw TorrentTaskError.invalid
         }

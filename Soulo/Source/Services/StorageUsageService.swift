@@ -82,10 +82,10 @@ import CoreData
 }
 
 enum StorageUsageCategory: String, CaseIterable, Identifiable, Sendable {
-    case webData, websiteStorage, tabSnapshots, favicons, wallpaperCache, otherCaches, temporaryFiles, ruleCache
+    case webData, websiteStorage, tabSnapshots, favicons, wallpaperCache, videoPlaybackCache, otherCaches, temporaryFiles, ruleCache
     case wallpapers, downloads, downloadTasks, readingData, backups, filterRules, extensions, personalData, sharedData, otherData
     var id: Self { self }
-    var canClear: Bool { [.webData, .tabSnapshots, .favicons, .wallpaperCache, .otherCaches, .temporaryFiles, .ruleCache, .downloadTasks].contains(self) }
+    var canClear: Bool { [.webData, .tabSnapshots, .favicons, .wallpaperCache, .videoPlaybackCache, .otherCaches, .temporaryFiles, .ruleCache, .downloadTasks].contains(self) }
 }
 
 struct StorageUsageRecord: Identifiable, Sendable {
@@ -137,7 +137,10 @@ struct StorageCleanupReport: Sendable {
 /// regenerable cache categories have an explicit, confirmed cleanup action.
 enum StorageUsageService {
     private static let sessionStartedAt = Date()
-    static func prepareSession() { _ = sessionStartedAt }
+    static func prepareSession() {
+        _ = sessionStartedAt
+        Task.detached(priority: .utility) { _ = try? VideoPlaybackCacheDirectory.clearUnused() }
+    }
     @MainActor private static let inventoryCache = StorageInventoryCache { appBytes in
         measureInventory(locations: .current, knownAppBytes: appBytes)
     }
@@ -163,6 +166,8 @@ enum StorageUsageService {
             await WebViewModel.deleteAllPersistedSnapshotsAndWait()
         case .favicons:
             WebsiteFaviconService.shared.clear()
+        case .videoPlaybackCache:
+            report = try await Task.detached(priority: .utility) { try VideoPlaybackCacheDirectory.clearUnused() }.value
         case .ruleCache:
             do { try await clearCompiledRuleCache(in: WKContentRuleListStore.default()) }
             catch { report.retainedCategories.insert(.ruleCache); report.failures.append(error.localizedDescription) }
@@ -886,6 +891,7 @@ struct StoragePathClassifier {
             case "wallpaper_hd": return .wallpapers
             case "CurrentWallpaper", "WallpaperSourcePreviews": return .wallpaperCache
             case "SouloAdBlockStartup": return .ruleCache
+            case VideoPlaybackCacheDirectory.name: return .videoPlaybackCache
             case "BackgroundDownloadStaging": return .downloadTasks
             default: break
             }

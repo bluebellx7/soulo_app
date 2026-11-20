@@ -1,4 +1,4 @@
-• Am reorganizat setările. Poți previzualiza bara de instrumente a paginii de pornire, îi poți schimba stilul, reordona butoanele sau muta bara prin tragere.
-• Când restaurarea la repornire este activată, Soulo deschide pagina de pornire sau ultima pagină web vizualizată.
-• Meniurile browserului sunt mai ușor de citit. Poți afișa din nou bara de instrumente ascunsă din meniul Mai multe.
-• Am îmbunătățit solicitările de rețea și verificarea actualizărilor pentru scripturile utilizatorului.
+• Au fost îmbunătățite trecerea la ecran complet, încărcarea în buffer și meniul vitezei pentru videoclipurile online.
+• Au fost îmbunătățite recunoașterea linkurilor magnet și găsirea partenerilor pentru descărcările BitTorrent.
+• Scripturile utilizator pot folosi GM_webRequest pentru a anula solicitările Fetch și XHR ale cadrului principal sau a le redirecționa către aceeași origine.
+• Am îmbunătățit compatibilitatea extensiilor browserului, inclusiv numele fișierelor descărcate și încărcarea paginilor în afara ecranului.

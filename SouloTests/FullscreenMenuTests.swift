@@ -58,8 +58,8 @@ private struct FullscreenMenuTestSurface: View {
     var body: some View {
         VStack {
             if state.isVisible {
-                FullscreenQuickMenu(webViewModel: model, title: model.pageTitle,
-                    isBookmarked: false, isDesktopMode: false, canSwitchContentMode: true) { _ in }
+                WebViewToolbar(viewModel: model, isBookmarked: .constant(false),
+                    isFullscreen: true, onToggleFullscreen: {}).moreMenuPanel
             }
         }
     }

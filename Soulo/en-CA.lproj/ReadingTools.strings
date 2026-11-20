@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Preview Feedback";
 
-"media_start_timeout" = "Playback has not started. Check your network or switch players.";
+"media_start_timeout" = "Playback has not started. Check your network.";
+"media_load_complete" = "Fully loaded";
+"media_playback_stalled" = "Playback stalled.";
 
 "wallpaper_appearance_hint" = "Set backgrounds separately for light and dark appearance. They switch automatically with the app.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Downloads & files";
 "storage_cache_group" = "Caches & temporary files";
+"storage_video_cache" = "Video cache";
 "storage_saved_group" = "Saved content";
 
 "storage_clear_offline_media_warning" = "Deletes all offline videos here and their file entries. Unfinished file/video downloads, playback and exports will stop.";

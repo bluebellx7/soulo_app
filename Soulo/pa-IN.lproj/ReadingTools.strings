@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "ਫੀਡਬੈਕ ਦੀ ਝਲਕ";
 
-"media_start_timeout" = "ਪਲੇਬੈਕ ਸ਼ੁਰੂ ਨਹੀਂ ਹੋਇਆ। ਨੈੱਟਵਰਕ ਜਾਂਚੋ ਜਾਂ ਪਲੇਅਰ ਬਦਲੋ।";
+"media_start_timeout" = "ਪਲੇਬੈਕ ਸ਼ੁਰੂ ਨਹੀਂ ਹੋਇਆ। ਨੈੱਟਵਰਕ ਜਾਂਚੋ।";
+"media_load_complete" = "ਲੋਡ ਪੂਰਾ";
+"media_playback_stalled" = "ਵੀਡੀਓ ਚੱਲਣਾ ਰੁਕ ਗਿਆ ਹੈ।";
 
 "wallpaper_appearance_hint" = "ਹਲਕੀ ਅਤੇ ਗੂੜ੍ਹੀ ਦਿੱਖ ਲਈ ਵੱਖਰੇ ਪਿਛੋਕੜ ਸੈੱਟ ਕਰੋ। ਐਪ ਦੀ ਦਿੱਖ ਬਦਲਣ ਨਾਲ ਇਹ ਆਪਣੇ ਆਪ ਬਦਲ ਜਾਣਗੇ।";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "ਡਾਊਨਲੋਡ ਅਤੇ ਫਾਈਲਾਂ";
 "storage_cache_group" = "ਕੈਸ਼ ਅਤੇ ਅਸਥਾਈ ਫਾਈਲਾਂ";
+"storage_video_cache" = "ਵੀਡੀਓ ਕੈਸ਼";
 "storage_saved_group" = "ਸੰਭਾਲੀ ਸਮੱਗਰੀ";
 
 "storage_clear_offline_media_warning" = "ਇੱਥੇ ਦੇ ਸਾਰੇ ਆਫਲਾਈਨ ਵੀਡੀਓ ਅਤੇ ਉਨ੍ਹਾਂ ਦੀਆਂ ਫਾਈਲ ਐਂਟਰੀਆਂ ਮਿਟ ਜਾਣਗੀਆਂ। ਅਧੂਰੇ ਫਾਈਲ/ਵੀਡੀਓ ਡਾਊਨਲੋਡ, ਪਲੇਬੈਕ ਅਤੇ ਨਿਰਯਾਤ ਰੁਕ ਜਾਣਗੇ।";

@@ -283,6 +283,11 @@ final class DownloadManagerServiceTests: XCTestCase {
         XCTAssertEqual(WebDownloadFilename.native(
             suggested: "index.pdf", pageTitle: "Research Paper", response: named
         ), "index.pdf")
+
+        let torrent = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: [
+            "Content-Type": "application/x-bittorrent", "Content-Disposition": "attachment; filename=sample.php"
+        ])!
+        XCTAssertEqual(WebDownloadFilename.native(suggested: "sample.php", pageTitle: nil, response: torrent), "sample.torrent")
     }
 
     func testCompletionNoticeIsSentOnceAndNotForCanceledOrFailedDownloads() throws {

@@ -88,6 +88,27 @@ private actor SuggestionRequests {
         model.clearSuggestions()
     }
 
+    func testHomeQuickSearchStopsSuggestionsAndKeepsBrowserAutocomplete() async throws {
+        let requests = SuggestionRequests()
+        let model = SearchViewModel(suggestionProvider: { await requests.fetch($0, $1) })
+        model.searchText = "home suggestion"
+        try await wait { !model.suggestions.isEmpty }
+        model.setHomeAutocompleteEnabled(false)
+        XCTAssertTrue(model.suggestions.isEmpty)
+        model.searchText = "home keyword"
+        try await Task.sleep(for: .milliseconds(320))
+        let homeRequests = await requests.requests.map(\.query)
+        XCTAssertEqual(homeRequests, ["home suggestion"])
+        model.isSearching = true
+        model.searchText = "browser keyword"
+        try await wait { model.suggestions == ["browser keyword result"] }
+        model.clearSearch()
+        model.setHomeAutocompleteEnabled(true)
+        model.searchText = "restored home suggestion"
+        try await wait { model.suggestions == ["restored home suggestion result"] }
+        model.clearSuggestions()
+    }
+
     func testURLAndSubmittedQueryDoNotRequestSuggestions() async throws {
         let requests = SuggestionRequests()
         let model = SearchViewModel(suggestionProvider: { await requests.fetch($0, $1) })

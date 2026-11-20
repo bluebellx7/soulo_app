@@ -5,7 +5,17 @@ import CryptoKit
 /// request and cryptography code remain in the installed package.
 enum WebExtensionTYTYAdapter {
     static let chromeID = "kmibgmblaakbhikfbjaincmnmabgnoim"
-    static let originalHash = "21877195d29dc57a97ab457684674bf9fd4ab50915eb7687919044d1360e1036"
+    static let packageIdentity = "chrome:" + chromeID
+    private static let workerHashes = [
+        "0.6.6": (
+            original: "21877195d29dc57a97ab457684674bf9fd4ab50915eb7687919044d1360e1036",
+            prepared: "b49ce420d8d2e7d18aa7ca37279d48a3dc26c814754497fd96b14999591f1a25"
+        ),
+        "0.6.7": (
+            original: "343bc6cb9ef2f5199b0122fb39a58117682cab07c9f7bea0a4632e8006faa50d",
+            prepared: "24c390f11d550fc5ff9f4389818d168142eec631ae45ff3783bfbf58c78e1b40"
+        )
+    ]
     private static let stateName = "__soulo_tyty_adapter.json"
     private static let backupName = "__soulo_tyty_original.js"
     private struct Patch: Decodable { let start: Int; let length: Int; let replacement: String }
@@ -15,38 +25,41 @@ enum WebExtensionTYTYAdapter {
     static func isPrepared(in root: URL) -> Bool {
         guard let state = try? Data(contentsOf: root.appendingPathComponent(stateName)),
               let values = try? JSONDecoder().decode([String: String].self, from: state),
-              values["originalSHA256"] == originalHash,
+              let revision = workerHashes.values.first(where: { $0.original == values["originalSHA256"] }),
+              values["preparedSHA256"] == revision.prepared,
               let current = try? Data(contentsOf: root.appendingPathComponent("background.min.js")) else { return false }
-        return values["preparedSHA256"] == hash(current)
+        return hash(current) == revision.prepared
     }
 
     @discardableResult
     static func prepare(in root: URL, manifest: inout [String: Any]) throws -> Bool {
-        guard manifest["name"] as? String == "TYTY", manifest["version"] as? String == "0.6.6" else { return false }
+        guard manifest["name"] as? String == "TYTY", let version = manifest["version"] as? String,
+              let revision = workerHashes[version] else { return false }
         let worker = root.appendingPathComponent("background.min.js")
         let backup = root.appendingPathComponent(backupName)
         guard let current = try? Data(contentsOf: worker) else { return false }
         let original = (try? Data(contentsOf: backup)) ?? current
-        guard hash(original) == originalHash, current == original || isPrepared(in: root) else { return false }
-        guard let patchURL = Bundle.main.url(forResource: "tyty-0.6.6-template-patches", withExtension: "json", subdirectory: "UserScripts") else {
+        guard hash(original) == revision.original, current == original || hash(current) == revision.prepared else { return false }
+        guard let patchURL = Bundle.main.url(forResource: "tyty-\(version)-template-patches", withExtension: "json", subdirectory: "UserScripts") else {
             throw BrowserExtensionError.invalidExtension
         }
         let patches = try JSONDecoder().decode(Patches.self, from: Data(contentsOf: patchURL))
-        guard patches.originalSHA256 == originalHash, let text = String(data: original, encoding: .utf8) else { throw BrowserExtensionError.invalidExtension }
+        guard patches.originalSHA256 == revision.original, let text = String(data: original, encoding: .utf8) else { throw BrowserExtensionError.invalidExtension }
         let source = NSMutableString(string: text)
         for patch in patches.patches.sorted(by: { $0.start > $1.start }) {
-            guard patch.start >= 0, patch.length >= 0, patch.start + patch.length <= source.length else { throw BrowserExtensionError.invalidExtension }
+            guard (0...source.length).contains(patch.start),
+                  (0...(source.length - patch.start)).contains(patch.length) else { throw BrowserExtensionError.invalidExtension }
             source.replaceCharacters(in: NSRange(location: patch.start, length: patch.length), with: patch.replacement)
         }
         // The document background loads this same library before the program.
         let prepared = (source as String).replacingOccurrences(of: "importScripts((\"./lib/jsencrypt.min.js\"));", with: "void 0;")
-        guard !prepared.contains("importScripts("), prepared != text else { throw BrowserExtensionError.invalidExtension }
         let data = Data(prepared.utf8)
+        guard hash(data) == revision.prepared else { throw BrowserExtensionError.invalidExtension }
         if !FileManager.default.fileExists(atPath: backup.path) { try original.write(to: backup, options: .atomic) }
         try data.write(to: worker, options: .atomic)
         try Data((WebExtensionTampermonkeyAdapter.javaScript + ruleCompatibility).utf8)
             .write(to: root.appendingPathComponent("__soulo_tyty_rules.js"), options: .atomic)
-        try JSONEncoder().encode(["originalSHA256": originalHash, "preparedSHA256": hash(data)])
+        try JSONEncoder().encode(["originalSHA256": revision.original, "preparedSHA256": revision.prepared])
             .write(to: root.appendingPathComponent(stateName), options: .atomic)
         manifest["background"] = ["scripts": ["lib/jsencrypt.min.js", "__soulo_tyty_rules.js", "background.min.js"], "persistent": false]
         return true

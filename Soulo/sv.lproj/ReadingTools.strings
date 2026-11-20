@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Prova respons";
 
-"media_start_timeout" = "Uppspelningen har inte startat. Kontrollera nätverket eller byt spelare.";
+"media_start_timeout" = "Uppspelningen har inte startat. Kontrollera nätverket.";
+"media_load_complete" = "Inläsning klar";
+"media_playback_stalled" = "Uppspelningen har stannat.";
 
 "wallpaper_appearance_hint" = "Välj separata bakgrunder för ljust och mörkt utseende. De växlar automatiskt med appen.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Hämtningar och filer";
 "storage_cache_group" = "Cache och tillfälliga filer";
+"storage_video_cache" = "Videocache";
 "storage_saved_group" = "Sparat innehåll";
 
 "storage_clear_offline_media_warning" = "Raderar alla offlinevideor här och deras filposter. Oavslutade fil-/videohämtningar, uppspelning och exporter stoppas.";

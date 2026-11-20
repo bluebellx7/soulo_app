@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Pratonton Maklum Balas";
 
-"media_start_timeout" = "Main balik belum bermula. Semak rangkaian atau tukar pemain.";
+"media_start_timeout" = "Main balik belum bermula. Semak rangkaian.";
+"media_load_complete" = "Pemuatan selesai";
+"media_playback_stalled" = "Main balik tersekat.";
 
 "wallpaper_appearance_hint" = "Tetapkan latar berasingan untuk penampilan cerah dan gelap. Latar bertukar secara automatik mengikut aplikasi.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Muat turun dan fail";
 "storage_cache_group" = "Cache dan fail sementara";
+"storage_video_cache" = "Cache video";
 "storage_saved_group" = "Kandungan disimpan";
 
 "storage_clear_offline_media_warning" = "Memadam semua video luar talian di sini dan entri failnya. Muat turun fail/video yang belum selesai, main balik dan eksport akan dihentikan.";

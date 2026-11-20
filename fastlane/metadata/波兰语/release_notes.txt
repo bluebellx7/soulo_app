@@ -1,4 +1,4 @@
-• Zmieniliśmy układ ustawień. Podgląd na żywo pozwala zmieniać styl paska narzędzi strony głównej, przestawiać przyciski i przeciągać pasek w wybrane miejsce.
-• Po włączeniu przywracania przy ponownym uruchomieniu Soulo otwiera stronę główną lub ostatnio wyświetlaną stronę internetową.
-• Menu przeglądarki są bardziej czytelne. Ukryty pasek narzędzi możesz ponownie pokazać z menu Więcej.
-• Ulepszyliśmy żądania sieciowe i sprawdzanie aktualizacji skryptów użytkownika.
+• Ulepszono przełączanie na pełny ekran, buforowanie i menu szybkości odtwarzania filmów online.
+• Ulepszono rozpoznawanie linków magnet i wyszukiwanie peerów do pobierania przez BitTorrent.
+• Skrypty użytkownika mogą używać GM_webRequest do anulowania żądań Fetch i XHR z głównej ramki lub przekierowywania ich do tego samego źródła.
+• Poprawiono zgodność rozszerzeń przeglądarki, w tym nazwy pobieranych plików i wczytywanie stron poza ekranem.

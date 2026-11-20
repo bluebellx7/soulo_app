@@ -7,6 +7,27 @@ import SwiftUI
 
 @MainActor
 final class WebEpisodeTests: XCTestCase {
+    func testLivePBKanSingleMoviePublishesAllPlaybackLines() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_PBKAN_EPISODE_QA"] == "1", "Live user-supplied page is opt-in")
+        let model = WebViewModel()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        window.rootViewController = UIHostingController(rootView: WebViewRepresentable(viewModel: model).frame(width: 390, height: 800))
+        window.makeKeyAndVisible()
+        defer { model.releaseWebViewRuntime(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+
+        let url = try XCTUnwrap(URL(string: "https://www.pbkan.com/yun/242279-1-1.html"))
+        model.loadURL(url)
+        for _ in 0..<240 {
+            if model.episodeList?.sources.count == 4 { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let list = try XCTUnwrap(model.episodeList, "Failed to publish the playback lines for \(model.currentURL?.absoluteString ?? url.absoluteString)")
+        XCTAssertEqual(list.sources.map(\.title), ["天堂云播", "暴风云播", "量子云播", "索尼云播"])
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map(\.title), Array(repeating: "高清", count: 4))
+        XCTAssertEqual(list.currentSource?.episodes.first?.url, url)
+    }
+
     func testLiveBilibiliBangumiPublishesItsWebEpisodesAndKeepsTheDockWithoutVideoTools() async throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_EPISODE_QA"]=="1","Live user-supplied page is opt-in")
         let defaults=UserDefaults.standard,keys=[VideoPlaybackPreferences.showsToolsKey,VideoPlaybackPreferences.showsEpisodeDockKey]
@@ -643,6 +664,44 @@ final class WebEpisodeTests: XCTestCase {
         XCTAssertEqual(list.sources.map(\.title), ["线路①", "线路②"])
         XCTAssertEqual(list.sources.map { $0.episodes.count }, [1, 3])
         XCTAssertEqual(list.currentSource?.title, "线路②")
+    }
+
+    func testSingleMoviePlaylistsRecognizeHDLabelsOnAnUnfamiliarRoute() async throws {
+        let url = "https://media.example/yun/242279-3-1.html"
+        let (web, capture) = try await page("""
+        <div class='tab-content'>
+          <ul class='play-tab'><li><a>天堂云播</a></li><li><a>暴风云播</a></li><li><a>量子云播</a></li><li><a>索尼云播</a></li></ul>
+          <div class='play-content'>
+            <div class='play-item'><ul class='stui-play__list'><li><a href='/yun/242279-1-1.html'>高清</a></li></ul></div>
+            <div class='play-item'><ul class='stui-play__list'><li><a href='/yun/242279-4-1.html'>高清</a></li></ul></div>
+            <div class='play-item active'><ul class='stui-play__list'>
+              <li><a href='/yun/242279-3-1.html'>高清</a></li>
+              <li><a href='/yun/242279-3-2.html'>下一集</a></li>
+              <li><a href='/yun/999999-3-1.html'>第1集</a></li>
+            </ul></div>
+            <div class='play-item'><ul class='stui-play__list'><li><a href='/yun/242279-2-1.html'>高清</a></li></ul></div>
+          </div>
+        </div>
+        """, url: url)
+        let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
+        XCTAssertEqual(list.sources.map(\.title), ["天堂云播", "暴风云播", "量子云播", "索尼云播"])
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map(\.title), Array(repeating: "高清", count: 4))
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map(\.url.path), [1, 4, 3, 2].map { "/yun/242279-\($0)-1.html" })
+        XCTAssertEqual(list.currentSource?.title, "量子云播")
+    }
+
+    func testSingleMoviePlaylistsCanUseSemanticMarkupWithoutKnownClassesOrRoutes() async throws {
+        let (web, capture) = try await page("""
+        <section aria-label='播放线路 原声'><a href='/streaming/420-1-1.html'>高清</a></section>
+        <section aria-label='播放线路 配音'><a href='/streaming/420-2-1.html'>正片</a></section>
+        <section aria-label='播放线路 其他影片'><a href='/streaming/421-1-1.html'>高清</a></section>
+        <aside class='related'><section aria-label='播放线路 推荐'><a href='/streaming/420-3-1.html'>高清</a></section></aside>
+        <div><a href='/streaming/420-4-1.html'>高清</a></div>
+        """, url: "https://another.example/streaming/420-1-1.html")
+        let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map(\.title), ["高清", "正片"])
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map(\.url.path), ["/streaming/420-1-1.html", "/streaming/420-2-1.html"])
+        XCTAssertEqual(list.currentSource?.episodes.first?.title, "高清")
     }
 
     func testFallbackGroupsPlaybackLinksAndIgnoresCatalogPages() async throws {

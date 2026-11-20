@@ -1,5 +1,4 @@
 import AVFoundation
-import MobileVLCKit
 import SwiftUI
 import XCTest
 @testable import Soulo
@@ -14,9 +13,12 @@ final class PlaybackSleepIntegrationTests: XCTestCase {
         let session = MediaSession.shared
 
         for engine in ["soulo", "system"] {
-            prepare(engine: engine, urls: fixture.urls)
+            prepare(urls: fixture.urls)
             let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
-            let host = UIHostingController(rootView: AnyView(NavigationStack { LocalDocumentContent(url: fixture.urls[0]) }))
+            let host = UIHostingController(rootView: AnyView(NavigationStack {
+                if engine == "system" { FileMediaPlaybackView(url: fixture.urls[0], initialSystemPlayer: true) }
+                else { LocalDocumentContent(url: fixture.urls[0]) }
+            }))
             window.rootViewController = host; window.makeKeyAndVisible()
             defer {
                 window.isHidden = true; window.rootViewController = nil
@@ -74,9 +76,12 @@ final class PlaybackSleepIntegrationTests: XCTestCase {
         let session = MediaSession.shared
 
         for engine in ["soulo", "system"] {
-            prepare(engine: engine, urls: fixture.urls)
+            prepare(urls: fixture.urls)
             let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
-            let host = UIHostingController(rootView: AnyView(NavigationStack { LocalDocumentContent(url: fixture.urls[0]) }))
+            let host = UIHostingController(rootView: AnyView(NavigationStack {
+                if engine == "system" { FileMediaPlaybackView(url: fixture.urls[0], initialSystemPlayer: true) }
+                else { LocalDocumentContent(url: fixture.urls[0]) }
+            }))
             window.rootViewController = host; window.makeKeyAndVisible()
             defer {
                 window.isHidden = true; window.rootViewController = nil
@@ -115,7 +120,7 @@ final class PlaybackSleepIntegrationTests: XCTestCase {
     }
 
     private func actualClock(_ session: MediaSession) -> Double {
-        if let playback = session.soulo { return Double(playback.player?.time.intValue ?? 0) / 1000 }
+        if let playback = session.soulo { return (playback.player?.currentTime ?? 0) }
         return session.player.currentTime().seconds
     }
 
@@ -131,10 +136,9 @@ final class PlaybackSleepIntegrationTests: XCTestCase {
         throw URLError(.timedOut)
     }
 
-    private func prepare(engine: String, urls: [URL]) {
+    private func prepare(urls: [URL]) {
         let session = MediaSession.shared
         session.stop(); session.setBackgrounded(false); session.loop = false
-        UserDefaults.standard.set(engine, forKey: VideoPlaybackPreferences.defaultPlayerKey)
         UserDefaults.standard.set(1.0, forKey: "media.rate")
         _ = session.setRate(1)
         urls.forEach { UserDefaults.standard.removeObject(forKey: MediaSession.positionKey($0)) }
@@ -171,7 +175,6 @@ final class PlaybackSleepIntegrationTests: XCTestCase {
 
 @MainActor
 private struct PlaybackPreferencesSnapshot {
-    let mode = UserDefaults.standard.object(forKey: VideoPlaybackPreferences.defaultPlayerKey)
     let storedRate = UserDefaults.standard.object(forKey: "media.rate")
     let rate = MediaSession.shared.rate
     let loop = MediaSession.shared.loop
@@ -189,7 +192,6 @@ private struct PlaybackPreferencesSnapshot {
             session.stop()
         }
         session.loop = loop; session.setBackgrounded(backgrounded)
-        defaults.set(mode, forKey: VideoPlaybackPreferences.defaultPlayerKey)
         defaults.set(storedRate, forKey: "media.rate")
     }
 }

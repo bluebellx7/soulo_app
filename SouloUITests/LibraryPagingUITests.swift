@@ -96,7 +96,8 @@ final class LibraryPagingUITests: XCTestCase {
         }
         app.terminate(); app.launch()
         try openVideo()
-        XCTAssertEqual(app.buttons["media.file.player"].value as? String, "Soulo", "Casting must not change the default video player")
+        XCTAssertFalse(app.buttons["media.file.player"].exists)
+        XCTAssertTrue(app.buttons["media.file.airplay"].exists, "A new session must use automatic selection after casting")
     }
 
     private func launch() -> XCUIApplication {
@@ -352,24 +353,23 @@ final class LibraryPagingUITests: XCTestCase {
             text.split(separator: ":").reduce(0) { $0 * 60 + (Double($1) ?? 0) }
         }
         let position = seconds(app.staticTexts["media.mkv.timeline.elapsed"].label)
-        XCTAssertGreaterThan(position, 10, "The fixture must seek before testing a paused handoff")
-        app.buttons["media.file.player"].tap()
-        app.descendants(matching: .any)["media.file.engine.system"].firstMatch.tap()
-        XCTAssertTrue(app.otherElements["media.preview"].waitForExistence(timeout: 8), "Compatible video can switch to the native player")
-        XCTAssertEqual(app.buttons["media.file.player"].value as? String, "System")
-        XCTAssertEqual(app.buttons["media.file.speed"].value as? String, "1.5×", "Switching players preserves speed")
-        app.buttons["media.file.player"].tap()
-        app.descendants(matching: .any)["media.file.engine.soulo"].firstMatch.tap()
+        XCTAssertGreaterThan(position, 10, "The fixture must seek before testing fullscreen")
+        XCTAssertFalse(app.buttons["media.file.player"].exists)
+        app.buttons["media.mkv.fullscreen"].tap()
+        let fullscreen = app.buttons["media.mkv.fullscreen.close"]
+        XCTAssertTrue(fullscreen.waitForExistence(timeout: 5))
+        fullscreen.tap()
         XCTAssertTrue(app.buttons["media.mkv.fullscreen"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.buttons["media.file.speed"].value as? String, "1.5×")
         let resumed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             let value = app.staticTexts["media.mkv.timeline.elapsed"].label
             return abs(seconds(value) - position) <= 2
         }, object: nil)
         let resumedResult = XCTWaiter.wait(for: [resumed], timeout: 6)
         let resumedPosition = app.staticTexts["media.mkv.timeline.elapsed"].label
-        XCTAssertEqual(resumedResult, .completed, "Switching a paused video must preserve \(position)s; got \(resumedPosition)")
-        XCTAssertEqual(app.buttons["media.mkv.play"].label, "Play", "Switching players must preserve pause")
-        XCTAssertTrue(app.progressIndicators["media.mkv.buffering"].waitForNonExistence(timeout: 3), "A paused handoff must not leave a loading spinner")
+        XCTAssertEqual(resumedResult, .completed, "Returning from fullscreen must preserve \(position)s; got \(resumedPosition)")
+        XCTAssertEqual(app.buttons["media.mkv.play"].label, "Play", "Returning from fullscreen must preserve pause")
+        XCTAssertTrue(app.progressIndicators["media.mkv.buffering"].waitForNonExistence(timeout: 3), "A fullscreen transition must not leave a loading spinner")
         app.buttons["media.mkv.fullscreen"].tap()
         XCTAssertTrue(app.buttons["media.mkv.fullscreen.close"].waitForExistence(timeout: 4))
         app.buttons["media.file.episodes"].tap()
@@ -388,7 +388,7 @@ final class LibraryPagingUITests: XCTestCase {
         app.buttons["media.file.speed"].tap()
         app.descendants(matching: .any)["media.file.rate.1.0"].firstMatch.tap()
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        shot.name = "File player with episodes, speed and player switching"; shot.lifetime = .keepAlways; add(shot)
+        shot.name = "File player with episodes and speed"; shot.lifetime = .keepAlways; add(shot)
         app.navigationBars.buttons.firstMatch.tap()
         let mini = app.otherElements["media.mini-player"]
         XCTAssertTrue(mini.waitForExistence(timeout: 5), "Soulo must keep the same mini player when navigating back")
@@ -396,9 +396,8 @@ final class LibraryPagingUITests: XCTestCase {
         miniShot.name = "Soulo mini player over its original file directory"; miniShot.lifetime = .keepAlways; add(miniShot)
         app.buttons.matching(NSPredicate(format: "identifier == %@ AND label == %@", "media.mini-player", "02.mp4")).firstMatch.tap()
         XCTAssertTrue(app.buttons["media.mkv.fullscreen"].waitForExistence(timeout: 8))
-        app.buttons["media.file.player"].tap()
-        app.descendants(matching: .any)["media.file.engine.system"].firstMatch.tap()
-        XCTAssertTrue(app.otherElements["media.preview"].waitForExistence(timeout: 8), "A restored Soulo mini player must still switch to system mode")
+        XCTAssertFalse(app.buttons["media.file.player"].exists)
+        XCTAssertTrue(app.buttons["media.file.airplay"].exists, "Compatible restored playback must still offer AirPlay")
     }
 
     func testFileMoveAndFolderRename() throws {

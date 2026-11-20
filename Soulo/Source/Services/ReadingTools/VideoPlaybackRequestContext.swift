@@ -1,6 +1,5 @@
 import Foundation
 import AVFoundation
-import MobileVLCKit
 import WebKit
 
 /// Web playback credentials stay with this playback session in memory.
@@ -63,21 +62,7 @@ import WebKit
         return try await BoundedMediaHTTP.read(resourceRequest(for: target, referrer: referrer), session: session, delegate: delegate, limit: maximumBytes)
     }
 
-    func apply(to media: VLCMedia) throws {
-        guard ["http", "https"].contains(url.scheme?.lowercased()) else { return }
-        media.addOption(":http-user-agent=" + userAgent.replacingOccurrences(of: "\r", with: "").replacingOccurrences(of: "\n", with: ""))
-        if !omitsReferrer, let referrer { media.addOption(":http-referrer=" + referrer.absoluteString) }
-        guard let host = url.host else { return }
-        for cookie in cookies {
-            var value = "\(cookie.name)=\(cookie.value); Path=\(cookie.path)"
-            if cookie.domain.hasPrefix(".") { value += "; Domain=" + cookie.domain }
-            if cookie.isSecure { value += "; Secure" }
-            if let expiry = cookie.expiresDate { value += "; Max-Age=\(max(0, Int(expiry.timeIntervalSinceNow)))" }
-            guard media.storeCookie(value, forHost: host, path: cookie.path) == 0 else {
-                throw URLError(.userAuthenticationRequired)
-            }
-        }
-    }
+
 }
 
 private enum BoundedMediaHTTP {
@@ -125,6 +110,56 @@ private final class VideoResourceRedirectDelegate: NSObject, URLSessionTaskDeleg
             var scoped = context.resourceRequest(for: target, referrer: referrer)
             scoped.setValue(range, forHTTPHeaderField: "Range")
             completionHandler(scoped)
+        }
+    }
+}
+
+/// Measure the origin connection. The player's HTTP requests to the local
+/// bridge only read files that this session has already received.
+final class VideoPlaybackTransfer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var measurement: (bytesPerSecond: Int64, received: ContinuousClock.Instant)?
+    private var complete = false
+    private var cachedRanges: [String: [Range<Double>]] = [:]
+    private var fileFraction: Double?
+
+    func markComplete() { lock.withLock { complete = true } }
+    func invalidateCompletion() { lock.withLock { complete = false } }
+
+    var coverage: VideoCacheCoverage {
+        lock.withLock {
+            VideoCacheCoverage(ranges: cachedRanges.values.flatMap { $0 }, fileFraction: fileFraction,
+                isComplete: complete && (fileFraction != nil || !cachedRanges.isEmpty))
+        }
+    }
+
+    func setCachedBytes(_ bytes: Int64, total: Int64) {
+        lock.withLock {
+            fileFraction = bytes > 0 ? Double(bytes) / Double(total) : nil
+            complete = bytes == total
+        }
+    }
+
+    func setCachedSegment(_ name: String, ranges: [Range<Double>]?) {
+        lock.withLock { cachedRanges[name] = ranges }
+    }
+
+    func selectCachedRendition(_ ranges: [String: [Range<Double>]], complete: Bool) {
+        lock.withLock { cachedRanges = ranges; self.complete = complete }
+    }
+
+    func record(bytes: Int64, started: ContinuousClock.Instant, finished: ContinuousClock.Instant) {
+        var meter = VideoTransferMeter()
+        _ = meter.rate(totalBytes: 0, now: started)
+        guard case .rate(let bytesPerSecond) = meter.rate(totalBytes: bytes, now: finished) else { return }
+        lock.withLock { measurement = (bytesPerSecond, finished) }
+    }
+
+    var status: VideoLoadingStatus? {
+        lock.withLock {
+            if complete { return .complete }
+            guard let measurement, measurement.received.duration(to: .now) <= .seconds(2) else { return nil }
+            return .rate(measurement.bytesPerSecond)
         }
     }
 }
@@ -196,9 +231,8 @@ final class HLSKeyResourceLoader: NSObject, @preconcurrency AVAssetResourceLoade
     }
 
     static func prepare(native: DownloadPlaybackSource, originalURL: URL) async throws -> SouloMediaPlaybackSource {
-        // AVFoundation also labels ordinary AES-128 HLS as protected. VLC
-        // supports those streams; hasProtectedContent is not a DRM capability
-        // check and must not reject a handoff before the decoder tries it.
+        // AVFoundation labels ordinary AES-128 HLS as protected too. Let the
+        // playback backend open the asset before deciding whether it can play.
         try Task.checkCancellation()
         let url = native.asset.url
         guard url.isFileURL, url.pathExtension.lowercased() == "movpkg" else {
@@ -330,27 +364,50 @@ enum HLSTransportPrefix {
     }
 }
 
-/// On-demand playback bridge, used only after a small probe confirms decorated
-/// TS. Segments go to a bounded temporary disk cache, never a whole-video Blob.
+/// Serve HLS resources on demand. Decorated TS is normalized here, and the
+/// selected finite rendition can fill a disk cache ahead of playback.
 private actor DecoratedHLSResources {
     struct Resource { let url: URL; let playlist: Bool; let key: Bool }
+    private struct Rendition {
+        let files: [String]
+        let ranges: [String: [Range<Double>]]
+        let initialization: String?
+    }
     let context: VideoPlaybackRequestContext
     let session: URLSession
     let directory: URL
+    let transfer = VideoPlaybackTransfer()
+    private let diskLease: VideoPlaybackCacheDirectory?
     var resources: [String: Resource] = [:]
     var names: [URL: String] = [:]
     var ready: [String: URL] = [:]
     var pending: [String: Task<URL, Error>] = [:]
+    private var successors: [String: Set<String>] = [:]
+    private var prefetch: Task<Void, Never>?
+    private var prefetchRevision = 0
+    private var cacheablePlaylists = Set<String>()
+    private var mediaSegments = Set<String>()
+    private var renditions: [String: Rendition] = [:]
+    private var segmentRenditions: [String: String] = [:]
+    private var activeRendition: String?
+    private var lastRequestedSegment: Int?
+    private var cacheSuspended = false
+    private var fullPlaylist: [String] = []
+    private var missingFullSegments: Set<String> = []
+    private var segmentRanges: [String: [Range<Double>]] = [:]
     var order: [String] = []
     var cachedBytes = 0
     var stopped = false
-    init(context: VideoPlaybackRequestContext) {
+    var canCacheEntireVideo: Bool { !renditions.isEmpty }
+    init(context: VideoPlaybackRequestContext, cacheForPlayback: Bool = false) {
         self.context = context
         let config = URLSessionConfiguration.ephemeral
         config.httpCookieStorage = nil; config.httpShouldSetCookies = false; config.httpMaximumConnectionsPerHost = 4
+        config.urlCache = nil
         config.timeoutIntervalForResource = 15
         session = URLSession(configuration: config)
-        directory = FileManager.default.temporaryDirectory.appendingPathComponent("SouloHLSPlayback/" + UUID().uuidString)
+        diskLease = cacheForPlayback ? try? VideoPlaybackCacheDirectory(reserving: 0) : nil
+        directory = diskLease?.url ?? FileManager.default.temporaryDirectory.appendingPathComponent("SouloHLSPlayback/" + UUID().uuidString)
     }
     func prepare(url: URL) async throws -> Bool {
         #if SOULO_ACCEPTANCE
@@ -365,7 +422,7 @@ private actor DecoratedHLSResources {
             NSLog("[SouloHLSBridge] manifest status:%d length:%d prefix:%@", (response as? HTTPURLResponse)?.statusCode ?? -1,
                 data.count, data.prefix(12).map { String(format: "%02x", $0) }.joined())
             #endif
-            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+            guard let http = response as? HTTPURLResponse, Self.containsWholeResource(http, size: data.count),
                   let text = String(data: data, encoding: .utf8), text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("#EXTM3U") else { return false }
             #if SOULO_ACCEPTANCE
             NSLog("[SouloHLSBridge] manifest bytes:%d", data.count)
@@ -375,7 +432,8 @@ private actor DecoratedHLSResources {
             let base = http.url ?? probe
             if let i = lines.firstIndex(where: { $0.hasPrefix("#EXT-X-STREAM-INF:") }), i+1 < lines.count {
                 let name = name(for: probe, playlist: true, key: false)
-                try rewrite(text, base: base).write(to: directory.appendingPathComponent(name), options: .atomic)
+                let cacheVariants = diskLease != nil && !lines.contains { $0.hasPrefix("#EXT-X-MEDIA:") || $0.hasPrefix("#EXT-X-SESSION-KEY:") }
+                try rewrite(text, base: base, cacheVariants: cacheVariants).write(to: directory.appendingPathComponent(name), options: .atomic)
                 ready[name] = directory.appendingPathComponent(name)
                 guard let child = resolve(lines[i+1], base: base) else { return false }; probe = child; continue
             }
@@ -384,13 +442,23 @@ private actor DecoratedHLSResources {
                   let line = lines.first(where: { !$0.isEmpty && !$0.hasPrefix("#") }),
                   let segment = resolve(line, base: base) else { return false }
             guard lines.contains("#EXT-X-ENDLIST") else { return false }
+            let playlistName = name(for: probe, playlist: true, key: false)
+            let cacheRendition = diskLease != nil && (probe == url || cacheablePlaylists.contains(playlistName)) ? playlistName : nil
+            if let cacheRendition {
+                let rewritten = try rewrite(text, base: base, cacheRendition: cacheRendition)
+                if renditions[cacheRendition] != nil {
+                    let file = directory.appendingPathComponent(playlistName)
+                    try rewritten.write(to: file, options: .atomic)
+                    ready[playlistName] = file
+                    return true
+                }
+            }
             let signed = URLComponents(url: probe, resolvingAgainstBaseURL: false)?.queryItems?.contains {
                 ["time", "timestamp", "expires", "deadline", "token", "sign", "signature", "auth_key", "auth"].contains($0.name.lowercased())
             } == true
             if context.manifests[probe] != nil, signed {
-                let name = name(for: probe, playlist: true, key: false)
-                try rewrite(text, base: base).write(to: directory.appendingPathComponent(name), options: .atomic)
-                ready[name] = directory.appendingPathComponent(name)
+                try rewrite(text, base: base).write(to: directory.appendingPathComponent(playlistName), options: .atomic)
+                ready[playlistName] = directory.appendingPathComponent(playlistName)
                 return true
             }
             var request = await context.resourceRequest(for: segment, referrer: context.referrer ?? url)
@@ -408,9 +476,8 @@ private actor DecoratedHLSResources {
             NSLog("[SouloHLSBridge] prefix count:%d offset:%d", prefix.count, HLSTransportPrefix.offset(in: prefix) ?? -1)
             #endif
             guard HLSTransportPrefix.offset(in: prefix) != nil else { return false }
-            let name = name(for: probe, playlist: true, key: false)
-            try rewrite(text, base: base).write(to: directory.appendingPathComponent(name), options: .atomic)
-            ready[name] = directory.appendingPathComponent(name)
+            try rewrite(text, base: base).write(to: directory.appendingPathComponent(playlistName), options: .atomic)
+            ready[playlistName] = directory.appendingPathComponent(playlistName)
             return true
         }
         return false
@@ -427,10 +494,19 @@ private actor DecoratedHLSResources {
         names[url] = name; resources[name] = Resource(url: url, playlist: playlist, key: key)
         return name
     }
-    private func rewrite(_ text: String, base: URL) throws -> Data {
+    private func rewrite(_ text: String, base: URL, cacheRendition: String? = nil, cacheVariants: Bool = false) throws -> Data {
         guard resources.count < 10_000 else { throw URLError(.dataLengthExceedsMaximum) }
         let regex = try NSRegularExpression(pattern: #"URI="([^"]+)""#)
-        var expectsPlaylist = false, output: [String] = []
+        let prefetchable = text.contains("#EXT-X-ENDLIST") && !text.contains("#EXT-X-BYTERANGE")
+        var expectsPlaylist = false, expectsSegment = false, output: [String] = [], segments: [String] = []
+        var segmentDuration: Double?, durations: [Double?] = [], initializations: [String] = []
+        let storeFullPlaylist = cacheRendition != nil && prefetchable && !text.contains("#EXT-X-GAP")
+            && !text.contains("#EXT-X-MEDIA:") && !text.contains("#EXT-X-I-FRAMES-ONLY")
+            && !text.components(separatedBy: .newlines).contains {
+                let line = $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                return (line.hasPrefix("#EXT-X-KEY:") && !line.contains("METHOD=NONE"))
+                    || (line.hasPrefix("#EXT-X-MAP:") && line.contains("BYTERANGE="))
+            }
         for raw in text.components(separatedBy: .newlines) {
             guard resources.count < 10_000 else { throw URLError(.dataLengthExceedsMaximum) }
             let line = raw.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -440,55 +516,241 @@ private actor DecoratedHLSResources {
                     guard let range = Range(match.range(at: 1), in: line), let target = resolve(String(line[range]), base: base) else { continue }
                     let playlist = line.hasPrefix("#EXT-X-MEDIA:") || line.hasPrefix("#EXT-X-I-FRAME-STREAM-INF:")
                     let key = line.hasPrefix("#EXT-X-KEY:") || line.hasPrefix("#EXT-X-SESSION-KEY:")
-                    rewritten.replaceSubrange(range, with: name(for: target, playlist: playlist, key: key))
+                    let resourceName = name(for: target, playlist: playlist, key: key)
+                    if line.hasPrefix("#EXT-X-MAP:"), !line.contains("BYTERANGE=") { initializations.append(resourceName) }
+                    rewritten.replaceSubrange(range, with: resourceName)
                 }
                 output.append(rewritten); if line.hasPrefix("#EXT-X-STREAM-INF:") { expectsPlaylist = true }
+                if line.hasPrefix("#EXTINF:") {
+                    expectsSegment = true
+                    if storeFullPlaylist {
+                        let value = line.dropFirst("#EXTINF:".count).prefix { $0 != "," }
+                        segmentDuration = Double(value.trimmingCharacters(in: .whitespaces))
+                    }
+                }
             } else if !line.isEmpty {
                 guard let target = resolve(line, base: base) else { throw URLError(.badURL) }
-                output.append(name(for: target, playlist: expectsPlaylist, key: false)); expectsPlaylist = false
+                let name = name(for: target, playlist: expectsPlaylist, key: false)
+                output.append(name)
+                if expectsPlaylist, cacheVariants { cacheablePlaylists.insert(name) }
+                if expectsSegment, !expectsPlaylist {
+                    segments.append(name)
+                    mediaSegments.insert(name)
+                    if storeFullPlaylist { durations.append(segmentDuration) }
+                }
+                expectsPlaylist = false; expectsSegment = false; segmentDuration = nil
             } else { output.append(line) }
+        }
+        if prefetchable {
+            for (current, next) in zip(segments, segments.dropFirst()) where current != next {
+                successors[current, default: []].insert(next)
+            }
+        }
+        if let cacheRendition, storeFullPlaylist, !segments.isEmpty, Set(initializations).count <= 1,
+           !text.contains("#EXT-X-MAP:") || !initializations.isEmpty {
+            let lengths = durations.compactMap { $0 }.filter { $0.isFinite && $0 > 0 }
+            let duration = lengths.reduce(0, +)
+            if lengths.count == segments.count, duration.isFinite {
+                var start = 0.0
+                var ranges: [String: [Range<Double>]] = [:]
+                for (name, length) in zip(segments, lengths) {
+                    let end = start + length
+                    if end > start { ranges[name, default: []].append(start..<end) }
+                    if segmentRenditions[name] == nil { segmentRenditions[name] = cacheRendition }
+                    start = end
+                }
+                let initialization = initializations.first
+                renditions[cacheRendition] = Rendition(files: Array(initializations.prefix(1)) + segments,
+                    ranges: ranges, initialization: initialization)
+            }
         }
         return Data(output.joined(separator: "\n").utf8)
     }
     func file(_ name: String) async throws -> URL? {
+        selectRendition(for: name)
+        trimFullCacheIfNeeded(keeping: name)
+        if let index = fullPlaylist.firstIndex(of: name) {
+            if let previous = lastRequestedSegment, abs(index - previous) > 2 { cancelPrefetch() }
+            lastRequestedSegment = index
+        }
+        guard let file = try await loadedFile(name) else { return nil }
+        if let index = order.firstIndex(of: name) { order.remove(at: index); order.append(name) }
+        if prefetch == nil, !missingFullSegments.isEmpty, let index = fullPlaylist.firstIndex(of: name) {
+            let order = Array(fullPlaylist[index...] + fullPlaylist[..<index])
+            let revision = prefetchRevision
+            prefetch = Task(priority: .utility) {
+                defer { if prefetchRevision == revision { prefetch = nil } }
+                for next in order {
+                    trimFullCacheIfNeeded(keeping: name)
+                    guard !Task.isCancelled, !fullPlaylist.isEmpty else { return }
+                    if ready[next] == nil {
+                        do {
+                            try await Task.sleep(for: .milliseconds(120))
+                            _ = try await loadedFile(next)
+                        } catch { return }
+                    }
+                }
+            }
+        } else if prefetch == nil, let choices = successors[name], choices.count == 1, let next = choices.first,
+           ready[next] == nil, pending[next] == nil {
+            // Warm one segment of the requested rendition. Prefetch shares the
+            // same in-flight request and bounded cache as a decoder request.
+            let revision = prefetchRevision
+            prefetch = Task(priority: .utility) {
+                defer { if prefetchRevision == revision { prefetch = nil } }
+                _ = try? await loadedFile(next)
+            }
+        }
+        return file
+    }
+
+    private func cancelPrefetch() {
+        prefetchRevision += 1
+        prefetch?.cancel(); prefetch = nil
+    }
+
+    private func selectRendition(for name: String) {
+        guard segmentRanges[name] == nil, mediaSegments.contains(name) else { return }
+        let revision = segmentRenditions[name]
+        guard revision != activeRendition else { return }
+        cancelPrefetch()
+        activeRendition = revision
+        lastRequestedSegment = nil
+        let rendition = revision.flatMap { renditions[$0] }
+        fullPlaylist = cacheSuspended ? [] : rendition?.files ?? []
+        missingFullSegments = Set(fullPlaylist.filter { ready[$0] == nil })
+        segmentRanges = rendition?.ranges ?? [:]
+        publishRenditionCoverage()
+    }
+
+    private var activeInitialization: String? { activeRendition.flatMap { renditions[$0]?.initialization } }
+
+    private func publishRenditionCoverage() {
+        let initialized = activeInitialization.map { ready[$0] != nil } ?? true
+        let cached = initialized ? segmentRanges.filter { ready[$0.key] != nil } : [:]
+        transfer.selectCachedRendition(cached, complete: !fullPlaylist.isEmpty && missingFullSegments.isEmpty)
+    }
+
+    private func trimFullCacheIfNeeded(keeping name: String) {
+        guard !fullPlaylist.isEmpty, diskLease?.hasHeadroom == false else { return }
+        cacheSuspended = true
+        fullPlaylist = []; missingFullSegments = []
+        transfer.invalidateCompletion()
+        trimRollingCache(keeping: name)
+    }
+
+    private func trimRollingCache(keeping name: String) {
+        while (cachedBytes > 64 * 1024 * 1024 || order.count > 16), let index = order.firstIndex(where: { $0 != name }) {
+            let old = order.remove(at: index)
+            if let file = ready.removeValue(forKey: old) {
+                if old == activeInitialization { publishRenditionCoverage() }
+                else { transfer.setCachedSegment(old, ranges: nil) }
+                cachedBytes -= (try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+                try? FileManager.default.removeItem(at: file)
+            }
+        }
+    }
+
+    private func loadedFile(_ name: String) async throws -> URL? {
         guard !stopped, let resource = resources[name] else { return nil }
-        if let file = ready[name], FileManager.default.fileExists(atPath: file.path) { return file }
+        if let file = ready[name] {
+            if FileManager.default.fileExists(atPath: file.path) { return file }
+            ready.removeValue(forKey: name)
+            order.removeAll { $0 == name }
+            if fullPlaylist.contains(name) { missingFullSegments.insert(name); transfer.invalidateCompletion() }
+            if name == activeInitialization { publishRenditionCoverage() }
+            else { transfer.setCachedSegment(name, ranges: nil) }
+        }
         if let task = pending[name] { return try await task.value }
         let task = Task { try await materialize(resource, name: name) }
         pending[name] = task
         defer { pending[name] = nil }
         return try await task.value
     }
+
+    private func downloadSegment(_ resource: Resource) async throws -> (URL, URLResponse, ContinuousClock.Instant) {
+        func fetch() async throws -> (URL, URLResponse, ContinuousClock.Instant) {
+            let started = ContinuousClock.now
+            let (file, response) = try await context.download(for: resource.url, referrer: context.referrer ?? context.url,
+                range: nil, session: session)
+            return (file, response, started)
+        }
+        do {
+            let result = try await fetch()
+            guard !resource.key, let http = result.1 as? HTTPURLResponse,
+                  [408, 500, 502, 503, 504].contains(http.statusCode),
+                  http.value(forHTTPHeaderField: "Retry-After") == nil else { return result }
+            try? FileManager.default.removeItem(at: result.0)
+        } catch let error as URLError where !resource.key && [.networkConnectionLost, .timedOut, .cannotConnectToHost].contains(error.code) {
+            try Task.checkCancellation()
+        }
+        try await Task.sleep(for: .milliseconds(350))
+        return try await fetch()
+    }
+
     private func materialize(_ resource: Resource, name: String) async throws -> URL {
         let target = directory.appendingPathComponent(name)
         if resource.playlist {
             let (data, response) = try await context.boundedData(for: resource.url, referrer: context.referrer ?? context.url, maximumBytes: 2 * 1024 * 1024, session: session)
-            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode), let text = String(data: data, encoding: .utf8), text.hasPrefix("#EXTM3U") else { throw URLError(.cannotParseResponse) }
-            try rewrite(text, base: http.url ?? resource.url).write(to: target, options: .atomic)
+            guard let http = response as? HTTPURLResponse, Self.containsWholeResource(http, size: data.count),
+                  let text = String(data: data, encoding: .utf8), text.hasPrefix("#EXTM3U") else { throw URLError(.cannotParseResponse) }
+            let cacheRendition = cacheablePlaylists.contains(name) ? name : nil
+            try rewrite(text, base: http.url ?? resource.url, cacheRendition: cacheRendition).write(to: target, options: .atomic)
         } else {
-            let (temporary, response) = try await context.download(for: resource.url, referrer: context.referrer ?? context.url, range: nil, session: session)
+            let (temporary, response, started) = try await downloadSegment(resource)
+            let finished = ContinuousClock.now
             defer { try? FileManager.default.removeItem(at: temporary) }
-            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
-                  !["text/html","application/json"].contains(http.mimeType?.lowercased() ?? "") else { throw URLError(.badServerResponse) }
             let size = try temporary.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-            guard size > 0, size <= 32 * 1024 * 1024, !resource.key || size == 16 else { throw URLError(.dataLengthExceedsMaximum) }
-            if !resource.key { _ = try HLSTransportPrefix.normalizeFile(temporary) }
-            try FileManager.default.moveItem(at: temporary, to: target)
-            cachedBytes += size; order.append(name)
-            while (cachedBytes > 64 * 1024 * 1024 || order.count > 16), let old = order.first {
-                order.removeFirst()
-                if let file = ready.removeValue(forKey: old) {
-                    cachedBytes -= (try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-                    try? FileManager.default.removeItem(at: file)
+            guard let http = response as? HTTPURLResponse, Self.containsWholeResource(http, size: size),
+                  !["text/html","application/json"].contains(http.mimeType?.lowercased() ?? "") else { throw URLError(.badServerResponse) }
+            // Disk-backed playback caches can store segments larger than the
+            // temporary rolling bridge's per-resource limit.
+            guard size > 0, diskLease != nil || size <= 32 * 1024 * 1024,
+                  !resource.key || size == 16 else { throw URLError(.dataLengthExceedsMaximum) }
+            if !resource.key {
+                _ = try HLSTransportPrefix.normalizeFile(temporary)
+                if (http.value(forHTTPHeaderField: "Content-Encoding") ?? "identity").lowercased() == "identity" {
+                    transfer.record(bytes: Int64(size), started: started, finished: finished)
                 }
             }
+            let storedSize = try temporary.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? size
+            try FileManager.default.moveItem(at: temporary, to: target)
+            cachedBytes += storedSize; order.append(name)
         }
         try Task.checkCancellation(); guard !stopped else { throw CancellationError() }
         ready[name] = target
+        trimFullCacheIfNeeded(keeping: name)
+        if fullPlaylist.isEmpty { trimRollingCache(keeping: name) }
+        let finished = missingFullSegments.remove(name) != nil && missingFullSegments.isEmpty
+        if name == activeInitialization { publishRenditionCoverage() }
+        else {
+            if let range = segmentRanges[name], activeInitialization.map({ ready[$0] != nil }) ?? true {
+                transfer.setCachedSegment(name, ranges: range)
+            }
+            if finished { transfer.markComplete() }
+        }
         return target
     }
-    func stop() {
-        stopped = true; pending.values.forEach { $0.cancel() }; pending.removeAll()
+
+    private static func containsWholeResource(_ response: HTTPURLResponse, size: Int) -> Bool {
+        let range = response.value(forHTTPHeaderField: "Content-Range")
+        if response.statusCode == 200, range == nil { return true }
+        // Some origins send 206 without a Range request. Count the segment
+        // only if the stored bytes cover the entire advertised resource.
+        guard response.statusCode == 206, size > 0, let range,
+              (response.value(forHTTPHeaderField: "Content-Encoding") ?? "identity").lowercased() == "identity" else { return false }
+        return range.trimmingCharacters(in: .whitespaces).lowercased() == "bytes 0-\(size - 1)/\(size)"
+    }
+
+    func stop() async {
+        guard !stopped else { return }
+        stopped = true
+        cancelPrefetch()
+        let downloads = Array(pending.values)
+        for download in downloads { download.cancel() }
+        // Request creation can be suspended on the main actor. Invalidate
+        // only after cancelled requests have finished using the session.
+        for download in downloads { _ = await download.result }
         session.invalidateAndCancel(); try? FileManager.default.removeItem(at: directory)
     }
 }
@@ -496,12 +758,27 @@ private actor DecoratedHLSResources {
 private final class DecoratedHLSLease: @unchecked Sendable {
     let resources: DecoratedHLSResources
     let server: TorrentStreamServer
-    init(resources: DecoratedHLSResources, server: TorrentStreamServer) { self.resources = resources; self.server = server }
+    let canCacheEntireVideo: Bool
+    init(resources: DecoratedHLSResources, server: TorrentStreamServer, canCacheEntireVideo: Bool) {
+        self.resources = resources; self.server = server; self.canCacheEntireVideo = canCacheEntireVideo
+    }
     deinit { server.stop(); let resources = resources; Task { await resources.stop() } }
 }
 
 @MainActor enum HLSPlaybackBridge {
     private static var leaseKey: UInt8 = 0
+    static func usesLocalBridge(_ asset: AVURLAsset) -> Bool {
+        objc_getAssociatedObject(asset, &leaseKey) != nil
+    }
+    static func canCacheEntireVideo(_ asset: AVURLAsset) -> Bool {
+        (objc_getAssociatedObject(asset, &leaseKey) as? DecoratedHLSLease)?.canCacheEntireVideo == true
+    }
+    static func loadingStatus(_ asset: AVURLAsset) -> VideoLoadingStatus? {
+        transfer(for: asset)?.status
+    }
+    static func transfer(for asset: AVURLAsset) -> VideoPlaybackTransfer? {
+        (objc_getAssociatedObject(asset, &leaseKey) as? DecoratedHLSLease)?.resources.transfer
+    }
     static func requiresSegmentNormalization(resource: WebMediaResource, webView: WKWebView?) async -> Bool {
         guard resource.delivery == .hls else { return false }
         let context = await VideoPlaybackRequestContext.load(url: resource.url, pageURL: resource.sourcePageURL, webView: webView)
@@ -510,19 +787,20 @@ private final class DecoratedHLSLease: @unchecked Sendable {
         await resources.stop()
         return needed
     }
-    static func assetIfNeeded(resource: WebMediaResource, webView: WKWebView?) async -> AVURLAsset? {
+    static func assetIfNeeded(resource: WebMediaResource, webView: WKWebView?, cacheForPlayback: Bool = false) async -> AVURLAsset? {
         #if SOULO_ACCEPTANCE
         NSLog("[SouloHLSBridge] asset delivery:%@", resource.delivery.rawValue)
         #endif
         guard resource.delivery == .hls, ["http","https"].contains(resource.url.scheme?.lowercased() ?? "") else { return nil }
         let context = await VideoPlaybackRequestContext.load(url: resource.url, pageURL: resource.sourcePageURL, webView: webView)
-        let resources = DecoratedHLSResources(context: context)
+        let resources = DecoratedHLSResources(context: context, cacheForPlayback: cacheForPlayback)
         do {
             guard try await resources.prepare(url: resource.url) else { await resources.stop(); return nil }
             try Task.checkCancellation()
             let server = try await TorrentStreamServer.startHLSResources { [weak resources] name in try await resources?.file(name) }
             let asset = AVURLAsset(url: server.url)
-            objc_setAssociatedObject(asset, &leaseKey, DecoratedHLSLease(resources: resources, server: server), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            let lease = DecoratedHLSLease(resources: resources, server: server, canCacheEntireVideo: await resources.canCacheEntireVideo)
+            objc_setAssociatedObject(asset, &leaseKey, lease, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             return asset
         } catch {
             #if SOULO_ACCEPTANCE

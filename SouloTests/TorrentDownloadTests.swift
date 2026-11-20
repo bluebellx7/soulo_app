@@ -2,6 +2,7 @@ import CryptoKit
 import AVFoundation
 import Foundation
 import SouloTorrent
+import UIKit
 import XCTest
 @testable import Soulo
 
@@ -38,6 +39,14 @@ final class TorrentDownloadTests: XCTestCase {
         XCTAssertTrue(PublicTorrentTrackerStore.parse(Data(repeating: 65, count: 128*1024+1)).isEmpty)
         let many = (0..<100).map { "https://t\($0).example/announce" }.joined(separator: "\n")
         XCTAssertEqual(PublicTorrentTrackerStore.parse(Data(many.utf8)).count, 24)
+    }
+
+    func testDiscoveryKeepsHTTPSInsideTheTrackerLimit() {
+        let udp = (0..<24).map { "udp://tracker\($0).example:1337/announce" }
+        let discovery = PublicTorrentTrackerStore.discoveryTrackers(udp)
+        XCTAssertEqual(discovery.count, 24)
+        XCTAssertTrue(discovery.contains { $0.hasPrefix("https://") })
+        XCTAssertEqual(PublicTorrentTrackerStore.discoveryTrackers(discovery), discovery)
     }
 
     func testAutomaticTrackersPreservePublisherEntriesExcludePrivateAndAreNotSavedAsUserTrackers() async throws {
@@ -122,6 +131,57 @@ final class TorrentDownloadTests: XCTestCase {
     }
 
     @MainActor
+    func testMKVDecodesAndSeeksWhileNativeTorrentIsStillDownloading() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "torrent-stream-h264-aac", withExtension: "mkv",
+                                                            subdirectory: "ReadingFixtures"))
+        let bytes = try Data(contentsOf: fixture)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let seed = root.appendingPathComponent("seed"), destination = root.appendingPathComponent("download")
+        try FileManager.default.createDirectory(at: seed, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let fileName = fixture.lastPathComponent
+        try bytes.write(to: seed.appendingPathComponent(fileName))
+        var pieces = Data()
+        for first in stride(from: 0, to: bytes.count, by: 16384) {
+            pieces.append(contentsOf: Insecure.SHA1.hash(data: bytes[first..<min(first + 16384, bytes.count)]))
+        }
+        let metadata = bencode(["info": ["name": fileName, "length": bytes.count, "piece length": 16384, "pieces": pieces]])
+        let peer = try StreamingTorrentTestPeer(metadata: metadata, seed: seed, destination: destination)
+        for _ in 0..<100 {
+            if await peer.ready() { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        await peer.connect()
+        let server = try await TorrentStreamServer.start(size: Int64(bytes.count), name: fileName) { offset, count in
+            try await peer.read(offset: offset, count: count)
+        }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene), controller = UIViewController()
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        let playback = MatroskaPlayback()
+        playback.attach(controller.view)
+        defer { playback.stop(); server.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        do {
+            let lease = TorrentPlaybackLease(server: server, id: UUID(), worker: ControlledTorrentEngine())
+            playback.open(server.url, resourceLease: lease)
+            try await wait(20) { (playback.player?.currentTime ?? 0) > 0.5 && (playback.player?.decodedFrameCount ?? 0) > 2 }
+            XCTAssertTrue(playback.player is ExtendedPlaybackDecoder)
+            let finished = await peer.finished()
+            XCTAssertFalse(finished, "The player must display MKV frames before the torrent finishes")
+            let frames = playback.player?.decodedFrameCount ?? 0
+            playback.seek(6)
+            try await wait(25) { (playback.player?.currentTime ?? 0) > 6.2 && (playback.player?.decodedFrameCount ?? 0) > frames }
+            XCTAssertNil(playback.error)
+            await peer.stop()
+        } catch {
+            await peer.stop()
+            throw error
+        }
+    }
+
+    @MainActor
     func testPartialTorrentFilesUseStreamingAndRejectOutsidePaths() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let name = UUID().uuidString, defaults = UserDefaults(suiteName: UUID().uuidString)!
@@ -186,7 +246,7 @@ final class TorrentDownloadTests: XCTestCase {
         let v = value as! [String: Any]
         return Data("d".utf8) + v.keys.sorted().reduce(Data()) { $0 + bencode($1) + bencode(v[$1]!) } + Data("e".utf8)
     }
-    private func fixture() -> (data: Data, magnet: String, first: Data, second: Data) {
+    private func fixture(tracker: URL? = nil) -> (data: Data, magnet: String, first: Data, second: Data) {
         let first = Data((0..<(1024 * 1024)).map { UInt8($0 % 251) })
         let second = Data(repeating: 0x73, count: 512 * 1024)
         let payload = first + second
@@ -197,7 +257,13 @@ final class TorrentDownloadTests: XCTestCase {
         let info: [String: Any] = ["name": "BTFixture", "piece length": 16384, "pieces": pieces,
             "files": [["length": first.count, "path": ["selected.bin"]], ["length": second.count, "path": ["excluded.bin"]]]]
         let hash = Insecure.SHA1.hash(data: bencode(info)).map { String(format: "%02x", $0) }.joined()
-        return (bencode(["info": info]), "magnet:?xt=urn:btih:\(hash)&dn=BTFixture", first, second)
+        var metainfo: [String: Any] = ["info": info]
+        var magnet = URLComponents(string: "magnet:?xt=urn:btih:\(hash)&dn=BTFixture")!
+        if let tracker {
+            metainfo["announce"] = tracker.absoluteString
+            magnet.queryItems?.append(URLQueryItem(name: "tr", value: tracker.absoluteString))
+        }
+        return (bencode(metainfo), magnet.string!, first, second)
     }
     private func wait(_ seconds: TimeInterval = 30, until condition: () throws -> Bool) async throws {
         let deadline = Date().addingTimeInterval(seconds)
@@ -207,6 +273,61 @@ final class TorrentDownloadTests: XCTestCase {
         }
         XCTFail("Timed out waiting for native transfer")
         throw URLError(.timedOut)
+    }
+
+    @MainActor
+    func testDownloadServiceFindsTrackerPeerForTorrentAndMagnetAndDownloadsSelection() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let seed = root.appendingPathComponent("seed")
+        let initial = fixture()
+        try FileManager.default.createDirectory(at: seed.appendingPathComponent("BTFixture"), withIntermediateDirectories: true)
+        try initial.first.write(to: seed.appendingPathComponent("BTFixture/selected.bin"))
+        try initial.second.write(to: seed.appendingPathComponent("BTFixture/excluded.bin"))
+        let seeder = SLTorrentEngine(certificateFile: "", discoveryEnabled: false)
+        try seeder.addIdentifier("seed", data: initial.data, magnet: nil, directory: seed.path,
+                                 resumeData: nil, priorities: [1, 1], metadataOnly: false)
+        defer { seeder.remove("seed", deleteFiles: false) }
+        try await wait { seeder.snapshots().first?["finished"] as? Bool == true && seeder.listeningPort > 0 }
+        let port = try XCTUnwrap(UInt16(exactly: seeder.listeningPort))
+        let peers = Data([127, 0, 0, 1, UInt8(port >> 8), UInt8(port & 0xff)])
+        let server = try DownloadPlaybackHTTPFixture(files: ["/announce": bencode(["interval": 2, "peers": peers])])
+        let tracker = try await server.start().appendingPathComponent("announce")
+        defer { server.stop() }
+        let source = fixture(tracker: tracker)
+
+        for entry in ["torrent", "magnet", "restored-magnet"] {
+            let useMagnet = entry != "torrent"
+            let directory = root.appendingPathComponent(entry)
+            let jobs = directory.appendingPathComponent("jobs")
+            let manager = DownloadManagerService(storageKey: "torrent-audit-\(UUID())", storageDirectory: directory.appendingPathComponent("downloads"))
+            var service = TorrentDownloadService(manager: manager, root: jobs,
+                worker: TorrentEngineWorker(discoveryEnabled: false), workChanged: {}, userStartedWork: {})
+            let id = try await service.create(data: useMagnet ? nil : source.data, magnet: useMagnet ? source.magnet : nil)
+            try await wait { service.job(id)?.state == .selection }
+            let destination = URL(fileURLWithPath: try XCTUnwrap(service.job(id)?.directory))
+            let selected = destination.appendingPathComponent("BTFixture/selected.bin")
+            let excluded = destination.appendingPathComponent("BTFixture/excluded.bin")
+            XCTAssertFalse(FileManager.default.fileExists(atPath: selected.path))
+            service.select(id, indices: [0])
+            if entry == "restored-magnet" {
+                let resume = jobs.appendingPathComponent(id.uuidString + ".resume")
+                try await wait { FileManager.default.fileExists(atPath: resume.path) }
+                try Data("invalid checkpoint".utf8).write(to: resume)
+                service = TorrentDownloadService(manager: manager, root: jobs,
+                    worker: TorrentEngineWorker(discoveryEnabled: false), workChanged: {}, userStartedWork: {})
+                XCTAssertEqual(service.job(id)?.selected, [0])
+            }
+            let existing = try await service.create(data: useMagnet ? nil : source.data, magnet: useMagnet ? source.magnet : nil, openExisting: true)
+            XCTAssertEqual(existing, id)
+            XCTAssertEqual(service.jobs.count, 1)
+            service.start(id)
+            try await wait { manager.downloads.first?.status == .finished }
+            XCTAssertEqual(try Data(contentsOf: selected), source.first)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: excluded.path))
+            XCTAssertEqual(manager.downloads.first?.receivedBytes, Int64(source.first.count))
+        }
+        XCTAssertGreaterThanOrEqual(server.receivedRequests.filter { $0.path == "/announce" }.count, 2)
     }
     func testNativePeerDownloadSelectionAndResumeAcrossEngineRestart() async throws {
         let fixture = fixture()
@@ -363,6 +484,30 @@ final class TorrentDownloadTests: XCTestCase {
         XCTAssertEqual(manager.downloads.first?.progress, 0.5)
         await worker.setChecking(false, completed: 750)
         try await wait { manager.downloads.first?.receivedBytes == 750 }
+        await service.suspendAll()
+    }
+
+    @MainActor
+    func testQueuedTorrentKeepsItsSelectionWhenASlotOpens() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { try? FileManager.default.removeItem(at: root); defaults.removePersistentDomain(forName: suite) }
+        let manager = DownloadManagerService(userDefaults: defaults, storageDirectory: root.appendingPathComponent("Downloads"))
+        let service = TorrentDownloadService(manager: manager, root: root.appendingPathComponent("Tasks"),
+            worker: ControlledTorrentEngine(), workChanged: {}, userStartedWork: {})
+        var ids: [UUID] = []
+        for _ in 0..<4 {
+            let id = try await service.create(data: Data([1]), magnet: nil)
+            ids.append(id)
+            service.start(id)
+        }
+        let queued = try XCTUnwrap(ids.last)
+        XCTAssertEqual(service.job(queued)?.state, .queued)
+        service.select(queued, indices: [])
+        XCTAssertEqual(service.job(queued)?.selected, [0])
+        service.pause(ids[0])
+        try await wait { service.job(queued)?.state == .downloading && service.job(queued)?.selected == [0] }
         await service.suspendAll()
     }
 

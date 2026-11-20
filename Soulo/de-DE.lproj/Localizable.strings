@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Alle Lesezeichen löschen?";
 "settings" = "Einstellungen";
 "platform_management" = "Plattformverwaltung";
+"home_quick_search" = "Schnellsuche auf der Startseite";
 "region_korea" = "Korea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Zwischengespeicherte Inhalte und Seitenaufrufe der letzten 3 Tage werden gelöscht. Cookies und Anmeldungen bleiben erhalten.";
 "enter_fullscreen" = "Vollbild";
 "exit_fullscreen" = "Vollbild beenden";
-"fullscreen_exit_hint" = "Tippen für Steuerung, zum Beenden nach unten ziehen";
+"exit_fullscreen_short" = "Beenden";
+"fullscreen_exit_hint" = "Tippen fürs Menü, zum Beenden nach oben wischen";
 "restore_browser_toolbar" = "Symbolleiste wiederherstellen";
 "floating_more_detach" = "Mehr-Taste vom Rand lösen";
 "floating_more_snap" = "Mehr-Taste am Rand anheften";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Teilweise unterstützt";
 "userscript_docs_partial_desc" = "Benachrichtigungen bleiben auf der Seite; Ressourcen-APIs liefern Promises. cookie erfordert GM_cookie; Cookies werden nicht automatisch gesendet.";
 "userscript_docs_unsupported_title" = "Derzeit nicht unterstützt";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in-Isolierung und in WKWebView nicht verfügbare Desktop-Funktionen.";
+"userscript_docs_network_webrequest" = "GM_webRequest kann Fetch- und XMLHttpRequest-Anfragen der Hauptseite abbrechen oder innerhalb desselben Ursprungs umleiten.";
+"userscript_docs_unsupported_desc" = "GM_audio benötigt die Stummschaltung des gesamten Tabs und seinen Audiostatus. Die öffentliche Schnittstelle von WKWebView deckt das nur teilweise ab.\n@sandbox legt die Ausführungsumgebung fest. Soulo führt Benutzerskripte derzeit in der Umgebung der Webseite aus.";
 "userscript_docs_metadata_title" = "Metadaten";
 "userscript_docs_metadata_identity" = "Für Menschen lesbarer Skriptname und optionale Beschreibung, die vor der Installation und in den Skriptdetails angezeigt werden.";
 "userscript_docs_metadata_version" = "Verwenden Sie einen stabilen, eindeutigen Namespace und erhöhen Sie die Version, wenn sich das gebündelte Skript ändert.";

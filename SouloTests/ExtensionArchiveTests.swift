@@ -3,6 +3,21 @@ import zlib
 @testable import Soulo
 
 final class ExtensionArchiveTests: XCTestCase {
+    func testPreparationIdentifiesAnInvalidManifestAndAMissingRequiredBackground() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let manifest = root.appendingPathComponent("manifest.json")
+        try Data("{".utf8).write(to: manifest)
+        XCTAssertThrowsError(try WebExtensionPackagePreparer.installCompatibilityLayer(in: root)) {
+            XCTAssertEqual(($0 as? WebExtensionInstallationFailure)?.stage, .manifest)
+        }
+        try Data(#"{"manifest_version":3,"name":"Missing background","version":"1.0","background":{"service_worker":"missing.js"}}"#.utf8).write(to: manifest)
+        XCTAssertThrowsError(try WebExtensionPackagePreparer.installCompatibilityLayer(in: root)) {
+            XCTAssertEqual(($0 as? WebExtensionInstallationFailure)?.stage, .background("missing.js"))
+        }
+    }
+
     private let manifest = Data(#"{"manifest_version":3,"name":"Archive fixture","version":"1.0"}"#.utf8)
 
     private func archive(extraPath: String = "scripts/test.js", badCRC: Bool = false, encrypted: Bool = false, declaredSize: UInt32? = nil) -> Data {

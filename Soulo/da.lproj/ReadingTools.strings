@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Prøv feedback";
 
-"media_start_timeout" = "Afspilningen er ikke startet. Tjek netværket, eller skift afspiller.";
+"media_start_timeout" = "Afspilningen er ikke startet. Tjek netværket.";
+"media_load_complete" = "Indlæsning fuldført";
+"media_playback_stalled" = "Afspilningen er gået i stå.";
 
 "wallpaper_appearance_hint" = "Vælg baggrunde til lyst og mørkt udseende hver for sig. De skifter automatisk med appen.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Downloads og filer";
 "storage_cache_group" = "Cache og midlertidige filer";
+"storage_video_cache" = "Videocache";
 "storage_saved_group" = "Gemt indhold";
 
 "storage_clear_offline_media_warning" = "Sletter alle offlinevideoer her og deres filposter. Uafsluttede fil-/videodownloads, afspilning og eksport stoppes.";

@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Testar resposta";
 
-"media_start_timeout" = "A reprodução não começou. Verifique a rede ou mude de reprodutor.";
+"media_start_timeout" = "A reprodução não começou. Verifique a rede.";
+"media_load_complete" = "Carregamento concluído";
+"media_playback_stalled" = "A reprodução travou.";
 
 "wallpaper_appearance_hint" = "Defina fundos separados para a aparência clara e escura. Eles mudam automaticamente com o app.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Downloads e arquivos";
 "storage_cache_group" = "Cache e arquivos temporários";
+"storage_video_cache" = "Cache de vídeo";
 "storage_saved_group" = "Conteúdo salvo";
 
 "storage_clear_offline_media_warning" = "Exclui todos os vídeos offline deste local e suas entradas de arquivo. Downloads de arquivos/vídeos incompletos, reprodução e exportações serão interrompidos.";

@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Vil du fjerne alle bokmerker?";
 "settings" = "Innstillinger";
 "platform_management" = "Plattformledelse";
+"home_quick_search" = "Hurtigsøk på startsiden";
 "region_korea" = "Korea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Bufrede ressurser og sidebesøk fra de siste 3 dagene vil bli fjernet. Informasjonskapsler og pålogginger beholdes.";
 "enter_fullscreen" = "Fullskjerm";
 "exit_fullscreen" = "Avslutt fullskjerm";
-"fullscreen_exit_hint" = "Trykk for kontroller, trekk ned for å avslutte";
+"exit_fullscreen_short" = "Avslutt";
+"fullscreen_exit_hint" = "Trykk for menyen, sveip opp for å avslutte";
 "restore_browser_toolbar" = "Gjenopprett verktøylinje";
 "floating_more_detach" = "Koble fra mer-knappen";
 "floating_more_snap" = "Fest Mer-knappen til kanten";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Delvis støttet";
 "userscript_docs_partial_desc" = "Varsler vises på siden; ressurs-API-er returnerer Promise. cookie krever GM_cookie; informasjonskapsler sendes ikke automatisk.";
 "userscript_docs_unsupported_title" = "Støttes ikke for øyeblikket";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in-isolering og skrivebordsfunksjoner som WKWebView ikke tilbyr.";
+"userscript_docs_network_webrequest" = "GM_webRequest kan avbryte Fetch- og XMLHttpRequest-forespørsler fra hovedsiden eller omdirigere dem innenfor samme opphav.";
+"userscript_docs_unsupported_desc" = "GM_audio krever demping av hele fanen og tilgang til lydstatusen. Det offentlige grensesnittet i WKWebView støtter dette i begrenset grad.\n@sandbox velger kjøremiljøet. Soulo kjører for øyeblikket brukerskript i sidens miljø.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Menneskelest skriptnavn og valgfri beskrivelse vist før installasjon og i skriptdetaljer.";
 "userscript_docs_metadata_version" = "Bruk et stabilt, unikt navneområde og øk versjonen hver gang det medfølgende skriptet endres.";

@@ -1,4 +1,4 @@
-• Pengaturan ditata ulang. Lihat pratinjau bilah alat beranda saat mengganti gaya, mengatur ulang tombol, atau menyeret bilah ke posisi yang diinginkan.
-• Jika pemulihan saat mulai ulang diaktifkan, Soulo membuka beranda atau halaman web terakhir yang Anda lihat.
-• Menu peramban kini lebih mudah dibaca. Tampilkan kembali bilah alat yang tersembunyi dari menu Lainnya.
-• Permintaan jaringan dan pemeriksaan pembaruan untuk skrip pengguna ditingkatkan.
+• Peralihan ke layar penuh, buffering, dan menu kecepatan pemutaran video online telah ditingkatkan.
+• Pengenalan tautan magnet dan pencarian peer untuk unduhan BitTorrent telah ditingkatkan.
+• Skrip pengguna dapat memakai GM_webRequest untuk membatalkan permintaan Fetch dan XHR dari bingkai utama atau mengalihkannya ke origin yang sama.
+• Kompatibilitas ekstensi browser ditingkatkan, termasuk penamaan file unduhan dan pemuatan halaman di luar layar.

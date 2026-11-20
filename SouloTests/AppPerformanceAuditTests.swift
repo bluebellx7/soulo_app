@@ -28,7 +28,8 @@ import PDFKit
             throw XCTSkip("Opt-in application page performance audit")
         }
         let defaults = UserDefaults.standard
-        let keys = ["app_language", "icloud_sync_enabled", "wallpaper_source", "wallpaper_refresh_interval", "tab_overview_grouped", "is_incognito"]
+        let keys = ["app_language", "icloud_sync_enabled", "wallpaper_source", "wallpaper_refresh_interval",
+                    "tab_overview_grouped", "is_incognito", "platform_management_layout", PlatformBarPreferences.homeQuickSearchKey]
         let saved = Dictionary(uniqueKeysWithValues: keys.map { ($0, defaults.object(forKey: $0)) })
         let language = LanguageManager.shared.currentLanguage
         let storage = "performance-audit-" + UUID().uuidString
@@ -41,6 +42,7 @@ import PDFKit
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let modelContainer = try LibraryStore(inMemory: true)
         let search = SearchViewModel()
+        let quickSearch = SearchViewModel()
         let tabs = TabManager(storageKey: storage)
         tabs.tabs = (0..<24).map { index in
             let tab = BrowserTab()
@@ -121,7 +123,7 @@ import PDFKit
             Page(name: "backups", make: { AnyView(SettingsBackupsView()) }),
             Page(name: "quick_actions", make: { AnyView(AppQuickActionSettingsView()) }),
             Page(name: "url_schemes", make: { AnyView(URLSchemeGuideView()) }),
-            Page(name: "version", make: { AnyView(AppVersionView(version: "1.2.11")) }),
+            Page(name: "version", make: { AnyView(AppVersionView(version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")) }),
             Page(name: "review", make: { AnyView(AppReviewSupportView()) }),
             Page(name: "feedback", make: { AnyView(FeedbackView()) }),
             Page(name: "storage", make: { AnyView(StorageUsageView()) }),
@@ -171,7 +173,10 @@ import PDFKit
             Page(name: "platform_trial", make: { AnyView(PlatformTrialSearch(template: "https://audit.invalid/?q=%@")) }),
             Page(name: "web_privacy_panel", make: { AnyView(SitePrivacyPanelView(currentURL: url)) }),
             Page(name: "web_address", make: { AnyView(BrowserAddressEditorSheet(initialText: "Audit", initialURL: url.absoluteString, onOpen: { _ in }, onOpenURL: { _ in }, onVoiceInput: {})) }),
-            Page(name: "web_fullscreen_menu", make: { AnyView(FullscreenQuickMenu(webViewModel: webModel, title: "Audit page", isBookmarked: false, isDesktopMode: false, canSwitchContentMode: true, onAction: { _ in })) }),
+            Page(name: "web_fullscreen_menu", make: {
+                AnyView(WebViewToolbar(viewModel: webModel, isBookmarked: .constant(false), tabManager: tabs,
+                    isFullscreen: true, onToggleFullscreen: {}).moreMenuPanel)
+            }),
             Page(name: "web_translation_shell", make: { AnyView(WebPageTranslationSheet(webView: web, pageURL: url, onOpenURL: { _ in }, onAppleTranslationApplied: { _, _ in }, onGoogleTranslationOpened: { _ in }, onRestore: {})) }),
             Page(name: "image_text_result", make: { AnyView(ImageTextRecognitionView(result: ImageTextRecognitionResult(image: image, text: "Audit text", sourceURL: url), onSearch: { _ in })) }),
             Page(name: "scan_result", make: { AnyView(LocalScanResultView(content: ScannedContent(text: "Audit text"))) }),
@@ -179,7 +184,28 @@ import PDFKit
             Page(name: "text_document", make: { AnyView(TextDocumentPreview(url: bookURL)) }),
             Page(name: "web_container", make: { AnyView(WebViewContainer(webViewModel: webModel, bookmarkViewModel: BookmarkViewModel(), isFullscreen: .constant(false), tabManager: tabs)) }),
             Page(name: "video_soulo", make: { AnyView(FileMediaPlaybackView(url: mediaURL, persistPosition: false, initialSystemPlayer: false)) }),
-            Page(name: "video_system", make: { AnyView(FileMediaPlaybackView(url: mediaURL, persistPosition: false, initialSystemPlayer: true)) })
+            Page(name: "video_system", make: { AnyView(FileMediaPlaybackView(url: mediaURL, persistPosition: false, initialSystemPlayer: true)) }),
+            Page(name: "settings_personalization", make: { AnyView(AppearanceHomeSettingsView()) }),
+            Page(name: "settings_personalization_wallpaper", make: { AnyView(AppearanceHomeSettingsView(initialPage: .wallpaper)) }),
+            Page(name: "settings_browsing_display", make: { AnyView(BrowsingDisplaySettingsView()) }),
+            Page(name: "settings_interaction", make: { AnyView(GesturesFeedbackSettingsView()) }),
+            Page(name: "settings_feedback_preferences", make: { AnyView(AppFeedbackSettingsView()) }),
+            Page(name: "settings_protection_ads", make: { AnyView(ProtectionSettingsView()) }),
+            Page(name: "settings_protection_privacy", make: { AnyView(ProtectionSettingsView(initialPage: .privacy)) }),
+            Page(name: "platforms_grid", make: { AnyView(PlatformManagementView()) }),
+            Page(name: "browser_platform_panel", make: {
+                let context = BrowserPlatformPickerContext(scope: .region(.international), selectedPlatformID: nil, onSelect: { _, _ in })
+                return AnyView(BrowserPlatformPanel(context: context, onSelect: context.onSelect, onManage: {}, onClose: {}))
+            }),
+            Page(name: "home_quick_search", make: {
+                quickSearch.input.receiveEdit("Audit query", isComposing: false)
+                quickSearch.input.setEditing(true)
+                return AnyView(HomeView().environmentObject(quickSearch))
+            }),
+            Page(name: "new_download_magnet", make: {
+                let magnet = URL(string: "magnet:?xt=urn:btih:" + String(repeating: "a", count: 40))
+                return AnyView(NewDownloadTaskView(initialURL: magnet))
+            })
         ]
         var samples: [Sample] = []
         func root(_ content: AnyView) -> AnyView {
@@ -193,6 +219,14 @@ import PDFKit
         window.makeKeyAndVisible()
         try await Task.sleep(for: .seconds(2))
         func run(_ page: Page, iteration: Int, suffix: String = "") async throws {
+            let platformLayout = page.name == "platforms_grid" ? "grid" : "list"
+            if defaults.string(forKey: "platform_management_layout") != platformLayout {
+                defaults.set(platformLayout, forKey: "platform_management_layout")
+            }
+            let quickSearch = page.name == "home_quick_search"
+            if defaults.bool(forKey: PlatformBarPreferences.homeQuickSearchKey) != quickSearch {
+                defaults.set(quickSearch, forKey: PlatformBarPreferences.homeQuickSearchKey)
+            }
             let probe = FrameProbe(); probe.start()
             let mainQueue = MainQueueProbe(); mainQueue.start()
             // Ensure the background timer is armed before synchronous layout.
@@ -215,8 +249,16 @@ import PDFKit
             let line = try JSONEncoder().encode(sample)
             print("APP_PAGE_PERF|" + String(decoding: line, as: UTF8.self)); fflush(stdout)
             XCTAssertGreaterThan(host.view.bounds.width, 0)
+            if page.name.hasPrefix("video_") {
+                if let fullscreen = SharedVideoFullscreenHost.current(in: window) {
+                    fullscreen.dismiss(owner: fullscreen.owner)
+                    for _ in 0..<15 where SharedVideoFullscreenHost.current(in: window) != nil {
+                        try await Task.sleep(for: .milliseconds(20))
+                    }
+                }
+                MediaSession.shared.stop()
+            }
             window.rootViewController = nil
-            if page.name.hasPrefix("video_") { MediaSession.shared.stop() }
             try await Task.sleep(for: .milliseconds(30))
         }
         let environment = ProcessInfo.processInfo.environment

@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 enum VideoPlaybackPreferences {
@@ -6,7 +7,6 @@ enum VideoPlaybackPreferences {
         defaults.bool(forKey: takesOverWebPlayersKey)
     }
     static let showsToolsKey = "video.showsWebTools"
-    static let defaultPlayerKey = "video.defaultPlayer"
     static let holdSpeedKey = "video.holdSpeed"
     static let showsEpisodeDockKey = "video.showsEpisodeDock"
     // Presentation only: download transports and existing tasks never consult this key.
@@ -24,9 +24,6 @@ enum VideoPlaybackPreferences {
     }
     static func showsTools(in defaults: UserDefaults = .standard) -> Bool {
         defaults.object(forKey: showsToolsKey) == nil || defaults.bool(forKey: showsToolsKey)
-    }
-    static func usesSystemPlayer(in defaults: UserDefaults = .standard) -> Bool {
-        defaults.string(forKey: defaultPlayerKey) == "system"
     }
 }
 
@@ -59,5 +56,101 @@ struct VideoStartupWatch {
         guard !completed, requested else { since = nil; return false }
         if since == nil { since = now }
         return now - (since ?? now) >= 5
+    }
+}
+
+struct VideoProgressWatch {
+    private var checkpoint: (position: Double, lastMovement: ContinuousClock.Instant, lastActivity: ContinuousClock.Instant)?
+
+    mutating func stalled(at position: Double, requested: Bool, receivingData: Bool = false,
+                          now: ContinuousClock.Instant = .now) -> Bool {
+        guard requested, position.isFinite else { checkpoint = nil; return false }
+        guard var current = checkpoint, abs(position - current.position) < 0.05 else {
+            checkpoint = (position, now, now)
+            return false
+        }
+        if receivingData { current.lastActivity = now }
+        checkpoint = current
+        return current.lastActivity.duration(to: now) >= .seconds(12) || current.lastMovement.duration(to: now) >= .seconds(30)
+    }
+}
+
+enum VideoLoadingStatus: Equatable {
+    case rate(Int64)
+    case complete
+
+    var isTransferring: Bool {
+        if case .rate = self { return true }
+        return false
+    }
+
+    static func isOnline(_ url: URL) -> Bool {
+        ["http", "https"].contains(url.scheme?.lowercased() ?? "")
+    }
+
+    static func coversVideo(_ ranges: [CMTimeRange], duration: CMTime) -> Bool {
+        guard duration.isNumeric, duration > .zero else { return false }
+        var loadedThrough = CMTime.zero
+        for range in ranges.filter({ $0.start.isNumeric && $0.end.isNumeric && $0.duration > .zero })
+            .sorted(by: { $0.start < $1.start }) {
+            guard range.start <= loadedThrough else { break }
+            loadedThrough = max(loadedThrough, range.end)
+            if loadedThrough >= duration { return true }
+        }
+        return false
+    }
+}
+
+struct VideoCacheCoverage {
+    var ranges: [Range<Double>] = []
+    var fileFraction: Double?
+    var isComplete = false
+}
+
+struct VideoCacheProgress: Equatable {
+    var timeFractions: [Range<Double>] = []
+    var fileFraction: Double?
+
+    var coveredFraction: Double? {
+        if let fileFraction { return fileFraction }
+        guard !timeFractions.isEmpty else { return nil }
+        return min(1, timeFractions.reduce(0) { $0 + ($1.upperBound - $1.lowerBound) })
+    }
+
+    init(duration: Double = 0, buffered: [CMTimeRange] = [], cache: VideoCacheCoverage = .init()) {
+        fileFraction = cache.fileFraction
+        guard duration.isFinite, duration > 0 else { return }
+        if cache.isComplete { timeFractions = [0..<1]; return }
+
+        let times = buffered.compactMap { range -> Range<Double>? in
+            let start = range.start.seconds, end = range.end.seconds
+            guard start.isFinite, end.isFinite, start < end else { return nil }
+            return start..<end
+        } + cache.ranges
+        for range in times.sorted(by: { $0.lowerBound < $1.lowerBound }) {
+            let start = max(0, range.lowerBound / duration), end = min(1, range.upperBound / duration)
+            guard start < end else { continue }
+            if let last = timeFractions.last, start <= last.upperBound {
+                timeFractions[timeFractions.count - 1] = last.lowerBound..<max(last.upperBound, end)
+            } else {
+                timeFractions.append(start..<end)
+            }
+        }
+    }
+}
+
+struct VideoTransferMeter {
+    private var previous: (bytes: Int64, time: ContinuousClock.Instant)?
+
+    mutating func rate(totalBytes: Int64?, now: ContinuousClock.Instant = .now) -> VideoLoadingStatus? {
+        guard let totalBytes, totalBytes >= 0 else { previous = nil; return nil }
+        defer { previous = (totalBytes, now) }
+        guard let previous, totalBytes > previous.bytes else { return nil }
+        let elapsed = previous.time.duration(to: now).components
+        let seconds = Double(elapsed.seconds) + Double(elapsed.attoseconds) / 1e18
+        guard seconds > 0, let rate = Int64(exactly: (Double(totalBytes - previous.bytes) / seconds).rounded()) else {
+            return nil
+        }
+        return .rate(rate)
     }
 }

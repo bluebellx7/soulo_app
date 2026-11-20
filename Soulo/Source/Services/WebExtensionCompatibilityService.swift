@@ -4,6 +4,7 @@ import UserNotifications
 import WebKit
 import zlib
 import JavaScriptCore
+import CryptoKit
 
 /// Converts store packages into a private resource directory and installs a
 /// small compatibility layer before an extension's own background code runs.
@@ -52,7 +53,8 @@ enum WebExtensionPackagePreparer {
         } catch {
             BrowserStartupTrace.mark("extension_prepare_failure", detail: preparationStage + ":" + String(describing: error))
             try? fileManager.removeItem(at: destination)
-            throw error
+            if error is CancellationError || error is WebExtensionInstallationFailure { throw error }
+            throw WebExtensionInstallationFailure(stage: .package, underlying: error)
         }
     }
 
@@ -60,11 +62,25 @@ enum WebExtensionPackagePreparer {
         try validateResourceTree(in: resourceDirectory)
         let manifestURL = resourceDirectory.appendingPathComponent("manifest.json")
         guard let manifestData = try? Data(contentsOf: manifestURL),
-              var manifest = try JSONSerialization.jsonObject(with: manifestData) as? [String: Any]
+              var manifest = (try? JSONSerialization.jsonObject(with: manifestData)) as? [String: Any]
         else {
-            throw BrowserExtensionError.invalidExtension
+            throw WebExtensionInstallationFailure(stage: .manifest, underlying: BrowserExtensionError.invalidExtension)
         }
+        try requireBackgroundFiles(in: manifest, root: resourceDirectory)
         let originalManifest = manifest
+
+        // A declarative Chrome panel can use the same native presentation as
+        // extension popups on iPhone. Preserve any publisher-supplied popup.
+        if let panel = manifest["side_panel"] as? [String: Any],
+           let path = panel["default_path"] as? String,
+           var action = manifest["action"] as? [String: Any],
+           (action["default_popup"] as? String)?.isEmpty != false,
+           let page = try? resourceURL(path, in: resourceDirectory),
+           ["html", "htm"].contains(page.pathExtension.lowercased()),
+           (try? page.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true {
+            action["default_popup"] = String(path.drop(while: { $0 == "/" }))
+            manifest["action"] = action
+        }
 
         // Chrome's explicit wildcard ports are not portable to WebKit.
         // Omitting the port already matches every port; fixed ports stay intact.
@@ -82,6 +98,7 @@ enum WebExtensionPackagePreparer {
            let worker = background["service_worker"] as? String,
            (background["type"] as? String)?.lowercased() != "module" {
             let original = try originalWorkerURL(worker, isModule: false, in: resourceDirectory)
+            try repairImageyePopupSelection(worker: original, manifest: manifest)
             // Keep the already verified publisher-specific migration intact.
             if try !WebExtensionTampermonkeyAdapter.prepare(worker: original, root: resourceDirectory, manifest: &manifest) {
                 try installClassicBackground(in: resourceDirectory, worker: original, manifest: &manifest)
@@ -94,11 +111,16 @@ enum WebExtensionPackagePreparer {
         let needsOffscreen = declaredPermissions.contains("offscreen")
         let needsDownloads = declaredPermissions.contains("downloads")
         let needsUserScripts = declaredPermissions.contains("userScripts")
+        let needsProxy = declaredPermissions.contains("proxy")
+        let hasRequiredHosts = (manifest["host_permissions"] as? [String])?.isEmpty == false
+            || permissions.contains { $0 == "<all_urls>" || $0.contains("://") }
+        let needsTabMetadata = declaredPermissions.contains("tabs") && !hasRequiredHosts
         if needsDownloads || needsUserScripts || manifest["commands"] != nil || needsNotifications || needsOffscreen {
             try Data("<!doctype html><meta charset='utf-8'><title>Download</title>".utf8)
                 .write(to: resourceDirectory.appendingPathComponent(WebExtensionDownloadsScript.helperFilename), options: .atomic)
         }
-        guard needsNotifications || needsOffscreen || needsDownloads || needsUserScripts || manifest["commands"] != nil else {
+        guard needsNotifications || needsOffscreen || needsDownloads || needsUserScripts || needsProxy
+                || needsTabMetadata || manifest["commands"] != nil else {
             // Plain packages need no manifest rewrite. Preserve their original
             // bytes while still persisting actual worker/port migrations.
             if !(manifest as NSDictionary).isEqual(originalManifest as NSDictionary) {
@@ -189,55 +211,58 @@ enum WebExtensionPackagePreparer {
 
     private static let nativeBindingsFilename = "__soulo_webextension_native_bindings.js"
 
+    private static func repairImageyePopupSelection(worker: URL, manifest: [String: Any]) throws {
+        guard manifest["version"] as? String == "7.5.7", worker.lastPathComponent == "background.js",
+              let source = try? Data(contentsOf: worker), source.count == 37_080,
+              SHA256.hash(data: source).map({ String(format: "%02x", $0) }).joined()
+                == "9dfd9af7109cdd31646eeb24217966918430cad3b00a19af6fce2953e48ddaaf"
+        else { return }
+        // The publisher's fallback selects popup mode when sidePanel is
+        // unavailable. Its subsequent tab query can clear that popup using
+        // the saved desktop display mode. Keep the original capability check.
+        let original = Data(#"case 8:"sidePanel"===(r=e.sent)?chrome.action.setPopup({popup:""}):m(t[0].id,r)"#.utf8)
+        let corrected = Data(#"case 8:"sidePanel"===(r=e.sent)&&globalThis.canDisplayInSidePanel?chrome.action.setPopup({popup:""}):m(t[0].id,r)"#.utf8)
+        guard let range = source.range(of: original) else { return }
+        var updated = source
+        updated.replaceSubrange(range, with: corrected)
+        try updated.write(to: worker, options: .atomic)
+    }
+
     /// Classic workers with a literal, initial import list can run as an event
     /// page without evaluating or rewriting their program. Dynamic imports,
     /// modules and service-worker-only APIs keep their native execution path.
     private static func installClassicBackground(in root: URL, worker: URL, manifest: inout [String: Any]) throws {
-        let prefix = try NSRegularExpression(pattern: #"(?s)\A\s*(?:(?://[^\n]*(?:\n|$)|/\*.*?\*/)\s*)*(?:(if)\s*\(\s*typeof\s+[A-Za-z_$][\w$]*\s*={2,3}\s*(['"])undefined\2\s*\)\s*\{\s*)?importScripts\s*\(([^)]*)\)\s*;?\s*"#)
-        let literal = try NSRegularExpression(pattern: #"(['"])([A-Za-z0-9_./@+\-]+)\1"#)
-        let calls = try NSRegularExpression(pattern: #"\bimportScripts\s*\("#)
-        let workerOnly = try NSRegularExpression(pattern: #"\b(?:ServiceWorkerGlobalScope|skipWaiting|clients|registration|caches)\b"#)
+        guard let initial = try? String(contentsOf: worker, encoding: .utf8),
+              initial.utf8.count <= 8_000_000, initial.contains("importScripts"), let parser = WebExtensionClassicImports.makeParser(),
+              let firstImports = parser.call(withArguments: [initial])?.toArray() as? [String],
+              !firstImports.isEmpty else { return }
         let base = root.resolvingSymlinksInPath().standardizedFileURL
         func relative(_ file: URL) -> String { String(file.standardizedFileURL.path.dropFirst(base.path.count + 1)) }
-        func imports(_ source: String) -> [String]? {
-            let range = NSRange(source.startIndex..., in: source)
-            guard calls.numberOfMatches(in: source, range: range) == 1,
-                  let match = prefix.firstMatch(in: source, range: range),
-                  let arguments = Range(match.range(at: 3), in: source) else { return nil }
-            if match.range(at: 1).location != NSNotFound {
-                guard let end = Range(match.range, in: source)?.upperBound,
-                      source[end...].first == "}" else { return nil }
-            }
-            let values = String(source[arguments])
-            let matches = literal.matches(in: values, range: NSRange(values.startIndex..., in: values))
-            let remainder = literal.stringByReplacingMatches(in: values, range: NSRange(values.startIndex..., in: values), withTemplate: "")
-            guard !matches.isEmpty,
-                  String(remainder.filter { !$0.isWhitespace }) == String(repeating: ",", count: matches.count - 1) else { return nil }
-            return matches.compactMap { Range($0.range(at: 2), in: values).map { String(values[$0]) } }
-        }
-        guard let initial = try? String(contentsOf: worker, encoding: .utf8), imports(initial) != nil else { return }
-        var ordered: [URL] = [], visiting = Set<URL>(), loaded = Set<URL>()
-        func visit(_ file: URL) throws -> Bool {
+        var ordered: [URL] = [], discovered = Set<URL>()
+        var remainingBytes = 8_000_000 - initial.utf8.count
+        func visit(_ file: URL, knownImports: [String]? = nil) throws -> Bool {
             let file = file.resolvingSymlinksInPath().standardizedFileURL
-            guard file.path.hasPrefix(base.path + "/"), !visiting.contains(file), ordered.count < 128,
-                  let source = try? String(contentsOf: file, encoding: .utf8), source.utf8.count <= 8_000_000,
-                  workerOnly.firstMatch(in: source, range: NSRange(source.startIndex..., in: source)) == nil else { return false }
             // Re-importing a script can intentionally repeat side effects.
             // Leave those programs on their original native worker path.
-            if loaded.contains(file) { return false }
-            visiting.insert(file); defer { visiting.remove(file) }
-            if calls.firstMatch(in: source, range: NSRange(source.startIndex..., in: source)) != nil {
-                guard let dependencies = imports(source) else { return false }
-                for reference in dependencies {
-                    let next: URL
-                    if reference.hasPrefix("/") { next = base.appendingPathComponent(String(reference.dropFirst())) }
-                    else { next = worker.deletingLastPathComponent().appendingPathComponent(reference) }
-                    guard try visit(next) else { return false }
-                }
+            guard file.path.hasPrefix(base.path + "/"), discovered.count < 128, discovered.insert(file).inserted else { return false }
+            let dependencies: [String]
+            if let knownImports {
+                dependencies = knownImports
+            } else {
+                guard let source = try? String(contentsOf: file, encoding: .utf8), source.utf8.count <= remainingBytes,
+                      let imports = parser.call(withArguments: [source])?.toArray() as? [String] else { return false }
+                remainingBytes -= source.utf8.count
+                dependencies = imports
             }
-            loaded.insert(file); ordered.append(file); return true
+            for reference in dependencies {
+                let next = reference.hasPrefix("/") ? base.appendingPathComponent(String(reference.dropFirst()))
+                    : worker.deletingLastPathComponent().appendingPathComponent(reference)
+                guard try visit(next) else { return false }
+            }
+            ordered.append(file)
+            return true
         }
-        guard try visit(worker) else { return }
+        guard try visit(worker, knownImports: firstImports) else { return }
         let paths = ordered.map(relative)
         let encoded = String(decoding: try JSONEncoder().encode(paths), as: UTF8.self)
         let entry = String(decoding: try JSONEncoder().encode(relative(worker)), as: UTF8.self)
@@ -266,9 +291,55 @@ enum WebExtensionPackagePreparer {
       const retained=globalThis.__souloNativeBindingsObjects||(globalThis.__souloNativeBindingsObjects=[]);
       for(const namespace of [globalThis.chrome,globalThis.browser]){
         if(!namespace)continue;
-        for(const object of [namespace,...['i18n','tabs','runtime','webRequest','webNavigation','scripting'].map(key=>namespace[key])]){
+        for(const object of [namespace,...['i18n','tabs','runtime','permissions','webRequest','webNavigation','scripting'].map(key=>namespace[key])]){
           if(object&&!retained.includes(object))retained.push(object);
         }
+        const installEnum=(object,name,values)=>{
+          if(!object||object[name])return;
+          try{Object.defineProperty(object,name,{value:Object.freeze(values),configurable:true,enumerable:true});}catch(_){}
+        };
+        installEnum(namespace.runtime,'OnInstalledReason',{
+          INSTALL:'install',UPDATE:'update',CHROME_UPDATE:'chrome_update',SHARED_MODULE_UPDATE:'shared_module_update'
+        });
+        const runtime = namespace.runtime;
+        if (runtime && !runtime.onUpdateAvailable) {
+          // Soulo installs extension updates after review. It has no staged,
+          // background update to announce through Chrome's event.
+          const listeners = new Set();
+          try { Object.defineProperty(runtime, 'onUpdateAvailable', {configurable:true, value:{
+            addListener(listener) { if (typeof listener === 'function') listeners.add(listener); },
+            removeListener(listener) { listeners.delete(listener); },
+            hasListener(listener) { return listeners.has(listener); },
+            hasListeners() { return listeners.size > 0; }
+          }}); } catch (_) {}
+        }
+        const permissions = namespace.permissions;
+        const contains = permissions?.contains;
+        if (typeof contains === 'function' && !contains.__souloPrivacyQuery) {
+          // Older WebKit rejects Chrome's unsupported optional privacy
+          // permission synchronously. A read-only query can report it absent.
+          // Preserve native validation and all grants, requests and events.
+          const wrapped = function(request, callback) {
+            try { return Reflect.apply(contains, permissions, arguments); }
+            catch (error) {
+              const privacyOnly = request && Object.keys(request).length === 1
+                && Array.isArray(request.permissions) && request.permissions.length === 1
+                && request.permissions[0] === 'privacy';
+              if (!privacyOnly || namespace.privacy || arguments.length > 2
+                  || (callback !== undefined && typeof callback !== 'function')
+                  || !String(error).includes("'privacy' is not a valid permission")) throw error;
+              if (callback) { queueMicrotask(() => callback(false)); return; }
+              return Promise.resolve(false);
+            }
+          };
+          Object.defineProperty(wrapped, '__souloPrivacyQuery', {value:true});
+          try { Object.defineProperty(permissions, 'contains', {configurable:true, writable:true, value:wrapped}); } catch (_) {}
+        }
+        installEnum(namespace.webRequest,'ResourceType',{
+          MAIN_FRAME:'main_frame',SUB_FRAME:'sub_frame',STYLESHEET:'stylesheet',SCRIPT:'script',IMAGE:'image',
+          FONT:'font',OBJECT:'object',XMLHTTPREQUEST:'xmlhttprequest',PING:'ping',CSP_REPORT:'csp_report',
+          MEDIA:'media',WEBSOCKET:'websocket',WEBTRANSPORT:'webtransport',WEBBUNDLE:'webbundle',OTHER:'other'
+        });
       }
       for(const api of [globalThis.chrome?.i18n,globalThis.browser?.i18n]){
         if(!api)continue;
@@ -535,6 +606,34 @@ enum WebExtensionPackagePreparer {
         return target
     }
 
+    private static func requireBackgroundFiles(in manifest: [String: Any], root: URL) throws {
+        guard let background = manifest["background"] as? [String: Any] else { return }
+        var files = (background["scripts"] as? [String] ?? []) + [background["page"] as? String].compactMap { $0 }
+        if let worker = background["service_worker"] as? String {
+            files.append(worker)
+            // Prepared packages can point at a generated bootstrap on disk.
+            // Check its publisher entry point as well.
+            do {
+                let original = try originalWorkerURL(worker, isModule: background["type"] as? String == "module", in: root)
+                if original.lastPathComponent != worker.split(separator: "/").last.map(String.init) {
+                    files.append(String(original.path.dropFirst(root.resolvingSymlinksInPath().standardizedFileURL.path.count + 1)))
+                }
+            } catch {
+                throw WebExtensionInstallationFailure(stage: .background(worker), underlying: error)
+            }
+        }
+        for path in files {
+            do {
+                let file = try resourceURL(path, in: root)
+                guard try file.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true else {
+                    throw CocoaError(.fileNoSuchFile)
+                }
+            } catch {
+                throw WebExtensionInstallationFailure(stage: .background(path), underlying: error)
+            }
+        }
+    }
+
     private static func originalWorkerURL(_ reference: String, isModule: Bool, in root: URL) throws -> URL {
         let wrapperURL = try resourceURL(reference, in: root)
         guard wrapperURL.lastPathComponent.hasPrefix("__soulo_webextension_background_"),
@@ -666,6 +765,84 @@ enum WebExtensionPackagePreparer {
         } catch (error) { failed(error); }
         return typeof callback === 'function' ? undefined : promise;
       };
+      const manifest = chrome.runtime.getManifest?.() || {};
+      const declaredPermissions = [...(manifest.permissions || []), ...(manifest.optional_permissions || [])];
+      const hasRequiredHosts = !!manifest.host_permissions?.length
+        || (manifest.permissions || []).some(value => value === '<all_urls>' || value.includes('://'));
+      if (declaredPermissions.includes('tabs') && !hasRequiredHosts) {
+        for (const tabs of new Set([chrome.tabs, root.browser?.tabs])) {
+          if (!tabs?.query) continue;
+          const query = tabs.query.bind(tabs);
+          // WebKit can return a tab ID while withholding its URL when only
+          // the Chrome tabs permission was granted. Match the original tab
+          // IDs against a fresh native enumeration before filling fields.
+          const enrich = async value => {
+            const items = Array.isArray(value) ? value : [value];
+            const missing = items.filter(tab => tab && !tab.incognito && !tab.url
+              && Number.isInteger(tab.index) && Number.isSafeInteger(tab.id));
+            if (!missing.length) return value;
+            try {
+              const data = await native({souloCompatibility:1, api:'tabMetadata',
+                indexes:missing.map(tab => tab.index)});
+              if (!Array.isArray(data) || !data.length) return value;
+              const live = new Map((await query({})).map(tab => [tab.id,tab]));
+              const metadata = new Map(data.map(tab => [tab.index,tab]));
+              for (const tab of missing) {
+                const current = live.get(tab.id), entry = metadata.get(tab.index);
+                if (!entry || !current || current.incognito || current.index !== tab.index
+                    || current.windowId !== tab.windowId || current.active !== entry.active) continue;
+                tab.url = current.url || entry.url;
+                if (!tab.title && entry.title) tab.title = entry.title;
+              }
+            } catch (_) {}
+            return value;
+          };
+          for (const method of ['query','get','getCurrent']) {
+            if (typeof tabs[method] !== 'function' || tabs[method].__souloTabMetadata) continue;
+            const original = tabs[method];
+            const wrapped = function(...args) {
+              const callback = typeof args.at(-1) === 'function' ? args.pop() : null;
+              if (!callback) return Reflect.apply(original,tabs,args).then(enrich);
+              return Reflect.apply(original,tabs,[...args,value => {
+                if (chrome.runtime.lastError || value == null) callback(value);
+                else enrich(value).then(callback);
+              }]);
+            };
+            Object.defineProperty(wrapped,'__souloTabMetadata',{value:true});
+            try { Object.defineProperty(tabs,method,{value:wrapped,configurable:true,writable:true}); } catch (_) {}
+          }
+        }
+      }
+      if (declaredPermissions.includes('proxy') && !chrome.proxy?.settings) {
+        // No extension owns the system proxy. Listeners may register, but
+        // Soulo cannot report route changes or failures it does not observe.
+        const readOnlyEvent = () => {
+          const listeners = new Set();
+          return {
+            addListener(listener) { if (typeof listener === 'function') listeners.add(listener); },
+            removeListener(listener) { listeners.delete(listener); },
+            hasListener(listener) { return listeners.has(listener); },
+            hasListeners() { return listeners.size > 0; }
+          };
+        };
+        const settings = {
+          get(details, callback) {
+            return native({souloCompatibility:1, api:'proxy', operation:'get'}, callback);
+          },
+          set(details, callback) {
+            return native({souloCompatibility:1, api:'proxy', operation:'set'}, callback);
+          },
+          clear(details, callback) {
+            return native({souloCompatibility:1, api:'proxy', operation:'clear'}, callback);
+          },
+          onChange: readOnlyEvent()
+        };
+        const proxy = chrome.proxy || {};
+        setIfMissing(proxy, 'settings', settings);
+        setIfMissing(proxy, 'onProxyError', readOnlyEvent());
+        setIfMissing(chrome, 'proxy', proxy);
+        if (root.browser && root.browser !== chrome) setIfMissing(root.browser, 'proxy', proxy);
+      }
       \#(WebExtensionDownloadsScript.javaScript)
       \#(WebExtensionUserScriptsScript.javaScript)
       // WebKit can report install again when a context is re-created. All
@@ -817,8 +994,6 @@ enum WebExtensionPackagePreparer {
       // iOS. Keep its public message/storage contract intact in extension
       // pages so the original panel, options and persistence continue to work.
       // The command check deliberately limits this adapter to Tomato Clock.
-      const manifest = typeof chrome.runtime.getManifest === 'function'
-        ? chrome.runtime.getManifest() : {};
       const usesTomatoTimerContract = !!(manifest.commands && manifest.commands['start-tomato']
         && manifest.commands['start-short-break'] && manifest.commands['start-long-break']);
       const localStorageArea = chrome.storage && chrome.storage.local;
@@ -1644,6 +1819,7 @@ final class WebExtensionCompatibilityHost {
         access: WebExtensionAccess? = nil,
         webView: WKWebView? = nil,
         blobSources: [WKWebView] = [],
+        tabMetadata: ([Int]) -> [[String: Any]] = { _ in [] },
         replyHandler: @escaping (Any?, Error?) -> Void
     ) -> Bool {
         guard applicationIdentifier == Self.applicationIdentifier,
@@ -1651,6 +1827,12 @@ final class WebExtensionCompatibilityHost {
               (values["souloCompatibility"] as? Int) == 1,
               let api = values["api"] as? String else { return false }
         switch api {
+        case "tabMetadata":
+            guard hasPermission("tabs", context: context, access: access),
+                  let indexes = values["indexes"] as? [Int] else {
+                replyHandler(nil, NativeWebExtensionCompatibilityError.missingPermission("tabs")); return true
+            }
+            replyHandler(tabMetadata(indexes), nil)
         case "userScripts":
             guard hasPermission("userScripts", context: context, access: access), let resourceURL else {
                 replyHandler(nil, NativeWebExtensionCompatibilityError.missingPermission("userScripts")); return true
@@ -1703,6 +1885,15 @@ final class WebExtensionCompatibilityHost {
                 return true
             }
             handleOffscreen(values, context: context, resourceURL: resourceURL, access: access, replyHandler: replyHandler)
+        case "proxy":
+            guard hasPermission("proxy", context: context, access: access) else {
+                replyHandler(nil, NativeWebExtensionCompatibilityError.missingPermission("proxy")); return true
+            }
+            if values["operation"] as? String == "get" {
+                replyHandler(["value": ["mode": "system"], "levelOfControl": "not_controllable"], nil)
+            } else {
+                replyHandler(nil, NativeWebExtensionCompatibilityError.unsupportedAPI)
+            }
         case "notifications":
             guard hasPermission("notifications", context: context, access: access) else {
                 replyHandler(nil, NativeWebExtensionCompatibilityError.missingPermission("notifications"))
@@ -1985,19 +2176,21 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
     }
     private var subscriptions: [ObjectIdentifier: MessageSubscription] = [:]
     private struct PendingReply {
-        let owner: String
+        let source: MessageEndpoint
         let reply: (Any?, Error?) -> Void
         let deadline: Task<Void, Never>
+        var receivers: Set<ObjectIdentifier>
+        var receiverError: Error? = nil
     }
     private var replies: [String: PendingReply] = [:]
-    private struct UserChannel {
+    private struct MessageEndpoint {
         let owner: String
         let worldID: String
         let nonce: String
         let frame: LocatedFrame
         let world: WKContentWorld
     }
-    private var channels: [String: UserChannel] = [:]
+    private var channels: [String: MessageEndpoint] = [:]
     private var worlds: [String: (owner: String, id: String, csp: String)] = [:]
     static let portIdentifier = WebExtensionCompatibilityHost.applicationIdentifier + ".userScripts"
     private var injected: [WKUserScript] = []
@@ -2054,7 +2247,7 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
         entries.removeValue(forKey: owner)
         executionHost.remove(owner: owner)
         for (id, channel) in Array(channels) where channel.owner == owner { closeChannel(id, error: "The extension was disabled.") }
-        for (id, pending) in Array(replies) where pending.owner == owner { finishReply(id, value: nil, error: Self.failure("The extension was disabled.")) }
+        for (id, pending) in Array(replies) where pending.source.owner == owner { finishReply(id, value: nil, error: Self.failure("The extension was disabled.")) }
         for (key, subscription) in Array(subscriptions) where subscription.owner == owner {
             subscriptions.removeValue(forKey: key); subscription.port.disconnect()
         }
@@ -2168,11 +2361,18 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
         return raw
     }
     private static func conditions(_ patterns: [String]) -> [String] { patterns.compactMap(UserScriptURLMatcher.regularExpression) }
+    private func allowsMessaging(from source: MessageEndpoint) -> Bool {
+        guard let entry = entries[source.owner], let web = source.frame.webView,
+              entry.worlds[source.worldID]?["messaging"] as? Bool == true else { return false }
+        return Self.allowed(entry, frame: source.frame.info, webView: web)
+    }
+
     private func rebuild() {
-        for (id, channel) in Array(channels) {
-            guard let entry = entries[channel.owner], let web = channel.frame.webView,
-                  entry.worlds[channel.worldID]?["messaging"] as? Bool == true,
-                  Self.allowed(entry, frame: channel.frame.info, webView: web) else { closeChannel(id, error: "User script permission was revoked."); continue }
+        for (id, channel) in Array(channels) where !allowsMessaging(from: channel) {
+            closeChannel(id, error: "User script permission was revoked.")
+        }
+        for (id, pending) in Array(replies) where !allowsMessaging(from: pending.source) {
+            finishReply(id, value: nil, error: Self.failure("User script permission was revoked."))
         }
         if entries.isEmpty { executionHost.close() }
         let previous = Set(injected.map(ObjectIdentifier.init)); var next: [WKUserScript] = []
@@ -2335,8 +2535,11 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
         subscriptions[key] = MessageSubscription(owner: owner, port: port)
         port.disconnectHandler = { [weak self] _ in
             guard let self else { return }; self.subscriptions[key] = nil
+            let error = Self.failure("The extension message receiver disconnected.")
+            for (id, pending) in Array(self.replies) where pending.receivers.contains(key) {
+                self.receiverFinished(key, for: id, error: error)
+            }
             if !self.subscriptions.values.contains(where: { $0.owner == owner }) {
-                for (id, _) in self.replies where self.replies[id]?.owner == owner { self.finishReply(id, value: nil, error: Self.failure("The extension message receiver disconnected.")) }
                 for (id, channel) in Array(self.channels) where channel.owner == owner { self.closeChannel(id, error: "The extension message receiver disconnected.") }
             }
         }
@@ -2350,8 +2553,13 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
             guard let id = packet["id"] as? String else { return }
             switch packet["operation"] as? String {
             case "reply":
-                guard self.replies[id]?.owner == owner else { return }
+                guard let pending = self.replies[id], pending.receivers.contains(key) else { return }
+                guard self.allowsMessaging(from: pending.source) else {
+                    self.finishReply(id, value: nil, error: Self.failure("User script permission was revoked.")); return
+                }
                 self.finishReply(id, value: packet["value"] ?? NSNull(), error: (packet["error"] as? String).map(Self.failure))
+            case "ignored":
+                self.receiverFinished(key, for: id)
             case "post":
                 guard let channel = self.channels[id], channel.owner == owner else { return }
                 self.deliver(id, packet: ["operation": "message", "id": id, "value": packet["value"] ?? NSNull()], channel: channel)
@@ -2367,16 +2575,29 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
         guard let pending = replies.removeValue(forKey: id) else { return }
         pending.deadline.cancel(); pending.reply(value, error)
     }
-    private func waitForReceiver(owner: String, connection: Bool) async throws {
+    private func receiverFinished(_ key: ObjectIdentifier, for id: String, error: Error? = nil) {
+        guard var pending = replies[id], pending.receivers.remove(key) != nil else { return }
+        pending.receiverError = pending.receiverError ?? error
+        replies[id] = pending
+        if pending.receivers.isEmpty {
+            finishReply(id, value: pending.receiverError == nil ? NSNull() : nil, error: pending.receiverError)
+        }
+    }
+    private func waitForReceiver(owner: String, connection: Bool) async throws -> [ObjectIdentifier: MessageSubscription] {
         for attempt in 0..<12 {
-            if subscriptions.values.contains(where: { $0.owner == owner && !$0.port.isDisconnected && (connection ? $0.receivesConnections : $0.receivesMessages) }) { return }
-            if attempt > 0 && !subscriptions.values.contains(where: { $0.owner == owner && !$0.port.isDisconnected }) { break }
+            let available = subscriptions.filter { $0.value.owner == owner && !$0.value.port.isDisconnected }
+            let receivers = available.filter { connection ? $0.value.receivesConnections : $0.value.receivesMessages }
+            if !receivers.isEmpty { return receivers }
+            if attempt > 0 && available.isEmpty { break }
             try await Task.sleep(for: .milliseconds(20))
         }
         throw Self.failure("Could not establish connection. Receiving end does not exist.")
     }
     func detach(_ webView: WKWebView) {
         for (id, channel) in Array(channels) where channel.frame.webView === webView { closeChannel(id, error: "The user script tab was closed.") }
+        for (id, pending) in Array(replies) where pending.source.frame.webView === webView {
+            finishReply(id, value: nil, error: Self.failure("The user script tab was closed."))
+        }
     }
     private func send(_ owner: String, packet: [String: Any]) throws {
         let operation = packet["operation"] as? String
@@ -2387,10 +2608,8 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
         guard !ports.isEmpty else { throw Self.failure("Could not establish connection. Receiving end does not exist.") }
         for receiver in ports { receiver.port.sendMessage(packet, completionHandler: nil) }
     }
-    private func deliver(_ id: String, packet: [String: Any], channel: UserChannel) {
-        guard let web = channel.frame.webView, let entry = entries[channel.owner],
-              entry.worlds[channel.worldID]?["messaging"] as? Bool == true,
-              Self.allowed(entry, frame: channel.frame.info, webView: web) else { closeChannel(id, error: "User script permission was revoked."); return }
+    private func deliver(_ id: String, packet: [String: Any], channel: MessageEndpoint) {
+        guard let web = channel.frame.webView, allowsMessaging(from: channel) else { closeChannel(id, error: "User script permission was revoked."); return }
         Task { @MainActor [weak self] in
             do { _ = try await web.callAsyncJavaScript("if(globalThis.__souloUserScriptEndpoint!==nonce)throw Error('Document changed');globalThis.__souloUserScriptDeliver(packet);return true;", arguments: ["nonce": channel.nonce, "packet": packet], in: channel.frame.info, contentWorld: channel.world) }
             catch { self?.closeChannel(id, error: "The user script document was closed.") }
@@ -2436,6 +2655,9 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
               let nonce = packet["nonce"] as? String, UUID(uuidString: nonce) != nil else { replyHandler(nil, "User script permission was denied."); return }
         if operation == "pagehide" {
             for (id, channel) in Array(channels) where channel.owner == configured.owner && channel.nonce == nonce { closeChannel(id, error: "The document was closed.") }
+            for (id, pending) in Array(replies) where pending.source.owner == configured.owner && pending.source.nonce == nonce {
+                finishReply(id, value: nil, error: Self.failure("The document was closed."))
+            }
             replyHandler(true, nil); return
         }
         guard entry.worlds[configured.id]?["messaging"] as? Bool == true,
@@ -2455,8 +2677,10 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
                 let (frame, tab) = try await self.identify(web, nonce: nonce, world: message.world, entry: entry)
                 guard let current = self.entries[configured.owner], Self.allowed(current, frame: frame.info, webView: web),
                       current.worlds[configured.id]?["messaging"] as? Bool == true else { throw Self.failure("User script messaging permission was revoked.") }
-                try await self.waitForReceiver(owner: configured.owner, connection: operation == "connect")
-                guard let latest = self.entries[configured.owner], Self.allowed(latest, frame: frame.info, webView: web), latest.worlds[configured.id]?["messaging"] as? Bool == true else { throw Self.failure("User script messaging permission was revoked.") }
+                let receivers = try await self.waitForReceiver(owner: configured.owner, connection: operation == "connect")
+                let source = MessageEndpoint(owner: configured.owner, worldID: configured.id, nonce: nonce, frame: frame, world: message.world)
+                guard self.allowsMessaging(from: source) else { throw Self.failure("User script messaging permission was revoked.") }
+                guard self.replies.count < 128, self.channels.count < 128 else { throw Self.failure("Too many active user script requests.") }
                 var origin = URLComponents(); origin.scheme = frame.info.securityOrigin.protocol; origin.host = frame.info.securityOrigin.host
                 let port = frame.info.securityOrigin.port
                 if port > 0 && !(origin.scheme == "http" && port == 80) && !(origin.scheme == "https" && port == 443) { origin.port = port }
@@ -2464,7 +2688,7 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
                     "tab": tab, "frameId": frame.frameID, "documentId": frame.documentID, "documentLifecycle": "active", "userScriptWorldId": configured.id]
                 if operation == "connect" {
                     guard let id = packet["id"] as? String, UUID(uuidString: id) != nil, self.channels[id] == nil else { throw Self.failure("Invalid user script port.") }
-                    self.channels[id] = UserChannel(owner: configured.owner, worldID: configured.id, nonce: nonce, frame: frame, world: message.world)
+                    self.channels[id] = source
                     do { try self.send(configured.owner, packet: ["operation": "connect", "id": id, "name": packet["name"] as? String ?? "", "sender": sender]) }
                     catch { self.channels[id] = nil; throw error }
                     replyHandler(true, nil)
@@ -2474,12 +2698,15 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
                         try? await Task.sleep(for: .seconds(15)); guard !Task.isCancelled else { return }
                         self?.finishReply(id, value: nil, error: Self.failure("The user script message timed out."))
                     }
-                    self.replies[id] = PendingReply(owner: configured.owner, reply: { [weak self, weak web] value, error in
-                        guard let self, let web, let active = self.entries[configured.owner], Self.allowed(active, frame: frame.info, webView: web), active.worlds[configured.id]?["messaging"] as? Bool == true else { replyHandler(nil, "User script permission was revoked."); return }
+                    self.replies[id] = PendingReply(source: source, reply: { value, error in
                         replyHandler(value, error?.localizedDescription)
-                    }, deadline: deadline)
-                    do { try self.send(configured.owner, packet: ["operation": "send", "id": id, "value": packet["value"] ?? NSNull(), "sender": sender]) }
-                    catch { self.finishReply(id, value: nil, error: error) }
+                    }, deadline: deadline, receivers: Set(receivers.keys))
+                    let request: [String: Any] = ["operation": "send", "id": id, "value": packet["value"] ?? NSNull(), "sender": sender]
+                    for (key, receiver) in receivers {
+                        receiver.port.sendMessage(request) { [weak self] error in
+                            if let error { self?.receiverFinished(key, for: id, error: error) }
+                        }
+                    }
                 }
             } catch { replyHandler(nil, error.localizedDescription) }
         }
@@ -2528,7 +2755,7 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
             define('chrome',Object.freeze({runtime}));define('browser',globalThis.chrome);
           };
           define('__souloUserScriptEnableMessaging',enable);if(\#(messaging))enable();
-          addEventListener('pagehide',()=>{call({operation:'pagehide'}).catch(()=>{});},{once:true});
+          addEventListener('pagehide',()=>{call({operation:'pagehide'}).catch(()=>{});});
         })();
         """#
     }
@@ -2625,13 +2852,13 @@ private enum WebExtensionUserScriptsScript {
             const reply=value=>{if(!settled){settled=true;post({operation:'reply',id:packet.id,value:value??null});}};
             const fail=error=>{if(!settled){settled=true;post({operation:'reply',id:packet.id,error:String(error?.message??error)});}};
             const listeners=receivers.onUserScriptMessage?.listeners;
-            if(!listeners?.size){fail('Could not establish connection. Receiving end does not exist.');return;}
+            if(!listeners?.size){post({operation:'ignored',id:packet.id});return;}
             for(const listener of listeners){try{
               const response=listener(packet.value,packet.sender,reply);
               if(response===true)waiting=true;
               else if(response&&typeof response.then==='function'){waiting=true;response.then(reply,fail);}
             }catch(error){fail(error);}}
-            if(!waiting&&!settled)reply(undefined);
+            if(!waiting&&!settled)post({operation:'ignored',id:packet.id});
           }else if(packet.operation==='connect'){
             const listeners=receivers.onUserScriptConnect?.listeners;
             if(!listeners?.size){post({operation:'disconnect',id:packet.id});return;}
@@ -2788,6 +3015,69 @@ private final class WebExtensionUserScriptExecutionHost {
         view?.stopLoading(); view = nil; container?.removeFromSuperview(); container = nil
         if let context, let controller = context.webExtensionController { try? controller.unload(context) }; context = nil
         if let directory { try? FileManager.default.removeItem(at: directory) }; directory = nil
+    }
+}
+
+private enum WebExtensionClassicImports {
+    static func makeParser() -> JSValue? {
+        guard let url = Bundle.main.url(forResource: "acorn-8.15.0", withExtension: "js"),
+              let engine = try? String(contentsOf: url, encoding: .utf8), let context = JSContext() else { return nil }
+        context.evaluateScript(engine)
+        return context.evaluateScript(#"""
+        (function(source){
+          try {
+            if(source.length>8000000)return null;
+            const program=acorn.parse(source,{ecmaVersion:'latest',sourceType:'script'});
+            const imports=[], accepted=new Set();
+            const workerOnly=new Set(['ServiceWorkerGlobalScope','WorkerGlobalScope','skipWaiting','clients','registration','caches','oninstall','onactivate','onfetch']);
+            function literal(node){
+              if(node.type==='Literal')return node.value;
+              if(node.type==='TemplateLiteral'&&!node.expressions.length)return node.quasis[0].value.cooked;
+              return null;
+            }
+            function call(statement){
+              const node=statement?.type==='ExpressionStatement'&&statement.expression;
+              return node?.type==='CallExpression'&&!node.optional&&node.callee.type==='Identifier'&&node.callee.name==='importScripts' ? node : null;
+            }
+            // Chrome packages also use a guard for a helper that supplies a global.
+            function guardedCall(statement){
+              if(statement.type!=='IfStatement'||statement.alternate||statement.consequent.type!=='BlockStatement'||statement.consequent.body.length!==1)return null;
+              const test=statement.test;
+              if(test.type!=='BinaryExpression'||!['===','=='].includes(test.operator)||test.left.type!=='UnaryExpression'||
+                 test.left.operator!=='typeof'||test.left.argument.type!=='Identifier'||test.left.argument.name==='importScripts'||test.right.value!=='undefined')return null;
+              return call(statement.consequent.body[0]);
+            }
+            for(const statement of program.body){
+              if(statement.directive||statement.type==='EmptyStatement')continue;
+              const direct=call(statement), entry=direct||(!accepted.size&&guardedCall(statement));
+              if(!entry)break;
+              if(!entry.arguments.length)return null;
+              for(const argument of entry.arguments) {
+                const path=literal(argument);
+                if(typeof path!=='string'||!/^[A-Za-z0-9_./@+\-]+$/.test(path)||path.startsWith('//'))return null;
+                imports.push(path);
+              }
+              accepted.add(entry.callee);
+              if(!direct)break;
+            }
+            const queue=[program];
+            while(queue.length){
+              const node=queue.pop();
+              if(node.type==='Identifier'&&(workerOnly.has(node.name)||node.name==='importScripts'&&!accepted.has(node)))return null;
+              const value=literal(node);
+              if(workerOnly.has(value)||value==='importScripts')return null;
+              if(node.type==='CallExpression'&&node.arguments.length&&
+                 (node.callee.name==='addEventListener'||node.callee.property?.name==='addEventListener'||node.callee.property&&literal(node.callee.property)==='addEventListener')&&
+                 ['install','activate','fetch'].includes(literal(node.arguments[0])))return null;
+              for(const child of Object.values(node)){
+                if(Array.isArray(child)){for(const item of child)if(item?.type)queue.push(item);}
+                else if(child?.type)queue.push(child);
+              }
+            }
+            return imports;
+          } catch (_) { return null; }
+        })
+        """#)
     }
 }
 

@@ -11,6 +11,7 @@
   const playerSelector = 'video,iframe[allowfullscreen],iframe[src*="player"],iframe[src*="play/"]';
   const clean = value => (value || '').replace(/\s+/g, ' ').trim().slice(0, 160);
   const playPath = /\/(?:player|play|vodplay)\/(\d+)[-_](\d+)[-_](\d+)(?:\.html)?\/?$/i;
+  const numberedPlayPath = /^(.*\/)(\d+)[-_]\d+[-_]\d+(?:\.html)?\/?$/i;
   const plainNumber = /^#?\d{1,5}$/;
   function labelText(value) {
     return clean(value).normalize('NFKC').replace(/[\u0660-\u0669\u06f0-\u06f9]/g,c => String(c.charCodeAt(0) & 15));
@@ -288,6 +289,14 @@
     const currentQuery = location.search.match(/^\?(\d+)-(\d+)-(\d+)\.html$/i);
     const current = location.pathname.match(playPath), videoPage = !!document.querySelector('video,iframe[src*="player"],iframe[src*="play/"]');
     const currentURL = safeURL(location.href), currentOpaqueFamily = opaquePlayFamily(currentURL);
+    const numberedPage = currentURL?.pathname.match(numberedPlayPath);
+    // Use the current playback route as evidence for unfamiliar prefixes.
+    // Only recognized playlist groups may then supply non-numbered labels.
+    function numberedSibling(url) {
+      if (!numberedPage || url.origin !== currentURL.origin) return null;
+      const candidate = url.pathname.match(numberedPlayPath);
+      return candidate?.[1] === numberedPage[1] ? candidate : null;
+    }
     const opaqueGroups = new Map(), selectedRows = new WeakMap();
     function opaqueGroup(group,family) {
       let cached = opaqueGroups.get(group);
@@ -349,11 +358,16 @@
       if (groups.size >= 60 || link.closest(listSelector)) continue;
       const title = clean(link.textContent || link.getAttribute('title') || link.getAttribute('aria-label'));
       const url = destination(link);
-      if (!url || !episodeLabel(title)) continue;
+      if (!url) continue;
+      const sibling = numberedSibling(url), sameWork = sibling && sibling[2] === numberedPage[2];
+      const numberedLabel = episodeLabel(title);
+      if (!numberedLabel && !(sameWork && resourceLabel(title))) continue;
       let group = link.closest('ul,ol,[role="list"]') || link.parentElement;
       for (let depth = 0; group && depth < 4; depth++, group = group.parentElement) {
         if (group === document.body || group === document.documentElement || excludedGroup(group)) break;
         const semantic = semanticGroup(group);
+        if (semantic && sameWork) { groups.add(group); break; }
+        if (!numberedLabel) continue;
         if (!(semantic || looksPlayable(url) || (videoPage && !plainNumber.test(labelText(title))))) continue;
         const family = opaquePlayFamily(url);
         if (family) {
@@ -398,6 +412,7 @@
         continue;
       }
       if (group.matches(resourceListSelector)) continue;
+      const numberedPlaylist = numberedPage && (known || semanticGroup(group));
       let opaque = null, opaqueFamily = null;
       for (const link of group.querySelectorAll(linkSelector)) {
         const family = opaquePlayFamily(destination(link));
@@ -421,7 +436,11 @@
         }
         const title = clean(link.textContent || link.getAttribute('title') || link.getAttribute('aria-label'));
         const match = url.pathname.match(playPath);
-        if (!title || !(match || episodeLabel(title) || (opaque ? namedOpaquePeer(link,title,url,opaque)
+        const sibling = numberedSibling(url);
+        if (sibling && sibling[2] !== numberedPage[2]) continue;
+        const sameWorkPlaylistLink = numberedPlaylist && sibling;
+        if (sameWorkPlaylistLink && (excludedGroup(link) || auxiliaryLink(link) || link.hasAttribute('download'))) continue;
+        if (!title || !(match || sameWorkPlaylistLink || episodeLabel(title) || (opaque ? namedOpaquePeer(link,title,url,opaque)
             : known && /^(?:HD|BD|正片|全集)/i.test(title)))) continue;
         if (current && match && match[1] !== current[1]) continue;
         if (seen.has(url.href) || used.has(url.href)) continue;

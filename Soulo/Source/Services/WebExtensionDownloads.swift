@@ -16,8 +16,17 @@ final class WebExtensionDownloads {
         var previous: [Int: [String: Any]]
         var observer: AnyCancellable?
     }
+    private struct FilenameRequest {
+        let subscription: ObjectIdentifier
+        let owner: String
+        let deadline: Task<Void, Never>
+        let reply: (Result<String?, Error>) -> Void
+    }
     private var subscriptions: [ObjectIdentifier: Subscription] = [:]
+    private var filenameListeners: [String: ObjectIdentifier] = [:]
+    private var filenameRequests: [UUID: FilenameRequest] = [:]
     private var ownerMappings: [String: [String: String]] = [:]
+    private var nextDownloadIDs: [String: Int] = [:]
     private var itemCache: [UUID: (item: BrowserDownloadItem, value: [String: Any])] = [:]
     private let dateFormatter = ISO8601DateFormatter()
     private var nativeTransfers: [UUID: WebExtensionURLDownload] = [:]
@@ -43,9 +52,15 @@ final class WebExtensionDownloads {
         ownerMappings[owner] = values
         return values
     }
-    private func register(_ item: BrowserDownloadItem, owner: String) -> Int {
+    private func allocateDownloadID(owner: String) -> Int {
+        let id = nextDownloadIDs[owner] ?? ((mapping(owner).keys.compactMap(Int.init).max() ?? 0) + 1)
+        nextDownloadIDs[owner] = id + 1
+        return id
+    }
+
+    private func register(_ item: BrowserDownloadItem, owner: String, reservedID: Int? = nil) -> Int {
         var values = mapping(owner)
-        let id = (values.keys.compactMap(Int.init).max() ?? 0) + 1
+        let id = reservedID ?? allocateDownloadID(owner: owner)
         values[String(id)] = item.id.uuidString
         ownerMappings[owner] = values
         UserDefaults.standard.set(values, forKey: storageKey(owner))
@@ -88,16 +103,75 @@ final class WebExtensionDownloads {
         let key = ObjectIdentifier(port)
         let initial = snapshot(owner)
         subscriptions[key] = Subscription(port: port, owner: owner, previous: initial)
-        port.disconnectHandler = { [weak self] _ in self?.subscriptions.removeValue(forKey: key) }
-        port.messageHandler = { [weak self, weak port] _, _ in
+        port.disconnectHandler = { [weak self] _ in self?.disconnectSubscription(key, owner: owner) }
+        port.messageHandler = { [weak self, weak port] message, _ in
             guard let self, let port else { return }
-            port.sendMessage(["type": "snapshot", "items": Array(self.snapshot(owner).values)], completionHandler: nil)
+            guard let values = message as? [String: Any] else { return }
+            switch values["operation"] as? String {
+            case "filenameListener":
+                if values["enabled"] as? Bool == true {
+                    self.filenameListeners[owner] = key
+                } else if self.filenameListeners[owner] == key {
+                    self.filenameListeners.removeValue(forKey: owner)
+                }
+            case "filenameSuggestion":
+                guard let text = values["request"] as? String, let token = UUID(uuidString: text),
+                      self.filenameRequests[token]?.subscription == key else { return }
+                let filename = (values["filename"] as? String).flatMap(Self.relativeFilename)
+                self.resolveFilename(token, result: .success(filename))
+            default:
+                port.sendMessage(["type": "snapshot", "items": Array(self.snapshot(owner).values)], completionHandler: nil)
+            }
         }
         subscriptions[key]?.observer = DownloadManagerService.shared.$downloads
             .throttle(for: .milliseconds(200), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in Task { @MainActor in self?.publish(key) } }
         completion(nil)
         port.sendMessage(["type": "snapshot", "items": Array(initial.values)], completionHandler: nil)
+    }
+
+    private static func relativeFilename(_ filename: String) -> String? {
+        let decoded = filename.removingPercentEncoding ?? filename
+        guard !decoded.isEmpty, decoded.utf8.count <= 4096, !decoded.hasPrefix("/"),
+              !decoded.contains("\\"), !decoded.contains("\0") else { return nil }
+        let components = decoded.split(separator: "/", omittingEmptySubsequences: false)
+        guard components.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." }),
+              let leaf = components.last else { return nil }
+        return String(leaf)
+    }
+
+    private func requestFilename(for url: URL, id: Int, suggested: String, owner: String,
+                                 reply: @escaping (Result<String?, Error>) -> Void) {
+        guard let key = filenameListeners[owner], let port = subscriptions[key]?.port, url.absoluteString.utf8.count <= 32_768,
+              filenameRequests.count < 256 else { reply(.success(nil)); return }
+        let token = UUID()
+        let deadline = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            self?.resolveFilename(token, result: .success(nil))
+        }
+        filenameRequests[token] = FilenameRequest(subscription: key, owner: owner, deadline: deadline, reply: reply)
+        var item: [String: Any] = ["id": id, "url": url.absoluteString, "finalUrl": url.absoluteString,
+                                   "filename": suggested, "state": "in_progress", "incognito": false,
+                                   "paused": false, "bytesReceived": 0, "totalBytes": -1, "fileSize": -1]
+        if let mime = UTType(filenameExtension: (suggested as NSString).pathExtension)?.preferredMIMEType { item["mime"] = mime }
+        port.sendMessage(["type": "determineFilename", "request": token.uuidString, "item": item]) { [weak self] error in
+            if error != nil { self?.resolveFilename(token, result: .success(nil)) }
+        }
+    }
+
+    private func resolveFilename(_ token: UUID, result: Result<String?, Error>) {
+        guard let request = filenameRequests.removeValue(forKey: token) else { return }
+        request.deadline.cancel()
+        request.reply(result)
+    }
+
+    private func disconnectSubscription(_ key: ObjectIdentifier, owner: String) {
+        subscriptions.removeValue(forKey: key)
+        if filenameListeners[owner] == key { filenameListeners.removeValue(forKey: owner) }
+        for token in filenameRequests.filter({ $0.value.subscription == key }).keys {
+            resolveFilename(token, result: .success(nil))
+        }
     }
     private func created(_ item: BrowserDownloadItem, id: Int, owner: String) {
         let value = object(item, id: id)
@@ -126,6 +200,10 @@ final class WebExtensionDownloads {
         subscription.previous = current; subscriptions[key] = subscription
     }
     func disconnect(owner: String) {
+        for token in filenameRequests.filter({ $0.value.owner == owner }).keys {
+            resolveFilename(token, result: .failure(Self.failure("The extension was disabled before the download started.")))
+        }
+        filenameListeners.removeValue(forKey: owner)
         for (id, save) in documentSaves where save.owner == owner {
             documentSaves.removeValue(forKey: id)?.task.cancel()
         }
@@ -164,6 +242,7 @@ final class WebExtensionDownloads {
         disconnect(owner: owner)
         for value in mapping(owner).values { if let id = UUID(uuidString: value) { itemCache.removeValue(forKey: id) } }
         ownerMappings.removeValue(forKey: owner)
+        nextDownloadIDs.removeValue(forKey: owner)
         UserDefaults.standard.removeObject(forKey: storageKey(owner))
     }
 
@@ -204,44 +283,19 @@ final class WebExtensionDownloads {
                   let url = URL(string: text) else {
                 reply(nil, Self.failure("This URL cannot be downloaded by the native queue.")); return
             }
-            if ["blob", "data"].contains(url.scheme?.lowercased() ?? "") {
-                let token = UUID()
-                let transfer = WebExtensionURLDownload(url: url, filename: options["filename"] as? String,
-                    accepted: { [weak self] item in
-                        guard let self else { return }
-                        let id = self.register(item, owner: owner)
-                        self.created(item, id: id, owner: owner)
-                        reply(["id": id], nil)
-                    }, rejected: { error in reply(nil, error) }, ended: { [weak self] in self?.nativeTransfers.removeValue(forKey: token) })
-                nativeTransfers[token] = transfer
-                transfer.start(context: context, source: webView)
-                return
-            }
-            guard ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host != nil else {
+            let scheme = url.scheme?.lowercased() ?? ""
+            guard ["blob", "data"].contains(scheme) || (["http", "https"].contains(scheme) && url.host != nil) else {
                 reply(nil, Self.failure("This URL cannot be downloaded by the native queue.")); return
             }
-            let method = (options["method"] as? String ?? "GET").uppercased()
-            guard ["GET", "POST"].contains(method), (options["body"] as? String)?.utf8.count ?? 0 <= 1_048_576 else {
-                reply(nil, Self.failure("Unsupported download request.")); return
-            }
-            let (item, _) = DownloadManagerService.shared.beginDownload(suggestedFilename: options["filename"] as? String ?? url.lastPathComponent, sourceURL: url, transport: .background)
-            let id = self.register(item, owner: owner)
-            self.created(item, id: id, owner: owner)
-            reply(["id": id], nil)
-            Task { @MainActor in
-                var request = await WebResourceDownloadService.shared.resourceRequest(url, pageURL: webView?.url, webView: webView)
-                request.httpMethod = method
-                if let body = options["body"] as? String { request.httpBody = Data(body.utf8) }
-                for header in options["headers"] as? [[String: String]] ?? [] {
-                    guard let name = header["name"], let value = header["value"], !name.contains("\r"), !name.contains("\n"), !value.contains("\r"), !value.contains("\n") else { continue }
-                    request.setValue(value, forHTTPHeaderField: name)
-                }
-                // Request preparation may briefly need the originating webview;
-                // the transfer must not retain that page or its reply handler.
-                guard DownloadManagerService.shared.downloads.contains(where: { $0.id == item.id && $0.status == .inProgress }) else { return }
-                Task { @MainActor in
-                    do { _ = try await BackgroundDownloadService.shared.start(request: request, item: item) }
-                    catch { DownloadManagerService.shared.markFailed(id: item.id, error: error) }
+            let id = allocateDownloadID(owner: owner)
+            let originalName = options["filename"] as? String
+            requestFilename(for: url, id: id, suggested: originalName ?? url.lastPathComponent, owner: owner) { result in
+                switch result {
+                case .success(let suggestion):
+                    self.startDownload(url, options: options, filename: suggestion ?? originalName, id: id,
+                                       context: context, webView: webView, reply: reply)
+                case .failure(let error):
+                    reply(nil, error)
                 }
             }
         case "search":
@@ -275,6 +329,49 @@ final class WebExtensionDownloads {
         default: reply(nil, Self.failure("This download operation is unavailable."))
         }
     }
+    private func startDownload(_ url: URL, options: [String: Any], filename: String?, id: Int,
+                               context: WKWebExtensionContext, webView: WKWebView?,
+                               reply: @escaping (Any?, Error?) -> Void) {
+        let owner = context.uniqueIdentifier
+        if ["blob", "data"].contains(url.scheme?.lowercased() ?? "") {
+            let token = UUID()
+            let transfer = WebExtensionURLDownload(url: url, filename: filename,
+                accepted: { [weak self] item in
+                    guard let self else { return }
+                    _ = self.register(item, owner: owner, reservedID: id)
+                    self.created(item, id: id, owner: owner)
+                    reply(["id": id], nil)
+                }, rejected: { error in reply(nil, error) }, ended: { [weak self] in self?.nativeTransfers.removeValue(forKey: token) })
+            nativeTransfers[token] = transfer
+            transfer.start(context: context, source: webView)
+            return
+        }
+        let method = (options["method"] as? String ?? "GET").uppercased()
+        guard ["GET", "POST"].contains(method), (options["body"] as? String)?.utf8.count ?? 0 <= 1_048_576 else {
+            reply(nil, Self.failure("Unsupported download request.")); return
+        }
+        let (item, _) = DownloadManagerService.shared.beginDownload(suggestedFilename: filename ?? url.lastPathComponent, sourceURL: url, transport: .background)
+        _ = register(item, owner: owner, reservedID: id)
+        self.created(item, id: id, owner: owner)
+        reply(["id": id], nil)
+        Task { @MainActor in
+            var request = await WebResourceDownloadService.shared.resourceRequest(url, pageURL: webView?.url, webView: webView)
+            request.httpMethod = method
+            if let body = options["body"] as? String { request.httpBody = Data(body.utf8) }
+            for header in options["headers"] as? [[String: String]] ?? [] {
+                guard let name = header["name"], let value = header["value"], !name.contains("\r"), !name.contains("\n"), !value.contains("\r"), !value.contains("\n") else { continue }
+                request.setValue(value, forHTTPHeaderField: name)
+            }
+            // Request preparation may briefly need the originating webview;
+            // the transfer must not retain that page or its reply handler.
+            guard DownloadManagerService.shared.downloads.contains(where: { $0.id == item.id && $0.status == .inProgress }) else { return }
+            Task { @MainActor in
+                do { _ = try await BackgroundDownloadService.shared.start(request: request, item: item) }
+                catch { DownloadManagerService.shared.markFailed(id: item.id, error: error) }
+            }
+        }
+    }
+
     private static func failure(_ message: String) -> NSError {
         NSError(domain: "com.dkluge.Soulo.WebExtensionDownloads", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
     }
@@ -318,6 +415,20 @@ enum WebExtensionDownloadsScript {
               if(message.type==='created')emit('onCreated',message.item);
               if(message.type==='changed')emit('onChanged',message.delta);
               if(message.type==='erased')emit('onErased',message.id);
+              if(message.type==='determineFilename'){
+                let settled=false;
+                const suggest=suggestion=>{
+                  if(settled)return;
+                  settled=true;
+                  const filename=typeof suggestion?.filename==='string'?suggestion.filename:null;
+                  try{connection.postMessage({operation:'filenameSuggestion',request:message.request,filename});}catch(_){}
+                };
+                try{
+                  const listener=Array.from(events.onDeterminingFilename||[])[0];
+                  const item={...message.item,byExtensionId:chrome.runtime.id,byExtensionName:manifest.name};
+                  if(listener?.(item,suggest)!==true)suggest();
+                }catch(error){console.error(error);suggest();}
+              }
             });
             connection.onDisconnect.addListener(()=>{clearTimeout(timer);const error=chrome.runtime.lastError;if(port===connection){port=null;ready=null;}reject(new Error(error?.message||'Download event connection closed.'));});
             connection.postMessage({operation:'snapshot'});
@@ -329,6 +440,22 @@ enum WebExtensionDownloadsScript {
         const listeners=new Set();events[key]=listeners;
         api[key]={addListener(listener){listeners.add(listener);connect();},removeListener(listener){listeners.delete(listener);},hasListener(listener){return listeners.has(listener);},hasListeners(){return listeners.size>0;}};
       }
+      const filenameListeners=new Set();
+      events.onDeterminingFilename=filenameListeners;
+      function updateFilenameListener(){
+        connect().then(()=>port?.postMessage({operation:'filenameListener',enabled:filenameListeners.size>0}))
+          .catch(error=>console.error('downloads.onDeterminingFilename: '+error.message));
+      }
+      api.onDeterminingFilename={
+        addListener(listener){
+          if(typeof listener!=='function')throw new TypeError('A filename listener must be a function.');
+          if(filenameListeners.size&&!filenameListeners.has(listener))throw new Error('Only one filename listener is supported.');
+          if(!filenameListeners.has(listener)){filenameListeners.add(listener);updateFilenameListener();}
+        },
+        removeListener(listener){if(filenameListeners.delete(listener))updateFilenameListener();},
+        hasListener(listener){return filenameListeners.has(listener);},
+        hasListeners(){return filenameListeners.size>0;}
+      };
       function finish(promise,callback){
         if(typeof callback!=='function')return promise;
         promise.then(callback,error=>{

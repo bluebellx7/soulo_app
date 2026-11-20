@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "सभी बुकमार्क साफ़ करें?";
 "settings" = "सेटिंग्स";
 "platform_management" = "प्लेटफार्म प्रबंधन";
+"home_quick_search" = "होम से त्वरित खोज";
 "region_korea" = "कोरिया";
 "platform_naver" = "नावेर";
 "platform_daum" = "दम";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "पिछले 3 दिनों के कैश्ड संसाधन और पेज विज़िट हटा दिए जाएंगे। कुकीज़ और साइन-इन रखे जाएंगे.";
 "enter_fullscreen" = "पूर्ण स्क्रीन";
 "exit_fullscreen" = "पूर्ण स्क्रीन से बाहर निकलें";
-"fullscreen_exit_hint" = "नियंत्रण के लिए टैप करें, बाहर निकलने के लिए नीचे खींचें";
+"exit_fullscreen_short" = "बाहर निकलें";
+"fullscreen_exit_hint" = "मेनू खोलने के लिए टैप करें, बाहर निकलने के लिए ऊपर स्वाइप करें";
 "restore_browser_toolbar" = "टूलबार पुनर्स्थापित करें";
 "floating_more_detach" = "अधिक बटन अलग करें";
 "floating_more_snap" = "किनारे पर अधिक बटन स्नैप करें";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "आंशिक रूप से समर्थित";
 "userscript_docs_partial_desc" = "सूचनाएँ पृष्ठ में दिखती हैं; रिसोर्स API Promise लौटाते हैं। cookie के लिए GM_cookie अनुमति चाहिए; कुकी अपने आप नहीं भेजी जाती।";
 "userscript_docs_unsupported_title" = "वर्तमान में समर्थित नहीं है";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in अलगाव और WKWebView में अनुपलब्ध डेस्कटॉप व्यवहार।";
+"userscript_docs_network_webrequest" = "GM_webRequest मुख्य पेज के Fetch और XMLHttpRequest अनुरोधों को रद्द कर सकता है या उसी ओरिजिन पर रीडायरेक्ट कर सकता है।";
+"userscript_docs_unsupported_desc" = "GM_audio को पूरे टैब की आवाज़ बंद करने और ऑडियो की स्थिति पढ़ने की सुविधा चाहिए। WKWebView के सार्वजनिक API में इनका समर्थन सीमित है।\n@sandbox स्क्रिप्ट का परिवेश चुनता है। Soulo में उपयोगकर्ता स्क्रिप्ट अभी पेज के परिवेश में चलती हैं।";
 "userscript_docs_metadata_title" = "मेटाडेटा";
 "userscript_docs_metadata_identity" = "मानव-पठनीय स्क्रिप्ट नाम और वैकल्पिक विवरण इंस्टॉलेशन से पहले और स्क्रिप्ट विवरण में दिखाया गया है।";
 "userscript_docs_metadata_version" = "एक स्थिर, अद्वितीय नामस्थान का उपयोग करें और जब भी बंडल स्क्रिप्ट बदलती है तो संस्करण बढ़ाएँ।";

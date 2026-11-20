@@ -1,4 +1,4 @@
-• De instellingen zijn opnieuw ingedeeld. Bekijk de werkbalk op de startpagina terwijl je de stijl verandert, knoppen herschikt of de balk versleept.
-• Als herstellen bij herstart is ingeschakeld, opent Soulo de startpagina of de laatst bekeken webpagina.
-• Browsermenu’s hebben beter contrast. Via het menu Meer kun je een verborgen werkbalk weer tonen.
-• Netwerkverzoeken en updatecontroles voor gebruikersscripts zijn verbeterd.
+• Verbeterde overgang naar volledig scherm, buffering en afspeelsnelheidsmenu voor onlinevideo’s.
+• Verbeterde herkenning van magnetlinks en het vinden van peers voor BitTorrent-downloads.
+• Gebruikersscripts kunnen met GM_webRequest Fetch- en XHR-verzoeken van het hoofdframe annuleren of omleiden binnen dezelfde oorsprong.
+• Verbeterde compatibiliteit met browserextensies, inclusief bestandsnamen voor downloads en het laden van pagina’s buiten beeld.

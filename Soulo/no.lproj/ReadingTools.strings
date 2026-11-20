@@ -495,7 +495,9 @@
 
 "gesture_feedback_preview" = "Prøv tilbakemelding";
 
-"media_start_timeout" = "Avspillingen har ikke startet. Sjekk nettverket eller bytt avspiller.";
+"media_start_timeout" = "Avspillingen har ikke startet. Sjekk nettverket.";
+"media_load_complete" = "Ferdig lastet";
+"media_playback_stalled" = "Avspillingen har stoppet opp.";
 
 "wallpaper_appearance_hint" = "Velg egne bakgrunner for lyst og mørkt utseende. De byttes automatisk med appen.";
 
@@ -555,6 +557,7 @@
 
 "storage_files_group" = "Nedlastinger og filer";
 "storage_cache_group" = "Buffer og midlertidige filer";
+"storage_video_cache" = "Videobuffer";
 "storage_saved_group" = "Lagret innhold";
 
 "storage_clear_offline_media_warning" = "Sletter alle frakoblede videoer her og filoppføringene deres. Ufullførte fil-/videonedlastinger, avspilling og eksport stoppes.";

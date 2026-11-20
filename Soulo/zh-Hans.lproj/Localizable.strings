@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "确认清除所有收藏？";
 "settings" = "设置";
 "platform_management" = "平台管理";
+"home_quick_search" = "首页快捷搜索";
 "region_korea" = "韩国";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -173,7 +174,8 @@
 "privacy_clear_cache_confirm_message" = "将清除网页缓存和最近 3 天的网页访问记录，但保留 Cookie 和登录状态。";
 "enter_fullscreen" = "全屏";
 "exit_fullscreen" = "退出全屏";
-"fullscreen_exit_hint" = "轻点展开，下拉退出";
+"exit_fullscreen_short" = "退出全屏";
+"fullscreen_exit_hint" = "轻点展开，上滑退出";
 "restore_browser_toolbar" = "显示工具栏";
 "floating_more_detach" = "退出吸附";
 "floating_more_snap" = "吸附到屏幕边缘";
@@ -673,7 +675,8 @@
 "userscript_docs_partial_title" = "部分支持";
 "userscript_docs_partial_desc" = "通知在网页内显示；资源接口返回 Promise。cookie 参数需 GM_cookie 权限，请求不会自动发送 Cookie。";
 "userscript_docs_unsupported_title" = "暂不支持";
-"userscript_docs_unsupported_desc" = "GM_webRequest、GM_audio、sandbox/run-in 隔离，以及 WKWebView 不具备的桌面特性。";
+"userscript_docs_network_webrequest" = "GM_webRequest 可取消主框架发出的 Fetch 和 XMLHttpRequest 请求，也可将请求重定向到同源地址。";
+"userscript_docs_unsupported_desc" = "GM_audio 需要控制整个标签页的静音，并读取发声状态。WKWebView 的公开接口覆盖有限。\n@sandbox 用于选择脚本的执行环境。Soulo 目前在网页环境运行用户脚本。";
 "userscript_docs_metadata_title" = "元数据";
 "userscript_docs_metadata_identity" = "脚本名称及可选描述，会显示在安装确认和脚本详情中。";
 "userscript_docs_metadata_version" = "使用稳定且唯一的命名空间；内置脚本发生变化时应递增版本号。";

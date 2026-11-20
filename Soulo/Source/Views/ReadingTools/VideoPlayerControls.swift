@@ -127,17 +127,52 @@ final class VideoVerticalGestureHandler: NSObject, UIGestureRecognizerDelegate {
     }
 }
 
-/// System glass can be bright even above a dark video. Give video menus an
-/// explicit surface and foreground pair instead of inheriting mismatched colors.
-private struct VideoPopoverSurface: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-    func body(content: Content) -> some View {
-        content.foregroundStyle(colorScheme == .dark ? Color.white : Color.black)
-            .compatiblePresentationBackground(colorScheme == .dark ? Color(white: 0.12) : Color.white)
+extension View {
+    func videoMenuPopover<Panel: View>(isPresented: Binding<Bool>, arrowEdge: Edge = .top,
+                                      @ViewBuilder content: @escaping () -> Panel) -> some View {
+        compatiblePopover(isPresented: isPresented, arrowEdge: arrowEdge,
+                          tracksSourceView: true, backgroundColor: UIColor(white: 0.12, alpha: 1)) {
+            content().environment(\.colorScheme, .dark).foregroundStyle(.white)
+        }
     }
 }
-extension View {
-    func videoPopoverSurface() -> some View { modifier(VideoPopoverSurface()) }
+
+struct FullscreenVideoMenuLabel: View {
+    let title: String
+    let symbol: String
+    @ScaledMetric(relativeTo: .body) private var iconSize: CGFloat = 20
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: symbol)
+                .resizable()
+                .symbolRenderingMode(.monochrome)
+                .scaledToFit()
+                .frame(width: iconSize, height: iconSize)
+                .frame(width: iconSize + 4)
+                .accessibilityHidden(true)
+            Text(title)
+                .multilineTextAlignment(.leading)
+        }
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+}
+
+/// Size the popover to its rows, then let the scrollable variant take over
+/// when the proposed height is shorter than the rows.
+private struct FullscreenVideoMenuLayout: Layout {
+    let maximumHeight: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let menu = subviews.first else { return .zero }
+        let ideal = menu.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil))
+        return CGSize(width: ideal.width, height: min(ideal.height, maximumHeight))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
+    }
 }
 
 private struct VideoFullscreenInsetsKey: EnvironmentKey {
@@ -336,6 +371,8 @@ struct VideoPlaybackControls: View {
     let playing: Bool
     let identifier: String
     var options: FileVideoOptions?
+    var videoLoading: VideoLoadingStatus?
+    var cacheProgress = VideoCacheProgress()
     var showEpisodes: (() -> Void)?
     var expand: (() -> Void)?
     var interactionChanged: ((Bool) -> Void)?
@@ -343,11 +380,11 @@ struct VideoPlaybackControls: View {
     let setRate: (Float) -> Void
     var body: some View {
         VStack(spacing: 6) {
-            VideoPlaybackTimeline(elapsed: elapsed, duration: duration, identifier: identifier + ".timeline",
+            VideoPlaybackTimeline(elapsed: elapsed, duration: duration, identifier: identifier + ".timeline", cacheProgress: cacheProgress,
                                   seek: seek, interactionChanged: interactionChanged)
             HStack(spacing: 12) {
                 FileVideoMenus(rate: rate, playbackState: { (elapsed, playing) }, setRate: setRate,
-                    options: options, showEpisodes: showEpisodes, menuInteraction: interactionChanged,
+                    options: options, videoLoading: videoLoading, showEpisodes: showEpisodes, menuInteraction: interactionChanged,
                     interaction: { interactionChanged?(false) })
                 if options?.usesSystem == true {
                     AirPlayRoutePicker(prioritizesVideoDevices: true, presentRequested: options?.airPlayPresentation)
@@ -406,6 +443,8 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
     let identifier: String
     let closeIdentifier: String
     var options: FileVideoOptions?
+    var videoLoading: VideoLoadingStatus?
+    var cacheProgress = VideoCacheProgress()
     var retry: (() -> Void)?
     var subtitlePlayer: AVPlayer? = nil
     let close: () -> Void
@@ -441,45 +480,52 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                             if geometry.size.width > geometry.size.height {
                                 VideoFullscreenClock()
                             }
-                            if let options { MediaPlayerMenu(options: options, playbackState: { (elapsed, playing) }, interactionChanged: visibility.interaction) }
                             Button { morePresented.toggle() } label: {
                                 Image(systemName: "ellipsis").font(.system(size: 18)).frame(width: 44, height: 44)
                             }
                             .accessibilityLabel(ToolText.text("media_options"))
                             .accessibilityIdentifier("media.fullscreen.options")
-                            .compatiblePopover(isPresented: $morePresented) {
-                                VStack(alignment: .leading, spacing: 8) {
+                            .videoMenuPopover(isPresented: $morePresented) {
+                                let rows = VStack(alignment: .leading, spacing: 8) {
                                     if let request = options?.requestPictureInPicture {
                                         Button {
                                             pendingAction = { request(elapsed, playing) }
                                             morePresented = false
                                         } label: {
-                                            Label(ToolText.text("media_pip"), systemImage: "pip.enter")
-                                                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                            FullscreenVideoMenuLabel(title: ToolText.text("media_pip"), symbol: "pip.enter")
                                         }
                                         .disabled(options?.systemAvailable == false)
                                         .accessibilityIdentifier("media.picture-in-picture")
                                     }
                                     more()
-                                    PlaybackSleepTimerMenu()
+                                    PlaybackSleepTimerMenu(fullscreen: true)
                                     if let download = options?.download, showsVideoDownloadControls || options?.downloadIsVideo == false {
                                         Button { morePresented = false; download() } label: {
-                                            Label(LanguageManager.shared.localizedString("download"), systemImage: "arrow.down.circle")
-                                                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                            FullscreenVideoMenuLabel(title: LanguageManager.shared.localizedString("download"), symbol: "arrow.down.circle")
                                         }.accessibilityIdentifier("media.download")
                                     }
                                     if let url = options?.shareURL {
-                                        ShareLink(item: url) { Label(ToolText.text("share_media"), systemImage: "square.and.arrow.up") }
+                                        ShareLink(item: url) {
+                                            FullscreenVideoMenuLabel(title: ToolText.text("share_media"), symbol: "square.and.arrow.up")
+                                        }
+                                        .accessibilityIdentifier("media.fullscreen.share")
                                     }
-                                    Divider()
                                     Button { opensSettings = true; morePresented = false } label: {
-                                        Label(LanguageManager.shared.localizedString("settings"), systemImage: "gearshape")
-                                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                        FullscreenVideoMenuLabel(title: LanguageManager.shared.localizedString("settings"), symbol: "gearshape")
                                     }
                                     .accessibilityIdentifier("media.fullscreen.settings")
                                 }
-                                .padding(16).frame(width: 280).buttonStyle(.plain)
-                                .compatiblePopoverAdaptation().videoPopoverSurface()
+                                .padding(.horizontal, 16).padding(.vertical, 10).buttonStyle(.plain)
+                                FullscreenVideoMenuLayout(maximumHeight: min(420, max(100, geometry.size.height - 92))) {
+                                    ViewThatFits(in: .vertical) {
+                                        rows.fixedSize(horizontal: false, vertical: true)
+                                        ScrollView { rows }
+                                            .accessibilityIdentifier("media.fullscreen.options.scroll")
+                                    }
+                                }
+                                .frame(width: 280)
+                                .accessibilityElement(children: .contain)
+                                .accessibilityIdentifier("media.fullscreen.options.panel")
                                 .onDisappear {
                                     if opensSettings { opensSettings = false; DispatchQueue.main.async { settingsVisible = true } }
                                     if let action = pendingAction {
@@ -509,12 +555,13 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                 .overlay(alignment: .bottom) {
                     if visibility.visible && !episodesVisible {
                         VStack(spacing: 6) {
-                            VideoPlaybackTimeline(elapsed: elapsed, duration: duration, identifier: identifier + ".timeline",
+                            VideoPlaybackTimeline(elapsed: elapsed, duration: duration, identifier: identifier + ".timeline", cacheProgress: cacheProgress,
                                 seek: seek, interactionChanged: visibility.interaction)
                                 .offset(y: 8)
-                            HStack(spacing: 12) {
+                            HStack(spacing: 8) {
                                 FileVideoMenus(rate: rate, playbackState: { (elapsed, playing) }, setRate: setRate,
-                                    options: options, showEpisodes: { episodesVisible = true }, showsPlayerMenu: false, menuInteraction: visibility.interaction,
+                                    options: options, videoLoading: videoLoading, showEpisodes: { episodesVisible = true },
+                                    menuInteraction: visibility.interaction,
                                     interaction: visibility.show)
                                 if options?.usesSystem == true {
                                     AirPlayRoutePicker(prioritizesVideoDevices: true, presentRequested: options?.airPlayPresentation)
@@ -585,12 +632,12 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
 private struct VideoVolumeDiagnostics: View {
     @ObservedObject private var session = MediaSession.shared
     private var frameReady: Bool {
-        if let playback = session.soulo { return (playback.player?.media?.statistics.displayedPictures ?? 0) > 0 }
+        if let playback = session.soulo { return (playback.player?.decodedFrameCount ?? 0) > 0 }
         return session.pictureInPicture.surface?.playerLayer.isReadyForDisplay == true
     }
     var body: some View {
         if ProcessInfo.processInfo.environment["SOULO_VIDEO_VOLUME_TRACE"] == "1" {
-            Text("clock=\(session.soulo.map { Double($0.player?.time.intValue ?? 0) / 1000 } ?? session.player.currentTime().seconds) pauseDelay=\(session.pauseInputLatency ?? -1) events=\(session.volumeObservationEvents) raw=\(AVAudioSession.sharedInstance().outputVolume) state=\(UIApplication.shared.applicationState.rawValue) video=\(session.hasVideo) nativeSurfaces=\(session.playerSurfaces) soulo=\(session.soulo != nil) souloVideo=\(session.soulo?.hasVideo == true) visible=\(session.soulo?.hasVisibleSurface == true) frameReady=\(frameReady) duration=\(session.duration) page=\(session.pageURL?.lastPathComponent ?? "") episode=\(session.webMediaContext?.selectedEpisodeID ?? "")")
+            Text("clock=\(session.soulo.map { ($0.player?.currentTime ?? 0) } ?? session.player.currentTime().seconds) pauseDelay=\(session.pauseInputLatency ?? -1) events=\(session.volumeObservationEvents) raw=\(AVAudioSession.sharedInstance().outputVolume) state=\(UIApplication.shared.applicationState.rawValue) video=\(session.hasVideo) nativeSurfaces=\(session.playerSurfaces) soulo=\(session.soulo != nil) souloVideo=\(session.soulo?.hasVideo == true) visible=\(session.soulo?.hasVisibleSurface == true) frameReady=\(frameReady) duration=\(session.duration) page=\(session.pageURL?.lastPathComponent ?? "") episode=\(session.webMediaContext?.selectedEpisodeID ?? "")")
                 .font(.system(size: 8)).foregroundStyle(.white.opacity(0.3))
                 .accessibilityIdentifier("media.volume.diagnostics")
                 .allowsHitTesting(false)
@@ -647,7 +694,10 @@ private struct VideoFullscreenTapReader: UIViewRepresentable {
         private var lastDoubleTap: CFTimeInterval = 0
         private var hold: UILongPressGestureRecognizer?
         func attach(from view: UIView) {
-            var candidate = view.window?.rootViewController
+            // SwiftUI can update the anchor while the presenting view and its
+            // responder chain are being torn down.
+            guard let window = view.window else { return }
+            var candidate = window.rootViewController
             var fullscreen: UIViewController?
             while let current = candidate {
                 if ["media.fullscreen.player", "media.mkv.fullscreen.player"].contains(current.viewIfLoaded?.accessibilityIdentifier ?? "") {
@@ -655,7 +705,8 @@ private struct VideoFullscreenTapReader: UIViewRepresentable {
                 }
                 candidate = current.presentedViewController
             }
-            guard let owner = fullscreen ?? VideoOrientation.owningController(of: view), controller !== owner else { return }
+            guard let owner = fullscreen ?? VideoOrientation.owningController(of: view),
+                  owner.viewIfLoaded?.window === window, !owner.isBeingDismissed, controller !== owner else { return }
             detach(); controller = owner
             let tap = UITapGestureRecognizer(target: self, action: #selector(activate))
             tap.name = "SouloFullscreenControlsTap"
@@ -843,6 +894,7 @@ struct VideoPlaybackTimeline: View {
     let elapsed: Double
     let duration: Double
     let identifier: String
+    var cacheProgress = VideoCacheProgress()
     let seek: (Double) -> Void
     var interactionChanged: ((Bool) -> Void)?
     @State private var scrubTime: Double?
@@ -859,10 +911,18 @@ struct VideoPlaybackTimeline: View {
                 Text(clock(scrubTime ?? elapsed))
                     .accessibilityIdentifier(identifier + ".elapsed")
                 Spacer()
+                if let fraction = cacheProgress.coveredFraction {
+                    let percent = (floor(fraction * 100) / 100).formatted(.percent.precision(.fractionLength(0)))
+                    Text("\(ToolText.text("storage_video_cache")) \(percent)")
+                        .foregroundStyle(Color(uiColor: .systemGreen))
+                        .lineLimit(1)
+                        .accessibilityIdentifier(identifier + ".cache")
+                    Spacer()
+                }
                 Text(duration.isFinite && duration > 0 ? clock(duration) : "—:—")
             }
             .font(.caption.monospacedDigit()).opacity(0.8)
-            PlaybackTimelineSlider(elapsed: elapsed, duration: duration, identifier: identifier,
+            PlaybackTimelineSlider(elapsed: elapsed, duration: duration, identifier: identifier, cacheProgress: cacheProgress,
                 seek: seek, preview: { scrubTime = $0 }, interaction: { active in
                     if !active { scrubTime = nil }
                     interactionChanged?(active)
@@ -879,18 +939,76 @@ struct VideoPlaybackTimeline: View {
 /// gesture on its 44 pt control owns the complete touch sequence. Native slider
 /// tracking can drop the end event when a new touch starts away from its thumb.
 private final class PlaybackPositionControl: UIControl {
+    private static let compactThumb = {
+        let size = CGSize(width: 24, height: 15)
+        return UIGraphicsImageRenderer(size: size).image { _ in
+            UIColor.white.setFill()
+            UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 5).fill()
+        }.withRenderingMode(.alwaysOriginal)
+    }()
+
     let slider = UISlider()
+    private let cacheBackground = CAShapeLayer()
+    private let cacheTrack = CAShapeLayer()
+    var cacheProgress = VideoCacheProgress() {
+        didSet {
+            guard oldValue != cacheProgress else { return }
+            setNeedsLayout()
+        }
+    }
     private var trackingOffset: CGFloat = 0
     override init(frame: CGRect) {
         super.init(frame: frame)
+        slider.setThumbImage(Self.compactThumb, for: .normal)
+        slider.setThumbImage(Self.compactThumb, for: .highlighted)
         addSubview(slider)
+        layer.insertSublayer(cacheTrack, below: slider.layer)
+        layer.insertSublayer(cacheBackground, below: cacheTrack)
         let gesture = UILongPressGestureRecognizer(target: self, action: #selector(track(_:)))
         gesture.minimumPressDuration = 0
         gesture.allowableMovement = .greatestFiniteMagnitude
         addGestureRecognizer(gesture)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-    override func layoutSubviews() { super.layoutSubviews(); slider.frame = bounds }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        slider.frame = bounds
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+        cacheBackground.path = nil
+        cacheTrack.path = nil
+        let track = slider.trackRect(forBounds: slider.bounds)
+        guard track.width > 0, track.height > 0 else { return }
+        let thumbs = thumbCenters(track)
+        let reversed = thumbs.start > thumbs.end
+        let timed = !cacheProgress.timeFractions.isEmpty
+        let fractions: [Range<Double>]
+        if timed {
+            fractions = cacheProgress.timeFractions
+        } else if let fraction = cacheProgress.fileFraction, fraction > 0 {
+            fractions = [0..<fraction]
+        } else { return }
+
+        let thumb = slider.thumbRect(forBounds: slider.bounds, trackRect: track, value: slider.value)
+        let rail = CGRect(x: track.minX, y: max(track.maxY, thumb.maxY) + 2, width: track.width, height: 2)
+        cacheBackground.fillColor = UIColor.label.withAlphaComponent(0.17).resolvedColor(with: traitCollection).cgColor
+        cacheBackground.path = UIBezierPath(roundedRect: rail, cornerRadius: rail.height / 2).cgPath
+        cacheTrack.fillColor = UIColor.systemGreen.resolvedColor(with: traitCollection).cgColor
+        let path = UIBezierPath()
+        func x(_ fraction: Double) -> CGFloat {
+            if timed && fraction > 0 && fraction < 1 {
+                return min(rail.maxX, max(rail.minX, thumbs.start + (thumbs.end - thumbs.start) * CGFloat(fraction)))
+            }
+            return rail.minX + rail.width * CGFloat(reversed ? 1 - fraction : fraction)
+        }
+        for range in fractions {
+            let start = x(range.lowerBound), end = x(range.upperBound)
+            let rect = CGRect(x: min(start, end), y: rail.minY, width: abs(end - start), height: rail.height)
+            path.append(UIBezierPath(roundedRect: rect, cornerRadius: min(rect.height, rect.width) / 2))
+        }
+        cacheTrack.path = path.cgPath
+    }
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         // Route physical touches to this control's single recognizer while the
         // slider remains enabled for VoiceOver and accessibility adjustment.
@@ -921,11 +1039,14 @@ private final class PlaybackPositionControl: UIControl {
     }
     private func updateValue(at point: CGPoint) {
         let track = slider.trackRect(forBounds: slider.bounds)
-        let start = slider.thumbRect(forBounds: slider.bounds, trackRect: track, value: slider.minimumValue).midX
-        let end = slider.thumbRect(forBounds: slider.bounds, trackRect: track, value: slider.maximumValue).midX
+        let (start, end) = thumbCenters(track)
         guard abs(end - start) > .ulpOfOne else { return }
         let fraction = min(1, max(0, (point.x - trackingOffset - start) / (end - start)))
         slider.setValue(slider.minimumValue + Float(fraction) * (slider.maximumValue - slider.minimumValue), animated: false)
+    }
+    private func thumbCenters(_ track: CGRect) -> (start: CGFloat, end: CGFloat) {
+        (slider.thumbRect(forBounds: slider.bounds, trackRect: track, value: slider.minimumValue).midX,
+         slider.thumbRect(forBounds: slider.bounds, trackRect: track, value: slider.maximumValue).midX)
     }
 }
 
@@ -933,6 +1054,7 @@ private struct PlaybackTimelineSlider: UIViewRepresentable {
     let elapsed: Double
     let duration: Double
     let identifier: String
+    let cacheProgress: VideoCacheProgress
     let seek: (Double) -> Void
     let preview: (Double?) -> Void
     let interaction: (Bool) -> Void
@@ -982,6 +1104,7 @@ private struct PlaybackTimelineSlider: UIViewRepresentable {
         slider.maximumValue = Float(duration.isFinite && duration > 0 ? duration : 1)
         slider.isEnabled = duration.isFinite && duration > 0
         control.isEnabled = slider.isEnabled
+        control.cacheProgress = cacheProgress
         slider.accessibilityLabel = ToolText.text("position")
         slider.accessibilityIdentifier = identifier
         // UIKit can stop reporting isTracking before its final release action.

@@ -36,7 +36,7 @@ import XCTest
     }
 
     private func preview(_ app: XCUIApplication) -> Bool {
-        let more = app.buttons["ellipsis"].firstMatch
+        let more = app.buttons["browser.more"].firstMatch
         guard more.waitForExistence(timeout: 10) else { XCTFail(app.debugDescription); return false }
         more.tap()
         let share = app.descendants(matching: .any)["browser.moreMenu.share"].firstMatch
@@ -68,7 +68,7 @@ import XCTest
         app.buttons["pageShare.copyLink"].tap()
         XCTAssertTrue(app.buttons["pageShare.copyLink"].label.contains("已复制"))
         app.buttons["pageShare.close"].tap()
-        XCTAssertTrue(app.buttons["ellipsis"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["browser.more"].firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(preview(app), "The preview can be opened again after copying")
     }
 

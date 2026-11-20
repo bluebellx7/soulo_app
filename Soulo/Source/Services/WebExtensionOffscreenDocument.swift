@@ -17,9 +17,13 @@ final class WebExtensionOffscreenDocument: NSObject, WKNavigationDelegate {
     private var pendingMessages: [UUID: (reply: (Any?, Error?) -> Void, timeout: Task<Void, Never>)] = [:]
     var access: WebExtensionAccess?
 
-    static func resource(_ reference: String, root: URL) throws -> URL {
-        guard let components = URLComponents(string: reference), components.scheme == nil,
-              components.host == nil, components.query == nil, components.fragment == nil,
+    static func resource(_ reference: String, root: URL, extensionOrigin: URL? = nil) throws -> URL {
+        guard let components = URLComponents(string: reference),
+              components.user == nil, components.password == nil,
+              (components.scheme == nil && components.host == nil && components.port == nil)
+                || (extensionOrigin != nil && components.scheme == extensionOrigin?.scheme
+                    && components.host == extensionOrigin?.host && components.port == extensionOrigin?.port),
+              components.query == nil, components.fragment == nil,
               !components.path.isEmpty, !components.path.contains("\\"), !components.path.contains("\0"),
               !components.path.split(separator: "/").contains("..") else {
             throw failure("Offscreen documents must use a bundled HTML resource.")
@@ -36,7 +40,7 @@ final class WebExtensionOffscreenDocument: NSObject, WKNavigationDelegate {
     }
 
     init(reference: String, root: URL, context: WKWebExtensionContext, access: WebExtensionAccess?) throws {
-        let file = try Self.resource(reference, root: root)
+        let file = try Self.resource(reference, root: root, extensionOrigin: context.baseURL)
         let relative = String(file.path.dropFirst(root.resolvingSymlinksInPath().standardizedFileURL.path.count + 1))
         url = context.baseURL.appendingPathComponent(relative)
         self.context = context

@@ -59,6 +59,7 @@
 "confirm_clear_bookmarks" = "Vymazať všetky záložky?";
 "settings" = "Nastavenia";
 "platform_management" = "Správa platformy";
+"home_quick_search" = "Rýchle vyhľadávanie na úvodnej stránke";
 "region_korea" = "Kórea";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -167,7 +168,8 @@
 "privacy_clear_cache_confirm_message" = "Zdroje vo vyrovnávacej pamäti a návštevy stránok za posledné 3 dni budú odstránené. Súbory cookie a prihlásenia sa zachovajú.";
 "enter_fullscreen" = "Celá obrazovka";
 "exit_fullscreen" = "Ukončiť celú obrazovku";
-"fullscreen_exit_hint" = "Klepnutím zobrazíte ovládacie prvky, potiahnutím nadol opustíte ponuku";
+"exit_fullscreen_short" = "Ukončiť";
+"fullscreen_exit_hint" = "Klepnutím otvoríte ponuku, potiahnutím nahor ukončíte";
 "restore_browser_toolbar" = "Obnoviť panel s nástrojmi";
 "floating_more_detach" = "Tlačidlo Odpojiť viac";
 "floating_more_snap" = "Pritiahnite tlačidlo Viac k okraju";
@@ -667,7 +669,8 @@
 "userscript_docs_partial_title" = "Čiastočne podporované";
 "userscript_docs_partial_desc" = "Oznámenia sú na stránke; API zdrojov vracajú Promise. cookie vyžaduje GM_cookie; cookies sa neposielajú automaticky.";
 "userscript_docs_unsupported_title" = "Momentálne nie je podporované";
-"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolácia sandbox/run-in a funkcie počítača nedostupné vo WKWebView.";
+"userscript_docs_network_webrequest" = "GM_webRequest umožňuje zrušiť požiadavky Fetch a XMLHttpRequest hlavnej stránky alebo ich presmerovať v rámci rovnakého pôvodu.";
+"userscript_docs_unsupported_desc" = "GM_audio vyžaduje stlmenie celej karty a čítanie stavu zvuku. Verejné rozhranie WKWebView to podporuje len obmedzene.\n@sandbox vyberá prostredie skriptu. Používateľské skripty v Soule momentálne bežia v prostredí stránky.";
 "userscript_docs_metadata_title" = "Metadáta";
 "userscript_docs_metadata_identity" = "Ľudsky čitateľný názov skriptu a voliteľný popis zobrazené pred inštaláciou a v detailoch skriptu.";
 "userscript_docs_metadata_version" = "Použite stabilný, jedinečný priestor názvov a zvýšte verziu vždy, keď sa zmení pribalený skript.";

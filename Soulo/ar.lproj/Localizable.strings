@@ -72,6 +72,7 @@
 /* Settings */
 "settings" = "الإعدادات";
 "platform_management" = "إدارة المنصات";
+"home_quick_search" = "بحث سريع من الرئيسية";
 "region_korea" = "كوريا";
 "platform_naver" = "Naver";
 "platform_daum" = "Daum";
@@ -189,7 +190,8 @@
 
 "enter_fullscreen" = "ملء الشاشة";
 "exit_fullscreen" = "الخروج من ملء الشاشة";
-"fullscreen_exit_hint" = "اضغط لعناصر التحكم واسحب لأسفل للخروج";
+"exit_fullscreen_short" = "خروج";
+"fullscreen_exit_hint" = "اضغط لفتح القائمة، واسحب لأعلى للخروج";
 "restore_browser_toolbar" = "استعادة شريط الأدوات";
 "floating_more_detach" = "إلغاء تثبيت زر المزيد";
 "floating_more_snap" = "تثبيت زر المزيد عند الحافة";

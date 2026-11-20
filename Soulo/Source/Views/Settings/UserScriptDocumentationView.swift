@@ -3,6 +3,8 @@ import SwiftUI
 struct UserScriptDocumentationView: View {
     @State private var promptCopied = false
 
+    private static let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.18"
+
     private let template = """
     // ==UserScript==
     // @name My Soulo Script
@@ -66,6 +68,7 @@ struct UserScriptDocumentationView: View {
                 compatibilityRow(
                     titleKey: "userscript_docs_partial_title",
                     descriptionKey: "userscript_docs_partial_desc",
+                    additionalDescriptionKey: "userscript_docs_network_webrequest",
                     icon: "circle.lefthalf.filled",
                     tint: .orange
                 )
@@ -85,6 +88,7 @@ struct UserScriptDocumentationView: View {
                     ("@match / @include", "userscript_docs_metadata_match"),
                     ("@exclude / @exclude-match", "userscript_docs_metadata_exclude"),
                     ("@run-at document-start | document-end", "userscript_docs_metadata_run_at"),
+                    ("@run-in normal-tabs", "userscript_docs_limits_private"),
                     ("@grant", "userscript_docs_metadata_grant"),
                     ("@connect", "userscript_docs_metadata_connect"),
                     ("@homepage / @updateURL / @downloadURL", "userscript_docs_metadata_urls"),
@@ -147,7 +151,7 @@ struct UserScriptDocumentationView: View {
                 ]
             )
 
-            Section("Soulo \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.17") · API") {
+            Section("Soulo \(Self.appVersion) · API") {
                 ScrollView(.horizontal) {
                     Text(Self.runtimeReference)
                         .font(.system(.caption, design: .monospaced))
@@ -198,6 +202,7 @@ struct UserScriptDocumentationView: View {
     private func compatibilityRow(
         titleKey: String,
         descriptionKey: String,
+        additionalDescriptionKey: String? = nil,
         icon: String,
         tint: Color
     ) -> some View {
@@ -213,6 +218,12 @@ struct UserScriptDocumentationView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                if let additionalDescriptionKey {
+                    Text(localized(additionalDescriptionKey))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .padding(.vertical, 3)
@@ -254,14 +265,15 @@ struct UserScriptDocumentationView: View {
     6. GM_xmlhttpRequest details 支持 url、method、headers、data、timeout、responseType、anonymous、cookie、context，以及 onloadstart、onreadystatechange、onprogress、upload 事件、ontimeout、onabort、onload、onerror、onloadend。data 支持文本、Blob、ArrayBuffer、TypedArray、URLSearchParams 和 FormData；responseType 可为 json、blob、arraybuffer 或文本。GM.xmlHttpRequest 返回可 await 的 Promise，两种写法均可通过 abort() 取消。单次响应上限 20 MiB、上传上限 8 MiB、每页最多 8 个并发请求，超时范围 1–60 秒。进度事件报告 loaded/total 字节数，完整响应在 onload 中读取；不提供流式 responseText。不会自动发送 Cookie，也不能通过 headers 注入 Cookie/Host/Origin；显式 cookie 参数还需 GM_cookie 权限，anonymous=true 时不发送，跨源重定向时移除。
     7. 存储单个值上限 256 KiB、脚本总存储上限 1 MiB，只保存可 JSON 序列化的数据。值变化监听支持跨标签页，其他标签页的变化会以 remote=true 通知；注意移除不再使用的监听器。
     8. @resource 需要声明名称、URL 及匹配的 @connect；资源 API 是异步 Promise。HTTPS @require 在安装或保存时下载并缓存，按声明顺序在正文前执行，不需要 @connect；旧 HTTP 地址会升级为 HTTPS。最多 32 个依赖，单文件 5 MB、合计 20 MB；支持 URL 片段中的 MD5、SHA-1/256/384/512 完整性校验，不支持 tampermonkey:// 内置依赖。
-    9. 可以使用标准 DOM、事件、MutationObserver、fetch 等网页 API；fetch 仍受网页同源和 CORS 限制。脚本在隐私浏览中不运行。
+    9. 可以使用标准 DOM、事件、MutationObserver、fetch 等网页 API；fetch 仍受网页同源和 CORS 限制。单页应用可声明 `@grant window.onurlchange`，在 `window.onurlchange === null` 时监听 `urlchange`，通过 `event.url` 读取新地址。脚本在隐私浏览中不运行。
     10. 兼顾 iPhone/iPad、明暗模式、安全区、动态网页和无障碍；所有新增 DOM id/class 使用独特前缀，避免污染网页；避免高频无节制的 MutationObserver、轮询和全局样式。
     11. 代码应可重复执行而不产生重复控件，包含必要的空值检查、错误处理和清理逻辑；页面跳转、重复运行和 DOM 移除时取消请求、移除监听器并释放 Object URL。独立脚本按主框架注入；不要假定能够直接访问跨域 iframe。
     12. 下载公网直链优先使用 GM_download / GM.download 并遵守 @connect、取消和错误回调；不要把大视频全部经 GM 请求读入内存后拼成 Blob。不要伪造文件大小，也不要把分片数、时长或进度单位当作字节。
     13. 如必须处理 Range，验证 206、Content-Range 和准确字节长度；遇到服务器忽略 Range 返回 200 时退回普通下载，不重复拼接整文件。请求池应有上限和退避，不能假定每片都重新握手。
     14. HLS 既可能是 TS，也可能是 fMP4。AES-128 未提供 IV 时应按媒体序号生成 128 位大端 IV，不能使用密钥充当 IV。TS 拼接不等于 MP4 封装；不要默认删除疑似广告分片或处理 DRM。
     15. 本需求生成的是独立 UserScript，不是 CRX/WebExtension。不要在 .user.js 中调用 chrome.userScripts、chrome.runtime 或 chrome.downloads；下方 extensionHost 参考仅适用于已安装的浏览器扩展。不要把部分接口支持表述为完整 Chrome/Tampermonkey 兼容。
-    16. 提供 HTTPS @updateURL/@downloadURL 和 @version 可用于更新检查；打开已安装列表时每次最多检查 4 个脚本，每个脚本每 24 小时最多一次。隐私浏览、低电量或高温时暂停；更新代码仍需用户检查确认后安装。GM_webRequest、GM_audio 和 sandbox/run-in 隔离暂不支持。
+    16. 提供 HTTPS @updateURL/@downloadURL 和 @version 可用于更新检查；打开已安装列表时每次最多检查 4 个脚本，每个脚本每 24 小时最多一次。隐私浏览、低电量或高温时暂停；更新代码仍需用户检查确认后安装。`@run-in normal-tabs` 匹配普通标签页。只声明隐私标签页或容器时，脚本会被跳过。GM_audio 和 @sandbox 暂不支持。
+    17. `GM_webRequest(rules, listener)` 需显式声明 `@grant GM_webRequest`，建议使用 `@run-at document-start` 尽早注册。只处理匹配页面主框架发出的 Fetch 和已注册后打开的 XMLHttpRequest。规则示例 `{selector: '*://example.com/ping*', action: 'cancel'}`。重定向必须与原请求同源，且目标符合脚本的 @match 或 @include，避开排除规则；Fetch 的 Request 对象带请求体时无法重定向，可用字符串 URL 加 init。回调是 `(action, status, details)`，报告规则执行结果而非 HTTP 状态。传 `[]` 清除当前脚本的规则。规则不覆盖资源标签、iframe、Worker、WebSocket 或 GM_xmlhttpRequest。
 
     请现在根据“用户需求”生成脚本。
     """
@@ -281,14 +293,15 @@ struct UserScriptDocumentationView: View {
     6. XHR details support url, method, headers, data, timeout, responseType, anonymous, cookie, context, onloadstart, onreadystatechange, onprogress, upload events, ontimeout, onabort, onload, onerror, and onloadend. data accepts text, Blob, ArrayBuffer, TypedArray, URLSearchParams, and FormData. responseType may be json, blob, arraybuffer, or text. Limits: 20 MiB per response, 8 MiB per upload, 8 concurrent requests per page, and 1–60 seconds per request. Progress reports loaded/total bytes; read the complete response in onload, not streaming responseText. Cookies are not sent automatically; Cookie/Host/Origin cannot be injected through headers. An explicit cookie option also requires GM_cookie permission; anonymous=true suppresses it, and cross-origin redirects remove it. GM.xmlHttpRequest returns an awaitable Promise; both forms support abort().
     7. Persist only JSON-serializable values. Limits: 256 KiB per value and 1 MiB per script. Value listeners support cross-tab changes, reporting remote=true for another tab. Remove listeners when no longer needed.
     8. @resource requires a name, URL, and matching @connect; resource APIs return Promises. HTTPS @require files are downloaded and cached at installation or save, then executed in declaration order before the main script without needing @connect; legacy HTTP URLs are upgraded to HTTPS. Limits: 32 dependencies, 5 MB each, 20 MB total. MD5 and SHA-1/256/384/512 integrity hashes in URL fragments are supported; tampermonkey:// built-in dependencies are not.
-    9. Standard DOM, events, MutationObserver, fetch, and other web APIs are available; fetch remains subject to page origin and CORS. Scripts do not run in Private Browsing.
+    9. Standard DOM, events, MutationObserver, fetch, and other web APIs are available. Fetch remains subject to page origin and CORS. For single-page apps, declare `@grant window.onurlchange`, check `window.onurlchange === null`, and read `event.url` in a `urlchange` listener. Scripts do not run in Private Browsing.
     10. Support iPhone/iPad, light/dark appearance, safe areas, dynamic pages, and accessibility. Namespace every inserted id/class and avoid expensive polling, unbounded observers, and global CSS leakage.
     11. Make execution idempotent. Cancel outstanding requests, remove listeners, and revoke Object URLs on cleanup/navigation. Standalone scripts are injected in the main frame; do not assume cross-origin iframe access.
     12. Prefer GM_download / GM.download for public direct URLs, respecting @connect, cancellation, and error callbacks. Do not accumulate an entire large video in memory through GM XHR and Blob arrays. Never present segment counts, duration, or scaled progress units as bytes or invent a file size.
     13. For Range requests, validate 206, Content-Range, and exact byte counts. Fall back to an ordinary download if the server ignores Range and returns 200; never concatenate duplicated whole files. Bound concurrency and back off on failures. Connections may be reused between requests.
     14. HLS may contain TS or fMP4. If AES-128 has no IV attribute, derive the 128-bit big-endian IV from the media sequence number, never from the key. Concatenated TS is not MP4 muxing. Do not remove presumed ad segments by default or implement DRM decryption.
     15. This output is a standalone UserScript, not a CRX/WebExtension. Do not call chrome.userScripts, chrome.runtime, or chrome.downloads from .user.js. The extensionHost reference below applies only to installed browser extensions. Partial API support does not mean complete Chrome/Tampermonkey compatibility.
-    16. Supply HTTPS @updateURL/@downloadURL and @version for update checks. Opening Installed checks up to 4 scripts per visit, once per script per 24 hours. Checks pause in Private Browsing, Low Power Mode, or high heat. Updated code still requires user review and installation. GM_webRequest, GM_audio, and sandbox/run-in isolation are unsupported.
+    16. Supply HTTPS @updateURL/@downloadURL and @version for update checks. Opening Installed checks up to 4 scripts per visit, once per script per 24 hours. Checks pause in Private Browsing, Low Power Mode, or high heat. Updated code still requires user review and installation. `@run-in normal-tabs` matches ordinary tabs. Scripts that specify only private tabs or containers are skipped. GM_audio and @sandbox are unsupported.
+    17. Declare `@grant GM_webRequest` explicitly to use `GM_webRequest(rules, listener)`. Register at `@run-at document-start` to catch early requests. Rules apply to Fetch and XMLHttpRequest opened after registration in a matching document's main frame. Example rule `{selector: '*://example.com/ping*', action: 'cancel'}`. Redirects stay on the original request's origin and must match the script's @match or @include without matching an exclusion. To redirect a Fetch upload, pass a URL string and init instead of a Request with a body. The listener `(action, status, details)` reports the rule action, not the HTTP status. Pass `[]` to clear your script's rules. Resource tags, iframes, workers, WebSocket and GM_xmlhttpRequest are outside this API's scope.
 
     Generate the script now from the Requirement section.
     """
@@ -296,23 +309,27 @@ struct UserScriptDocumentationView: View {
     /// Machine-readable reference shared by the visible document and copied
     /// prompt, so their capability boundaries cannot drift independently.
     private static var runtimeReference: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.17"
         return """
         {
-          "Soulo": "\(version)",
+          "Soulo": "\(appVersion)",
           "standaloneUserScript": {
             "format": ".user.js", "frames": "main", "privateBrowsing": false,
             "GM_xmlhttpRequest": {"maxResponseBytes": 20971520, "maxUploadBytes": 8388608, "maxConcurrentPerPage": 8, "timeoutSeconds": [1, 60], "events": ["progress", "upload", "timeout", "abort"], "progress": "loaded/total bytes; complete response in onload", "automaticCookies": false, "explicitCookieGrant": "GM_cookie", "anonymousSuppressesCookie": true, "crossOriginRedirectStripsCookie": true},
             "GM_download": {"transport": "native", "publicHTTPURL": true, "requiresConnectPermission": true, "gmXHRSizeCapApplies": false},
+            "GM_notification": {"presentation": "in-page", "options": ["text", "title", "image", "tag", "timeout", "url", "onclick", "ondone"]},
+            "GM_webRequest": {"grant": "GM_webRequest", "scope": "main-frame Fetch and XMLHttpRequest", "selectors": ["include", "match", "exclude"], "actions": ["cancel", "redirect"], "redirect": "same-origin and script-matched destination", "listener": ["action", "status", "details"], "clearRules": []},
             "storage": {"perValueBytes": 262144, "perScriptBytes": 1048576, "crossTabValueListeners": true, "remoteChanges": true},
+            "urlchange": {"grant": "window.onurlchange", "featureCheck": "window.onurlchange === null", "eventURL": "event.url"},
             "updateChecks": {"trigger": "Installed list", "perVisit": 4, "minimumIntervalHours": 24, "metadataOnly": true, "automaticInstall": false},
-            "unsupported": ["GM_webRequest", "GM_audio", "sandbox/run-in isolation"]
+            "runIn": {"supported": ["normal-tabs"], "skipIfExcluded": true},
+            "unsupported": ["GM_audio", "@sandbox", "private and container execution"]
           },
           "extensionHost": {
             "minimumIOS": "18.4", "publisherPermissionsRequired": true,
             "userScripts.execute": {"worlds": ["USER_SCRIPT", "MAIN"], "targets": ["tabId", "frameIds", "documentIds", "allFrames"], "asyncResults": true},
             "userScripts.configureWorld": {"messaging": "opt-in", "networkCSP": ["default-src", "connect-src"], "fullChromeCSP": false},
             "runtime": ["onUserScriptMessage", "onUserScriptConnect", "bidirectional ports"],
+            "userScriptMessageReplies": {"firstResponseWins": true, "ignoresNonRespondingListeners": true, "canceledOnDocumentCloseOrPermissionRevocation": true},
             "downloads": ["HTTP(S)", "owned Blob", "data URL"],
             "registeredScripts": "wrapped programs; use explicit shared global state when required",
             "allChromeAPIs": false, "allExtensionsCompatible": false

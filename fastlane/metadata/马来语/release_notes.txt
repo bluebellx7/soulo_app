@@ -1,4 +1,4 @@
-• Tetapan telah disusun semula. Pratonton bar alat halaman utama sambil menukar gaya, menyusun semula butang atau menyeretnya ke tempat yang dikehendaki.
-• Apabila pemulihan ketika mula semula dihidupkan, Soulo membuka halaman utama atau halaman web yang terakhir dilihat.
-• Menu pelayar lebih mudah dibaca. Anda boleh memaparkan semula bar alat yang tersembunyi daripada menu Lagi.
-• Permintaan rangkaian dan semakan kemas kini untuk skrip pengguna telah diperbaik.
+• Peralihan ke skrin penuh, penimbalan dan menu kelajuan main balik video dalam talian telah ditambah baik.
+• Pengecaman pautan magnet dan carian rakan setara untuk muat turun BitTorrent telah ditambah baik.
+• Skrip pengguna boleh menggunakan GM_webRequest untuk membatalkan permintaan Fetch dan XHR daripada bingkai utama atau mengubah halanya ke asal yang sama.
+• Keserasian sambungan pelayar dipertingkat, termasuk penamaan fail muat turun dan pemuatan halaman di luar skrin.
