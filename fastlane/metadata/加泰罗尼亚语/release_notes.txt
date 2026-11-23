@@ -1,4 +1,1 @@
-• S’han millorat el pas a pantalla completa, la memòria intermèdia i el menú de velocitat dels vídeos en línia.
-• S’han millorat el reconeixement dels enllaços magnet i la detecció de parells per a les baixades BitTorrent.
-• Els scripts d’usuari poden fer servir GM_webRequest per cancel·lar o redirigir al mateix origen les sol·licituds Fetch i XHR del marc principal.
-• S'ha millorat la compatibilitat de les extensions del navegador, inclosos els noms dels fitxers baixats i la càrrega de pàgines fora de pantalla.
+S’ha millorat la càrrega de scripts en obrir pàgines web i la compatibilitat amb les extensions del navegador.

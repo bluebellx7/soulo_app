@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "קפסולה";
 "home_toolbar_icons" = "סמלים בלבד";
 "home_toolbar_bottom" = "בתחתית";
-"home_toolbar_belowSearch" = "מתחת לחיפוש";
 "home_toolbar_free" = "מיקום חופשי";
+"home_toolbar_search_bottom" = "בתחתית";
+"home_toolbar_alignment" = "יישור סרגל הכלים";
 "home_toolbar_leading" = "יישור להתחלה";
 "home_toolbar_center" = "מרכוז";
 "home_toolbar_trailing" = "יישור לסוף";
 "home_toolbar_drag_position" = "גררו את סרגל הכלים למקום הרצוי.";
 "home_toolbar_drag_buttons" = "הקישו להחלפת כפתור וגררו לשינוי הסדר.";
+"home_toolbar_style" = "סגנון";
+"home_toolbar_visibility" = "הצגה/הסתרה";
+"home_toolbar_visibility_page" = "רכיבי דף הבית";
+"home_toolbar_visibility_search_area" = "אזור החיפוש";
+"home_toolbar_visibility_title" = "כותרת";
+"home_toolbar_visibility_subtitle" = "כותרת משנה";
+"home_toolbar_visibility_search" = "סרגל חיפוש";
+"home_toolbar_visibility_search_hint" = "כדי להציג את סרגל החיפוש, החליקו למעלה או למטה בדף הבית.";
+"home_toolbar_visibility_recovery" = "לחצו לחיצה ממושכת על מקום ריק בדף הבית כדי לפתוח את התפריט.";
 "home_toolbar_search" = "מצא דף";
 "group_default_search" = "חיפוש ברירת מחדל";
 "group_search_settings" = "הגדרות קבוצה";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "זכוכית חלבית";
 "wallpaper_blur_amount" = "עוצמת הטשטוש";
 
+"home_quick_search_guide" = "הקלידו מילת חיפוש בדף הבית כדי לראות פלטפורמות מתחת לסרגל החיפוש. הקישו על פלטפורמה כדי לחפש בה.";
 "auto_hide_platform_bar_hint" = "כשהאפשרות מופעלת, הסרגל מוסתר רק לאחר הקשה על תוכן הדף ורק אם דומיין הדף אינו תואם לשום פלטפורמה בסרגל הנוכחי. התאמה משאירה את הסרגל גלוי או מציגה אותו מחדש. גלילה והפניות אוטומטיות אינן מסתירות אותו.";
 
 "ad_subscription_add" = "הוספת רשימת סינון";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "דפי אינטרנט";
 "manual_backups_empty" = "עדיין אין גיבויים ידניים";
 "browsing_display_settings_legacy" = "תצוגת גלישה";
+"media_lock_orientation" = "נעילת כיוון המסך";
+"media_unlock_orientation" = "ביטול נעילת כיוון המסך";
+
+"music_queue" = "רשימת השמעה";
+"music_previous_track" = "הרצועה הקודמת";
+"music_next_track" = "הרצועה הבאה";

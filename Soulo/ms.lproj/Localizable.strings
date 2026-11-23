@@ -241,8 +241,6 @@
 "login_required_toast" = "Sila log masuk dahulu, kemudian cari semula";
 "status_enabled" = "Didayakan";
 "status_disabled" = "Dilumpuhkan";
-"show_top_search_bar" = "Tunjukkan Bar Carian Teratas";
-"show_top_search_bar_desc" = "Apabila tersembunyi, gunakan kawalan alamat bawah untuk mencari atau memulakan input suara";
 "ad_block_master_disabled_desc" = "Hidupkan Blok Iklan untuk menggunakan dan mengurus langganan penapis di bawah.";
 "custom_groups" = "Kumpulan Tersuai";
 "no_groups" = "Tiada Kumpulan Tersuai";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Berjaya mengimport platform %d";
 "paste_from_clipboard" = "Tampal dari Papan Klip";
 "none" = "tiada";
-"show_group_picker_home" = "Tunjukkan Pemilih Kumpulan di Laman Utama";
-"show_group_picker_home_desc" = "Paparkan tab kumpulan platform pada skrin utama untuk penukaran pantas";
 "error_no_internet" = "Tiada sambungan internet. Sila semak rangkaian anda.";
 "error_timeout" = "Sambungan tamat masa. Sila cuba lagi.";
 "error_ssl" = "Sambungan selamat gagal. Laman web ini mungkin tidak selamat.";

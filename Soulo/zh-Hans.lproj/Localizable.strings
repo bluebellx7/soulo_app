@@ -50,12 +50,12 @@
 "no_bookmarks" = "暂无收藏";
 "no_bookmarks_desc" = "浏览网页时点击收藏按钮保存";
 "search_history" = "搜索历史";
-"no_history" = "暂无搜索历史";
+"no_history" = "暂无历史";
 "no_history_desc" = "最近的搜索和访问过的网页会显示在这里";
 "today" = "今天";
 "yesterday" = "昨天";
 "earlier" = "更早";
-"confirm_clear_history" = "确认清除所有搜索历史？";
+"confirm_clear_history" = "确认清除所有历史？";
 "confirm_clear_bookmarks" = "确认清除所有收藏？";
 "settings" = "设置";
 "platform_management" = "平台管理";
@@ -247,8 +247,6 @@
 "login_required_toast" = "请先登录后再搜索";
 "status_enabled" = "已启用";
 "status_disabled" = "已停用";
-"show_top_search_bar" = "显示顶部搜索框";
-"show_top_search_bar_desc" = "隐藏后，可点击底部地址栏搜索或使用语音输入";
 "ad_block_master_disabled_desc" = "开启广告过滤后，才能使用和管理下方过滤规则订阅。";
 "custom_groups" = "自定义分组";
 "no_groups" = "暂无自定义分组";
@@ -370,8 +368,6 @@
 "batch_import_result" = "成功导入 %d 个平台";
 "paste_from_clipboard" = "从剪贴板粘贴";
 "none" = "无";
-"show_group_picker_home" = "首页显示分组";
-"show_group_picker_home_desc" = "在首页显示平台分组标签，快速切换搜索范围";
 "error_no_internet" = "无网络连接，请检查网络设置";
 "error_timeout" = "连接超时，请重试";
 "error_ssl" = "安全连接失败，该网站可能不安全";
@@ -850,7 +846,7 @@
 "current_keyword" = "当前关键词";
 "platform_invalid_web_url" = "请输入以 http:// 或 https:// 开头的有效网址。";
 
-"library_history_tab" = "搜索历史";
+"library_history_tab" = "历史";
 
 "library_files_tab" = "文件";
 

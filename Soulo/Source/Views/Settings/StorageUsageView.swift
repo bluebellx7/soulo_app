@@ -135,9 +135,7 @@ struct StorageUsageView: View {
         .overlay { if loading || clearing != nil { ProgressView().allowsHitTesting(false) } }
         .onAppear { Task { await refresh() } }
         .refreshable { await refresh() }
-        .alert(ToolText.text("done"), isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
-            Button(ToolText.text("done")) { notice = nil }
-        } message: { Text(notice ?? "") }
+        .statusNotice($notice)
         .alert(ToolText.text("error"), isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button(ToolText.text("done")) { error = nil }
         } message: { Text(error ?? "") }
@@ -436,9 +434,7 @@ private struct AdditionalStorageView: View {
         }
         .overlay { if loading || clearing { ProgressView().allowsHitTesting(false) } }
         .onAppear { Task { await refresh() } }.refreshable { await refresh() }
-        .alert(ToolText.text("done"), isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
-            Button(ToolText.text("done")) { notice = nil }
-        } message: { Text(notice ?? "") }
+        .statusNotice($notice)
         .alert(ToolText.text("error"), isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button(ToolText.text("done")) { error = nil }
         } message: { Text(error ?? "") }
@@ -502,15 +498,17 @@ private struct WebsiteStorageView: View {
                 .accessibilityLabel(FeatureText.text("Website data"))
                 .accessibilityValue(totalBytes.map(String.init) ?? "")
                 .accessibilityIdentifier("storage.websites.total")
+                // Size calculation is read-only. Cleanup selects the current website records itself.
                 StorageCacheClearButton(title: FeatureText.text("Website data"), identifier: "storage.websites.clear-all",
-                    textLabel: LanguageManager.shared.localizedString("clear_all_data"), enabled: !loading && !clearingExtensions,
+                    textLabel: LanguageManager.shared.localizedString("clear_all_data"), enabled: !clearingExtensions,
                     confirmationTitle: LanguageManager.shared.localizedString("clear_all_data"),
                     confirmationMessage: FeatureText.text("Deleting website data can sign you out and remove offline content.") + "\n\n" + ToolText.text("storage_website_clear_scope")) {
                         refreshID = UUID()
                         clearingExtensions = true
                         Task {
                             notice = await StorageUsageService.clearWebsiteData().notice
-                            await refresh(afterCleanup: true); clearingExtensions = false
+                            clearingExtensions = false
+                            await refresh()
                         }
                     }
             } footer: { Text(ToolText.text("storage_website_clear_scope")) }
@@ -563,15 +561,13 @@ private struct WebsiteStorageView: View {
         .navigationTitle(FeatureText.text("Website data"))
         .overlay { if loading || clearingExtensions { ProgressView().allowsHitTesting(false) } }
         .task { await refresh() }.refreshable { await refresh() }
-        .alert(ToolText.text("done"), isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
-            Button(ToolText.text("done")) { notice = nil }
-        } message: { Text(notice ?? "") }
+        .statusNotice($notice)
         .alert(ToolText.text("error"), isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button(ToolText.text("done")) { error = nil }
         } message: { Text(error ?? "") }
     }
-    private func refresh(afterCleanup: Bool = false) async {
-        guard !clearingExtensions || afterCleanup else { return }
+    private func refresh() async {
+        guard !clearingExtensions else { return }
         let id = UUID(); refreshID = id
         let updated = await WebsiteStorageService.snapshot { list in
             guard refreshID == id, !list.isEmpty else { return }
@@ -614,11 +610,13 @@ private struct WebsiteStorageDetail: View {
                 Button(LanguageManager.shared.localizedString("delete"), role: .destructive) {
                     requested = nil; clearing = true
                     Task {
-                        do { try await WebsiteStorageService.clear(entry, types: types) }
+                        defer { clearing = false }
+                        do {
+                            try await WebsiteStorageService.clear(entry, types: types)
+                            let updated = await WebsiteStorageService.entries()
+                            entry = updated.first { $0.id == entry.id } ?? .init(domain: entry.domain, dataTypes: [], bytes: .init())
+                        }
                         catch { self.error = error.localizedDescription }
-                        let updated = await WebsiteStorageService.entries()
-                        entry = updated.first { $0.id == entry.id } ?? .init(domain: entry.domain, dataTypes: [], bytes: .init())
-                        clearing = false
                     }
                 }
             }
@@ -742,7 +740,7 @@ private struct StorageCleanupView: View {
                 ToolbarItem(placement: .cancellationAction) { Button(ToolText.text("cancel")) { dismiss() }.disabled(clearing) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(LanguageManager.shared.localizedString("privacy_clear_action"), role: .destructive) { confirms = true }
-                        .disabled(selectedChoices.isEmpty || clearing || (requiresTypedConfirmation && confirmation.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() != "CLEAR"))
+                        .disabled(selectedChoices.isEmpty || clearing || retainedNotice != nil || (requiresTypedConfirmation && confirmation.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() != "CLEAR"))
                         .accessibilityIdentifier("storage.cleanup.execute")
                 }
             }
@@ -751,9 +749,7 @@ private struct StorageCleanupView: View {
             .confirmationDialog(LanguageManager.shared.localizedString("privacy_clear_action"), isPresented: $confirms, titleVisibility: .visible) {
                 Button(LanguageManager.shared.localizedString("privacy_clear_action"), role: .destructive) { Task { await execute() } }
             } message: { Text(selectedChoices.map(\.title).sorted().joined(separator: "、")) }
-            .alert(ToolText.text("done"), isPresented: Binding(get: { retainedNotice != nil }, set: { if !$0 { retainedNotice = nil; dismiss() } })) {
-                Button(ToolText.text("done")) { retainedNotice = nil; dismiss() }
-            } message: { Text(retainedNotice ?? "") }
+            .statusNotice($retainedNotice) { dismiss() }
             .alert(ToolText.text("error"), isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button(ToolText.text("done")) { error = nil }
             } message: { Text(error ?? "") }

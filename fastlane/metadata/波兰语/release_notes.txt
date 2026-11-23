@@ -1,4 +1,1 @@
-• Ulepszono przełączanie na pełny ekran, buforowanie i menu szybkości odtwarzania filmów online.
-• Ulepszono rozpoznawanie linków magnet i wyszukiwanie peerów do pobierania przez BitTorrent.
-• Skrypty użytkownika mogą używać GM_webRequest do anulowania żądań Fetch i XHR z głównej ramki lub przekierowywania ich do tego samego źródła.
-• Poprawiono zgodność rozszerzeń przeglądarki, w tym nazwy pobieranych plików i wczytywanie stron poza ekranem.
+Usprawniono wczytywanie skryptów podczas otwierania stron internetowych i zgodność z rozszerzeniami przeglądarki.

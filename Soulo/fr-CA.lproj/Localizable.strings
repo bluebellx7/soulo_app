@@ -241,8 +241,6 @@
 "login_required_toast" = "Veuillez d'abord vous connecter, puis effectuer une nouvelle recherche";
 "status_enabled" = "Activé";
 "status_disabled" = "Désactivé";
-"show_top_search_bar" = "Afficher la barre de recherche supérieure";
-"show_top_search_bar_desc" = "Lorsqu'il est masqué, utilisez le contrôle d'adresse inférieur pour rechercher ou démarrer la saisie vocale";
 "ad_block_master_disabled_desc" = "Activez Ad Block pour utiliser et gérer les abonnements aux filtres ci-dessous.";
 "custom_groups" = "Groupes personnalisés";
 "no_groups" = "Aucun groupe personnalisé";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Plateformes %d importées avec succès";
 "paste_from_clipboard" = "Coller depuis le Presse-papiers";
 "none" = "Aucun";
-"show_group_picker_home" = "Afficher le sélecteur de groupe sur la page d'accueil";
-"show_group_picker_home_desc" = "Afficher les onglets des groupes de plates-formes sur l'écran d'accueil pour une commutation rapide";
 "error_no_internet" = "Pas de connexion Internet. Veuillez vérifier votre réseau.";
 "error_timeout" = "La connexion a expiré. Veuillez réessayer.";
 "error_ssl" = "La connexion sécurisée a échoué. Ce site n'est peut-être pas sûr.";

@@ -31,6 +31,8 @@ struct ReaderLink: Identifiable {
         webView?.evaluateJavaScript("window.soulo.\(name)(...\(json)); null;", completionHandler: nil)
     }
     func seek(_ fraction: Double) {
+        guard fraction.isFinite else { return }
+        let fraction = LibraryBook.normalizedFraction(fraction)
         if let pdfView, let document = pdfView.document {
             let index = Int((fraction * Double(max(0, document.pageCount - 1))).rounded())
             if let page = document.page(at: index) { pdfView.go(to: page) }

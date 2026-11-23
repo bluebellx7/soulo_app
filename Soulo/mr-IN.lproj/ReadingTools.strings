@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "कॅप्सूल";
 "home_toolbar_icons" = "फक्त चिन्हे";
 "home_toolbar_bottom" = "खाली";
-"home_toolbar_belowSearch" = "शोधाखाली";
 "home_toolbar_free" = "हवे ते स्थान";
+"home_toolbar_search_bottom" = "खाली";
+"home_toolbar_alignment" = "टूलबारचे संरेखन";
 "home_toolbar_leading" = "सुरुवातीला";
 "home_toolbar_center" = "मध्यभागी";
 "home_toolbar_trailing" = "शेवटी";
 "home_toolbar_drag_position" = "टूलबार हव्या त्या ठिकाणी ओढा.";
 "home_toolbar_drag_buttons" = "बटण बदलण्यासाठी टॅप करा. क्रम बदलण्यासाठी ओढा.";
+"home_toolbar_style" = "शैली";
+"home_toolbar_visibility" = "दाखवा/लपवा";
+"home_toolbar_visibility_page" = "मुख्यपृष्ठावरील घटक";
+"home_toolbar_visibility_search_area" = "शोध क्षेत्र";
+"home_toolbar_visibility_title" = "शीर्षक";
+"home_toolbar_visibility_subtitle" = "उपशीर्षक";
+"home_toolbar_visibility_search" = "शोध बार";
+"home_toolbar_visibility_search_hint" = "शोध बार दाखवण्यासाठी होम पेजवर वर किंवा खाली स्वाइप करा.";
+"home_toolbar_visibility_recovery" = "मेनू उघडण्यासाठी होमवरील रिकामी जागा दाबून ठेवा.";
 "home_toolbar_search" = "एक पृष्ठ शोधा";
 "group_default_search" = "डीफॉल्ट शोध";
 "group_search_settings" = "गट सेटिंग्ज";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "धूसर काच";
 "wallpaper_blur_amount" = "धूसरपणाची तीव्रता";
 
+"home_quick_search_guide" = "मुख्यपृष्ठावर शोधशब्द टाकल्यावर शोध बारखाली प्लॅटफॉर्म दिसतात. शोधण्यासाठी एखाद्या प्लॅटफॉर्मवर टॅप करा.";
 "auto_hide_platform_bar_hint" = "सुरू केल्यावर, पृष्ठातील मजकुरावर स्वतः टॅप केल्यावर आणि पृष्ठाचे डोमेन सध्याच्या बारमधील कोणत्याही प्लॅटफॉर्मशी जुळत नसल्यावरच बार लपतो. कोणत्याही प्लॅटफॉर्मशी जुळल्यास बार दिसत राहतो किंवा पुन्हा दिसतो. स्क्रोल आणि आपोआप पुनर्निर्देशन बार लपवत नाहीत.";
 
 "ad_subscription_add" = "फिल्टर यादी जोडा";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "वेबपृष्ठे";
 "manual_backups_empty" = "अद्याप मॅन्युअल बॅकअप नाही";
 "browsing_display_settings_legacy" = "ब्राउझिंगचे प्रदर्शन";
+"media_lock_orientation" = "स्क्रीनची दिशा लॉक करा";
+"media_unlock_orientation" = "स्क्रीनची दिशा अनलॉक करा";
+
+"music_queue" = "प्लेलिस्ट";
+"music_previous_track" = "मागील गाणे";
+"music_next_track" = "पुढील गाणे";

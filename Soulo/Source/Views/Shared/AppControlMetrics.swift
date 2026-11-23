@@ -7,6 +7,54 @@ enum AppControlMetrics {
     static let actionHeight: CGFloat = 44
 }
 
+extension View {
+    func statusNotice(_ message: Binding<String?>, identifier: String = "status.notice",
+                      onDismiss: (() -> Void)? = nil) -> some View {
+        modifier(AppStatusNotice(message: message, identifier: identifier, onDismiss: onDismiss))
+    }
+}
+
+private struct AppStatusNotice: ViewModifier {
+    @Binding var message: String?
+    let identifier: String
+    let onDismiss: (() -> Void)?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .top) {
+                if let message {
+                    Label {
+                        Text(message)
+                    } icon: {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    }
+                        .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 11)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: .black.opacity(0.14), radius: 8, y: 3)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityIdentifier(identifier)
+                        .allowsHitTesting(false)
+                        .transition(reduceMotion ? .identity : .opacity)
+                }
+            }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: message)
+            .task(id: message) {
+                guard let message else { return }
+                AppAccessibility.announce(message)
+                let seconds = min(7, max(3, Double(message.count) / 20))
+                do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
+                guard !Task.isCancelled, self.message == message else { return }
+                self.message = nil
+                onDismiss?()
+            }
+    }
+}
+
 /// One restrained press response for home controls, with no layout changes.
 struct HomePressFeedback: ViewModifier {
     let isPressed: Bool

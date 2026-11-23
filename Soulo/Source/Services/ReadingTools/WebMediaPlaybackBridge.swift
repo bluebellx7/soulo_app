@@ -60,6 +60,23 @@ enum WebVideoOrientationRuntime {
         }
         return true;
       }
+      function coveredByEmbeddedPlayer(rect) {
+        const left=Math.max(rect.left,0), right=Math.min(rect.right,innerWidth);
+        const top=Math.max(rect.top,0), bottom=Math.min(rect.bottom,innerHeight);
+        if (right <= left || bottom <= top) return false;
+        const frame=document.elementFromPoint((left+right)/2,(top+bottom)/2);
+        if (!(frame instanceof HTMLIFrameElement)) return false;
+        const bounds=frame.getBoundingClientRect();
+        if (bounds.left>left+1 || bounds.right<right-1 || bounds.top>top+1 || bounds.bottom<bottom-1) return false;
+        const replacement=frame.contentDocument?.querySelector('video');
+        if (replacement && replacement.clientWidth>=100 && replacement.clientHeight>=70
+            && isVisible(replacement,new Map())) return true;
+        // Separate extension origins cannot be inspected from the page.
+        try {
+          const source=new URL(frame.src);
+          return source.protocol==='webkit-extension:' && source.pathname==='/player/index.html';
+        } catch (_) { return false; }
+      }
       function needsBottomClearance(video, rect, styles) {
         if (window !== window.top || isFullscreen(video)) return false;
         if (rect.width < 100 || rect.height < 70 || rect.bottom <= 0 || rect.top >= innerHeight
@@ -254,6 +271,7 @@ enum WebVideoOrientationRuntime {
         }
         const viewport = overlay.metrics(), styles = new Map(), updates = [];
         let needsClearance = false;
+        const hasEmbeddedFrame = document.querySelector('iframe') !== null;
         // Read all geometry first. Interleaving a floating control's writes with
         // the next video's reads forces repeated layout on result-heavy pages.
         const layoutVideos = new Set(visibleVideos);
@@ -264,7 +282,8 @@ enum WebVideoOrientationRuntime {
           const r = video.getBoundingClientRect();
           const inViewport = r.right > 44 && r.bottom > 44 && r.left < innerWidth - 44 && r.top < innerHeight - 44;
           const videoVisible = !active?.began && r.width >= 100 && r.height >= 70
-            && (inViewport || floatingVideos.has(video)) && isVisible(video, styles);
+            && (inViewport || floatingVideos.has(video)) && isVisible(video, styles)
+            && (!hasEmbeddedFrame || floatingVideos.has(video) || !coveredByEmbeddedPlayer(r));
           if (videoVisible) needsClearance ||= needsBottomClearance(video, r, styles);
           const visible = toolsEnabled && videoVisible;
           if (visible && !button.__souloAvailabilityReported) {
@@ -584,6 +603,7 @@ enum WebVideoOrientationRuntime {
           const wasExpanded = expandedGroup === button; collapse(); if (wasExpanded) return;
           expandedGroup = button; button.style.setProperty('width',expandedWidth()+'px','important');
           for (const action of [download, speed, fullscreen, episodes, settings]) showAction(action, action !== episodes || episodesAvailable);
+          send('toolsOpened', button.dataset.souloMediaID);
           setToggleState(toggle,true); schedule();
         };
         button.append(download, speed, fullscreen, episodes, settings, toggle);

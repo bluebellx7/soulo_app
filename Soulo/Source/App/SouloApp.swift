@@ -40,18 +40,17 @@ struct SouloApp: App {
     @StateObject private var themeManager: ThemeManager
     @StateObject private var wallpaperManager = WallpaperManager.shared
 
-    private let libraryStore: LibraryStore
-    private let historyExitPolicy: BrowsingHistoryExitPolicy
+    struct OpenLibrary {
+        let store: LibraryStore
+        let historyExitPolicy: BrowsingHistoryExitPolicy
+    }
+
+    @State private var library: OpenLibrary?
 
     init() {
         StorageUsageService.prepareSession()
         StorageAutomaticMaintenance.shared.start()
-        do { libraryStore = try LibraryStore() }
-        catch { fatalError("Could not open the Soulo library: \(error)") }
-        historyExitPolicy = BrowsingHistoryExitPolicy(container:libraryStore.container)
-        historyExitPolicy.start()
-        BrowserIntentLibrary.shared.context = libraryStore.mainContext
-        BookmarkCloudSyncService.shared.attach(container: libraryStore.container)
+        _library = State(initialValue: Self.openLibrary())
         BrowserStartupTrace.mark("app_init")
         BrowserStartupTrace.startResponsivenessProbe()
         UserDefaults.standard.register(defaults: [AppConstants.StorageKeys.appearance: "dark"])
@@ -67,17 +66,54 @@ struct SouloApp: App {
         _themeManager = StateObject(wrappedValue: ThemeManager.shared)
     }
 
+    @MainActor
+    static func openLibrary(makeStore: () throws -> LibraryStore = { try LibraryStore() }) -> OpenLibrary? {
+        do {
+            let store = try makeStore()
+            let historyExitPolicy = BrowsingHistoryExitPolicy(container: store.container)
+            historyExitPolicy.start()
+            BrowserIntentLibrary.shared.context = store.mainContext
+            BookmarkCloudSyncService.shared.attach(container: store.container)
+            return OpenLibrary(store: store, historyExitPolicy: historyExitPolicy)
+        } catch {
+            BrowserStartupTrace.mark("library_open_failed")
+            return nil
+        }
+    }
+
     var body: some Scene {
         WindowGroup(for: BrowserWindowConfiguration.self) { configuration in
-            SouloWindowRoot(windowID: configuration.wrappedValue.id)
-                .environment(\.managedObjectContext, libraryStore.mainContext)
-                .environmentObject(languageManager)
-                .environmentObject(themeManager)
-                .environmentObject(wallpaperManager)
-                .environment(\.locale, languageManager.locale)
-                .environment(\.layoutDirection, languageManager.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
-                .tint(Color.themePrimary)
-                .accentColor(Color.themePrimary)
+            Group {
+                if let library {
+                    SouloWindowRoot(windowID: configuration.wrappedValue.id)
+                        .environment(\.managedObjectContext, library.store.mainContext)
+                } else {
+                    VStack(spacing: 16) {
+                        Image(systemName: "externaldrive.badge.exclamationmark")
+                            .font(.largeTitle)
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                        Text(languageManager.localizedString("library"))
+                            .font(.title2.bold())
+                        Text(languageManager.localizedString("load_error"))
+                            .foregroundStyle(.secondary)
+                        Button(languageManager.localizedString("retry")) {
+                            if library == nil { library = Self.openLibrary() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .multilineTextAlignment(.center)
+                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .environmentObject(languageManager)
+            .environmentObject(themeManager)
+            .environmentObject(wallpaperManager)
+            .environment(\.locale, languageManager.locale)
+            .environment(\.layoutDirection, languageManager.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
+            .tint(Color.themePrimary)
+            .accentColor(Color.themePrimary)
         } defaultValue: {
             BrowserWindowConfiguration.defaultWindow()
         }
@@ -125,6 +161,7 @@ private struct SouloWindowRoot: View {
                     tabManager.rememberVisibleScreen(isBrowsing: searchVM.isSearching)
                 }
                 VideoScreenAwakeService.shared.reloadUserPreference()
+                WidgetWallpaperPublisher.shared.schedule(wallpaperManager)
                 CloudSyncService.shared.startIfEnabled()
                 BookmarkCloudSyncService.shared.refresh()
             }
@@ -159,6 +196,9 @@ private struct SouloWindowRoot: View {
             }
             .onCompatibleChange(of: themeManager.appearance) { _, _ in
                 applyWebAppearanceToOpenTabs()
+            }
+            .onReceive(wallpaperManager.objectWillChange) { _ in
+                WidgetWallpaperPublisher.shared.schedule(wallpaperManager)
             }
             .onOpenURL { url in
                 if ["magnet", "ed2k", "thunder"].contains(url.scheme?.lowercased() ?? "") {
@@ -230,6 +270,7 @@ private struct SouloWindowRoot: View {
         activationTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 350_000_000)
             guard !Task.isCancelled else { return }
+            if !isIncognito { BrowserExtensionService.prepareNewTabExtensionIfSelected() }
             // A new user may already be composing the first query. Defer
             // speculative rule preparation until the editor releases focus.
             while searchVM.input.isEditing {

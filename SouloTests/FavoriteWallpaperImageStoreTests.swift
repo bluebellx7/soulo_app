@@ -5,6 +5,29 @@ import XCTest
 
 @MainActor
 final class FavoriteWallpaperImageStoreTests: XCTestCase {
+    func testHomeRefreshUsesAnotherBingCandidateWithoutReloadingTheArchive() async throws {
+        WallpaperPreviewProtocol.state.reset([
+            "www.bing.com/HPImageArchive.aspx": try JSONSerialization.data(withJSONObject: ["images": [
+                ["startdate": "today", "url": "/today.png"], ["startdate": "yesterday", "url": "/yesterday.png"]
+            ]]),
+            "www.bing.com/today.png": try png(.blue),
+            "www.bing.com/yesterday.png": try png(.red)
+        ])
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [WallpaperPreviewProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        try await withLocalManager(session: session) { manager in
+            manager.autoRandomizeRemoteSources = false
+            await manager.selectSource(.bing)
+            XCTAssertEqual(manager.currentImageID, "today")
+            XCTAssertEqual(WallpaperPreviewProtocol.state.requestCount, 2)
+            await manager.refreshRandom(appearance: .light)
+            XCTAssertEqual(manager.currentImageID, "yesterday")
+            XCTAssertEqual(WallpaperPreviewProtocol.state.requestCount, 3)
+        }
+    }
+
     func testManualSourceSelectionKeepsTheChosenSourceInFavoriteOnlyMode() async throws {
         let imageURL = "https://preview.test/source.png"
         WallpaperPreviewProtocol.state.reset([
@@ -280,6 +303,82 @@ final class FavoriteWallpaperImageStoreTests: XCTestCase {
         }
     }
 
+    func testImageContrastUsesRenderedWallpaperPosition() throws {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 100, height: 200), format: format).image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 100, height: 100))
+            UIColor.black.setFill()
+            context.fill(CGRect(x: 0, y: 100, width: 100, height: 100))
+        }
+        let sample = try XCTUnwrap(WallpaperContrast.ImageSample(try XCTUnwrap(image.cgImage)))
+        let frame = CGRect(x: 40, y: 100, width: 200, height: 120)
+        XCTAssertEqual(sample.prefersDarkText(in: CGRect(x: 130, y: 110, width: 20, height: 20),
+            wallpaperFrame: frame, overlayAmount: 0, blurRadius: 0), true)
+        XCTAssertEqual(sample.prefersDarkText(in: CGRect(x: 130, y: 190, width: 20, height: 20),
+            wallpaperFrame: frame, overlayAmount: 0, blurRadius: 0), false)
+        XCTAssertNil(sample.prefersDarkText(in: CGRect(x: 0, y: 0, width: 20, height: 20),
+            wallpaperFrame: frame, overlayAmount: 0, blurRadius: 0))
+    }
+
+    func testToolbarStylesKeepContrastOnBothSidesOfAWallpaper() throws {
+        let dark = Color(red: 0.18, green: 0.22, blue: 0.28)
+        func toolbar(_ style: HomeToolbarLayout.Style, darkInk: Bool) -> some View {
+            let appearance = HomeToolbarAppearance(lightWallpaper: darkInk, source: .photo)
+            return HomeToolbarStrip(indices: [0], metrics: HomeToolbarMetrics(width: 64, count: 1, style: style),
+                style: style, appearance: appearance) { _ in
+                Button {} label: { HomeToolbarButtonFace(action: .settings, appearance: appearance) }
+                    .buttonStyle(HomeToolbarButtonStyle(appearance: appearance, showsBackground: style == .tiles))
+            }
+            .frame(width: 64, height: 64)
+        }
+        let styles = HomeToolbarLayout.Style.allCases
+        let renderer = ImageRenderer(content: VStack(spacing: 0) {
+            ForEach(styles, id: \.self) { style in
+                HStack(spacing: 0) {
+                    toolbar(style, darkInk: false).background(dark)
+                    toolbar(style, darkInk: true).background(.white)
+                }
+            }
+        })
+        renderer.scale = 3
+        let screenshot = try XCTUnwrap(renderer.uiImage)
+        let image = try XCTUnwrap(screenshot.cgImage)
+        let width = image.width
+        let height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let didDraw = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height,
+                bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        XCTAssertTrue(didDraw)
+        let rowHeight = height / styles.count
+        for row in styles.indices {
+            var lightPixelsOverDark = 0
+            var darkPixelsOverLight = 0
+            for y in (row * rowHeight)..<((row + 1) * rowHeight) {
+                for x in 0..<width {
+                    let index = (y * width + x) * 4
+                    let rgb = pixels[index..<(index + 3)]
+                    if x < width / 2 && rgb.allSatisfy({ $0 > 240 }) { lightPixelsOverDark += 1 }
+                    if x >= width / 2 && rgb.allSatisfy({ $0 < 75 }) { darkPixelsOverLight += 1 }
+                }
+            }
+            XCTAssertGreaterThan(lightPixelsOverDark, 100)
+            XCTAssertGreaterThan(darkPixelsOverLight, 30)
+        }
+        XCTAssertEqual(Array(pixels[0..<3]), [46, 56, 71])
+        XCTAssertEqual(Array(pixels[(width / 2 * 4)..<(width / 2 * 4 + 3)]), [255, 255, 255])
+        let attachment = XCTAttachment(image: screenshot)
+        attachment.name = "toolbar-styles-contrast"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     func testImageOverlayDefaultsPersistsAndDoesNotTintSolidColors() async throws {
         try await withLocalManager { manager in
             XCTAssertTrue(manager.imageOverlayEnabled)
@@ -510,7 +609,7 @@ final class FavoriteWallpaperImageStoreTests: XCTestCase {
         let defaults = UserDefaults.standard
         let keys = ["wallpaper_source", "wallpaper_refresh_interval", "wallpaper_only_favorites", "wallpaper_favorites",
             "wallpaper_gradient_id", "wallpaper_solid_color", "wallpaper_gradient_id_light", "wallpaper_gradient_id_dark",
-            "wallpaper_solid_color_light", "wallpaper_solid_color_dark", "wallpaper_last_auto_refresh_at", "wallpaper_image_overlay", "wallpaper_image_overlay_amount", "wallpaper_image_blur", "wallpaper_image_blur_amount", "wallpaper_blocked"]
+            "wallpaper_solid_color_light", "wallpaper_solid_color_dark", "wallpaper_last_auto_refresh_at", "wallpaper_image_overlay", "wallpaper_image_overlay_amount", "wallpaper_image_blur", "wallpaper_image_blur_amount", "wallpaper_blocked", "wallpaper_auto_random_sources"]
         let previous = keys.map { defaults.object(forKey: $0) }
         defer { for (key, value) in zip(keys, previous) { defaults.set(value, forKey: key) } }
         for key in keys { defaults.removeObject(forKey: key) }

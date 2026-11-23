@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapsul";
 "home_toolbar_icons" = "Ikon sahaja";
 "home_toolbar_bottom" = "Bawah";
-"home_toolbar_belowSearch" = "Di bawah carian";
 "home_toolbar_free" = "Kedudukan bebas";
+"home_toolbar_search_bottom" = "Bawah";
+"home_toolbar_alignment" = "Penjajaran Bar Alat";
 "home_toolbar_leading" = "Jajar ke mula";
 "home_toolbar_center" = "Tengah";
 "home_toolbar_trailing" = "Jajar ke akhir";
 "home_toolbar_drag_position" = "Seret bar alat ke kedudukan yang diingini.";
 "home_toolbar_drag_buttons" = "Ketik untuk menukar butang. Seret untuk menyusun semula.";
+"home_toolbar_style" = "Gaya";
+"home_toolbar_visibility" = "Tunjuk/Sembunyi";
+"home_toolbar_visibility_page" = "Elemen Halaman Utama";
+"home_toolbar_visibility_search_area" = "Kawasan Carian";
+"home_toolbar_visibility_title" = "Tajuk";
+"home_toolbar_visibility_subtitle" = "Subtajuk";
+"home_toolbar_visibility_search" = "Bar carian";
+"home_toolbar_visibility_search_hint" = "Leret ke atas atau ke bawah pada halaman utama untuk memaparkan bar carian.";
+"home_toolbar_visibility_recovery" = "Sentuh dan tahan ruang kosong di Laman Utama untuk membuka menu.";
 "home_toolbar_search" = "Cari halaman";
 "group_default_search" = "Carian lalai";
 "group_search_settings" = "Tetapan Kumpulan";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Kaca Kabur";
 "wallpaper_blur_amount" = "Kekuatan Kabur";
 
+"home_quick_search_guide" = "Masukkan kata kunci pada Halaman Utama untuk melihat platform di bawah bar carian. Ketik platform untuk membuat carian.";
 "auto_hide_platform_bar_hint" = "Apabila dihidupkan, bar hanya disembunyikan selepas anda mengetik kandungan halaman dan domain halaman tidak sepadan dengan mana-mana platform dalam bar semasa. Jika sepadan dengan mana-mana platform, bar kekal atau dipaparkan semula. Menatal dan ubah hala automatik tidak menyembunyikannya.";
 
 "ad_subscription_add" = "Tambah senarai penapis";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Halaman Web";
 "manual_backups_empty" = "Belum ada sandaran manual";
 "browsing_display_settings_legacy" = "Paparan Penyemakan Imbas";
+"media_lock_orientation" = "Kunci orientasi";
+"media_unlock_orientation" = "Buka kunci orientasi";
+
+"music_queue" = "Senarai main";
+"music_previous_track" = "Lagu sebelumnya";
+"music_next_track" = "Lagu seterusnya";

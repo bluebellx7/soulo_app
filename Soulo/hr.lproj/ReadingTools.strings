@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapsula";
 "home_toolbar_icons" = "Samo ikone";
 "home_toolbar_bottom" = "Pri dnu";
-"home_toolbar_belowSearch" = "Ispod pretraživanja";
 "home_toolbar_free" = "Slobodan položaj";
+"home_toolbar_search_bottom" = "Pri dnu";
+"home_toolbar_alignment" = "Poravnanje alatne trake";
 "home_toolbar_leading" = "Poravnaj na početak";
 "home_toolbar_center" = "Centriraj";
 "home_toolbar_trailing" = "Poravnaj na kraj";
 "home_toolbar_drag_position" = "Povuci alatnu traku na željeno mjesto.";
 "home_toolbar_drag_buttons" = "Dodirni za promjenu gumba. Povuci za promjenu redoslijeda.";
+"home_toolbar_style" = "Stil";
+"home_toolbar_visibility" = "Prikaži/sakrij";
+"home_toolbar_visibility_page" = "Elementi početne stranice";
+"home_toolbar_visibility_search_area" = "Područje pretraživanja";
+"home_toolbar_visibility_title" = "Naslov";
+"home_toolbar_visibility_subtitle" = "Podnaslov";
+"home_toolbar_visibility_search" = "Traka za pretraživanje";
+"home_toolbar_visibility_search_hint" = "Prijeđite prstom prema gore ili dolje na početnoj stranici za prikaz trake za pretraživanje.";
+"home_toolbar_visibility_recovery" = "Dodirnite i držite prazno mjesto na početnoj stranici za otvaranje izbornika.";
 "home_toolbar_search" = "Pronađite stranicu";
 "group_default_search" = "Zadana pretraga";
 "group_search_settings" = "Postavke grupe";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Mutno staklo";
 "wallpaper_blur_amount" = "Jačina zamućenja";
 
+"home_quick_search_guide" = "Unesite ključnu riječ na početnoj stranici za prikaz platformi ispod trake za pretraživanje. Dodirnite platformu za pretraživanje.";
 "auto_hide_platform_bar_hint" = "Kad je uključeno, traka se skriva tek nakon dodira sadržaja stranice i samo ako domena stranice ne odgovara nijednoj platformi na trenutačnoj traci. Ako odgovara, traka ostaje vidljiva ili se ponovno prikazuje. Pomicanje i automatska preusmjeravanja ne skrivaju traku.";
 
 "ad_subscription_add" = "Dodaj popis filtara";
@@ -621,3 +632,9 @@
 "browsing_web_display" = "Web-stranice";
 "manual_backups_empty" = "Još nema ručnih kopija";
 "browsing_display_settings_legacy" = "Prikaz pregledavanja";
+"media_lock_orientation" = "Zaključaj orijentaciju";
+"media_unlock_orientation" = "Otključaj orijentaciju";
+
+"music_queue" = "Popis za reprodukciju";
+"music_previous_track" = "Prethodna pjesma";
+"music_next_track" = "Sljedeća pjesma";

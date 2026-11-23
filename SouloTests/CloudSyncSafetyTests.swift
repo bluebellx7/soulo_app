@@ -260,12 +260,46 @@ final class CloudSyncSafetyTests: XCTestCase {
         let backups = backupStore()
         let original = try backups.save(["home_title": "Original"], initial: true, date: early)
         for index in 0..<30 {
-            try backups.save(["home_title": "Change \(index)"], date: later.addingTimeInterval(Double(index)))
+            let day = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: index + 1, to: early))
+            try backups.saveDaily(["home_title": "Change \(index)"], date: day)
         }
         let retained = try backups.list()
         XCTAssertEqual(retained.count, 21)
         XCTAssertTrue(retained.contains { $0.id == original.id })
         XCTAssertEqual(try backups.values(for: original)["home_title"] as? String, "Original")
+    }
+
+    func testAutomaticBackupReusesOneCopyUntilNextLocalDay() throws {
+        let local = defaults(), cloud = TestCloudSettingsStore()
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        directories.append(directory)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Los_Angeles"))
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 3, day: 8, hour: 0)))
+        let nextDay = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: start))
+        var date = start
+        let backups = CloudSettingsBackupStore(directory: directory, calendar: calendar)
+        let sync = CloudSyncService(defaults: local, store: cloud, backups: backups,
+                                    writerID: "daily", now: { date }, reload: {})
+        local.set("Before sync", forKey: "home_title")
+        sync.setEnabled(true)
+        let initial = try XCTUnwrap(backups.list().first)
+        for title in ["First edit", "Second edit"] {
+            date = date.addingTimeInterval(4 * 3600)
+            local.set(title, forKey: "home_title")
+            sync.processLocalChanges()
+            sync.refresh()
+        }
+        XCTAssertEqual(try backups.list().map(\.id), [initial.id])
+        date = nextDay
+        sync.refresh()
+        let daily = try XCTUnwrap(backups.list().first)
+        XCTAssertNotEqual(daily.id, initial.id)
+        XCTAssertEqual(daily.createdAt, nextDay)
+        local.set("Later edit", forKey: "home_title")
+        sync.processLocalChanges()
+        XCTAssertEqual(try backups.list().map(\.id), [daily.id, initial.id])
+        XCTAssertEqual(try backups.values(for: daily)["home_title"] as? String, "Second edit")
     }
 
     func testDeletingOneBackupKeepsCurrentSettingsOtherBackupsAndCloudUntouched() throws {
@@ -341,6 +375,23 @@ final class CloudSyncSafetyTests: XCTestCase {
         XCTAssertTrue(sync.hasSyncIssue)
         XCTAssertFalse(sync.isStarted)
         XCTAssertTrue(cloud.writes.isEmpty)
+    }
+
+    func testRetiredBrowserSearchSettingDoesNotBlockOtherCloudChanges() throws {
+        let local = defaults(), cloud = TestCloudSettingsStore()
+        let sync = service(local, cloud: cloud, id: "a")
+        sync.setEnabled(true)
+        let title = try CloudSettingsSyncEngine.propertyList(["value": "From an older device"])
+        let search = try CloudSettingsSyncEngine.propertyList(["value": true])
+        let remote = CloudSettingsJournal(writerID: "b", records: [
+            "setting.home_title": CloudSettingsRecord(value: title, isExplicit: true, modifiedAt: later, sequence: 1),
+            "setting.show_top_search_bar": CloudSettingsRecord(value: search, isExplicit: true, modifiedAt: later, sequence: 2)
+        ])
+        cloud.dictionaryRepresentation[CloudSyncService.journalPrefix + "b"] = try JSONEncoder().encode(remote)
+        sync.processRemoteChanges()
+        XCTAssertEqual(local.string(forKey: "home_title"), "From an older device")
+        XCTAssertNil(local.object(forKey: "show_top_search_bar"))
+        XCTAssertFalse(sync.hasSyncIssue)
     }
 
     func testCorruptJournalCannotPartiallyApplyOtherSettings() throws {

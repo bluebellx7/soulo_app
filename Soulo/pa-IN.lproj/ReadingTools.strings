@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "ਕੈਪਸੂਲ";
 "home_toolbar_icons" = "ਸਿਰਫ਼ ਆਈਕਨ";
 "home_toolbar_bottom" = "ਹੇਠਾਂ";
-"home_toolbar_belowSearch" = "ਖੋਜ ਹੇਠਾਂ";
 "home_toolbar_free" = "ਮਨਚਾਹਾ ਟਿਕਾਣਾ";
+"home_toolbar_search_bottom" = "ਹੇਠਾਂ";
+"home_toolbar_alignment" = "ਟੂਲਬਾਰ ਦੀ ਇਕਸਾਰਤਾ";
 "home_toolbar_leading" = "ਸ਼ੁਰੂ ਵੱਲ";
 "home_toolbar_center" = "ਵਿਚਕਾਰ";
 "home_toolbar_trailing" = "ਅੰਤ ਵੱਲ";
 "home_toolbar_drag_position" = "ਟੂਲਬਾਰ ਨੂੰ ਮਨਚਾਹੀ ਥਾਂ ਖਿੱਚੋ।";
 "home_toolbar_drag_buttons" = "ਬਟਨ ਬਦਲਣ ਲਈ ਟੈਪ ਕਰੋ। ਕ੍ਰਮ ਬਦਲਣ ਲਈ ਖਿੱਚੋ।";
+"home_toolbar_style" = "ਸ਼ੈਲੀ";
+"home_toolbar_visibility" = "ਦਿਖਾਓ/ਲੁਕਾਓ";
+"home_toolbar_visibility_page" = "ਹੋਮ ਪੰਨੇ ਦੇ ਭਾਗ";
+"home_toolbar_visibility_search_area" = "ਖੋਜ ਖੇਤਰ";
+"home_toolbar_visibility_title" = "ਸਿਰਲੇਖ";
+"home_toolbar_visibility_subtitle" = "ਉਪਸਿਰਲੇਖ";
+"home_toolbar_visibility_search" = "ਖੋਜ ਬਾਰ";
+"home_toolbar_visibility_search_hint" = "ਖੋਜ ਬਾਰ ਦਿਖਾਉਣ ਲਈ ਹੋਮ ਪੰਨੇ ’ਤੇ ਉੱਪਰ ਜਾਂ ਹੇਠਾਂ ਸਵਾਈਪ ਕਰੋ।";
+"home_toolbar_visibility_recovery" = "ਮੀਨੂ ਖੋਲ੍ਹਣ ਲਈ ਹੋਮ 'ਤੇ ਖਾਲੀ ਥਾਂ ਦਬਾ ਕੇ ਰੱਖੋ।";
 "home_toolbar_search" = "ਇੱਕ ਪੰਨਾ ਲੱਭੋ";
 "group_default_search" = "ਪੂਰਵ-ਨਿਰਧਾਰਤ ਖੋਜ";
 "group_search_settings" = "ਸਮੂਹ ਸੈਟਿੰਗਾਂ";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "ਧੁੰਦਲਾ ਕੱਚ";
 "wallpaper_blur_amount" = "ਧੁੰਦਲੇਪਨ ਦੀ ਤੀਬਰਤਾ";
 
+"home_quick_search_guide" = "ਹੋਮ ਪੰਨੇ ’ਤੇ ਖੋਜ ਸ਼ਬਦ ਲਿਖਣ ਨਾਲ ਖੋਜ ਬਾਰ ਦੇ ਹੇਠਾਂ ਪਲੇਟਫਾਰਮ ਦਿਸਣਗੇ। ਖੋਜਣ ਲਈ ਕਿਸੇ ਪਲੇਟਫਾਰਮ ’ਤੇ ਟੈਪ ਕਰੋ।";
 "auto_hide_platform_bar_hint" = "ਚਾਲੂ ਹੋਣ ’ਤੇ, ਪੰਨੇ ਦੀ ਸਮੱਗਰੀ ’ਤੇ ਖੁਦ ਟੈਪ ਕਰਨ ਤੋਂ ਬਾਅਦ ਅਤੇ ਪੰਨੇ ਦਾ ਡੋਮੇਨ ਮੌਜੂਦਾ ਬਾਰ ਦੇ ਕਿਸੇ ਵੀ ਪਲੇਟਫਾਰਮ ਨਾਲ ਨਾ ਮਿਲਣ ’ਤੇ ਹੀ ਬਾਰ ਲੁਕਦੀ ਹੈ। ਕਿਸੇ ਪਲੇਟਫਾਰਮ ਨਾਲ ਮਿਲਣ ’ਤੇ ਬਾਰ ਦਿਖਦੀ ਰਹਿੰਦੀ ਹੈ ਜਾਂ ਮੁੜ ਦਿਸਦੀ ਹੈ। ਸਕ੍ਰੋਲ ਅਤੇ ਆਪਣੇ ਆਪ ਰੀਡਾਇਰੈਕਟ ਹੋਣਾ ਬਾਰ ਨੂੰ ਨਹੀਂ ਲੁਕਾਉਂਦੇ।";
 
 "ad_subscription_add" = "ਫਿਲਟਰ ਸੂਚੀ ਜੋੜੋ";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "ਵੈੱਬਪੰਨੇ";
 "manual_backups_empty" = "ਅਜੇ ਕੋਈ ਮੈਨੁਅਲ ਬੈਕਅੱਪ ਨਹੀਂ";
 "browsing_display_settings_legacy" = "ਬ੍ਰਾਊਜ਼ਿੰਗ ਡਿਸਪਲੇ";
+"media_lock_orientation" = "ਸਕ੍ਰੀਨ ਦੀ ਦਿਸ਼ਾ ਲਾਕ ਕਰੋ";
+"media_unlock_orientation" = "ਸਕ੍ਰੀਨ ਦੀ ਦਿਸ਼ਾ ਅਨਲਾਕ ਕਰੋ";
+
+"music_queue" = "ਪਲੇਲਿਸਟ";
+"music_previous_track" = "ਪਿਛਲਾ ਗੀਤ";
+"music_next_track" = "ਅਗਲਾ ਗੀਤ";

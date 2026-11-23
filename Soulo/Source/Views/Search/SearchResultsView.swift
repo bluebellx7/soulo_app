@@ -14,7 +14,6 @@ enum PersistentFullscreenBehavior {
 }
 
 struct SearchResultsView: View {
-    var searchBarNamespace: Namespace.ID
     var speechService: SpeechRecognitionService
     var onOpenSettings: (() -> Void)? = nil
 
@@ -74,7 +73,6 @@ struct SearchResultsView: View {
     @AppStorage("auto_hide_platform_bar") private var autoHidePlatformBar = false
     @AppStorage(PlatformBarPreferences.visibilityKey) private var showPlatformBar = true
     @AppStorage("show_top_tab_bar") private var showTopTabBar = true
-    @AppStorage("show_top_search_bar") private var showTopSearchBar = BrowserInitialPreferences.showTopSearchBar
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
     @AppStorage(AppConstants.StorageKeys.shakeIntensity) private var shakeIntensity = BrowserShakeIntensity.standard.rawValue
@@ -336,28 +334,10 @@ struct SearchResultsView: View {
             VStack(spacing: 0) {
                 if !isFullscreen {
                     Group {
-                        if showTopSearchBar {
-                            topSearchBar
-                                .frame(maxWidth: 720)
-                                .frame(maxWidth: .infinity)
-                                .padding(.horizontal, 10)
-                                .padding(.top, 4)
-                                .padding(.bottom, 2)
-
-                            // Floating autocomplete — zero-height container with overlay extending below
-                            SearchAutocompleteOverlay(input: searchVM.input, darkVariant: false,
-                                horizontalPadding: 10, topPadding: 4,
-                                onSelect: { suggestion in
-                                    searchVM.searchText = suggestion
-                                    searchVM.performSearch(context: modelContext)
-                                    loadCurrentPlatformURL()
-                                }, onFill: { searchVM.searchText = $0 })
-                        }
-
                         // Tab bar — show when multiple tabs
                         if showTopTabBar && tabManager.tabs.count > 1 {
                             BrowserTabBar(tabManager: tabManager, onHidingTabBar: scheduleTopTabRecovery) {
-                                tabManager.createTab()
+                                tabManager.openNewTab()
                             }
                             .accessibilityIdentifier("browser.top-tab-bar")
                             .transition(.move(edge: .top).combined(with: .opacity))
@@ -548,7 +528,7 @@ struct SearchResultsView: View {
         } == true
     }
 
-    // MARK: - Top Search Bar
+    // MARK: - Search Feedback
 
     private var aiLoadingOverlay: some View {
         ZStack {
@@ -586,23 +566,6 @@ struct SearchResultsView: View {
         }
         .transition(.scale(scale: 0.85).combined(with: .opacity))
         .animation(.spring(response: 0.45, dampingFraction: 0.8), value: showAILoading)
-    }
-
-    private var topSearchBar: some View {
-        SearchBarView(
-            input: searchVM.input,
-            isCompact: true,
-            isIncognito: searchVM.isIncognito,
-            isRecording: speechService.isRecording,
-            onSubmit: {
-                searchVM.performSearch(context: modelContext)
-                loadCurrentPlatformURL()
-            },
-            onMicTap: {
-                showVoiceInput = true
-            }
-        )
-        .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
     }
 
     private func scheduleTopTabRecovery() {
@@ -651,7 +614,6 @@ struct SearchResultsView: View {
                 platforms: currentPlatforms,
                 selectedPlatform: $searchVM.selectedPlatform,
                 highlightedPlatformID: highlightedPlatformID,
-                usesContrastingControlSurface: !showTopSearchBar,
                 onSelection: { _ in loadCurrentPlatformURL() }
             )
             .frame(maxWidth: .infinity)
@@ -671,19 +633,8 @@ struct SearchResultsView: View {
         } label: {
             Image(systemName: selectedCustomGroup != nil ? "folder.fill" : "square.stack.3d.up.fill")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(
-                    showTopSearchBar
-                        ? Color.primary.opacity(0.58)
-                        : Color(uiColor: .systemGray).opacity(0.88)
-                )
+                .foregroundStyle(Color(uiColor: .systemGray).opacity(0.88))
                 .frame(width: 32, height: 32)
-                .background {
-                    if showTopSearchBar {
-                        Capsule()
-                            .fill(Color.primary.opacity(0.06))
-                            .frame(height: 26)
-                    }
-                }
                 .frame(width: 40, height: 36)
                 .contentShape(Rectangle())
         }
@@ -1040,9 +991,11 @@ struct SearchResultsView: View {
               let url = webViewModel.currentURL
         else { return }
 
+        let webView = webViewModel.webView
+        let title = (webView?.url == url ? webView?.title : nil) ?? webViewModel.pageTitle
         SearchHistoryService.recordWebVisit(
             url: url,
-            title: webViewModel.pageTitle,
+            title: title,
             context: modelContext
         )
     }
@@ -1074,17 +1027,23 @@ struct SearchResultsView: View {
     private func openRequestedBrowserTab(_ notification: Notification) {
         guard let url = notification.userInfo?["url"] as? URL else { return }
         let suppliedModel = notification.userInfo?["windowModel"] as? WebViewModel
+        let source = notification.object as? WebViewModel
         if suppliedModel != nil {
-            guard let opener = notification.object as? WebViewModel,
+            guard let opener = source,
                   tabManager.tabs.contains(where: { $0.webViewModel === opener }) else { return }
         }
         let request = notification.userInfo?["request"] as? URLRequest
+        let navigationOpenerID = source.flatMap { opener in
+            notification.userInfo?["mainFrameNavigation"] as? Bool == true
+                ? tabManager.tabs.first(where: { $0.webViewModel === opener })?.id : nil
+        }
         let tab = tabManager.createTab(
             url: suppliedModel == nil && request == nil ? url : nil,
             keyword: searchVM.currentKeyword,
             platform: searchVM.selectedPlatform,
             switchTo: notification.userInfo?["switchTo"] as? Bool ?? true,
-            webViewModel: suppliedModel
+            webViewModel: suppliedModel,
+            navigationOpenerID: navigationOpenerID
         )
         if suppliedModel == nil, let request { tab.webViewModel.loadRequest(request) }
         if let scriptTabID = notification.userInfo?["userScriptTabID"] as? String, !scriptTabID.isEmpty {

@@ -3,7 +3,10 @@ import SwiftUI
 struct WallpaperBackground: View {
     var isAnimating = true
     var appearanceOverride: WallpaperAppearance?
+    var onFrameChange: ((CGRect) -> Void)?
+    var reportsAppearance = true
     @Environment(\.colorScheme) private var renderingColorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var colorScheme: ColorScheme {
         appearanceOverride.map { $0 == .dark ? .dark : .light } ?? renderingColorScheme
     }
@@ -22,13 +25,16 @@ struct WallpaperBackground: View {
                             : min(1, wallpaperManager.imageOverlayOpacity / WallpaperContrast.defaultImageOverlayAmount))
                 }
             }
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { onFrameChange?($0) }
         }
         .ignoresSafeArea()
         .environment(\.colorScheme, colorScheme)
         .accessibilityHidden(true)
         .allowsHitTesting(false)
-        .onAppear { wallpaperManager.setDisplayAppearance(WallpaperAppearance(colorScheme)) }
-        .onCompatibleChange(of: colorScheme) { _, scheme in wallpaperManager.setDisplayAppearance(WallpaperAppearance(scheme)) }
+        .onAppear { if reportsAppearance { wallpaperManager.setDisplayAppearance(WallpaperAppearance(colorScheme)) } }
+        .onCompatibleChange(of: colorScheme) { _, scheme in
+            if reportsAppearance { wallpaperManager.setDisplayAppearance(WallpaperAppearance(scheme)) }
+        }
     }
 
     @ViewBuilder
@@ -55,6 +61,8 @@ struct WallpaperBackground: View {
         case .bing, .pexels, .pixabay:
             if let img = wallpaperManager.currentImage {
                 photoImage(img, size: size)
+                    .id(wallpaperManager.currentImageID)
+                    .transition(reduceMotion ? .identity : .opacity)
                 if wallpaperManager.imageOverlayEnabled {
                     Color.black
                         .opacity(wallpaperManager.imageOverlayOpacity)
@@ -88,10 +96,33 @@ struct WallpaperPhotoLayer: View {
             .frame(width: size.width, height: size.height)
             .clipped()
             // Extend the image beyond the crop so blur cannot fade its edges.
-            .scaleEffect(blurRadius > 0 ? 1 + blurRadius * 4 / max(1, min(size.width, size.height)) : 1)
+            .scaleEffect(WallpaperContrast.blurScale(blurRadius, in: size))
             .blur(radius: blurRadius, opaque: true)
             .frame(width: size.width, height: size.height)
             .clipped()
+    }
+}
+
+struct WallpaperRegionContrast {
+    let sample: WallpaperContrast.ImageSample
+    let wallpaperFrame: CGRect
+    let overlayAmount: Double
+    let blurRadius: CGFloat
+
+    func prefersDarkText(in bounds: CGRect) -> Bool? {
+        sample.prefersDarkText(in: bounds, wallpaperFrame: wallpaperFrame, overlayAmount: overlayAmount, blurRadius: blurRadius)
+    }
+}
+
+struct WallpaperForegroundRegion<Content: View>: View {
+    let contrast: WallpaperRegionContrast?
+    let fallbackDarkInk: Bool
+    @ViewBuilder let content: (Bool) -> Content
+    @State private var bounds: CGRect = .zero
+
+    var body: some View {
+        content(contrast?.prefersDarkText(in: bounds) ?? fallbackDarkInk)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global).integral } action: { bounds = $0 }
     }
 }
 

@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapsül";
 "home_toolbar_icons" = "Yalnızca simgeler";
 "home_toolbar_bottom" = "Altta";
-"home_toolbar_belowSearch" = "Aramanın altında";
 "home_toolbar_free" = "Serbest yerleşim";
+"home_toolbar_search_bottom" = "Altta";
+"home_toolbar_alignment" = "Araç Çubuğu Hizalaması";
 "home_toolbar_leading" = "Başlangıca hizala";
 "home_toolbar_center" = "Ortala";
 "home_toolbar_trailing" = "Sona hizala";
 "home_toolbar_drag_position" = "Araç çubuğunu istediğiniz yere sürükleyin.";
 "home_toolbar_drag_buttons" = "Düğmeyi değiştirmek için dokunun. Sıralamak için sürükleyin.";
+"home_toolbar_style" = "Stil";
+"home_toolbar_visibility" = "Göster/Gizle";
+"home_toolbar_visibility_page" = "Ana sayfa öğeleri";
+"home_toolbar_visibility_search_area" = "Arama alanı";
+"home_toolbar_visibility_title" = "Başlık";
+"home_toolbar_visibility_subtitle" = "Alt başlık";
+"home_toolbar_visibility_search" = "Arama çubuğu";
+"home_toolbar_visibility_search_hint" = "Arama çubuğunu göstermek için ana sayfada yukarı veya aşağı kaydırın.";
+"home_toolbar_visibility_recovery" = "Menüyü açmak için ana sayfada boş bir yere dokunup basılı tutun.";
 "home_toolbar_search" = "Bir sayfa bul";
 "group_default_search" = "Varsayılan arama";
 "group_search_settings" = "Grup Ayarları";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Buzlu Cam";
 "wallpaper_blur_amount" = "Bulanıklık Gücü";
 
+"home_quick_search_guide" = "Arama çubuğunun altında platformları görmek için ana sayfada anahtar kelime yazın. Aramak için bir platforma dokunun.";
 "auto_hide_platform_bar_hint" = "Açıkken çubuk yalnızca sayfa içeriğine dokunduğunuzda ve sayfanın alan adı mevcut çubuktaki hiçbir platformla eşleşmediğinde gizlenir. Herhangi biriyle eşleşirse çubuk görünür kalır veya yeniden gösterilir. Kaydırma ve otomatik yönlendirmeler çubuğu gizlemez.";
 
 "ad_subscription_add" = "Filtre listesi ekle";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Web Sayfaları";
 "manual_backups_empty" = "Henüz elle alınmış yedek yok";
 "browsing_display_settings_legacy" = "Tarayıcı Görünümü";
+"media_lock_orientation" = "Yönü kilitle";
+"media_unlock_orientation" = "Yön kilidini aç";
+
+"music_queue" = "Çalma listesi";
+"music_previous_track" = "Önceki parça";
+"music_next_track" = "Sonraki parça";

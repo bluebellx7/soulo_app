@@ -35,16 +35,23 @@ final class PortableSettingsBackupTests: XCTestCase {
     func testClearingManualCopiesPreservesAutomaticInitialAndLegacyFiles() throws {
         let backups = store()
         defer { try? FileManager.default.removeItem(at: backups.directory) }
-        let initial = try backups.save(["home_title": "Initial"], initial: true)
-        let legacy = try backups.save(["home_title": "Legacy"])
+        let day = Calendar.current.startOfDay(for: Date())
+        let initial = try backups.save(["home_title": "Initial"], initial: true, date: day)
+        let legacy = try backups.save(["home_title": "Legacy"], date: day.addingTimeInterval(1))
         let legacyURL = backups.directory.appendingPathComponent(legacy.id.uuidString + ".json")
         var legacyJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: legacyURL)) as? [String: Any])
         legacyJSON.removeValue(forKey: "isManual")
         try JSONSerialization.data(withJSONObject: legacyJSON).write(to: legacyURL)
-        let automatic = try backups.save(["home_title": "Current"])
-        let manual = try backups.save(["home_title": "Current"], manual: true)
+        let automatic = try backups.save(["home_title": "Current"], date: day.addingTimeInterval(2))
+        let manual = try backups.save(["home_title": "Current"], manual: true, date: day.addingTimeInterval(3))
         XCTAssertNotEqual(manual.id, automatic.id, "A manual copy must not reuse an identical automatic snapshot")
-        XCTAssertEqual(try backups.list().first(where: { $0.id == legacy.id })?.isManual, nil)
+        let existing = try backups.list()
+        XCTAssertEqual(existing.first(where: { $0.id == legacy.id })?.isManual, nil)
+        let recoveryDays = CloudSettingsBackupStore.recoveryDays(from: existing)
+        XCTAssertEqual(recoveryDays.count, 1)
+        let recoveryDay = try XCTUnwrap(recoveryDays.first)
+        XCTAssertEqual(Set(([recoveryDay.latest] + recoveryDay.earlier).map(\.id)), Set([initial.id, legacy.id, automatic.id]))
+        XCTAssertEqual(try backups.values(for: legacy)["home_title"] as? String, "Legacy")
         try backups.deleteManualBackups()
         XCTAssertEqual(Set(try backups.list().map(\.id)), Set([initial.id, legacy.id, automatic.id]))
         XCTAssertEqual(try backups.values(for: automatic)["home_title"] as? String, "Current")
@@ -56,7 +63,8 @@ final class PortableSettingsBackupTests: XCTestCase {
         let initial = try backups.save(["home_title": "Initial"], initial: true, date: Date(timeIntervalSince1970: 0))
         let manual = try backups.save(["home_title": "Manual"], manual: true, date: Date(timeIntervalSince1970: 1))
         for index in 0..<30 {
-            try backups.save(["home_title": "Auto \(index)"], date: Date(timeIntervalSince1970: Double(index + 2)))
+            let day = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: index + 1, to: initial.createdAt))
+            try backups.saveDaily(["home_title": "Auto \(index)"], date: day)
         }
         let stored = try backups.list()
         XCTAssertTrue(stored.contains { $0.id == initial.id })
@@ -69,8 +77,10 @@ final class PortableSettingsBackupTests: XCTestCase {
         let original = try backups.save(["home_title": "Older"])
         let exported = try backups.exportData(for: original)
         let oldFormat = try changed(exported) { object in
-            object["includedKeys"] = ["home_title", "home_subtitle"]
-            object["propertyList"] = try CloudSettingsSyncEngine.propertyList(["home_title": "Older"]).base64EncodedString()
+            object["includedKeys"] = ["home_title", "home_subtitle", "show_top_search_bar"]
+            object["propertyList"] = try CloudSettingsSyncEngine.propertyList([
+                "home_title": "Older", "show_top_search_bar": true
+            ]).base64EncodedString()
         }
         let imported = try backups.importData(oldFormat, preserving: [
             "home_title": "Current", "home_subtitle": "Explicitly reset", VideoPlaybackPreferences.holdSpeedKey: 2.5,
@@ -79,6 +89,7 @@ final class PortableSettingsBackupTests: XCTestCase {
         let values = try backups.values(for: imported)
         XCTAssertEqual(values["home_title"] as? String, "Older")
         XCTAssertNil(values["home_subtitle"], "The old format explicitly included this missing/default setting")
+        XCTAssertNil(values["show_top_search_bar"])
         XCTAssertEqual(values[VideoPlaybackPreferences.holdSpeedKey] as? Double, 2.5,
                        "An older exporting version cannot reset settings it did not know")
         XCTAssertNil(values["is_incognito"])

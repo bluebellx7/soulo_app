@@ -29,7 +29,7 @@ struct PlatformManagementView: View {
     @State private var renameText = ""
     @State private var showBatchImport = false
     @State private var showPlatformRequestFeedback = false
-    @State private var showAutoHidePlatformHint = false
+    @State private var platformGuide: PlatformManagementGuide?
     @State private var showPlatformBarGuide = false
     @AppStorage(PlatformBarPreferences.visibilityKey) private var showPlatformBar = true
     @AppStorage("auto_hide_platform_bar") private var autoHidePlatformBar = false
@@ -92,10 +92,8 @@ struct PlatformManagementView: View {
         .sheet(isPresented: $showPlatformBarGuide) {
             BrowsingDisplayGuide(example: .platformBar, enabled: $showPlatformBar)
         }
-        .alert(ToolText.text("auto_hide_platform_bar"), isPresented: $showAutoHidePlatformHint) {
-            Button(ToolText.text("done"), role: .cancel) { }
-        } message: {
-            Text(ToolText.text("auto_hide_platform_bar_hint"))
+        .sheet(item: $platformGuide) { guide in
+            PlatformManagementGuideSheet(guide: guide)
         }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
@@ -237,6 +235,7 @@ struct PlatformManagementView: View {
                     if !enabled { showPlatformBarGuide = true }
                 }
             ))
+            .frame(minHeight: 34)
             .accessibilityIdentifier("platform.show-platform-bar")
             if showPlatformBar {
                 Divider()
@@ -245,13 +244,15 @@ struct PlatformManagementView: View {
                     set: { enabled in
                         autoHidePlatformBar = enabled
                         for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
-                        if enabled { showAutoHidePlatformHint = true }
+                        if enabled { platformGuide = .autoHide }
                     }
                 ))
+                .frame(minHeight: 34)
                 .accessibilityIdentifier("platform.auto-hide-platforms")
             }
             Divider()
-            HomeQuickSearchToggle()
+            HomeQuickSearchToggle { platformGuide = .quickSearch }
+                .frame(minHeight: 34)
         }
     }
 
@@ -484,10 +485,73 @@ struct PlatformManagementView: View {
 
 private struct HomeQuickSearchToggle: View {
     @AppStorage(PlatformBarPreferences.homeQuickSearchKey) private var enabled = false
+    let onEnable: () -> Void
 
     var body: some View {
-        Toggle(LanguageManager.shared.localizedString("home_quick_search"), isOn: $enabled)
+        Toggle(LanguageManager.shared.localizedString("home_quick_search"), isOn: Binding(
+            get: { enabled }, set: { value in
+                enabled = value
+                if value { onEnable() }
+            }))
             .accessibilityIdentifier("platform.home-quick-search")
+    }
+}
+
+private enum PlatformManagementGuide: String, Identifiable {
+    case quickSearch, autoHide
+    var id: String { rawValue }
+
+    @MainActor var title: String {
+        switch self {
+        case .quickSearch: LanguageManager.shared.localizedString("home_quick_search")
+        case .autoHide: ToolText.text("auto_hide_platform_bar")
+        }
+    }
+
+    @MainActor var description: String {
+        ToolText.text(self == .quickSearch ? "home_quick_search_guide" : "auto_hide_platform_bar_hint")
+    }
+
+    var illustration: String {
+        self == .quickSearch ? "PlatformQuickSearchGuide" : "PlatformAutoHideGuide"
+    }
+}
+
+private struct PlatformManagementGuideSheet: View {
+    let guide: PlatformManagementGuide
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Image(guide.illustration)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: 360)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityHidden(true)
+                    Text(guide.description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("platform.guide." + guide.id)
+                }
+                .frame(maxWidth: 460)
+                .padding(20)
+                .frame(maxWidth: .infinity)
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+            .navigationTitle(guide.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(ToolText.text("done")) { dismiss() }
+                        .accessibilityIdentifier("platform.guide.done")
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 

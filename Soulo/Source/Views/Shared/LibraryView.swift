@@ -34,8 +34,6 @@ struct LibraryView: View {
     @EnvironmentObject private var tabManager: TabManager
     @ObservedObject var searchVM: SearchViewModel
     @State private var selectedSection: LibrarySection
-    @State private var compactSections: Set<LibrarySection> = []
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pageProgress: CGFloat
     @State private var showReadingList = false
 
@@ -50,7 +48,7 @@ struct LibraryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            LibrarySectionSwitcher(selectedSection: $selectedSection, progress: pageProgress, compact: compactSections.contains(selectedSection))
+            LibrarySectionSwitcher(selectedSection: $selectedSection, progress: pageProgress)
 
             libraryPager
         }
@@ -68,17 +66,6 @@ struct LibraryView: View {
         if #available(iOS 17.0, *) {
             LibraryPager(selectedSection: $selectedSection, progress: $pageProgress) { section in
                 page(section)
-                    .background {
-                        LibraryScrollCollapseObserver(active: selectedSection == section) { offset in
-                            let compact = compactSections.contains(section)
-                            if (!compact && offset > 48) || (compact && offset < 8) {
-                                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-                                    if offset > 48 { compactSections.insert(section) }
-                                    else { compactSections.remove(section) }
-                                }
-                            }
-                        }.allowsHitTesting(false)
-                    }
             }
         } else {
             // Capturing LibraryView also captures its dismiss environment. Old
@@ -90,9 +77,8 @@ struct LibraryView: View {
                 }
             }
             LibraryPager(selectedSection: $selectedSection, progress: $pageProgress) {
-                [searchVM, selection = $selectedSection, compact = $compactSections, onOpen] section in
-                LegacyLibraryPage(section: section, selection: selection, compactSections: compact,
-                                  searchVM: searchVM, onOpen: onOpen)
+                [searchVM, onOpen] section in
+                LegacyLibraryPage(section: section, searchVM: searchVM, onOpen: onOpen)
             }
         }
     }
@@ -121,27 +107,10 @@ struct LibraryView: View {
 
 private struct LegacyLibraryPage: View {
     let section: LibrarySection
-    @Binding var selection: LibrarySection
-    @Binding var compactSections: Set<LibrarySection>
     let searchVM: SearchViewModel
     let onOpen: (String) -> Void
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    var body: some View {
-        page.background {
-            LibraryScrollCollapseObserver(active: selection == section) { offset in
-                let compact = compactSections.contains(section)
-                if (!compact && offset > 48) || (compact && offset < 8) {
-                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-                        if offset > 48 { compactSections.insert(section) }
-                        else { compactSections.remove(section) }
-                    }
-                }
-            }.allowsHitTesting(false)
-        }
-    }
-
-    @ViewBuilder private var page: some View {
+    @ViewBuilder var body: some View {
         switch section {
         case .bookmarks: BookmarksContentView(searchVM: searchVM, onOpen: onOpen)
         case .history: SearchHistoryContentView(searchVM: searchVM, onOpen: onOpen)
@@ -238,7 +207,6 @@ struct LibraryPager<Content: View>: View {
 struct LibrarySectionSwitcher: View {
     @Binding var selectedSection: LibrarySection
     var progress: CGFloat? = nil
-    var compact = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .caption) private var captionSize: CGFloat = 11
 
@@ -257,14 +225,13 @@ struct LibrarySectionSwitcher: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, compact ? 0 : 1)
+        .padding(.horizontal, LibraryPageLayout.horizontalMargin)
         .padding(.bottom, 4)
         .background(Color(uiColor: .systemBackground))
     }
 
     private var sectionButtons: some View {
-        HStack(alignment: .top, spacing: 4) {
+        HStack(alignment: .top, spacing: 0) {
             ForEach(LibrarySection.allCases) { section in
                 let selected = selectedSection == section
                 let titleKey = section == .history ? "library_history_tab" : section == .files ? "library_files_tab" : section.titleKey
@@ -284,20 +251,19 @@ struct LibrarySectionSwitcher: View {
                                 .opacity(Double(emphasis))
                                 .accessibilityHidden(true)
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, compact ? 0 : 3)
-                        .frame(minWidth: 48, minHeight: compact ? 36 : 44)
-                        .contentShape(RoundedRectangle(cornerRadius: 10).inset(by: compact ? -4 : 0))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
+                        .frame(minWidth: 48, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .fixedSize(horizontal: true, vertical: false)
                 .anchorPreference(key: LibraryTabFramesKey.self, value: .bounds) { [section: $0] }
-                .accessibilityLabel(section == .history ? LanguageManager.shared.localizedString("search_history") : title)
+                .accessibilityLabel(title)
                 .accessibilityIdentifier("library.section.\(section.rawValue)")
-                .accessibilityValue(compact ? "compact" : "expanded")
                 .id(section)
                 .accessibilityAddTraits(selected ? .isSelected : [])
-                if section != .files { Spacer(minLength: 0) }
+                if section != .files { Spacer(minLength: 6) }
             }
         }
         .frame(maxWidth: .infinity)
@@ -308,7 +274,7 @@ struct LibrarySectionSwitcher: View {
                    let frame = LibraryPageGeometry.indicator(progress: displayProgress, frames: frames) {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(Color.themePrimary.opacity(0.1))
-                        .frame(width: frame.width, height: frame.height)
+                        .frame(width: frame.width, height: max(0, frame.height - 8))
                         .position(x: frame.midX, y: frame.midY)
                         .accessibilityHidden(true)
                 }
@@ -321,8 +287,7 @@ struct LibrarySectionSwitcher: View {
     }
 
     private func caption(_ section: LibrarySection, title: String) -> some View {
-        let layout = compact ? AnyLayout(HStackLayout(spacing: 5)) : AnyLayout(VStackLayout(spacing: 4))
-        return layout {
+        HStack(spacing: 5) {
             Image(systemName: section.systemImage)
                 .font(.system(size: 17, weight: .medium))
                 .frame(height: 20)
@@ -330,6 +295,24 @@ struct LibrarySectionSwitcher: View {
                 .font(.system(size: captionSize, weight: .medium))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: true, vertical: true)
+        }
+    }
+}
+
+enum LibraryPageLayout {
+    static let horizontalMargin: CGFloat = 16
+    static let searchRowInsets = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+}
+
+extension View {
+    @ViewBuilder func libraryListLayout(embedded: Bool) -> some View {
+        let list = listStyle(.insetGrouped)
+            .compatibleListSectionSpacing(20)
+            .compatibleScrollTopMargin(24)
+        if #available(iOS 17.0, *), embedded {
+            list.contentMargins(.horizontal, LibraryPageLayout.horizontalMargin, for: .scrollContent)
+        } else {
+            list
         }
     }
 }

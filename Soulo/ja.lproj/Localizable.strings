@@ -241,8 +241,6 @@
 "login_required_toast" = "先にログインしてから再度検索してください";
 "status_enabled" = "有効";
 "status_disabled" = "無効";
-"show_top_search_bar" = "上部の検索バーを表示";
-"show_top_search_bar_desc" = "非表示でも、下部のアドレス欄から検索や音声入力ができます";
 "ad_block_master_disabled_desc" = "広告ブロックを有効にすると、下のフィルター購読を使用・管理できます。";
 "custom_groups" = "カスタムグループ";
 "no_groups" = "カスタムグループなし";
@@ -364,8 +362,6 @@
 "batch_import_result" = "%d個のプラットフォームをインポートしました";
 "paste_from_clipboard" = "クリップボードから貼り付け";
 "none" = "None";
-"show_group_picker_home" = "ホームにグループ選択を表示";
-"show_group_picker_home_desc" = "Display platform group tabs on the home screen";
 "error_no_internet" = "インターネットに接続されていません。ネットワークを確認してください。";
 "error_timeout" = "接続がタイムアウトしました。もう一度お試しください。";
 "error_ssl" = "Secure connection failed.";

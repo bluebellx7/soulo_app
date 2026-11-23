@@ -1,4 +1,1 @@
-• Melhorámos a transição para ecrã inteiro, a memória intermédia e o menu de velocidade dos vídeos online.
-• Melhorámos o reconhecimento de ligações magnet e a descoberta de pares nas transferências BitTorrent.
-• Os scripts de utilizador podem usar GM_webRequest para cancelar pedidos Fetch e XHR do quadro principal ou redirecioná-los para a mesma origem.
-• Melhorámos a compatibilidade com extensões do navegador, incluindo os nomes de ficheiros descarregados e o carregamento de páginas fora do ecrã.
+Melhorámos o carregamento de scripts ao abrir páginas Web e a compatibilidade com extensões do navegador.

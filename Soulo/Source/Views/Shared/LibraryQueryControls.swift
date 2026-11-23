@@ -46,7 +46,7 @@ struct LibraryQueryControls: View {
         }
         .frame(minHeight: AppControlMetrics.minimumHitSize)
         .preservesKeyboardFocusOnTap()
-        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 8))
+        .listRowInsets(LibraryPageLayout.searchRowInsets)
     }
 }
 

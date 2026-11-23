@@ -130,25 +130,67 @@ struct RemoteWallpaper: Codable, Identifiable, Hashable {
 enum WallpaperContrast {
     static let defaultImageOverlayAmount = 0.30
 
-    static func imageLightness(_ image: CGImage, overlayAmount: Double) -> (masked: Bool, original: Bool) {
-        let side = 24
-        var pixels = [UInt8](repeating: 0, count: side * side * 4)
-        let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
-            guard let context = CGContext(data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8,
-                bytesPerRow: side * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
-            context.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
-            return true
+    struct ImageSample: Sendable {
+        private static let side = 32
+        private let pixels: [UInt8]
+        private let imageSize: CGSize
+
+        init?(_ image: CGImage) {
+            let side = Self.side
+            var pixels = [UInt8](repeating: 0, count: side * side * 4)
+            let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+                guard let context = CGContext(data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8,
+                    bytesPerRow: side * 4, space: CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+                context.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
+                return true
+            }
+            guard drawn else { return nil }
+            self.pixels = pixels
+            imageSize = CGSize(width: image.width, height: image.height)
         }
-        guard drawn else { return (false, false) }
-        var original = 0.0, masked = 0.0
-        let lightness = 1 - overlayAmount
-        for index in stride(from: 0, to: pixels.count, by: 4) {
-            let r = Double(pixels[index]) / 255, g = Double(pixels[index + 1]) / 255, b = Double(pixels[index + 2]) / 255
-            original += luminance(red: r, green: g, blue: b)
-            masked += luminance(red: r * lightness, green: g * lightness, blue: b * lightness)
+
+        func prefersDarkText(overlayAmount: Double = 0) -> Bool {
+            prefersDarkText(in: CGRect(x: 0, y: 0, width: 1, height: 1), overlayAmount: overlayAmount)
         }
-        let count = Double(side * side)
-        return (prefersDarkText(luminance: masked / count), prefersDarkText(luminance: original / count))
+
+        func prefersDarkText(in bounds: CGRect, wallpaperFrame: CGRect, overlayAmount: Double, blurRadius: CGFloat) -> Bool? {
+            guard !wallpaperFrame.isEmpty, !bounds.isEmpty else { return nil }
+            let visible = bounds.intersection(wallpaperFrame)
+            guard !visible.isEmpty else { return nil }
+            let scale = max(wallpaperFrame.width / imageSize.width, wallpaperFrame.height / imageSize.height)
+                * WallpaperContrast.blurScale(blurRadius, in: wallpaperFrame.size)
+            let width = imageSize.width * scale
+            let height = imageSize.height * scale
+            let origin = CGPoint(x: wallpaperFrame.midX - width / 2, y: wallpaperFrame.midY - height / 2)
+            let sampleBounds = visible.insetBy(dx: -blurRadius, dy: -blurRadius)
+            return prefersDarkText(in: CGRect(x: (sampleBounds.minX - origin.x) / width,
+                y: (sampleBounds.minY - origin.y) / height, width: sampleBounds.width / width,
+                height: sampleBounds.height / height), overlayAmount: overlayAmount)
+        }
+
+        private func prefersDarkText(in rect: CGRect, overlayAmount: Double) -> Bool {
+            let side = Self.side
+            func cells(_ lower: CGFloat, _ upper: CGFloat) -> Range<Int> {
+                let start = min(side - 1, max(0, Int(floor(lower * CGFloat(side)))))
+                return start..<max(start + 1, min(side, Int(ceil(upper * CGFloat(side)))))
+            }
+            let xs = cells(rect.minX, rect.maxX), ys = cells(rect.minY, rect.maxY)
+            let scale = (1 - overlayAmount) / 255
+            var sum = 0.0
+            for y in ys {
+                for x in xs {
+                    let i = (y * side + x) * 4
+                    sum += WallpaperContrast.luminance(red: Double(pixels[i]) * scale,
+                        green: Double(pixels[i + 1]) * scale, blue: Double(pixels[i + 2]) * scale)
+                }
+            }
+            return WallpaperContrast.prefersDarkText(luminance: sum / Double(xs.count * ys.count))
+        }
+    }
+
+    static func blurScale(_ radius: CGFloat, in size: CGSize) -> CGFloat {
+        1 + radius * 4 / max(1, min(size.width, size.height))
     }
 
     static func luminance(red: Double, green: Double, blue: Double) -> Double {

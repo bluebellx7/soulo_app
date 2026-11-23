@@ -11,7 +11,7 @@ final class HomeSearchInputUITests: XCTestCase {
         app.launchArguments = ["-app_language", "zh-Hans", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN",
             "-wallpaper_source", "gradient", "-wallpaper_gradient_id", "dawn",
             "-icloud_sync_enabled", "NO", "-last_selected_region", "china",
-            "-last_selected_group_id", "", "-show_top_search_bar", "NO",
+            "-last_selected_group_id", "",
             "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO"]
     }
 

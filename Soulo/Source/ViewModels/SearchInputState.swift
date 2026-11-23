@@ -15,6 +15,7 @@ final class SearchInputState: ObservableObject {
     @Published private(set) var isEditing = false
     @Published var suggestions: [String] = []
     @Published var isLoadingSuggestions = false
+    private var editingOwner: ObjectIdentifier?
 
     var text: String {
         get { edit.text }
@@ -31,7 +32,13 @@ final class SearchInputState: ObservableObject {
         if edit != next { edit = next }
     }
 
-    func setEditing(_ value: Bool) {
+    func setEditing(_ value: Bool, owner: ObjectIdentifier? = nil) {
+        if value {
+            editingOwner = owner
+        } else {
+            guard owner == nil || owner == editingOwner else { return }
+            editingOwner = nil
+        }
         if isEditing != value { isEditing = value }
     }
 }

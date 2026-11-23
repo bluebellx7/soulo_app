@@ -2,6 +2,45 @@ import SwiftUI
 import UIKit
 import CoreMotion
 
+@MainActor final class DeviceMotionSource {
+    static let shared = DeviceMotionSource()
+
+    private let manager = CMMotionManager()
+    private struct Observation {
+        let interval: TimeInterval
+        let receive: (CMDeviceMotion) -> Void
+    }
+    private var observations: [UUID: Observation] = [:]
+    var isAvailable: Bool { manager.isDeviceMotionAvailable }
+
+    func observe(interval: TimeInterval, receive: @escaping (CMDeviceMotion) -> Void) -> UUID? {
+        guard isAvailable else { return nil }
+        let id = UUID()
+        observations[id] = Observation(interval: interval, receive: receive)
+        updateInterval()
+        if !manager.isDeviceMotionActive {
+            manager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
+                guard let self, let motion else { return }
+                for observation in Array(self.observations.values) { observation.receive(motion) }
+            }
+        }
+        return id
+    }
+
+    func remove(_ id: UUID) {
+        observations.removeValue(forKey: id)
+        updateInterval()
+    }
+
+    private func updateInterval() {
+        if let interval = observations.values.map(\.interval).min() {
+            manager.deviceMotionUpdateInterval = interval
+        } else {
+            manager.stopDeviceMotionUpdates()
+        }
+    }
+}
+
 enum BrowserShakeAction: String, CaseIterable, Identifiable {
     case none
     case fullscreen
@@ -205,6 +244,10 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
         }
     }
 
+    static func dismantleUIViewController(_ uiViewController: ShakeViewController, coordinator: ()) {
+        uiViewController.isEnabled = false
+    }
+
     final class ShakeViewController: UIViewController {
         var onShake: (() -> Void)?
         var intensity: BrowserShakeIntensity = .standard {
@@ -227,12 +270,12 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
             }
         }
 
-        private let motionManager = CMMotionManager()
+        private var motionObservation: UUID?
         private var motionClassifier = ShakeMotionClassifier()
         private var lastDeliveryTime: TimeInterval = -.infinity
 
         override var canBecomeFirstResponder: Bool {
-            isEnabled && direction == .any && !motionManager.isDeviceMotionAvailable
+            isEnabled && direction == .any && !DeviceMotionSource.shared.isAvailable
         }
 
         override func viewDidAppear(_ animated: Bool) {
@@ -251,7 +294,7 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
             guard isEnabled,
                   motion == .motionShake,
                   direction == .any,
-                  !motionManager.isDeviceMotionActive else { return }
+                  motionObservation == nil else { return }
             deliverShake(at: ProcessInfo.processInfo.systemUptime)
         }
 
@@ -260,16 +303,16 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
                   let window = viewIfLoaded?.window else { return }
             // Core Motion does not need keyboard focus. The UIKit fallback may
             // claim an idle window, but must never replace a page or text field.
-            guard motionManager.isDeviceMotionAvailable else {
+            guard DeviceMotionSource.shared.isAvailable else {
                 if direction == .any && !containsFirstResponder(in: window) { becomeFirstResponder() }
                 return
             }
-            guard !motionManager.isDeviceMotionActive else { return }
+            guard motionObservation == nil else { return }
 
-            motionManager.deviceMotionUpdateInterval = 1.0 / 40.0
             motionClassifier = ShakeMotionClassifier(intensity: intensity)
-            motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
-                guard let self, self.isEnabled, let acceleration = motion?.userAcceleration else { return }
+            motionObservation = DeviceMotionSource.shared.observe(interval: 1.0 / 40.0) { [weak self] motion in
+                guard let self, self.isEnabled else { return }
+                let acceleration = motion.userAcceleration
                 let orientation = self.view.window?.windowScene?.interfaceOrientation ?? .portrait
                 let timestamp = ProcessInfo.processInfo.systemUptime
                 if self.motionClassifier.register(acceleration: acceleration, direction: self.direction,
@@ -280,7 +323,8 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
         }
 
         private func stopMotionUpdates() {
-            motionManager.stopDeviceMotionUpdates()
+            if let motionObservation { DeviceMotionSource.shared.remove(motionObservation) }
+            motionObservation = nil
             motionClassifier.resetCandidate()
         }
 

@@ -22,6 +22,9 @@ struct CloudSettingsRecord: Codable, Equatable {
 @MainActor
 enum CloudSettingsSyncEngine {
     typealias Values = [String: Any]
+    // Older devices and backup files can still contain these preferences.
+    static let retiredKeys: Set<String> = ["show_top_search_bar"]
+    private static let retiredRecordKeys = Set(retiredKeys.map { "setting." + $0 })
     private static let collections: Set<String> = ["platform_config", "custom_groups", "region_name_overrides", "soulo_ad_block_subscriptions"]
     private static let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
@@ -158,8 +161,9 @@ enum CloudSettingsSyncEngine {
     }
 
     static func decodeJournal(_ data: Data, expectedWriter: String) throws -> CloudSettingsJournal {
-        let journal = try JSONDecoder().decode(CloudSettingsJournal.self, from: data)
+        var journal = try JSONDecoder().decode(CloudSettingsJournal.self, from: data)
         guard journal.version == 3, journal.writerID == expectedWriter else { throw CocoaError(.coderReadCorrupt) }
+        journal.records = journal.records.filter { !retiredRecordKeys.contains($0.key) }
         for (id, key) in journal.platformAliases {
             guard UUID(uuidString: id) != nil, key.hasPrefix("platform.") else { throw CocoaError(.coderReadCorrupt) }
             try validate(nil, key: key)
@@ -179,7 +183,7 @@ enum CloudSettingsSyncEngine {
             for (id, key) in journal.platformAliases {
                 if let id = UUID(uuidString: id) { aliases[id] = key }
             }
-            for (key, record) in journal.records {
+            for (key, record) in journal.records where !retiredRecordKeys.contains(key) {
                 try validate(record.value, key: key)
                 if key.hasPrefix("platform."), let data = record.value {
                     aliases[try JSONDecoder().decode(SearchPlatform.self, from: data).id] = key
@@ -381,7 +385,7 @@ enum CloudSettingsSyncEngine {
          "auto_hide_platform_bar": false, "show_top_tab_bar": true,
          PlatformBarPreferences.homeQuickSearchKey: false,
          BrowserInitialPreferences.restoreLastPageKey: false,
-         "show_top_search_bar": false, "keep_fullscreen_browsing": false, "extend_page_background": BrowserInitialPreferences.extendPageBackground, "page_background_gradient": false, "freeze_page_background_on_scroll": false, "web_follows_app_color_scheme": true,
+         "keep_fullscreen_browsing": false, "extend_page_background": BrowserInitialPreferences.extendPageBackground, "page_background_gradient": false, "freeze_page_background_on_scroll": false, "web_follows_app_color_scheme": true,
          "web_warm_color_shift": false, "web_force_dark_pages": false, "web_reduce_page_motion": false,
          "web_underline_links": false, "browser_shake_action": "none", "browser_shake_intensity": "standard",
          BrowserShakeDirection.preferenceKey: BrowserShakeDirection.horizontal.rawValue,

@@ -1,12 +1,11 @@
 import SwiftUI
 
 enum BrowsingDisplayExample: String, Identifiable {
-    case topSearch, fullscreen, background, aboveToolbar, platformBar
+    case fullscreen, background, aboveToolbar, platformBar
     var id: String { rawValue }
     @MainActor var title: String {
         switch self {
         case .platformBar: ToolText.text("show_platform_bar")
-        case .topSearch: LanguageManager.shared.localizedString("show_top_search_bar")
         case .fullscreen: LanguageManager.shared.localizedString("keep_fullscreen_browsing")
         case .background: ToolText.text("extend_page_background")
         case .aboveToolbar: LanguageManager.shared.localizedString("keep_page_above_toolbar")
@@ -15,7 +14,6 @@ enum BrowsingDisplayExample: String, Identifiable {
     @MainActor var explanation: String {
         switch self {
         case .platformBar: PlatformBarPreferences.hiddenHint
-        case .topSearch: LanguageManager.shared.localizedString("show_top_search_bar_desc")
         case .fullscreen: LanguageManager.shared.localizedString("keep_fullscreen_browsing_desc")
         case .background: ToolText.text("extend_page_background_desc")
         case .aboveToolbar: LanguageManager.shared.localizedString("keep_page_above_toolbar_desc")
@@ -41,7 +39,10 @@ struct BrowsingDisplayGuide: View {
                                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                         }.accessibilityIdentifier("browsing-guide.customize-toolbar")
                     }
-                    Text(LanguageManager.shared.localizedString("settings") + " → " + ToolText.text("browsing_display_settings"))
+                    let destination = example == .platformBar
+                        ? LanguageManager.shared.localizedString("platform_management")
+                        : ToolText.text("browsing_display_settings")
+                    Text(LanguageManager.shared.localizedString("settings") + " → " + destination)
                         .font(.footnote).foregroundStyle(.secondary)
                 }.padding(24)
             }
@@ -68,11 +69,6 @@ struct BrowsingDisplayGuide: View {
             VStack(spacing: 10) {
                 HStack { Capsule().frame(width: 26, height: 5); Spacer(); Image(systemName: "wifi"); Image(systemName: "battery.100") }
                     .font(.system(size: 10)).foregroundStyle(extended ? .white : .secondary).padding(.horizontal, 13)
-                if example == .topSearch {
-                    HStack { Image(systemName: "magnifyingglass"); Text("Soulo"); Spacer() }
-                        .font(.caption).padding(8).background(Color.accentColor.opacity(0.16), in: Capsule())
-                        .overlay(Capsule().strokeBorder(Color.accentColor, lineWidth: 2))
-                }
                 VStack(spacing: 12) {
                     RoundedRectangle(cornerRadius: 4).fill(extended ? Color.red.opacity(0.85) : Color.accentColor.opacity(0.18)).frame(height: 40)
                     ForEach(0..<4) { index in

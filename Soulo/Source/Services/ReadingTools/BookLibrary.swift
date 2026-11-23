@@ -17,6 +17,9 @@ struct LibraryBook: Codable, Identifiable, Hashable {
     var bookmarks: [ReadingBookmark] = []
     var hasCover: Bool?
     var fileBookmark: Data?
+    static func normalizedFraction(_ fraction: Double) -> Double {
+        fraction.isFinite ? min(1, max(0, fraction)) : 0
+    }
     var coverURL: URL { BookLibrary.coverDirectory.appendingPathComponent(id + ".jpg") }
     var url: URL {
         if let fileBookmark {
@@ -37,7 +40,14 @@ struct LibraryBook: Codable, Identifiable, Hashable {
     private let progressPersistence = DeferredPersistence()
     init(metadata: URL? = nil) {
         self.metadata = metadata ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("BookLibrary.json")
-        if let data = try? Data(contentsOf: self.metadata), let books = try? JSONDecoder().decode([LibraryBook].self, from: data) { self.books = books }
+        if let data = try? Data(contentsOf: self.metadata),
+           let savedBooks = try? JSONDecoder().decode([LibraryBook].self, from: data) {
+            books = savedBooks.map { saved in
+                var book = saved
+                book.fraction = LibraryBook.normalizedFraction(saved.fraction)
+                return book
+            }
+        }
     }
     func add(_ url: URL) async throws -> LibraryBook {
         let accessing = url.startAccessingSecurityScopedResource()
@@ -66,7 +76,7 @@ struct LibraryBook: Codable, Identifiable, Hashable {
     }
     func update(_ id: String, location: String, fraction: Double) {
         guard fraction.isFinite, let index = books.firstIndex(where: { $0.id == id }) else { return }
-        let fraction = min(1, max(0, fraction))
+        let fraction = LibraryBook.normalizedFraction(fraction)
         guard books[index].location != location || books[index].fraction != fraction else { return }
         var book = books[index]
         book.location = location; book.fraction = fraction; book.openedAt = Date()

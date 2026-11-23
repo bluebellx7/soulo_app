@@ -73,7 +73,12 @@ struct SearchInputField: UIViewRepresentable {
     static func dismantleUIView(_ field: Field, coordinator: Coordinator) {
         field.compositionChanged = nil
         field.delegate = nil
-        coordinator.parent.input.setEditing(false)
+        let owner = ObjectIdentifier(field)
+        // SwiftUI dismantles the field during a view update. Publish on the
+        // next main-queue turn and let any newly focused field keep ownership.
+        DispatchQueue.main.async { [weak input = coordinator.parent.input] in
+            input?.setEditing(false, owner: owner)
+        }
     }
 
     final class Field: UITextField {
@@ -106,12 +111,12 @@ struct SearchInputField: UIViewRepresentable {
         }
         func textFieldDidChangeSelection(_ textField: UITextField) { changed(textField) }
         func textFieldDidBeginEditing(_ textField: UITextField) {
-            parent.input.setEditing(true)
+            parent.input.setEditing(true, owner: ObjectIdentifier(textField))
             parent.onFocusChanged(true)
         }
         func textFieldDidEndEditing(_ textField: UITextField) {
             changed(textField)
-            parent.input.setEditing(false)
+            parent.input.setEditing(false, owner: ObjectIdentifier(textField))
             parent.onFocusChanged(false)
         }
         func textFieldShouldReturn(_ textField: UITextField) -> Bool {

@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Càpsula";
 "home_toolbar_icons" = "Només icones";
 "home_toolbar_bottom" = "A baix";
-"home_toolbar_belowSearch" = "Sota la cerca";
 "home_toolbar_free" = "Posició lliure";
+"home_toolbar_search_bottom" = "A baix";
+"home_toolbar_alignment" = "Alineació de la barra d’eines";
 "home_toolbar_leading" = "Alinea a l’inici";
 "home_toolbar_center" = "Centra";
 "home_toolbar_trailing" = "Alinea al final";
 "home_toolbar_drag_position" = "Arrossega la barra per situar-la.";
 "home_toolbar_drag_buttons" = "Toca per canviar un botó. Arrossega’l per reordenar-lo.";
+"home_toolbar_style" = "Estil";
+"home_toolbar_visibility" = "Mostra/amaga";
+"home_toolbar_visibility_page" = "Elements d’inici";
+"home_toolbar_visibility_search_area" = "Àrea de cerca";
+"home_toolbar_visibility_title" = "Títol";
+"home_toolbar_visibility_subtitle" = "Subtítol";
+"home_toolbar_visibility_search" = "Barra de cerca";
+"home_toolbar_visibility_search_hint" = "Llisca amunt o avall a la pàgina d’inici per mostrar la barra de cerca.";
+"home_toolbar_visibility_recovery" = "Mantén premut un espai buit d’Inici per obrir el menú.";
 "home_toolbar_search" = "Busca una pàgina";
 "group_default_search" = "Cerca per defecte";
 "group_search_settings" = "Configuració del grup";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Vidre esmerilat";
 "wallpaper_blur_amount" = "Intensitat del desenfocament";
 
+"home_quick_search_guide" = "Escriu una paraula clau a l’inici per veure les plataformes sota la barra de cerca. Toca una plataforma per cercar-hi.";
 "auto_hide_platform_bar_hint" = "Quan s’activa, la barra només s’amaga després de tocar el contingut web i si el domini de la pàgina no coincideix amb cap plataforma de la barra actual. Si hi ha una coincidència, es manté visible o torna a aparèixer. El desplaçament i les redireccions automàtiques no l’amaguen.";
 
 "ad_subscription_add" = "Afegeix una llista";
@@ -621,3 +632,9 @@
 "browsing_web_display" = "Pàgines web";
 "manual_backups_empty" = "Encara no hi ha còpies manuals";
 "browsing_display_settings_legacy" = "Visualització de navegació";
+"media_lock_orientation" = "Bloqueja l’orientació";
+"media_unlock_orientation" = "Desbloqueja l’orientació";
+
+"music_queue" = "Llista de reproducció";
+"music_previous_track" = "Pista anterior";
+"music_next_track" = "Pista següent";

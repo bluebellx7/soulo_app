@@ -1,4 +1,1 @@
-• Forbedret skift til fuld skærm, buffering og hastighedsmenu for onlinevideoer.
-• Forbedret genkendelse af magnetlinks og søgning efter peers til BitTorrent-downloads.
-• Brugerscripts kan bruge GM_webRequest til at annullere eller omdirigere hovedrammens Fetch- og XHR-anmodninger inden for samme oprindelse.
-• Bedre kompatibilitet med browserudvidelser, herunder filnavne ved download og indlæsning af sider uden for skærmen.
+Forbedret indlæsning af scripts ved åbning af websider og bedre kompatibilitet med browserudvidelser.

@@ -241,8 +241,6 @@
 "login_required_toast" = "Először jelentkezzen be, majd keressen újra";
 "status_enabled" = "Engedélyezve";
 "status_disabled" = "Letiltva";
-"show_top_search_bar" = "Legfelső keresősáv megjelenítése";
-"show_top_search_bar_desc" = "Ha rejtett, használja az alsó címvezérlőt a kereséshez vagy a hangbevitel elindításához";
 "ad_block_master_disabled_desc" = "Az alábbi szűrő-előfizetések használatához és kezeléséhez kapcsolja be az Ad Blockot.";
 "custom_groups" = "Egyéni csoportok";
 "no_groups" = "Nincsenek egyéni csoportok";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Sikeresen importált %d platform";
 "paste_from_clipboard" = "Beillesztés a vágólapról";
 "none" = "Egyik sem";
-"show_group_picker_home" = "Csoportválasztó megjelenítése a Kezdőlapon";
-"show_group_picker_home_desc" = "A platformcsoportok lapjainak megjelenítése a kezdőképernyőn a gyors váltáshoz";
 "error_no_internet" = "Nincs internet kapcsolat. Kérjük, ellenőrizze a hálózatát.";
 "error_timeout" = "A kapcsolat időtúllépése lejárt. Kérjük, próbálja újra.";
 "error_ssl" = "A biztonságos kapcsolat nem sikerült. Lehet, hogy ez a webhely nem biztonságos.";

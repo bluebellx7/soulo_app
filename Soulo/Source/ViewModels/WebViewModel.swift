@@ -183,6 +183,7 @@ final class WebViewModel: ObservableObject {
     private var videoHoldSpeedDismissal: Task<Void, Never>?
     @Published var configuredVideo: WebMediaResource?
     @Published var configuredVideoUsesInlineControl = false
+    @Published var searchPlatformDraft: SearchPlatformDraft?
     @Published var episodeList: WebEpisodeList?
     @Published var showEpisodes = false
     @Published private(set) var domainNavigationConfirmation: WebDomainNavigationConfirmation?
@@ -201,6 +202,7 @@ final class WebViewModel: ObservableObject {
     @Published private(set) var followLinkTranslation: FollowLinkTranslation?
     @Published private(set) var googleFollowLinkTarget: String?
     @Published private(set) var runtimeRevision = UUID()
+    private var needsExtensionRuntimeRefresh = false
     @Published private(set) var userScriptMenuCommands: [UserScriptMenuCommand] = []
     @Published var manualAdSelection: ManualAdSelection?
     @Published var manualAdBusy = false
@@ -233,6 +235,7 @@ final class WebViewModel: ObservableObject {
     private var privatePageZooms: [String: CGFloat] = [:]
     let userScriptBridgeToken = UUID().uuidString
     let userScriptTabID = UUID().uuidString
+    var installedUserScriptStorageRevisions: [UUID: Int] = [:]
     var isStreamingDownloadHandlerInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
     private(set) var mediaFrameInfos: [WKFrameInfo] = []
@@ -284,6 +287,7 @@ final class WebViewModel: ObservableObject {
     var webView: WKWebView? {
         didSet {
             guard oldValue !== webView else { return }
+            if oldValue != nil { installedUserScriptStorageRevisions.removeAll() }
             historyTransition.reset()
             finishHistoryPreview()
             // SwiftUI, WebKit presentations or downloads can retain a retired
@@ -292,6 +296,7 @@ final class WebViewModel: ObservableObject {
             // Some older WebKit builds invoke these optional blocks without
             // checking for nil. Supply callbacks on every supported OS rather
             // than assuming the behavior changed at a major-version boundary.
+            oldValue?.isUserInteractionEnabled = false
             oldValue?.setAllMediaPlaybackSuspended(true, completionHandler: {})
             oldValue?.closeAllMediaPresentations(completionHandler: {})
             if webView == nil {
@@ -523,11 +528,10 @@ final class WebViewModel: ObservableObject {
         guard let webView else { return }
         errorMessage = nil
         updateCurrentURL(webView.url)
-        historyTransition.cancel()
         finishHistoryPreview()
         mediaSession.allowUserNavigation()
         mediaSession.finishNavigation()
-        webView.goBack()
+        historyTransition.goBack(in: webView)
     }
 
     func willNavigateHistory(in webView: WKWebView, isMainFrame: Bool, frameURL: URL?) {
@@ -575,9 +579,8 @@ final class WebViewModel: ObservableObject {
         updateCurrentURL(webView.url)
         finishHistoryPreview()
         mediaSession.finishNavigation()
-        historyTransition.cancel()
         mediaSession.allowUserNavigation()
-        webView.goForward()
+        historyTransition.goForward(in: webView)
     }
 
     func reload() {
@@ -624,6 +627,7 @@ final class WebViewModel: ObservableObject {
     /// Releases the expensive WebKit runtime while preserving the tab URL and snapshot.
     /// The view is recreated lazily the next time the tab becomes active.
     func releaseWebViewRuntime() {
+        needsExtensionRuntimeRefresh = false
         retainedInteractionState = browserInteractionState()
         retainedInteractionURL = retainedInteractionState == nil ? nil : currentURL
         pendingScriptWindowCoordinator = nil
@@ -657,6 +661,7 @@ final class WebViewModel: ObservableObject {
     /// Recreates WebKit so document-start UserScripts and their permissions are
     /// rebuilt before the next navigation, while preserving the current page.
     func rebuildWebViewRuntime() {
+        needsExtensionRuntimeRefresh = false
         retainedInteractionState = browserInteractionState()
         retainedInteractionURL = retainedInteractionState == nil ? nil : currentURL
         hasPresentedContent = false
@@ -685,6 +690,15 @@ final class WebViewModel: ObservableObject {
             estimatedProgress = 0
             showSnapshotWhileRestoring = snapshot != nil
         }
+    }
+
+    func invalidateExtensionRuntime() {
+        if webView != nil, currentURL != nil { needsExtensionRuntimeRefresh = true }
+    }
+
+    func refreshExtensionRuntimeIfNeeded() {
+        guard needsExtensionRuntimeRefresh else { return }
+        rebuildWebViewRuntime()
     }
 
     func registerUserScriptMenuCommand(
@@ -782,7 +796,11 @@ final class WebViewModel: ObservableObject {
         downloadFileName = mediaDownloads.values.first ?? nativeDownloadName
     }
 
-    func beginPageNavigation() {
+    func beginPageNavigation(afterWebContentTermination: Bool = false) {
+        if afterWebContentTermination {
+            webView?.isUserInteractionEnabled = false
+            hasPresentedContent = false
+        }
         pageEdgePalette = nil
         pageEdgesHaveScrolled = false
         clearVideoHoldSpeed()
@@ -839,6 +857,7 @@ final class WebViewModel: ObservableObject {
         finishHistoryPreview()
         if showSnapshotWhileRestoring { showSnapshotWhileRestoring = false }
         guard !hasVisibleContent else { return }
+        webView?.isUserInteractionEnabled = true
         markDocumentCommitted()
         BrowserStartupTrace.mark("content_visible")
         hasVisibleContent = true

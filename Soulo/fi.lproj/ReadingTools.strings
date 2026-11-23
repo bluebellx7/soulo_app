@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapseli";
 "home_toolbar_icons" = "Vain kuvakkeet";
 "home_toolbar_bottom" = "Alhaalla";
-"home_toolbar_belowSearch" = "Haun alla";
 "home_toolbar_free" = "Vapaa sijoittelu";
+"home_toolbar_search_bottom" = "Alhaalla";
+"home_toolbar_alignment" = "Työkalupalkin tasaus";
 "home_toolbar_leading" = "Tasaa alkuun";
 "home_toolbar_center" = "Keskitä";
 "home_toolbar_trailing" = "Tasaa loppuun";
 "home_toolbar_drag_position" = "Vedä työkalupalkki haluamaasi paikkaan.";
 "home_toolbar_drag_buttons" = "Vaihda painike napauttamalla. Järjestä vetämällä.";
+"home_toolbar_style" = "Tyyli";
+"home_toolbar_visibility" = "Näytä/piilota";
+"home_toolbar_visibility_page" = "Aloitussivun osat";
+"home_toolbar_visibility_search_area" = "Hakualue";
+"home_toolbar_visibility_title" = "Otsikko";
+"home_toolbar_visibility_subtitle" = "Alaotsikko";
+"home_toolbar_visibility_search" = "Hakupalkki";
+"home_toolbar_visibility_search_hint" = "Näytä hakupalkki pyyhkäisemällä aloitussivulla ylös tai alas.";
+"home_toolbar_visibility_recovery" = "Avaa valikko painamalla kotisivun tyhjää kohtaa pitkään.";
 "home_toolbar_search" = "Etsi sivu";
 "group_default_search" = "Oletushaku";
 "group_search_settings" = "Ryhmäasetukset";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Huurrelasi";
 "wallpaper_blur_amount" = "Sumennuksen voimakkuus";
 
+"home_quick_search_guide" = "Kirjoita hakusana aloitussivulla, niin alustat näkyvät hakupalkin alla. Hae valitsemallasi alustalla napauttamalla sitä.";
 "auto_hide_platform_bar_hint" = "Kun toiminto on käytössä, palkki piilotetaan vasta napautettuasi verkkosivun sisältöä ja vain, jos sivun verkkotunnus ei vastaa mitään nykyisen palkin alustaa. Osuma pitää palkin näkyvissä tai palauttaa sen. Vieritys ja automaattiset uudelleenohjaukset eivät piilota palkkia.";
 
 "ad_subscription_add" = "Lisää suodatinlista";
@@ -621,3 +632,9 @@
 "browsing_web_display" = "Verkkosivut";
 "manual_backups_empty" = "Ei vielä manuaalisia kopioita";
 "browsing_display_settings_legacy" = "Selausnäkymä";
+"media_lock_orientation" = "Lukitse suunta";
+"media_unlock_orientation" = "Avaa suunnan lukitus";
+
+"music_queue" = "Soittolista";
+"music_previous_track" = "Edellinen kappale";
+"music_next_track" = "Seuraava kappale";

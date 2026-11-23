@@ -1,4 +1,1 @@
-• Cải thiện chuyển sang toàn màn hình, tải đệm và menu tốc độ phát video trực tuyến.
-• Cải thiện nhận dạng liên kết magnet và tìm kiếm máy ngang hàng khi tải qua BitTorrent.
-• Tập lệnh người dùng có thể dùng GM_webRequest để hủy yêu cầu Fetch và XHR của khung chính hoặc chuyển hướng chúng về cùng nguồn gốc.
-• Cải thiện khả năng tương thích của tiện ích trình duyệt, bao gồm tên tệp tải xuống và quá trình tải trang ngoài màn hình.
+Cải thiện khả năng tải tập lệnh khi mở trang web và khả năng tương thích với tiện ích mở rộng của trình duyệt.

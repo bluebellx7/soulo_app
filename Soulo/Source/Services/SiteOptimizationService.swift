@@ -170,20 +170,27 @@ final class SiteOptimizationController: NSObject, WKScriptMessageHandler {
             controller.removeScriptMessageHandler(forName: Self.handler, contentWorld: rule.world)
             controller.add(self, contentWorld: rule.world, name: Self.handler)
             let source = rule.configuredScript(enabled: settings.isEnabled(rule), navigationEnabled: navigationEnabled)
+            applied[rule.id] = signature
+            guard !source.isEmpty else { continue }
             let existing = controller.userScripts.filter { $0.source.hasPrefix(rule.scriptPrefix) }
             if existing.count != 1 || existing.first?.source != source {
                 let replacement = WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: true, in: rule.world)
-                var replaced = false
-                let scripts = controller.userScripts.compactMap { script -> WKUserScript? in
-                    guard script.source.hasPrefix(rule.scriptPrefix) else { return script }
-                    guard !replaced else { return nil }
-                    replaced = true
-                    return replacement
+                if existing.isEmpty {
+                    // A fresh WebView only needs the new script. Re-sending the
+                    // rest can exhaust WebKit's startup IPC queue.
+                    controller.addUserScript(replacement)
+                } else {
+                    var replaced = false
+                    let scripts = controller.userScripts.compactMap { script -> WKUserScript? in
+                        guard script.source.hasPrefix(rule.scriptPrefix) else { return script }
+                        guard !replaced else { return nil }
+                        replaced = true
+                        return replacement
+                    }
+                    controller.removeAllUserScripts()
+                    scripts.forEach(controller.addUserScript)
                 }
-                controller.removeAllUserScripts(); scripts.forEach(controller.addUserScript)
-                if !replaced { controller.addUserScript(replacement) }
             }
-            applied[rule.id] = signature
             if webView.url != nil {
                 webView.evaluateCompatibleJavaScript(source, in: nil, in: rule.world, completionHandler: nil)
             }

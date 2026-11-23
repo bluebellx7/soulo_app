@@ -163,19 +163,24 @@ final class LibraryExperienceTests: XCTestCase {
         try await waitJS(web, "document.querySelector('foliate-view').renderer.getContents()[0]?.index === 6")
         // Publisher styles on descendants must not prevent reader preferences from applying.
         _ = try await web.evaluateJavaScript("""
-        (() => { const doc = document.querySelector('foliate-view').renderer.getContents()[0].doc;
+        (() => { const doc = document.querySelector('foliate-view').renderer.getContents().find(section => section.index === 6).doc;
         const p = doc.querySelector('p') || doc.body.appendChild(doc.createElement('p'));
         p.id = 'publisher-font-test'; p.textContent = 'Publisher text 字体测试';
         p.style.cssText = 'font-family: Times; font-size: 12px; line-height: 1'; return true; })()
         """)
         controller.font = "sans"; controller.line = 2
         controller.theme = "dark"; controller.size = 22; controller.style()
-        try await Task.sleep(for: .milliseconds(350))
+        try await waitJS(web, """
+        (() => {
+            const doc = document.querySelector('foliate-view').renderer.getContents().find(section => section.index === 6)?.doc;
+            return !!doc?.getElementById('publisher-font-test') && doc.defaultView.getComputedStyle(doc.body).fontSize === '22px';
+        })()
+        """)
         XCTAssertNil(controller.error)
-        let font = try await web.evaluateJavaScript("getComputedStyle(document.querySelector('foliate-view').renderer.getContents()[0].doc.body).fontSize") as? String
+        let font = try await web.evaluateJavaScript("getComputedStyle(document.querySelector('foliate-view').renderer.getContents().find(section => section.index === 6).doc.body).fontSize") as? String
         XCTAssertEqual(font, "22px")
         let paragraph = try await web.evaluateJavaScript("""
-        (() => {const doc = document.querySelector('foliate-view').renderer.getContents()[0].doc;
+        (() => {const doc = document.querySelector('foliate-view').renderer.getContents().find(section => section.index === 6).doc;
         const style = doc.defaultView.getComputedStyle(doc.getElementById('publisher-font-test'));
         return {font: style.fontFamily, size: style.fontSize, line: style.lineHeight};})()
         """) as? [String: String]

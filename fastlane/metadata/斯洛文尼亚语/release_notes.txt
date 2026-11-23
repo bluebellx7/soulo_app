@@ -1,4 +1,1 @@
-• Izboljšani so preklop v celozaslonski način, medpomnjenje in meni hitrosti predvajanja spletnih videov.
-• Izboljšana sta prepoznavanje povezav magnet in iskanje odjemalcev za prenose BitTorrent.
-• Uporabniški skripti lahko z GM_webRequest prekličejo zahteve Fetch in XHR glavnega okvira ali jih preusmerijo znotraj istega izvora.
-• Izboljšali smo združljivost razširitev brskalnika, vključno z imeni prenesenih datotek in nalaganjem strani zunaj zaslona.
+Izboljšali smo nalaganje skriptov pri odpiranju spletnih strani in združljivost z razširitvami brskalnika.

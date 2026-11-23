@@ -27,6 +27,25 @@ final class HomeColdStartUITests: XCTestCase {
     func testColdTabs() { check("tabs") }
     func testColdSearch() { check("search") }
 
+    func testHomeWallpaperActionRefreshesTheDisplayedAppearance() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-appearance", "dark", "-wallpaper_source", "gradient",
+            "-wallpaper_gradient_id_dark", "dawn", "-restore_last_page_on_launch", "NO", "-icloud_sync_enabled", "NO",
+            "-review.requestedOnce", "YES", "-home_toolbar_actions", "(refreshWallpaper,wallpaper)"]
+        app.launch()
+        defer { app.terminate() }
+        let refresh = app.buttons["home.toolbar.0"]
+        XCTAssertTrue(refresh.waitForExistence(timeout: 10))
+        refresh.tap()
+        XCTAssertTrue(refresh.isHittable, "Changing the wallpaper stays on Home")
+        app.buttons["home.toolbar.1"].tap()
+        let next = app.buttons["wallpaper.gradient.deep_sea"]
+        for _ in 0..<3 where !next.isHittable { app.swipeUp() }
+        XCTAssertTrue(next.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(next.isSelected, app.debugDescription)
+    }
+
     func testClosingAllAndLastTabReturnsToHome() {
         continueAfterFailure=false
         let app=XCUIApplication(bundleIdentifier:SouloUITestApplication.bundleIdentifier)
@@ -42,7 +61,7 @@ final class HomeColdStartUITests: XCTestCase {
         XCTAssertTrue(closeAll.waitForExistence(timeout:5));closeAll.tap()
         let hidden=NSPredicate(format:"exists == false")
         XCTAssertEqual(XCTWaiter.wait(for:[XCTNSPredicateExpectation(predicate:hidden,object:options)],timeout:5),.completed)
-        XCTAssertTrue(app.buttons["home.menu"].isHittable,"Closing all must reveal the actual home, not an empty browser or card")
+        XCTAssertTrue(tabs.isHittable, "Closing all must return to Home")
         tabs.tap()
         let card=app.descendants(matching:.any).matching(identifier:"tabs.card.placeholder").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout:5))
@@ -50,7 +69,7 @@ final class HomeColdStartUITests: XCTestCase {
         // the real visible X hit target rather than its select/open action.
         card.coordinate(withNormalizedOffset:CGVector(dx:1,dy:0)).withOffset(CGVector(dx:-26,dy:22)).tap()
         XCTAssertEqual(XCTWaiter.wait(for:[XCTNSPredicateExpectation(predicate:hidden,object:options)],timeout:5),.completed)
-        XCTAssertTrue(app.buttons["home.menu"].isHittable)
+        XCTAssertTrue(tabs.isHittable, "Closing the last tab must return to Home")
         let image=XCTAttachment(screenshot:app.screenshot());image.name="last-tab-returns-home";image.lifetime = .keepAlways;add(image)
     }
 
@@ -59,11 +78,11 @@ final class HomeColdStartUITests: XCTestCase {
         let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
         let base = ["-app_language", "en-US", "-appearance", "light", "-wallpaper_source", "gradient",
             "-keep_screen_awake", "YES", "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES",
-            "-home_toolbar_actions", "(settings,files,downloads,tabs)",
-            "-show_bookmarks_on_home", "NO", "-show_group_picker_on_home", "NO", "-show_recent_searches_on_home", "NO"]
-        app.launchEnvironment["SOULO_ACCEPTANCE_PROBE"] = "1"
-        app.launchEnvironment["SOULO_ACCEPTANCE_HISTORY"] = "1"
-        app.launchArguments = base + ["-home_title", "Soulo", "-home_subtitle", "Search Everything Everywhere"]
+            "-home_toolbar_actions", "(settings,files,downloads,tabs)", "-restore_last_page_on_launch", "NO",
+            "-home_toolbar_layout", "{ searchPlacement = center; }",
+            "-is_incognito", "NO", "-privacy_clear_browsing_on_exit", "NO"]
+        let noRows = ["-show_bookmarks_on_home", "NO", "-show_recent_searches_on_home", "NO"]
+        app.launchArguments = base + noRows + ["-home_title", "Soulo", "-home_subtitle", "Search Everything Everywhere"]
         app.launch()
         let query = app.textFields["search.query"]
         XCTAssertTrue(query.waitForExistence(timeout: 10))
@@ -74,15 +93,19 @@ final class HomeColdStartUITests: XCTestCase {
         XCTAssertTrue(searchBox.exists)
         XCTAssertEqual(before.midY, area.frame.midY - searchBox.frame.height / 2, accuracy: 3, "Place the field half its visible box height above the usable area's center")
         app.terminate()
-        app.launchArguments = base + ["-home_title", "", "-home_subtitle", ""]
+        app.launchArguments = base + noRows + ["-home_title", "", "-home_subtitle", ""]
         app.launch(); defer { app.terminate() }
         XCTAssertTrue(query.waitForExistence(timeout: 10))
         XCTAssertEqual(query.frame.minY, before.minY, accuracy: 1)
         XCTAssertEqual(query.frame.height, before.height, accuracy: 1)
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Edit title")).firstMatch.exists)
         app.terminate()
-        app.launchArguments = base + ["-home_title", "", "-home_subtitle", "", "-show_group_picker_on_home", "YES", "-show_bookmarks_on_home", "YES", "-show_recent_searches_on_home", "YES"]
+        app.launchArguments = base + ["-home_title", "", "-home_subtitle", "", "-show_bookmarks_on_home", "YES", "-show_recent_searches_on_home", "YES"]
         app.launch()
+        XCTAssertTrue(query.waitForExistence(timeout: 10))
+        app.open(URL(string: "soulo://search?q=Home%20layout%20fixture")!)
+        XCTAssertTrue(query.waitForNonExistence(timeout: 10))
+        app.open(URL(string: "soulo://home")!)
         XCTAssertTrue(query.waitForExistence(timeout: 10))
         XCTAssertEqual(query.frame.midY, before.midY, accuracy: 3, "Rows below the field must not shift its anchor")
         let recentTitle = app.staticTexts["home.recent.title"], terms = app.otherElements["home.recent.terms"]

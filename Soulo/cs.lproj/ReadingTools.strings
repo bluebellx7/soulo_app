@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapsle";
 "home_toolbar_icons" = "Jen ikony";
 "home_toolbar_bottom" = "Dole";
-"home_toolbar_belowSearch" = "Pod hledáním";
 "home_toolbar_free" = "Volné umístění";
+"home_toolbar_search_bottom" = "Dole";
+"home_toolbar_alignment" = "Zarovnání panelu nástrojů";
 "home_toolbar_leading" = "Zarovnat na začátek";
 "home_toolbar_center" = "Na střed";
 "home_toolbar_trailing" = "Zarovnat na konec";
 "home_toolbar_drag_position" = "Přetažením panelu změníte jeho umístění.";
 "home_toolbar_drag_buttons" = "Klepnutím tlačítko změníte, přetažením přesunete.";
+"home_toolbar_style" = "Styl";
+"home_toolbar_visibility" = "Zobrazit/skrýt";
+"home_toolbar_visibility_page" = "Prvky domovské stránky";
+"home_toolbar_visibility_search_area" = "Oblast vyhledávání";
+"home_toolbar_visibility_title" = "Nadpis";
+"home_toolbar_visibility_subtitle" = "Podnadpis";
+"home_toolbar_visibility_search" = "Vyhledávací pole";
+"home_toolbar_visibility_search_hint" = "Přejetím nahoru nebo dolů na domovské stránce zobrazíte vyhledávací pole.";
+"home_toolbar_visibility_recovery" = "Podržením prázdného místa na domovské stránce otevřete nabídku.";
 "home_toolbar_search" = "Najděte stránku";
 "group_default_search" = "Výchozí vyhledávání";
 "group_search_settings" = "Nastavení skupiny";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Matné sklo";
 "wallpaper_blur_amount" = "Intenzita rozostření";
 
+"home_quick_search_guide" = "Po zadání klíčového slova na domovské stránce se pod vyhledávacím polem zobrazí platformy. Klepnutím vyhledáte na vybrané platformě.";
 "auto_hide_platform_bar_hint" = "Po zapnutí se lišta skryje až po klepnutí na obsah stránky, a to jen pokud doména stránky neodpovídá žádné platformě na aktuální liště. Při shodě zůstane viditelná nebo se znovu zobrazí. Posouvání ani automatická přesměrování ji neskryjí.";
 
 "ad_subscription_add" = "Přidat seznam filtrů";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Webové stránky";
 "manual_backups_empty" = "Zatím žádné ruční zálohy";
 "browsing_display_settings_legacy" = "Zobrazení prohlížení";
+"media_lock_orientation" = "Zamknout orientaci";
+"media_unlock_orientation" = "Odemknout orientaci";
+
+"music_queue" = "Seznam skladeb";
+"music_previous_track" = "Předchozí skladba";
+"music_next_track" = "Další skladba";

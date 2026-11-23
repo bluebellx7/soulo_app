@@ -1,4 +1,1 @@
-• Verbeterde overgang naar volledig scherm, buffering en afspeelsnelheidsmenu voor onlinevideo’s.
-• Verbeterde herkenning van magnetlinks en het vinden van peers voor BitTorrent-downloads.
-• Gebruikersscripts kunnen met GM_webRequest Fetch- en XHR-verzoeken van het hoofdframe annuleren of omleiden binnen dezelfde oorsprong.
-• Verbeterde compatibiliteit met browserextensies, inclusief bestandsnamen voor downloads en het laden van pagina’s buiten beeld.
+Verbeterd laden van scripts bij het openen van webpagina’s en betere compatibiliteit met browserextensies.

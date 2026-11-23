@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Cápsula";
 "home_toolbar_icons" = "Solo iconos";
 "home_toolbar_bottom" = "Abajo";
-"home_toolbar_belowSearch" = "Bajo la búsqueda";
 "home_toolbar_free" = "Posición libre";
+"home_toolbar_search_bottom" = "Abajo";
+"home_toolbar_alignment" = "Alineación de la barra";
 "home_toolbar_leading" = "Alinear al inicio";
 "home_toolbar_center" = "Centrar";
 "home_toolbar_trailing" = "Alinear al final";
 "home_toolbar_drag_position" = "Arrastra la barra para colocarla.";
 "home_toolbar_drag_buttons" = "Toca para cambiar un botón. Arrástralo para reordenarlo.";
+"home_toolbar_style" = "Estilo";
+"home_toolbar_visibility" = "Mostrar/ocultar";
+"home_toolbar_visibility_page" = "Elementos de inicio";
+"home_toolbar_visibility_search_area" = "Área de búsqueda";
+"home_toolbar_visibility_title" = "Título";
+"home_toolbar_visibility_subtitle" = "Subtítulo";
+"home_toolbar_visibility_search" = "Barra de búsqueda";
+"home_toolbar_visibility_search_hint" = "Desliza hacia arriba o hacia abajo en la página de inicio para mostrar la barra de búsqueda.";
+"home_toolbar_visibility_recovery" = "Mantén pulsado un espacio vacío de Inicio para abrir el menú.";
 "home_toolbar_search" = "encontrar una pagina";
 "group_default_search" = "Búsqueda predeterminada";
 "group_search_settings" = "Configuración de grupo";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Cristal esmerilado";
 "wallpaper_blur_amount" = "Intensidad del desenfoque";
 
+"home_quick_search_guide" = "Escribe una palabra clave en Inicio para ver las plataformas debajo de la barra de búsqueda. Toca una plataforma para buscar en ella.";
 "auto_hide_platform_bar_hint" = "Al activarse, la barra solo se oculta después de tocar el contenido de la página y si su dominio no coincide con ninguna plataforma de la barra actual. Si coincide con alguna, la barra se mantiene o vuelve a mostrarse. El desplazamiento y las redirecciones automáticas no la ocultan.";
 
 "ad_subscription_add" = "Añadir lista de filtros";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Páginas web";
 "manual_backups_empty" = "Aún no hay copias manuales";
 "browsing_display_settings_legacy" = "Vista de navegación";
+"media_lock_orientation" = "Bloquear orientación";
+"media_unlock_orientation" = "Desbloquear orientación";
+
+"music_queue" = "Lista de reproducción";
+"music_previous_track" = "Pista anterior";
+"music_next_track" = "Pista siguiente";

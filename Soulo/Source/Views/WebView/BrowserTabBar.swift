@@ -11,7 +11,6 @@ struct BrowserTabBar: View {
     let onNewTab: () -> Void
 
     @State private var showTabOptions = false
-    @Namespace private var tabNamespace
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -45,7 +44,6 @@ struct BrowserTabBar: View {
                                 }
                             }
                         }
-                        .matchedGeometryEffect(id: tab.id, in: tabNamespace)
                         .transition(reduceMotion ? .identity : .asymmetric(
                             insertion: .scale(scale: 0.8).combined(with: .opacity),
                             removal: .scale(scale: 0.8).combined(with: .opacity)
@@ -84,7 +82,11 @@ struct BrowserTabBar: View {
                 await Task.yield()
                 guard !Task.isCancelled, let id, tabManager.tabs.count > 1,
                       tabManager.activeTab?.id == id else { return }
-                withAnimation(reduceMotion ? nil : .default) {
+                // On iOS 26, animating a lazy stack's first horizontal scroll
+                // can keep invalidating layout as the active chip changes width.
+                var transaction = Transaction(animation: nil)
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
                     proxy.scrollTo(id, anchor: .center)
                 }
             }
@@ -246,7 +248,8 @@ struct TabSwitcherOverlay: View {
                     }
                     .foregroundStyle(.primary).padding(.horizontal, 16).frame(minHeight: 44)
                     .background(Color.primary.opacity(0.10), in: Capsule())
-                    .padding(.horizontal, 24).padding(.top, max(geo.safeAreaInsets.top, 12))
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
                     if orderedTabs.isEmpty && !tabManager.tabs.isEmpty {
                         CompatibleUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
                             .foregroundStyle(.primary).frame(maxHeight: .infinity)
@@ -377,8 +380,18 @@ struct TabSwitcherOverlay: View {
 
     private var tabOptionsPanel: some View {
         BrowserTabOptionsPanel(tabManager: tabManager, onDismiss: { showTabOptions = false }, onNewTab: {
-            tabManager.createTab()
-            dismiss()
+            // Close the overview before publishing the changed tab list. Older SwiftUI
+            // can repeatedly lay out both the departing grid and the new tab during its spring.
+            HapticsManager.light()
+            var transaction = Transaction(animation: nil)
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                onDismiss()
+                let tab = tabManager.openNewTab()
+                if tab.webViewModel.currentURL != nil {
+                    onSelectTab(tabManager.activeTabIndex)
+                }
+            }
         })
     }
 
@@ -448,7 +461,10 @@ struct TabOverviewDomainGroup: Identifiable {
             let url = tab.webViewModel.currentURL ?? tab.suspendedURL
             let key: String
             let title: String
-            if url?.isFileURL == true {
+            if url?.scheme?.lowercased() == "webkit-extension" {
+                key = "web-extensions"
+                title = LanguageManager.shared.localizedString("web_extensions")
+            } else if url?.isFileURL == true {
                 key = "local-files"
                 title = LanguageManager.shared.localizedString("library_files_tab")
             } else if var host = url?.host?.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ".")), !host.isEmpty {
@@ -1368,7 +1384,7 @@ private struct TabOverviewCard: View {
                 previewSurface
                     .frame(height: compactPreviewHeight)
                 Text(displayTitle)
-                    .font(.caption.weight(.medium))
+                    .font(.caption.weight(isActive ? .semibold : .medium))
                     .foregroundStyle(Color.primary.opacity(isActive ? 1 : 0.78))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1389,10 +1405,6 @@ private struct TabOverviewCard: View {
             TabOverviewTapSurface {
                 if !isExpanding { onTap() }
             }
-        }
-        .overlay(alignment: .topTrailing) {
-            closeButton(size: compactPreviewHeight == nil ? 30 : 26)
-                .padding(.trailing, compactPreviewHeight == nil ? 4 : 0)
         }
         .contentShape(Rectangle())
         .contextMenu {
@@ -1487,24 +1499,7 @@ private struct TabOverviewCard: View {
             }
 
             Spacer(minLength: 6)
-
-            Color.clear.frame(width: 44, height: 44)
         }
-    }
-
-    private func closeButton(size: CGFloat) -> some View {
-        Button(action: onClose) {
-            Image(systemName: "xmark")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(.white.opacity(0.95))
-                .frame(width: size, height: size)
-                .background(.black.opacity(0.5), in: Circle())
-                .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 0.5))
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(LanguageManager.shared.localizedString("tab_close"))
     }
 
     private var previewSurface: some View {
@@ -1523,9 +1518,12 @@ private struct TabOverviewCard: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay {
-                if compactPreviewHeight != nil {
+                if isActive {
                     RoundedRectangle(cornerRadius: radius, style: .continuous)
-                        .strokeBorder(.white.opacity(isActive ? 0.92 : 0.12), lineWidth: isActive ? 1.5 : 0.5)
+                        .strokeBorder(Color.themePrimary, lineWidth: 2)
+                } else if compactPreviewHeight != nil {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
                 }
             }
             .shadow(

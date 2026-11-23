@@ -1,4 +1,1 @@
-• Çevrimiçi videolarda tam ekrana geçiş, arabelleğe alma ve oynatma hızı menüsü iyileştirildi.
-• BitTorrent indirmelerinde magnet bağlantılarını tanıma ve eş keşfi iyileştirildi.
-• Kullanıcı betikleri GM_webRequest ile ana çerçevenin Fetch ve XHR isteklerini iptal edebilir veya aynı kaynağa yönlendirebilir.
-• İndirilen dosyaların adlandırılması ve ekran dışı sayfaların yüklenmesi dahil olmak üzere tarayıcı uzantılarının uyumluluğu iyileştirildi.
+Web sayfaları açılırken betiklerin yüklenmesi ve tarayıcı uzantılarıyla uyumluluk iyileştirildi.

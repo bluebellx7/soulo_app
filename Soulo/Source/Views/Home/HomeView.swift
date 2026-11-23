@@ -2,10 +2,12 @@ import SwiftUI
 import CoreData
 import StoreKit
 
-private let homeSearchViewport = "home.search.viewport"
+private let homeSearchScrollTarget = "home.search.scroll-target"
+private let homeSearchBottomScrollTarget = "home.search.bottom-target"
 
 struct HomeView: View {
     @Environment(\.colorScheme) private var homeColorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("appearance") private var appAppearance = "system"
     @AppStorage(PlatformBarPreferences.homeQuickSearchKey) private var homeQuickSearch = false
     private var wallpaperAppearance: WallpaperAppearance {
@@ -31,13 +33,15 @@ struct HomeView: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var keyboardVisible = false
+    @State private var homeSearchReveal: HomeSearchSwipeDirection?
+    @State private var wallpaperFrame: CGRect = .zero
     @State private var landscapeIPadWindow = false
     @StateObject private var keyboardContext = BrowserKeyboardContext()
     @State private var reviewTask: Task<Void, Never>?
-    @Namespace private var searchBarNamespace
 
     @State private var showSettings = false
     @State private var showExtensionCenter = false
+    @State private var isRefreshingWallpaper = false
     @State private var librarySection: LibrarySection?
     @State private var navigationSession = UUID()
     @State private var pendingSelectionSearch: (text: String, platform: SearchPlatform, url: URL)?
@@ -62,18 +66,36 @@ struct HomeView: View {
     @State private var wallpaperLoadTask: Task<Void, Never>?
     @AppStorage("home_title") private var homeTitle: String = "Soulo"
     @AppStorage("home_subtitle") private var homeSubtitle: String = AppConstants.defaultHomeSubtitle
-    @AppStorage("show_bookmarks_on_home") private var showBookmarksOnHome: Bool = false
-    @AppStorage("show_group_picker_on_home") private var showGroupPickerOnHome: Bool = false
-    @AppStorage("show_recent_searches_on_home") private var showRecentSearchesOnHome: Bool = true
+    @AppStorage(HomePageElement.bookmarksKey) private var showBookmarksOnHome = HomePageElement.bookmarks.defaultVisibility
+    @AppStorage(HomePageElement.recentSearchesKey) private var showRecentSearchesOnHome = HomePageElement.recentSearches.defaultVisibility
+    @AppStorage("last_selected_region") private var lastRegion: String = ""
+    @AppStorage("last_selected_group_id") private var lastGroupID: String = ""
     @FetchRequest(sortDescriptors: BookmarkService.sortDescriptors) private var bookmarks: FetchedResults<BookmarkRecord>
     @State private var dynamicTheme: DynamicTheme = DynamicTheme(rawValue: UserDefaults.standard.string(forKey: "dynamic_theme") ?? "midnight") ?? .midnight
 
     private var displayedHomeTitle: String {
-        homeTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        showsHomeElement(.title) ? homeTitle.trimmingCharacters(in: .whitespacesAndNewlines) : ""
     }
 
     private var displayedHomeSubtitle: String {
-        homeSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        showsHomeElement(.subtitle) ? homeSubtitle.trimmingCharacters(in: .whitespacesAndNewlines) : ""
+    }
+
+    private func showsHomeElement(_ element: HomePageElement) -> Bool {
+        homeToolbar.layout.shows(element, in: homeToolbar.actions)
+    }
+
+    private static let homeSearchTransitionDuration = 0.24
+    private var homeSearchAnimation: Animation? {
+        reduceMotion ? nil : .easeOut(duration: Self.homeSearchTransitionDuration)
+    }
+    private var showsHomeSearch: Bool { showsHomeElement(.search) || homeSearchReveal != nil }
+    private var usesHomeSuggestions: Bool { showsHomeSearch && !homeQuickSearch }
+    private var searchAtBottom: Bool {
+        showsHomeSearch && homeToolbar.layout.searchPlacement == .bottom
+    }
+    private var freeToolbarSharesBottom: Bool {
+        searchAtBottom && showsHomeToolbar(.free) && homeToolbar.layout.freeToolbarAtBottom
     }
 
     private var showsTabOverview: Bool {
@@ -110,9 +132,9 @@ struct HomeView: View {
                 focus: {
                     if searchVM.isSearching, let model = tabManager.activeWebViewModel {
                         NotificationCenter.default.post(name: .focusSouloBrowserAddress, object: model)
-                    } else { NotificationCenter.default.post(name: .focusHomeSearch, object: tabManager) }
+                    } else { focusHomeSearch() }
                 },
-                newTab: { tabManager.createTab(); searchVM.isSearching = true },
+                newTab: { tabManager.openNewTab(); searchVM.isSearching = true },
                 closeTab: { tabManager.closeTab(at: tabManager.activeTabIndex) },
                 restoreTab: { tabManager.restoreLastClosedTab(); searchVM.isSearching = true },
                 reload: { tabManager.activeWebViewModel?.reload() },
@@ -131,6 +153,12 @@ struct HomeView: View {
         .tabOverviewBackground(isActive: showsTabOverview)
         .onCompatibleChange(of: tabManager.lastTabClosedRevision) { _, _ in
             returnHomeFromTabOverview()
+        }
+        .onReceive(tabManager.extensionForegroundNavigation) {
+            showExtensionCenter = false
+            showSettings = false
+            showTabOverviewFromHome = false
+            searchVM.isSearching = true
         }
         .animation(.easeInOut(duration: 0.22), value: showsTabOverview)
         .id(navigationSession)
@@ -196,14 +224,13 @@ struct HomeView: View {
             // controller's default background around the safe-area edges.
             WallpaperBackground(isAnimating: !searchVM.isSearching && !showsTabOverview
                 && !keyboardVisible && !showSettings && librarySection == nil && wallpaperPreview == nil,
-                appearanceOverride: wallpaperAppearance)
+                appearanceOverride: wallpaperAppearance, onFrameChange: { wallpaperFrame = $0 })
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea()
 
             Group {
                 if searchVM.isSearching {
                     SearchResultsView(
-                        searchBarNamespace: searchBarNamespace,
                         speechService: speechService,
                         onOpenSettings: { showSettings = true }
                     )
@@ -212,6 +239,17 @@ struct HomeView: View {
                     homeContent
                         .environment(\.colorScheme, wallpaperAppearance == .dark ? .dark : .light)
                         .transition(.opacity)
+                    if isRefreshingWallpaper && !homeToolbar.actions.contains(.refreshWallpaper) {
+                        VStack {
+                            ProgressView()
+                                .padding(11)
+                                .background(.regularMaterial, in: Circle())
+                                .accessibilityLabel(ToolText.text("wallpaper_refresh"))
+                                .padding(.top, 12)
+                            Spacer()
+                        }
+                        .allowsHitTesting(false)
+                    }
                 }
 
                 // Clipboard prompt
@@ -340,6 +378,7 @@ struct HomeView: View {
             editingTitle = homeTitle
             editingSubtitle = homeSubtitle
             searchVM.loadRecentSearches(context: modelContext)
+            searchVM.setHomeAutocompleteEnabled(usesHomeSuggestions)
             wallpaperLoadTask?.cancel()
             wallpaperLoadTask = Task { @MainActor in
                 guard !Task.isCancelled else { return }
@@ -359,6 +398,7 @@ struct HomeView: View {
         }
         .onCompatibleChange(of: searchVM.isSearching) { _, isSearching in
             reviewTask?.cancel()
+            if isSearching { homeSearchReveal = nil }
             if !isSearching {
                 searchVM.loadRecentSearches(context: modelContext)
                 reviewTask = Task { @MainActor in
@@ -377,6 +417,8 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
             keyboardVisible = false
         }
+        .onCompatibleChange(of: showsHomeElement(.search)) { _, _ in homeSearchReveal = nil }
+        .onCompatibleChange(of: usesHomeSuggestions) { _, enabled in searchVM.setHomeAutocompleteEnabled(enabled) }
         .onReceive(NotificationCenter.default.publisher(for: .appQuickActionReceived)) { notification in
             guard let action = notification.object as? AppQuickAction else { return }
             _ = AppQuickActionService.shared.consumePendingAction()
@@ -451,6 +493,7 @@ struct HomeView: View {
         searchVM.showClipboardPrompt = false
         switch route {
         case .home:
+            homeSearchReveal = nil
             searchVM.clearSearch()
         case .search(let text):
             if let text {
@@ -496,6 +539,7 @@ struct HomeView: View {
         showExtensionCenter = false
         showVoiceInput = false
         showTabOverviewFromHome = false
+        homeSearchReveal = nil
         showAppShareSheet = false
         wallpaperPreview = nil
         if recreateStack { navigationSession = UUID() }
@@ -505,68 +549,154 @@ struct HomeView: View {
 
     private var homeContent: some View {
         VStack(spacing: 0) {
-            topBar.padding(.top, 8)
+            if showsHomeTabs || !hidesHomeMenu {
+                homeShortcutBar.padding(.top, 8)
+            }
             GeometryReader { viewport in
-                homeContent(width: viewport.size.width)
-                    .overlay {
-                        if showsHomeToolbar(.free) {
-                            freeHomeToolbar
-                                // Leave room for the home indicator without reserving the full safe area.
-                                .padding(.bottom, min(viewport.safeAreaInsets.bottom, 16))
-                                .ignoresSafeArea(.container, edges: .bottom)
+                let width = max(0, viewport.size.width - 2 * HomeLandingSpacing.toolbarSideInset)
+                let toolbar = HomeToolbarMetrics(width: homeToolbar.layout.placement == .bottom ? min(526, width) : width,
+                    count: homeToolbarIndices.count, style: homeToolbar.layout.style)
+                homeContent(toolbar: toolbar, bottomSafeArea: viewport.safeAreaInsets.bottom)
+                    .overlayPreferenceValue(HomeToolbarContentBounds.self) { bounds in
+                        ZStack {
+                            Color.clear.allowsHitTesting(false)
+                            if showsHomeToolbar(.free) {
+                                freeHomeToolbar(width: width, toolbar: toolbar, avoiding: bounds)
+                            } else if showsHomeToolbar(.bottom) {
+                                liveHomeToolbar(metrics: toolbar)
+                                    .frame(maxWidth: .infinity, alignment: homeToolbar.layout.alignment.frameAlignment)
+                                    .padding(.horizontal, HomeLandingSpacing.toolbarSideInset)
+                                    .padding(.bottom, HomeLandingSpacing.bottomToolbarLift)
+                                    .frame(maxHeight: .infinity, alignment: .bottom)
+                            }
                         }
+                        // Leave room for the home indicator at the edge.
+                        .padding(.bottom, min(viewport.safeAreaInsets.bottom, HomeLandingSpacing.toolbarSafeInset))
+                        .ignoresSafeArea(.container, edges: .bottom)
                     }
             }
         }
         .buttonStyle(HomePressButtonStyle())
     }
 
-    private var freeHomeToolbar: some View {
+    private func freeHomeToolbar(width: CGFloat, toolbar: HomeToolbarMetrics, avoiding bounds: [Anchor<CGRect>]) -> some View {
         GeometryReader { geometry in
-            let sideMargin: CGFloat = 16
-            let metrics = homeToolbarMetrics(width: max(0, geometry.size.width - 2 * sideMargin), height: geometry.size.height)
-            let center = homeToolbar.layout.center(in: metrics.area, strip: metrics.size)
-            liveHomeToolbar(metrics: metrics)
-                .position(x: center.x + sideMargin, y: center.y)
+            let sideMargin = HomeLandingSpacing.toolbarSideInset
+            let area = CGSize(width: width, height: geometry.size.height)
+            let obstacles = bounds.map { geometry[$0].offsetBy(dx: -sideMargin, dy: 0) }
+            if let center = homeToolbar.layout.freeCenter(in: area, strip: toolbar.size, avoiding: obstacles,
+                dockAtBottom: homeToolbar.layout.freeToolbarAtBottom) {
+                liveHomeToolbar(metrics: toolbar)
+                    .position(x: center.x + sideMargin, y: center.y)
+            }
         }
     }
 
-    private func homeContent(width: CGFloat) -> some View {
+    private func homeContent(toolbar: HomeToolbarMetrics, bottomSafeArea: CGFloat) -> some View {
         VStack(spacing: 0) {
-            // Keep the search field mounted while the window changes size.
-            // Center when there is room, scroll when folding or the keyboard
-            // reduces the available height.
+            // Keep the search field mounted while the window or keyboard changes the viewport.
             GeometryReader { geometry in
-                ScrollView {
-                    SearchLandingLayout(viewportHeight: max(0, geometry.size.height - 32),
-                        headingGap: displayedHomeSubtitle.isEmpty ? (verticalSizeClass == .compact ? 8 : 12) : (verticalSizeClass == .compact ? 12 : 24),
-                        detailsGap: verticalSizeClass == .compact ? 12 : 16,
-                        searchOffsetRatio: homeQuickSearch && landscapeIPadWindow && keyboardVisible ? -1.5 : -0.5) {
-                        homeHeading.padding(.horizontal, 24)
-                        VStack(spacing: 12) {
-                            homeSearchField(width: min(600, max(0, geometry.size.width - 56)), viewportHeight: geometry.size.height)
-                                .zIndex(1)
-                            if showsHomeToolbar(.belowSearch) {
-                                homeToolbarStrip(width: max(0, min(geometry.size.width - 32, 526)))
+                let bottomInset = homeSearchBottomInset(toolbar: toolbar, bottomSafeArea: bottomSafeArea)
+                let bottomSearchViewportHeight = searchAtBottom ? geometry.size.height.rounded() : nil
+                let prioritizesPlatformSearch = homeQuickSearch && landscapeIPadWindow && keyboardVisible
+                    && showsHomeSearch && !searchAtBottom
+                ScrollViewReader { scroll in
+                    ScrollView {
+                        SearchLandingLayout(viewportHeight: max(0, geometry.size.height - 16 - bottomInset),
+                            headingGap: prioritizesPlatformSearch ? 0 : HomeLandingSpacing.headingGap(
+                                for: verticalSizeClass, showsSubtitle: !displayedHomeSubtitle.isEmpty),
+                            detailsGap: HomeLandingSpacing.detailsGap(for: verticalSizeClass),
+                            searchOffsetRatio: -0.5, searchAtBottom: searchAtBottom,
+                            alignsSearchAtTop: prioritizesPlatformSearch) {
+                            VStack(spacing: 0) {
+                                if !prioritizesPlatformSearch {
+                                    homeHeading
+                                        .anchorPreference(key: HomeToolbarContentBounds.self, value: .bounds) { [$0] }
+                                        .padding(.horizontal, 24)
+                                }
+                            }
+                            VStack(spacing: 0) {
+                                if showsHomeSearch {
+                                    homeSearchField(width: min(600, max(0, geometry.size.width - 2 * HomeLandingSpacing.contentInset)))
+                                        .id(homeSearchScrollTarget)
+                                        .zIndex(1)
+                                        .transition(homeSearchTransition)
+                                        .task(id: homeSearchReveal) {
+                                            guard let direction = homeSearchReveal else { return }
+                                            await Task.yield()
+                                            guard !Task.isCancelled, homeSearchReveal == direction else { return }
+                                            withAnimation(homeSearchAnimation) {
+                                                if searchAtBottom { scroll.scrollTo(homeSearchBottomScrollTarget, anchor: .bottom) }
+                                                else { scroll.scrollTo(homeSearchScrollTarget, anchor: .center) }
+                                            }
+                                            // Let the field slide in before the keyboard resizes the landing view.
+                                            if !reduceMotion {
+                                                try? await Task.sleep(for: .seconds(Self.homeSearchTransitionDuration))
+                                            }
+                                            guard !Task.isCancelled, homeSearchReveal == direction else { return }
+                                            postHomeSearchFocus()
+                                        }
+                                }
+                            }
+                            .zIndex(1)
+                            homeSearchDetails
+                                .anchorPreference(key: HomeToolbarContentBounds.self, value: .bounds) { [$0] }
+                        }
+                        .frame(maxWidth: 656)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 16)
+                        .padding(.bottom, bottomInset)
+                        .id(homeSearchBottomScrollTarget)
+                        .background {
+                            if hidesHomeMenu { homeMenuRecovery }
+                        }
+                        .background(alignment: .topLeading) {
+                            if !showsHomeElement(.search) {
+                                HomeSearchSwipeObserver(onSwipe: handleHomeSearchSwipe)
+                                    .frame(width: 0, height: 0)
                             }
                         }
-                        .zIndex(1)
-                        homeSearchDetails
                     }
-                    .frame(maxWidth: 656)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .scrollDismissesKeyboard(.interactively)
+                    .accessibilityIdentifier("home.search.area")
+                    .task(id: bottomSearchViewportHeight) {
+                        guard bottomSearchViewportHeight != nil else { return }
+                        await Task.yield()
+                        guard !Task.isCancelled else { return }
+                        scroll.scrollTo(homeSearchBottomScrollTarget, anchor: .bottom)
+                    }
                 }
-                .coordinateSpace(name: homeSearchViewport)
-                .scrollDismissesKeyboard(.interactively)
-                .accessibilityIdentifier("home.search.area")
-            }
-            if showsHomeToolbar(.bottom) {
-                homeToolbarStrip(width: min(526, max(0, width - 32)))
-                    .frame(maxWidth: .infinity, alignment: homeToolbar.layout.alignment.frameAlignment)
-                    .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 20)
+                // Anchor over the visible viewport so the panels can receive taps
+                // without changing the scroll content or sitting behind the keyboard.
+                .overlayPreferenceValue(HomeSearchBounds.self) { bounds in
+                    if let bounds {
+                        GeometryReader { viewport in
+                            HomeSearchPanel(input: searchVM.input, searchFrame: viewport[bounds],
+                                viewportHeight: viewport.size.height, prefersAbove: searchAtBottom,
+                                rowLimit: landscapeIPadWindow ? 4 : 3, platformPicker: homePlatformPicker,
+                                onSuggestionSelect: { suggestion in
+                                    searchVM.searchText = suggestion
+                                    performSearch()
+                                }, onSuggestionFill: { searchVM.searchText = $0 })
+                        }
+                    }
+                }
             }
         }
+        .padding(.bottom, showsHomeToolbar(.bottom) ? max(0, toolbar.size.height + HomeLandingSpacing.bottomToolbarTopInset
+            + HomeLandingSpacing.bottomToolbarLift
+            - HomeLandingSpacing.toolbarSafeAreaExtension(bottomSafeArea)) : 0)
+    }
+
+    private func homeSearchBottomInset(toolbar: HomeToolbarMetrics, bottomSafeArea: CGFloat) -> CGFloat {
+        guard searchAtBottom, !keyboardVisible else { return 16 }
+        if showsHomeToolbar(.bottom) { return HomeLandingSpacing.searchAboveToolbarInset }
+        if freeToolbarSharesBottom {
+            let strip = toolbar.size.height
+            let safeAreaExtension = HomeLandingSpacing.toolbarSafeAreaExtension(bottomSafeArea)
+            return max(HomeLandingSpacing.searchAboveToolbarInset, strip + HomeToolbarLayout.searchClearance - safeAreaExtension)
+        }
+        return 16
     }
 
     private var homeHeading: some View {
@@ -586,7 +716,7 @@ struct HomeView: View {
                             languageManager.localizedString("accessibility_edit_title_hint")
                         )
                         .accessibilityAddTraits(.isHeader)
-                    } else {
+                    } else if showsHomeElement(.title) {
                         Text("Soulo")
                             .font(.system(size: 38, weight: .bold, design: .rounded))
                             .hidden().accessibilityHidden(true)
@@ -608,7 +738,7 @@ struct HomeView: View {
                         .accessibilityHint(
                             languageManager.localizedString("accessibility_edit_subtitle_hint")
                         )
-                    } else {
+                    } else if showsHomeElement(.subtitle) {
                         Text(" ")
                             .font(.system(size: 13, weight: .medium))
                             .hidden().accessibilityHidden(true)
@@ -618,20 +748,32 @@ struct HomeView: View {
         }
     }
 
-    private func homeSearchField(width: CGFloat, viewportHeight: CGFloat) -> some View {
-        let region = PlatformRegion(rawValue: lastRegion) ?? searchVM.selectedRegion
-        let group = platformStore.customGroups.first { $0.id.uuidString == lastGroupID }
-        let scope = group.map { SearchGroupScope.custom($0.id) } ?? .region(region)
-        return SearchBarView(
+    private var homeSearchRegion: PlatformRegion {
+        PlatformRegion(rawValue: lastRegion) ?? searchVM.selectedRegion
+    }
+
+    private var homeSearchGroup: CustomGroup? {
+        platformStore.customGroups.first { $0.id.uuidString == lastGroupID }
+    }
+
+    private var homePlatformPicker: BrowserPlatformPickerContext? {
+        guard homeQuickSearch else { return nil }
+        return BrowserPlatformPickerContext(scope: homeSearchGroup.map { .custom($0.id) } ?? .region(homeSearchRegion),
+            selectedPlatformID: nil, onSelect: searchFromHomePlatform, onManage: { showPlatformManagement = true })
+    }
+
+    private func homeSearchField(width: CGFloat) -> some View {
+        SearchBarView(
                 input: searchVM.input,
                 isIncognito: searchVM.isIncognito,
                 isRecording: speechService.isRecording,
+                searchActionsArrowEdge: searchAtBottom ? .bottom : .top,
                 onSubmit: { performSearch() },
                 onMicTap: { showVoiceInput = true },
                 onIncognitoTap: { togglePrivateModeFromSearchBar() },
                 onScanTap: { showScanner = true },
-                selectedRegion: region,
-                selectedGroupID: group?.id,
+                selectedRegion: homeSearchRegion,
+                selectedGroupID: homeSearchGroup?.id,
                 onRegionSelect: { region in
                     lastRegion = region.rawValue
                     lastGroupID = ""
@@ -644,37 +786,17 @@ struct HomeView: View {
                 },
                 onPlatformManagementTap: { showPlatformManagement = true }
             )
-            .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("home.search.field")
 
             .frame(width: width)
-            .overlay(alignment: .bottom) {
-                if homeQuickSearch {
-                    HomeQuickSearchOverlay(input: searchVM.input, width: width, viewportHeight: viewportHeight,
-                        rowLimit: landscapeIPadWindow ? 4 : 3,
-                        platformPicker: BrowserPlatformPickerContext(scope: scope, selectedPlatformID: nil,
-                            onSelect: searchFromHomePlatform, onManage: { showPlatformManagement = true }))
-                } else {
-                    SearchAutocompleteOverlay(input: searchVM.input, darkVariant: true, maximumWidth: width,
-                        horizontalPadding: 0, topPadding: 8, onSelect: { suggestion in
-                            searchVM.searchText = suggestion
-                            performSearch()
-                        }, onFill: { searchVM.searchText = $0 })
-                }
-            }
-            .padding(.horizontal, 28)
-            .onAppear { searchVM.setHomeAutocompleteEnabled(!homeQuickSearch) }
-            .onCompatibleChange(of: homeQuickSearch) { _, enabled in searchVM.setHomeAutocompleteEnabled(!enabled) }
+            .anchorPreference(key: HomeSearchBounds.self, value: .bounds) { $0 }
+            .anchorPreference(key: HomeToolbarContentBounds.self, value: .bounds) { [$0] }
+            .padding(.horizontal, HomeLandingSpacing.contentInset)
     }
 
     private var homeSearchDetails: some View {
-        VStack(spacing: verticalSizeClass == .compact ? 12 : 16) {
-            // Group picker
-            if showGroupPickerOnHome {
-                homeGroupPicker
-            }
-
+        VStack(spacing: HomeLandingSpacing.detailsGap(for: verticalSizeClass)) {
             // Bookmark icons
             if showBookmarksOnHome && !bookmarks.isEmpty {
                 homeBookmarksRow
@@ -686,6 +808,7 @@ struct HomeView: View {
                 HomeRecentSearches(
                     input: searchVM.input,
                     recentSearches: searchVM.recentSearches,
+                    contrast: wallpaperManager.contrast(in: wallpaperFrame),
                     onTap: { keyword in
                         searchVM.searchText = keyword
                         performSearch()
@@ -696,7 +819,7 @@ struct HomeView: View {
                 )
                 .frame(maxWidth: .infinity)
                 .clipped()
-                .padding(.top, 12)
+                .padding(.top, HomeLandingSpacing.recentSearchInset)
             }
         }
     }
@@ -710,124 +833,58 @@ struct HomeView: View {
         homeToolbar.isVisible && !keyboardVisible && homeToolbar.layout.placement == placement
     }
 
-    private func homeToolbarMetrics(width: CGFloat, height: CGFloat = 0) -> HomeToolbarMetrics {
-        HomeToolbarMetrics(width: width, height: height, count: homeToolbarIndices.count, style: homeToolbar.layout.style)
-    }
-
-    private func homeToolbarStrip(width: CGFloat) -> some View { liveHomeToolbar(metrics: homeToolbarMetrics(width: width)) }
-
     private func liveHomeToolbar(metrics: HomeToolbarMetrics) -> some View {
-        HomeToolbarStrip(indices: homeToolbarIndices, metrics: metrics, style: homeToolbar.layout.style,
-            lightWallpaper: usesLightWallpaperContent) { homeToolbarButton($0) }
+        WallpaperForegroundRegion(contrast: wallpaperManager.contrast(in: wallpaperFrame),
+            fallbackDarkInk: wallpaperManager.source == .solid && usesLightWallpaperContent) { darkInk in
+            let appearance = HomeToolbarAppearance(lightWallpaper: darkInk, source: wallpaperManager.source)
+            HomeToolbarStrip(indices: homeToolbarIndices, metrics: metrics, style: homeToolbar.layout.style,
+                appearance: appearance) { homeToolbarButton($0, appearance: appearance) }
+        }
     }
 
-    private func homeToolbarButton(_ index: Int) -> some View {
+    private func homeToolbarButton(_ index: Int, appearance: HomeToolbarAppearance) -> some View {
         let action = homeToolbar.actions[index]
-        return Button { performHomeToolbarAction(action) } label: {
-            HomeToolbarButtonFace(action: action, lightWallpaper: usesLightWallpaperContent,
-                isActive: action == .privateBrowsing && searchVM.isIncognito,
-                isLoading: action == .refreshWallpaper && wallpaperManager.networkLoading,
-                tabCount: tabManager.tabCount)
+        let face = HomeToolbarButtonFace(action: action, appearance: appearance,
+            isActive: action == .privateBrowsing && searchVM.isIncognito,
+            isLoading: action == .refreshWallpaper && isRefreshingWallpaper,
+            tabCount: tabManager.tabCount)
+        return Group {
+            if action == .more {
+                Menu {
+                    homeMenuActions(includesSettings: true)
+                } label: { face }
+            } else {
+                Button { performHomeToolbarAction(action) } label: { face }
+                    .contextMenu {
+                        if action == .settings && hidesHomeMenu {
+                            homeMenuActions(includesSettings: false)
+                            Divider()
+                        }
+                        Button { homeToolbarDestination = .homeToolbar } label: {
+                            Label(ToolText.text("home_toolbar_customize"), systemImage: "slider.horizontal.3")
+                        }
+                    }
+            }
         }
-        .buttonStyle(HomeToolbarButtonStyle(lightWallpaper: usesLightWallpaperContent, showsBackground: homeToolbar.layout.style == .tiles))
+        .buttonStyle(HomeToolbarButtonStyle(appearance: appearance, showsBackground: homeToolbar.layout.style == .tiles))
         .accessibilityLabel(action.title)
         .accessibilityIdentifier("home.toolbar.\(index)")
         .accessibilityAddTraits(action == .privateBrowsing && searchVM.isIncognito ? .isSelected : [])
-        .disabled(action == .refreshWallpaper && wallpaperManager.networkLoading)
-        .contextMenu {
-            Button { homeToolbarDestination = .homeToolbar } label: {
-                Label(ToolText.text("home_toolbar_customize"), systemImage: "slider.horizontal.3")
-            }
-        }
-    }
-
-    // MARK: - Home Group Picker
-
-    @AppStorage("last_selected_region") private var lastRegion: String = ""
-    @AppStorage("last_selected_group_id") private var lastGroupID: String = ""
-
-    private var homeGroupPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(PlatformRegion.sortedCases(preferring: searchVM.selectedRegion), id: \.self) { region in
-                    let isSelected = lastGroupID.isEmpty && lastRegion == region.rawValue
-                    Button {
-                        lastRegion = region.rawValue
-                        lastGroupID = ""
-                    } label: {
-                        Text(platformStore.regionDisplayName(for: region))
-                            .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                            .foregroundStyle(
-                                isSelected
-                                    ? (usesLightWallpaperContent ? Color(hex: "2E2A47") : .white)
-                                    : (usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.8))
-                            )
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                isSelected
-                                    ? Capsule().fill(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.2))
-                                    : Capsule().fill(usesLightWallpaperContent ? Color.black.opacity(0.04) : .white.opacity(0.06))
-                            )
-                    }
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
-                    .accessibilityValue(
-                        isSelected
-                            ? languageManager.localizedString("accessibility_selected")
-                            : ""
-                    )
-                }
-                ForEach(platformStore.customGroups) { group in
-                    let isSelected = lastGroupID == group.id.uuidString
-                    Button {
-                        lastGroupID = group.id.uuidString
-                        lastRegion = ""
-                    } label: {
-                        Text(group.name)
-                            .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                            .foregroundStyle(
-                                isSelected
-                                    ? (usesLightWallpaperContent ? Color(hex: "2E2A47") : .white)
-                                    : (usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.8))
-                            )
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                isSelected
-                                    ? Capsule().fill(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.2))
-                                    : Capsule().fill(usesLightWallpaperContent ? Color.black.opacity(0.04) : .white.opacity(0.06))
-                            )
-                    }
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
-                    .accessibilityValue(
-                        isSelected
-                            ? languageManager.localizedString("accessibility_selected")
-                            : ""
-                    )
-                }
-            }
-            .frame(maxWidth: 600)
-            .padding(.horizontal, 32)
-        }
+        .disabled(action == .refreshWallpaper && (isRefreshingWallpaper || wallpaperManager.networkLoading))
     }
 
     // MARK: - Home Bookmarks Row
 
     private var homeBookmarksRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
+            HStack(spacing: HomeLandingSpacing.bookmarkSpacing) {
                 ForEach(bookmarks.prefix(10)) { bookmark in
                     Button {
                         searchVM.searchText = bookmark.urlString
                         performSearch()
                     } label: {
-                        VStack(spacing: 6) {
-                            BookmarkFaviconView(urlString: bookmark.urlString, size: 24)
-                            Text(bookmark.title)
-                                .font(.system(size: 9))
-                                .foregroundStyle(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.7) : .white.opacity(0.6))
-                                .lineLimit(1)
-                                .frame(width: 38)
+                        HomeBookmarkTile(title: bookmark.title, lightWallpaper: usesLightWallpaperContent) {
+                            BookmarkFaviconView(urlString: bookmark.urlString, size: HomeLandingSpacing.bookmarkIconSize)
                         }
                     }
                     .accessibilityElement(children: .ignore)
@@ -848,9 +905,10 @@ struct HomeView: View {
                     }
                 }
             }
-            .frame(maxWidth: 600)
-            .padding(.horizontal, 32)
+            .frame(maxWidth: 600, alignment: .leading)
+            .padding(.horizontal, HomeLandingSpacing.contentInset)
         }
+        .accessibilityIdentifier("home.bookmarks")
     }
 
     /// Show the tab switcher whenever there is anything worth restoring or previewing.
@@ -860,17 +918,33 @@ struct HomeView: View {
         }
     }
 
-    private var topBar: some View {
+    private var showsHomeTabs: Bool {
+        showsHomeElement(.tabs) && (shouldShowTabEntry || searchVM.isIncognito)
+    }
+
+    private var hidesHomeMenu: Bool {
+        !showsHomeElement(.menu)
+    }
+
+    private var homeMenuRecovery: some View {
+        Color.clear
+            .contentShape(Rectangle())
+            .contextMenu { homeMenuActions(includesSettings: true) }
+            .accessibilityElement()
+            .accessibilityLabel(languageManager.localizedString("show_more"))
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { showSettings = true }
+            .accessibilityIdentifier("home.menu.recovery")
+    }
+
+    private var homeShortcutBar: some View {
         HStack(spacing: 10) {
             // Existing tabs and the tab switcher remain available in private mode.
             // Privacy changes what is persisted, not which browser controls are shown.
-            if shouldShowTabEntry || searchVM.isIncognito {
+            if showsHomeTabs {
                 Button {
                     HapticsManager.light()
-                    tabManager.refreshSnapshotsForSwitcher()
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
-                        showTabOverviewFromHome = true
-                    }
+                    openHomeTabSwitcher()
                 } label: {
                     HStack(spacing: 5) {
                         ZStack {
@@ -894,6 +968,7 @@ struct HomeView: View {
                             Capsule().fill(.ultraThinMaterial).environment(\.colorScheme, .dark)
                         }
                     }
+                    .contentShape(Rectangle())
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(
@@ -908,74 +983,14 @@ struct HomeView: View {
 
             Spacer()
 
-            homeMenu
+            if !hidesHomeMenu { homeMenu }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, HomeLandingSpacing.toolbarSideInset)
     }
 
     private var homeMenu: some View {
         Menu {
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                Button { openWindow(value: BrowserWindowConfiguration()) } label: {
-                    Label(FeatureText.text("New window"), systemImage: "rectangle.badge.plus")
-                }
-                if let id = tabManager.activeTab?.id {
-                    Button(FeatureText.text("Move tab to new window")) {
-                        if let configuration = BrowserWindowTransferService.shared.prepare(from: tabManager, tabID: id) {
-                            openWindow(value: configuration)
-                        }
-                    }
-                }
-            }
-            Button {
-                librarySection = .bookmarks
-            } label: {
-                homeMenuLabel("my_favorites", systemImage: "bookmark")
-            }
-
-            Button {
-                librarySection = .history
-            } label: {
-                homeMenuLabel("search_history", systemImage: "clock.arrow.circlepath")
-            }
-
-            Button {
-                librarySection = .downloads
-            } label: {
-                homeMenuLabel("my_downloads", systemImage: "arrow.down.circle")
-            }
-
-            Divider()
-
-            Button {
-                Task { await wallpaperManager.refreshRandom() }
-            } label: {
-                homeMenuLabel("wallpaper_refresh", systemImage: "sparkles")
-            }
-
-            if wallpaperManager.canPreviewCurrentWallpaper {
-                Button {
-                    wallpaperPreview = wallpaperManager.exportPreview()
-                    HapticsManager.light()
-                } label: {
-                    homeMenuLabel("wallpaper_download", systemImage: "square.and.arrow.down")
-                }
-                .accessibilityIdentifier("home.wallpaper.download")
-            }
-
-            Divider()
-
-            Button {
-                showSettings = true
-            } label: {
-                homeMenuLabel("settings", systemImage: "gearshape")
-            }
-
-            Button {
-                showExtensionCenter = true
-            } label: {
-                homeMenuLabel("userscripts", systemImage: "puzzlepiece.extension")
-            }
+            homeMenuActions(includesSettings: true)
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
@@ -995,6 +1010,80 @@ struct HomeView: View {
         .accessibilityIdentifier("home.menu")
     }
 
+    @ViewBuilder
+    private func homeMenuActions(includesSettings: Bool) -> some View {
+        if !showsHomeElement(.search) {
+            Button { focusHomeSearch() } label: {
+                homeMenuLabel("search", systemImage: "magnifyingglass")
+            }
+            .accessibilityIdentifier("home.menu.search")
+        }
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            Button { openWindow(value: BrowserWindowConfiguration()) } label: {
+                Label(FeatureText.text("New window"), systemImage: "rectangle.badge.plus")
+            }
+            if let id = tabManager.activeTab?.id {
+                Button(FeatureText.text("Move tab to new window")) {
+                    if let configuration = BrowserWindowTransferService.shared.prepare(from: tabManager, tabID: id) {
+                        openWindow(value: configuration)
+                    }
+                }
+            }
+        }
+        Button {
+            librarySection = .bookmarks
+        } label: {
+            homeMenuLabel("my_favorites", systemImage: "bookmark")
+        }
+
+        Button {
+            librarySection = .history
+        } label: {
+            homeMenuLabel("search_history", systemImage: "clock.arrow.circlepath")
+        }
+
+        Button {
+            librarySection = .downloads
+        } label: {
+            homeMenuLabel("my_downloads", systemImage: "arrow.down.circle")
+        }
+
+        Divider()
+
+        Button {
+            refreshHomeWallpaper()
+        } label: {
+            homeMenuLabel("wallpaper_refresh", systemImage: "sparkles")
+        }
+        .disabled(isRefreshingWallpaper || wallpaperManager.networkLoading)
+
+        if wallpaperManager.canPreviewCurrentWallpaper {
+            Button {
+                wallpaperPreview = wallpaperManager.exportPreview()
+                HapticsManager.light()
+            } label: {
+                homeMenuLabel("wallpaper_download", systemImage: "square.and.arrow.down")
+            }
+            .accessibilityIdentifier("home.wallpaper.download")
+        }
+
+        Divider()
+
+        if includesSettings {
+            Button {
+                showSettings = true
+            } label: {
+                homeMenuLabel("settings", systemImage: "gearshape")
+            }
+        }
+
+        Button {
+            showExtensionCenter = true
+        } label: {
+            homeMenuLabel("userscripts", systemImage: "puzzlepiece.extension")
+        }
+    }
+
     private func homeMenuLabel(_ key: String, systemImage: String) -> some View {
         Label {
             Text(languageManager.localizedString(key))
@@ -1007,14 +1096,21 @@ struct HomeView: View {
         }
     }
 
+    private func openHomeTabSwitcher() {
+        tabManager.refreshSnapshotsForSwitcher()
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
+            showTabOverviewFromHome = true
+        }
+    }
+
     private func performHomeToolbarAction(_ action: HomeToolbarAction) {
         HapticsManager.selection()
         switch action {
-        case .none: break
-        case .refreshWallpaper: Task { await wallpaperManager.refreshRandom() }
-        case .search: NotificationCenter.default.post(name: .focusHomeSearch, object: nil)
+        case .none, .more: break
+        case .refreshWallpaper: refreshHomeWallpaper()
+        case .search: focusHomeSearch()
         case .newTab:
-            tabManager.createTab()
+            tabManager.openNewTab()
             searchVM.isSearching = true
         case .privateBrowsing: togglePrivateModeFromSearchBar()
         case .shareApp: showAppShareSheet = true
@@ -1027,14 +1123,50 @@ struct HomeView: View {
         case .extensions: showExtensionCenter = true
         case .newDownload: downloadCreation = DownloadCreationRequest()
         case .scanner: showScanner = true
-        case .tabs: showTabOverviewFromHome = true
+        case .tabs: openHomeTabSwitcher()
         default: homeToolbarDestination = action
+        }
+    }
+
+    private func refreshHomeWallpaper() {
+        guard !isRefreshingWallpaper, !wallpaperManager.networkLoading else { return }
+        if wallpaperManager.source == .photo {
+            homeToolbarDestination = .wallpaper
+            return
+        }
+        isRefreshingWallpaper = wallpaperManager.source.isRemote
+        Task {
+            defer { isRefreshingWallpaper = false }
+            await wallpaperManager.refreshRandom(appearance: wallpaperAppearance)
         }
     }
 
     // MARK: - Actions
 
     @State private var showSwitchToBing = false
+
+    private var homeSearchTransition: AnyTransition {
+        guard !reduceMotion, let direction = homeSearchReveal else { return .identity }
+        return .offset(x: 0, y: direction == .down ? -22 : 22).combined(with: .opacity)
+    }
+
+    private func handleHomeSearchSwipe(_ direction: HomeSearchSwipeDirection, startedAtEdge: Bool) {
+        if let revealDirection = homeSearchReveal {
+            guard direction != revealDirection else { return }
+            withAnimation(homeSearchAnimation) { homeSearchReveal = nil }
+        } else if startedAtEdge {
+            withAnimation(homeSearchAnimation) { homeSearchReveal = direction }
+        }
+    }
+
+    private func focusHomeSearch() {
+        if showsHomeSearch { postHomeSearchFocus() }
+        else { withAnimation(homeSearchAnimation) { homeSearchReveal = .down } }
+    }
+
+    private func postHomeSearchFocus() {
+        NotificationCenter.default.post(name: .focusHomeSearch, object: tabManager)
+    }
 
     private func performSearch() {
         let selectedGroup = lastGroupID.isEmpty
@@ -1090,7 +1222,7 @@ struct HomeView: View {
         case .search:
             searchVM.clearSearch()
             DispatchQueue.main.async {
-                NotificationCenter.default.post(name: .focusHomeSearch, object: nil)
+                focusHomeSearch()
             }
         case .newPrivateTab:
             if !searchVM.setPrivateBrowsing(true, tabManager: tabManager) {
@@ -1098,7 +1230,7 @@ struct HomeView: View {
             }
             searchVM.clearSearch()
             DispatchQueue.main.async {
-                NotificationCenter.default.post(name: .focusHomeSearch, object: nil)
+                focusHomeSearch()
             }
         case .clearCache:
             Task {
@@ -1120,16 +1252,72 @@ struct HomeView: View {
     }
 }
 
+private enum HomeSearchSwipeDirection: Equatable { case up, down }
+
+/// Listen to the landing scroll view's pan so links and scrolling retain their normal gestures.
+private struct HomeSearchSwipeObserver: UIViewRepresentable {
+    let onSwipe: (HomeSearchSwipeDirection, Bool) -> Void
+
+    func makeUIView(context: Context) -> Marker { Marker() }
+    func updateUIView(_ view: Marker, context: Context) { view.onSwipe = onSwipe }
+    static func dismantleUIView(_ view: Marker, coordinator: ()) { view.disconnect() }
+
+    final class Marker: UIView {
+        var onSwipe: ((HomeSearchSwipeDirection, Bool) -> Void)?
+        private weak var scrollView: UIScrollView?
+        private var wasAlwaysBouncing = false
+        private var startedAtTop = false
+        private var startedAtBottom = false
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            disconnect()
+            guard window != nil else { return }
+            var ancestor = superview
+            while let view = ancestor, !(view is UIScrollView) { ancestor = view.superview }
+            guard let scroll = ancestor as? UIScrollView else { return }
+            scrollView = scroll
+            wasAlwaysBouncing = scroll.alwaysBounceVertical
+            scroll.alwaysBounceVertical = true
+            scroll.panGestureRecognizer.addTarget(self, action: #selector(handlePan(_:)))
+        }
+
+        func disconnect() {
+            scrollView?.panGestureRecognizer.removeTarget(self, action: #selector(handlePan(_:)))
+            scrollView?.alwaysBounceVertical = wasAlwaysBouncing
+            scrollView = nil
+        }
+
+        @objc private func handlePan(_ pan: UIPanGestureRecognizer) {
+            guard let scrollView else { return }
+            switch pan.state {
+            case .began:
+                let top = -scrollView.adjustedContentInset.top
+                let bottom = max(top, scrollView.contentSize.height + scrollView.adjustedContentInset.bottom - scrollView.bounds.height)
+                startedAtTop = scrollView.contentOffset.y <= top + 2
+                startedAtBottom = scrollView.contentOffset.y >= bottom - 2
+            case .ended:
+                let translation = pan.translation(in: nil)
+                guard abs(translation.y) >= 48, abs(translation.y) > abs(translation.x) * 1.25 else { return }
+                let direction: HomeSearchSwipeDirection = translation.y > 0 ? .down : .up
+                onSwipe?(direction, direction == .down ? startedAtTop : startedAtBottom)
+            default: break
+            }
+        }
+    }
+}
+
 /// Keep the search field's position stable when the first marked letter arrives.
 /// Only this small section observes the draft; typing never rebuilds HomeView.
 private struct HomeRecentSearches: View {
     @ObservedObject var input: SearchInputState
     let recentSearches: [String]
+    let contrast: WallpaperRegionContrast?
     let onTap: (String) -> Void
     let onDelete: (String) -> Void
 
     var body: some View {
-        SearchSuggestionsView(recentSearches: recentSearches, onTap: onTap, onDelete: onDelete)
+        SearchSuggestionsView(recentSearches: recentSearches, onTap: onTap, onDelete: onDelete, contrast: contrast)
             .opacity(input.text.isEmpty ? 1 : 0)
             .allowsHitTesting(input.text.isEmpty)
             .accessibilityHidden(!input.text.isEmpty)
@@ -1151,42 +1339,121 @@ private struct HomeActivityView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
-private struct HomeQuickSearchOverlay: View {
+private struct HomeSearchPanel: View {
     @ObservedObject var input: SearchInputState
-    let width: CGFloat
+    let searchFrame: CGRect
     let viewportHeight: CGFloat
+    let prefersAbove: Bool
     let rowLimit: Int
-    let platformPicker: BrowserPlatformPickerContext
+    let platformPicker: BrowserPlatformPickerContext?
+    let onSuggestionSelect: (String) -> Void
+    let onSuggestionFill: (String) -> Void
     @State private var dismissedText: String?
-    @State private var anchorY: CGFloat?
 
-    private var showsPlatforms: Bool {
-        guard input.isEditing, !input.edit.isComposing,
-              input.text != dismissedText else { return false }
+    private var showsPanel: Bool {
+        guard input.isEditing, !input.edit.isComposing else { return false }
+        guard platformPicker != nil else { return !input.suggestions.isEmpty }
+        guard input.text != dismissedText else { return false }
         if case .search? = BrowserNavigationResolver.classify(input.text) { return true }
         return false
     }
 
     var body: some View {
         let gap: CGFloat = 8
-        let availableHeight = anchorY.map { max(0, viewportHeight - $0 - gap) } ?? 0
-        let isVisible = showsPlatforms && availableHeight > BrowserPlatformPanel.inlineChromeHeight
-        Color.clear.frame(height: 0)
-            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(homeSearchViewport)).minY } action: { anchorY = $0 }
-            .overlay(alignment: .top) {
-                if isVisible {
-                    BrowserPlatformPanel(context: platformPicker, inlineWidth: width, inlineHeight: availableHeight,
-                        inlineRowLimit: rowLimit,
-                        onSelect: platformPicker.onSelect,
-                        onManage: { platformPicker.onManage?() }, onClose: { dismissedText = input.text })
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
-                        .accessibilityIdentifier("home.quick-search.platforms")
-                        .padding(.top, gap)
+        let above = searchFrame.minY - gap
+        let below = viewportHeight - searchFrame.maxY - gap
+        let minimumHeight = platformPicker == nil ? 44 : BrowserPlatformPanel.inlineChromeHeight + 24
+        let opensAbove = prefersAbove ? above >= minimumHeight || above >= below
+                                      : below < minimumHeight && above > below
+        let availableHeight = opensAbove ? above : below
+        return Group {
+            if showsPanel, searchFrame.width > 0, searchFrame.minY >= 0,
+               searchFrame.maxY <= viewportHeight + 1, availableHeight >= minimumHeight {
+                Group {
+                    if let platformPicker {
+                        BrowserPlatformPanel(context: platformPicker, inlineWidth: searchFrame.width,
+                            inlineHeight: availableHeight, inlineRowLimit: rowLimit, onSelect: platformPicker.onSelect,
+                            onManage: { platformPicker.onManage?() }, onClose: { dismissedText = input.text })
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
+                            .accessibilityIdentifier("home.quick-search.platforms")
+                    } else {
+                        ViewThatFits(in: .vertical) {
+                            suggestions.fixedSize(horizontal: false, vertical: true)
+                            ScrollView { suggestions }
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                        }
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("home.search.suggestions")
+                    }
                 }
+                .frame(width: searchFrame.width, height: availableHeight, alignment: opensAbove ? .bottom : .top)
+                .position(x: searchFrame.midX, y: opensAbove ? above / 2 : viewportHeight - below / 2)
             }
-            .zIndex(100)
-            .allowsHitTesting(isVisible)
-            .onCompatibleChange(of: input.text) { _, _ in dismissedText = nil }
+        }
+        .onCompatibleChange(of: input.text) { _, _ in dismissedText = nil }
+    }
+
+    private var suggestions: some View {
+        SearchAutocompleteView(suggestions: input.suggestions, query: input.text,
+            onSelect: onSuggestionSelect, onFill: onSuggestionFill)
+    }
+}
+
+struct HomeSearchBounds: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>? { nil }
+
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        if let next = nextValue() { value = next }
+    }
+}
+
+struct HomeToolbarContentBounds: PreferenceKey {
+    static var defaultValue: [Anchor<CGRect>] { [] }
+
+    static func reduce(value: inout [Anchor<CGRect>], nextValue: () -> [Anchor<CGRect>]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
+enum HomeLandingSpacing {
+    static let toolbarSideInset: CGFloat = 16
+    static let contentInset: CGFloat = 28
+    static let bottomToolbarTopInset: CGFloat = 8
+    static let bottomToolbarLift: CGFloat = 10
+    static let searchAboveToolbarInset: CGFloat = 4
+    static let toolbarSafeInset: CGFloat = 12
+    static let recentSearchInset: CGFloat = 12
+    static let bookmarkSpacing: CGFloat = 16
+    static let bookmarkIconSize: CGFloat = 24
+
+    static func toolbarSafeAreaExtension(_ safeArea: CGFloat) -> CGFloat {
+        max(0, safeArea - toolbarSafeInset)
+    }
+
+    static func detailsGap(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 12 : 16
+    }
+
+    static func headingGap(for sizeClass: UserInterfaceSizeClass?, showsSubtitle: Bool) -> CGFloat {
+        if showsSubtitle { return sizeClass == .compact ? 12 : 24 }
+        return sizeClass == .compact ? 8 : 12
+    }
+}
+
+struct HomeBookmarkTile<Icon: View>: View {
+    let title: String
+    let lightWallpaper: Bool
+    @ViewBuilder let icon: () -> Icon
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            icon()
+            Text(title)
+                .font(.system(size: 9))
+                .foregroundStyle(lightWallpaper ? Color(hex: "2E2A47").opacity(0.7) : .white.opacity(0.6))
+                .lineLimit(1)
+                .frame(width: 38, alignment: .leading)
+        }
     }
 }
 
@@ -1197,27 +1464,42 @@ struct SearchLandingLayout: Layout {
     var headingGap: CGFloat
     var detailsGap: CGFloat
     var searchOffsetRatio: CGFloat = 0
+    var searchAtBottom = false
+    var centeredDetailsBottomInset: CGFloat?
+    var alignsSearchAtTop = false
 
-    private func metrics(_ proposal: ProposedViewSize, _ subviews: Subviews) -> (CGFloat, [CGSize], CGFloat) {
+    private func metrics(_ proposal: ProposedViewSize, _ subviews: Subviews) -> (width: CGFloat, sizes: [CGSize], tops: [CGFloat], height: CGFloat) {
         let width = proposal.width ?? 656
         let sizes = subviews.map { $0.sizeThatFits(ProposedViewSize(width: width, height: nil)) }
-        let center = max(viewportHeight / 2 + sizes[1].height * searchOffsetRatio, sizes[0].height + headingGap + sizes[1].height / 2)
-        return (width, sizes, center)
+        let preferredCenter = viewportHeight / 2 + sizes[1].height * searchOffsetRatio
+        let maxCenter = centeredDetailsBottomInset.map { inset in
+            sizes[2].height > 0 ? viewportHeight - inset - detailsGap - sizes[2].height - sizes[1].height / 2 : preferredCenter
+        } ?? preferredCenter
+        let minimumCenter = sizes[0].height + headingGap + sizes[1].height / 2
+        let center = alignsSearchAtTop ? minimumCenter : max(min(preferredCenter, maxCenter), minimumCenter)
+        let headingTop = center - sizes[1].height / 2 - headingGap - sizes[0].height
+        if searchAtBottom {
+            let detailsHeight = sizes[2].height
+            let belowHeading = detailsHeight > 0 ? detailsHeight + detailsGap : 0
+            let searchTop = max(viewportHeight - sizes[1].height, sizes[0].height + headingGap + belowHeading)
+            let detailsTop = searchTop - belowHeading
+            let top = min(headingTop, detailsTop - headingGap - sizes[0].height)
+            return (width, sizes, [top, searchTop, detailsTop], searchTop + sizes[1].height)
+        }
+        let detailsTop = center + sizes[1].height / 2 + detailsGap
+        return (width, sizes, [headingTop, center - sizes[1].height / 2, detailsTop], max(viewportHeight, detailsTop + sizes[2].height))
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let (width, sizes, center) = metrics(proposal, subviews)
-        return CGSize(width: width, height: max(viewportHeight, center + sizes[1].height / 2 + detailsGap + sizes[2].height))
+        let layout = metrics(proposal, subviews)
+        return CGSize(width: layout.width, height: layout.height)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let (width, sizes, center) = metrics(ProposedViewSize(width: bounds.width, height: nil), subviews)
-        let y = bounds.minY + center
-        let tops = [y - sizes[1].height / 2 - headingGap - sizes[0].height,
-                    y - sizes[1].height / 2, y + sizes[1].height / 2 + detailsGap]
+        let layout = metrics(ProposedViewSize(width: bounds.width, height: nil), subviews)
         for i in subviews.indices {
-            subviews[i].place(at: CGPoint(x: bounds.midX, y: tops[i]), anchor: .top,
-                proposal: ProposedViewSize(width: width, height: sizes[i].height))
+            subviews[i].place(at: CGPoint(x: bounds.midX, y: bounds.minY + layout.tops[i]), anchor: .top,
+                proposal: ProposedViewSize(width: layout.width, height: layout.sizes[i].height))
         }
     }
 }

@@ -502,6 +502,24 @@ final class AdBlockSubscriptionServiceTests: XCTestCase {
         XCTAssertTrue(rule?.unlessDomains.contains("*admin.example.com") == true)
     }
 
+    func testBadfilterCancelsOnlyExactActiveRulesInItsList() {
+        let rules = AdBlockRuleParser.parse("""
+        ||ads.example^
+        ||ads.example^$badfilter
+        ||ads.example^$image
+        ||scoped.example^$badfilter,script
+        ||scoped.example^$script
+        !#if false
+        ||stays.example^$badfilter
+        !#endif
+        ||stays.example^
+        """).networkRules
+        XCTAssertEqual(rules.count, 2)
+        XCTAssertEqual(rules.first { $0.urlFilter.contains("ads") }?.resourceTypes, ["image"])
+        XCTAssertTrue(rules.contains { $0.urlFilter.contains("stays") })
+        XCTAssertFalse(rules.contains { $0.urlFilter.contains("scoped") })
+    }
+
     func testParserDoesNotEmitWebKitUnsupportedDisjunctions() {
         let sample = """
         /waWQiOjE*=eyJ.js^

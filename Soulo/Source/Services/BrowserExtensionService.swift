@@ -335,6 +335,7 @@ final class BrowserExtensionService: ObservableObject {
     @Published private(set) var webExtensions: [WebExtensionRecord] = []
     @Published private(set) var loadingWebExtensions: Set<UUID> = []
     @Published private(set) var webExtensionErrors: [UUID: String] = [:]
+    @Published private(set) var newTabExtensionID: UUID?
     @Published private(set) var loadingUserScripts: Set<UUID> = []
     @Published private(set) var userScriptErrors: [UUID: String] = [:]
     @Published private(set) var userScriptRuntimeErrors: [UUID: String] = [:]
@@ -342,7 +343,7 @@ final class BrowserExtensionService: ObservableObject {
     private var preparedExtensions: [UUID: WebExtensionInstallPreview] = [:]
     private var installingExtensionIDs: Set<UUID> = []
     private var installingExtensionPackageIdentities: Set<String> = []
-    private var storageRevisions: [UUID: Int] = [:]
+    private(set) var storageRevisions: [UUID: Int] = [:]
     private var extensionLoadRevisions: [UUID: UUID] = [:]
     private var requirementTasks: [UUID: Task<Void, Never>] = [:]
     private var requirementRevisions: [UUID: UUID] = [:]
@@ -351,6 +352,7 @@ final class BrowserExtensionService: ObservableObject {
     private var automaticUpdateCheckInProgress = false
     static let updateCheckDatesKey = "userscript_update_checked_at"
     static let availableUpdateVersionsKey = "userscript_update_available_versions"
+    private static let newTabExtensionKey = "browser_new_tab_extension_id"
     private let customExtensionRoot: URL?
 
     private let fileManager = FileManager.default
@@ -360,6 +362,7 @@ final class BrowserExtensionService: ObservableObject {
         self.customExtensionRoot = extensionRoot
         self.requirementSession = requirementSession
         self.updateDefaults = updateDefaults
+        self.newTabExtensionID = updateDefaults.string(forKey: Self.newTabExtensionKey).flatMap(UUID.init(uuidString:))
         loadStore()
         let installedIDs = Set(userScripts.map { $0.id.uuidString })
         let savedVersions = updateDefaults.dictionary(forKey: Self.availableUpdateVersionsKey) as? [String: String] ?? [:]
@@ -643,6 +646,7 @@ final class BrowserExtensionService: ObservableObject {
         cancelRequirementResolution(id)
         userScriptErrors[id] = nil
         userScriptRuntimeErrors[id] = nil
+        storageRevisions[id] = nil
         if availableUserScriptUpdateVersions.removeValue(forKey: id) != nil { persistAvailableUserScriptUpdates() }
         UserScriptTabStore.shared.remove(scriptID: id)
         NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
@@ -706,6 +710,7 @@ final class BrowserExtensionService: ObservableObject {
             throw BrowserExtensionError.invalidStorageValue
         }
         var values = userScripts[index].storedValues ?? [:]
+        guard encodedValues.contains(where: { values[$0.key] != $0.value }) else { return }
         values.merge(encodedValues) { _, new in new }
         let totalSize = values.reduce(0) { result, item in
             result + item.key.utf8.count + item.value.utf8.count
@@ -730,6 +735,7 @@ final class BrowserExtensionService: ObservableObject {
     func deleteStoredValuesPersisting(forKeys keys: [String], scriptID: UUID, origin: String = "", mutationID: String = "") throws {
         guard let index = userScripts.firstIndex(where: { $0.id == scriptID }) else { throw BrowserExtensionError.invalidStorageValue }
         let previous = userScripts[index].storedValues
+        guard let previous, keys.contains(where: { previous[$0] != nil }) else { return }
         for key in keys {
             userScripts[index].storedValues?.removeValue(forKey: key)
         }
@@ -814,11 +820,13 @@ final class BrowserExtensionService: ObservableObject {
     }
 
     @discardableResult
-    func performWebExtensionAction(_ id: UUID) -> Bool {
+    func performWebExtensionAction(_ id: UUID, in tabManager: TabManager? = nil) -> Bool {
         guard #available(iOS 18.4, *),
               webExtensions.first(where: { $0.id == id })?.isEnabled == true,
               !loadingWebExtensions.contains(id) else { return false }
-        return NativeWebExtensionRuntime.shared.performAction(id: id)
+        let runtime = NativeWebExtensionRuntime.shared
+        if let tabManager { runtime.attach(tabManager: tabManager) }
+        return runtime.performAction(id: id)
     }
 
     func webExtensionCommands(for id: UUID) -> [WebExtensionCommandPresentation] {
@@ -826,6 +834,32 @@ final class BrowserExtensionService: ObservableObject {
               webExtensions.first(where: { $0.id == id })?.isEnabled == true,
               !loadingWebExtensions.contains(id) else { return [] }
         return NativeWebExtensionRuntime.shared.commands(id: id)
+    }
+
+    func webExtensionNewTabURL(for id: UUID) -> URL? {
+        guard #available(iOS 18.4, *),
+              !loadingWebExtensions.contains(id), webExtensions.contains(where: { $0.id == id && $0.isEnabled }) else { return nil }
+        return NativeWebExtensionRuntime.shared.newTabPageURL(for: id)
+    }
+
+    func setNewTabExtension(_ id: UUID, enabled: Bool) {
+        if enabled {
+            guard webExtensionNewTabURL(for: id) != nil else { return }
+            newTabExtensionID = id
+        } else {
+            guard newTabExtensionID == id else { return }
+            newTabExtensionID = nil
+        }
+        updateDefaults.set(newTabExtensionID?.uuidString, forKey: Self.newTabExtensionKey)
+    }
+
+    func preferredNewTabURL() -> URL? {
+        guard !UserDefaults.standard.bool(forKey: "is_incognito"), let newTabExtensionID else { return nil }
+        return webExtensionNewTabURL(for: newTabExtensionID)
+    }
+
+    static func prepareNewTabExtensionIfSelected() {
+        if UserDefaults.standard.string(forKey: newTabExtensionKey) != nil { _ = shared }
     }
 
     @discardableResult
@@ -843,6 +877,7 @@ final class BrowserExtensionService: ObservableObject {
         do { try writeExtensionStore() } catch {
             webExtensions = previous; webExtensionErrors[id] = error.localizedDescription; return
         }
+        setNewTabExtension(id, enabled: false)
         extensionLoadRevisions[id] = nil
         loadingWebExtensions.remove(id)
         webExtensionErrors[id] = nil
@@ -860,7 +895,12 @@ final class BrowserExtensionService: ObservableObject {
         guard #available(iOS 18.4, *) else { return }
         var migratedStore = false
         var restoredAny = false
-        for id in webExtensions.filter(\.isEnabled).map(\.id) {
+        var ids = webExtensions.filter(\.isEnabled).map(\.id)
+        if let newTabExtensionID, let index = ids.firstIndex(of: newTabExtensionID) {
+            ids.remove(at: index)
+            ids.insert(newTabExtensionID, at: 0)
+        }
+        for id in ids {
             guard !installingExtensionIDs.contains(id),
                   let index = webExtensions.firstIndex(where: { $0.id == id }), webExtensions[index].isEnabled else { continue }
             let record = webExtensions[index]
@@ -874,11 +914,15 @@ final class BrowserExtensionService: ObservableObject {
                 resourceURL = originalResourceURL
             } else {
                 do {
-                    resourceURL = try WebExtensionPackagePreparer.prepare(
+                    resourceURL = try await WebExtensionPackagePreparer.prepare(
                         sourceURL: originalResourceURL,
                         in: originalResourceURL.deletingLastPathComponent()
                     )
-                    webExtensions[index].storedResourceName = WebExtensionPackagePreparer.preparedResourceName
+                    guard extensionLoadRevisions[id] == revision,
+                          let current = webExtensions.firstIndex(where: { $0.id == id }),
+                          webExtensions[current].isEnabled,
+                          webExtensions[current].storedResourceName == record.storedResourceName else { continue }
+                    webExtensions[current].storedResourceName = WebExtensionPackagePreparer.preparedResourceName
                     migratedStore = true
                 } catch {
                     // Preserve older working packages if a rare archive method
@@ -889,8 +933,19 @@ final class BrowserExtensionService: ObservableObject {
                     resourceURL = originalResourceURL
                 }
             }
+            guard extensionLoadRevisions[id] == revision,
+                  webExtensions.contains(where: { $0.id == id && $0.isEnabled }) else { continue }
             do {
-                _ = try await loadNativeExtension(record, resourceURL: resourceURL)
+                do {
+                    _ = try await loadNativeExtension(record, resourceURL: resourceURL)
+                } catch let failure as WebExtensionInstallationFailure
+                    where failure.underlying is WebExtensionBackgroundStartupError {
+                    // A cold WebKit process can time out during App activation.
+                    // Retry once before persisting a change to the enabled state.
+                    guard !Task.isCancelled, extensionLoadRevisions[id] == revision,
+                          let current = webExtensions.first(where: { $0.id == id && $0.isEnabled }) else { continue }
+                    _ = try await loadNativeExtension(current, resourceURL: resourceURL)
+                }
                 if webExtensions.first(where: { $0.id == record.id })?.isEnabled != true {
                     NativeWebExtensionRuntime.shared.unload(id: record.id)
                 } else {
@@ -928,6 +983,15 @@ final class BrowserExtensionService: ObservableObject {
             let metadata = Self.parseMetadata(from: script.source)
             script.requiredURLs = metadata.requiredURLs
             script.runInContexts = metadata.runInContexts
+            // Before CRLF metadata was parsed, imports used the default site
+            // scope. Recover valid declared scope without granting new APIs
+            // or replacing a scope the user customized.
+            if stored.sourceURL != nil, stored.source.contains("\r\n"), stored.version == nil,
+               stored.matchPatterns == ["*://*/*"], (stored.excludePatterns ?? []).isEmpty,
+               metadata.version != nil, !metadata.patterns.isEmpty, (try? Self.validate(metadata: metadata)) != nil {
+                script.matchPatterns = metadata.patterns
+                script.excludePatterns = metadata.excludePatterns
+            }
             return script
         }
         webExtensions = store.webExtensions
@@ -1010,7 +1074,7 @@ final class BrowserExtensionService: ObservableObject {
         let trimSet = CharacterSet.whitespacesAndNewlines
             .union(CharacterSet(charactersIn: "\u{FEFF}"))
 
-        for line in source.split(separator: "\n", omittingEmptySubsequences: false).prefix(512) {
+        for line in source.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline).prefix(512) {
             let value = line.trimmingCharacters(in: trimSet)
             if value.range(of: #"^//\s*==UserScript==\s*$"#, options: .regularExpression) != nil {
                 isInsideMetadata = true
@@ -1206,6 +1270,11 @@ extension BrowserExtensionService {
         let token = UUID()
         let stage = extensionRoot.appendingPathComponent("Staging/" + token.uuidString, isDirectory: true)
         try fileManager.createDirectory(at: stage, withIntermediateDirectories: true)
+        let reusingInstalledResources = id.flatMap { target in
+            webExtensions.first(where: { $0.id == target }).flatMap { record in
+                try? checkedResourceURL(id: target, name: record.storedResourceName)
+            }
+        }?.standardizedFileURL == source.standardizedFileURL
         let scoped = source.startAccessingSecurityScopedResource()
         defer { if scoped { source.stopAccessingSecurityScopedResource() } }
         do {
@@ -1214,7 +1283,8 @@ extension BrowserExtensionService {
             // Wait for the worker before removing staging on cancellation.
             let preparation = Task.detached(priority: .userInitiated) {
                 try Task.checkCancellation()
-                let result = try WebExtensionPackagePreparer.prepare(sourceURL: source, in: stage)
+                let result = try await WebExtensionPackagePreparer.prepare(sourceURL: source, in: stage,
+                    reusingInstalledResources: reusingInstalledResources)
                 try Task.checkCancellation()
                 return result
             }
@@ -1232,9 +1302,11 @@ extension BrowserExtensionService {
                 ?? (isPreparedTYTY ? installedTYTYExtension() : nil)
             if id != nil && previous == nil { throw CancellationError() }
             let descriptor = Self.extensionDescriptor(object.manifest)
-            let permissions = Set(descriptor.permissions + object.requestedPermissions.map(\.rawValue)).sorted()
+            let requiredPermissions = Set(descriptor.permissions + object.requestedPermissions.map(\.rawValue)).sorted()
+            let optionalPermissions = WebExtensionPackagePreparer.managedOptionalPermissions(in: object.manifest)
+            let permissions = Set(requiredPermissions + optionalPermissions).sorted()
             let sites = Set(descriptor.sites + object.requestedPermissionMatchPatterns.map(\.string)).sorted()
-            let access = previous.map { webExtensionAccess($0.id) } ?? .requested(permissions: permissions, sites: sites)
+            let access = previous.map { webExtensionAccess($0.id) } ?? .requested(permissions: requiredPermissions, sites: sites)
             var warnings = object.errors.map(\.localizedDescription)
             if object.manifest["commands"] != nil { warnings.append("commands") }
             if permissions.contains("offscreen") { warnings.append("offscreen") }
@@ -1336,15 +1408,18 @@ extension BrowserExtensionService {
     func webExtensionAccess(_ id: UUID) -> WebExtensionAccess {
         guard let record = webExtensions.first(where: { $0.id == id }) else { return .init() }
         if let access = record.access { return access }
-        let descriptor = webExtensionDetails(id)
+        let descriptor = webExtensionDetails(id, includingManagedOptionalPermissions: false)
         return .requested(permissions: descriptor.permissions, sites: descriptor.sites)
     }
 
-    func webExtensionDetails(_ id: UUID) -> (permissions: [String], sites: [String]) {
+    func webExtensionDetails(_ id: UUID, includingManagedOptionalPermissions: Bool = true) -> (permissions: [String], sites: [String]) {
         guard let record = webExtensions.first(where: { $0.id == id }),
               let data = try? Data(contentsOf: checkedResourceURL(id: id, name: record.storedResourceName).appendingPathComponent("manifest.json")),
               let manifest = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return ([], []) }
-        return Self.extensionDescriptor(manifest)
+        let descriptor = Self.extensionDescriptor(manifest)
+        guard includingManagedOptionalPermissions else { return descriptor }
+        let optional = WebExtensionPackagePreparer.managedOptionalPermissions(in: manifest)
+        return (Set(descriptor.permissions + optional).sorted(), descriptor.sites)
     }
 
     func setWebExtensionAccess(_ access: WebExtensionAccess, id: UUID) throws {
@@ -1371,7 +1446,7 @@ extension BrowserExtensionService {
     }
 
     private static func extensionDescriptor(_ manifest: [String: Any]) -> (permissions: [String], sites: [String]) {
-        let entries = manifest["permissions"] as? [String] ?? []
+        let entries = WebExtensionPackagePreparer.requestedPermissions(in: manifest)
         let permissions = entries.filter { !$0.contains("://") && $0 != "<all_urls>" }
         let matches = (manifest["content_scripts"] as? [[String: Any]] ?? []).flatMap { $0["matches"] as? [String] ?? [] }
         let sites = entries.filter { $0.contains("://") || $0 == "<all_urls>" }
@@ -1411,6 +1486,10 @@ extension BrowserExtensionService {
 
 enum UserScriptRuntime {
     static let sourcePrefix = "/* Soulo UserScript */\n"
+
+    static func sourcePrefix(for id: UUID) -> String {
+        sourcePrefix + "// " + id.uuidString + "\n"
+    }
 
     private static let webRequestFactory: String? = {
         guard let url = Bundle.main.url(forResource: "web-request", withExtension: "js", subdirectory: "UserScripts") else { return nil }
@@ -2169,7 +2248,7 @@ enum UserScriptRuntime {
     static func wrappedSource(for script: UserScriptRecord, bridgeToken: String = "") -> String {
         guard script.allowsNormalTabs else { return "" }
         guard script.hasResolvedRequirements else {
-            return sourcePrefix + "console.error('Soulo UserScript: @require dependencies are not ready');"
+            return sourcePrefix(for: script.id) + "console.error('Soulo UserScript: @require dependencies are not ready');"
         }
         // Newlines prevent trailing // comments or source maps in a dependency
         // from swallowing the next file. All files share the script's scope.
@@ -2226,7 +2305,7 @@ enum UserScriptRuntime {
             : "__souloRunUserScript();"
 
         return """
-        \(sourcePrefix)(function() {
+        \(sourcePrefix(for: script.id))(function() {
             var __souloURL = String(window.location.href || '');
             if (__souloURL.toLowerCase().indexOf('http://') !== 0 && __souloURL.toLowerCase().indexOf('https://') !== 0) return;
             var __souloIncludes = \(includeLiteral);
@@ -2673,6 +2752,9 @@ enum UserScriptURLMatcher {
 
         let schemePattern = String(pattern[..<separator.lowerBound]).lowercased()
         let remainder = String(pattern[separator.upperBound...])
+        // Packages can advertise a local-file target alongside web targets.
+        // Both native matching and JavaScript execution still require HTTP(S).
+        if schemePattern == "file" { return remainder.contains("/") ? anchoredWildcardExpression(pattern) : nil }
         let hostAndPath = remainder.split(separator: "/", maxSplits: 1, omittingEmptySubsequences: false)
         guard let rawHost = hostAndPath.first.map(String.init), !rawHost.isEmpty else { return nil }
 
@@ -2695,8 +2777,9 @@ enum UserScriptURLMatcher {
             hostExpression = NSRegularExpression.escapedPattern(for: rawHost)
         }
 
-        let rawPath = "/" + (hostAndPath.count > 1 ? String(hostAndPath[1]) : "")
-        let pathExpression = wildcardFragment(rawPath)
+        let pathExpression = hostAndPath.count == 1 && rawHost == "*"
+            ? "(?:/.*)?"
+            : wildcardFragment("/" + (hostAndPath.count > 1 ? String(hostAndPath[1]) : ""))
         // Match patterns do not constrain an explicitly supplied web port.
         return "^\(schemeExpression)://\(hostExpression)(?::[0-9]+)?\(pathExpression)$"
     }
@@ -2863,6 +2946,12 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         return context.webViewConfiguration
     }
 
+    func newTabPageURL(for id: UUID) -> URL? {
+        guard let context = contexts[id], let url = context.overrideNewTabPageURL,
+              url.scheme == context.baseURL.scheme, url.host == context.baseURL.host else { return nil }
+        return url
+    }
+
     func hostInterfaceCoverage() -> HostInterfaceCoverage {
         let probeTab = NativeExtensionTab(
             browserTabID: nil,
@@ -2979,9 +3068,10 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         guard !UserDefaults.standard.bool(forKey: "is_incognito"),
               webView.configuration.websiteDataStore.isPersistent else { return }
         compatibilityHost.userScripts.attach(webView.configuration.userContentController)
-        let browserTabID = tabManager?.tabs.first(where: {
+        let browserTab = tabManager?.tabs.first(where: {
             $0.webViewModel.webView === webView
-        })?.id
+        })
+        let browserTabID = browserTab?.id
         if let browserTabID,
            let existingTab = browserWindow.tab(id: browserTabID) {
             existingTab.attach(webView)
@@ -2995,6 +3085,7 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
                 window: browserWindow,
                 runtime: self
             )
+            tab.parentNativeTab = browserTab?.navigationOpenerID.flatMap(browserWindow.tab(id:))
             browserWindow.tabs.append(tab)
             controller.didOpenTab(tab)
         }
@@ -3051,6 +3142,9 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
                     window: browserWindow,
                     runtime: self
                 )
+                nativeTab.parentNativeTab = browserTab.navigationOpenerID.flatMap { openerID in
+                    browserWindow.tab(id: openerID) ?? orderedTabs.first(where: { $0.browserTabID == openerID })
+                }
                 controller.didOpenTab(nativeTab)
             }
             orderedTabs.append(nativeTab)
@@ -3115,13 +3209,16 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         } onCancel: { task.cancel() }
     }
 
-    private func loadContext(id: UUID, resourceURL: URL, access: WebExtensionAccess?) async throws -> Metadata {
+    private func loadContext(
+        id: UUID, resourceURL: URL, access: WebExtensionAccess?, mayRetryClassicWorker: Bool = true
+    ) async throws -> Metadata {
         try Task.checkCancellation()
         if try resourceURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true {
             BrowserStartupTrace.mark("extension_prepare_start", detail: id.uuidString)
-            try WebExtensionPackagePreparer.installCompatibilityLayer(in: resourceURL)
+            try await WebExtensionPackagePreparer.installCompatibilityLayer(in: resourceURL)
             BrowserStartupTrace.mark("extension_prepare_end", detail: id.uuidString)
         }
+        try Task.checkCancellation()
 
         BrowserStartupTrace.mark("extension_native_load_start", detail: id.uuidString)
         let extensionObject = try await NativeWebExtensionIssuePolicy.validatedExtension(at: resourceURL)
@@ -3131,7 +3228,8 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         let context = WKWebExtensionContext(for: extensionObject)
         context.uniqueIdentifier = id.uuidString
         context.baseURL = URL(string: "webkit-extension://" + id.uuidString.lowercased() + "/")!
-        let manifestPermissions = (extensionObject.manifest["permissions"] as? [String] ?? []).filter { !$0.contains("://") && $0 != "<all_urls>" }
+        let manifestPermissions = WebExtensionPackagePreparer.requestedPermissions(in: extensionObject.manifest)
+            .filter { !$0.contains("://") && $0 != "<all_urls>" }
         let decisions = access ?? .requested(permissions: Array(Set(manifestPermissions + extensionObject.requestedPermissions.map { $0.rawValue })),
                                             sites: extensionObject.requestedPermissionMatchPatterns.map(\.string))
         applyAccess(decisions, id: id, context: context)
@@ -3161,8 +3259,40 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
                 let background = extensionObject.manifest["background"] as? [String: Any]
                 let path = background?["page"] as? String ?? (background?["scripts"] as? [String])?.last
                     ?? background?["service_worker"] as? String
-                if contexts[id] === context { unload(id: id) }
+                let restoreAccessHandler = accessHandlers[id]
+                if contexts[id] === context { removeContext(id: id) }
                 if error is CancellationError { throw error }
+                if mayRetryClassicWorker, background?["service_worker"] != nil {
+                    let backup: Data?
+                    do {
+                        backup = try await WebExtensionPackagePreparer.prepareClassicBackgroundRetry(in: resourceURL)
+                    } catch is CancellationError {
+                        throw CancellationError()
+                    } catch {
+                        BrowserStartupTrace.mark("extension_background_retry_prepare_failed", detail: error.localizedDescription)
+                        throw WebExtensionInstallationFailure(stage: .background(path), underlying: reported)
+                    }
+                    guard let backup else {
+                        BrowserStartupTrace.mark("extension_background_retry_unavailable", detail: path ?? "")
+                        throw WebExtensionInstallationFailure(stage: .background(path), underlying: reported)
+                    }
+                    BrowserStartupTrace.mark("extension_background_retry_start", detail: path ?? "")
+                    do {
+                        try Task.checkCancellation()
+                        accessHandlers[id] = restoreAccessHandler
+                        return try await loadContext(id: id, resourceURL: resourceURL, access: access, mayRetryClassicWorker: false)
+                    } catch {
+                        let manifest = resourceURL.appendingPathComponent("manifest.json")
+                        if error is CancellationError {
+                            try? backup.write(to: manifest, options: .atomic)
+                            throw error
+                        }
+                        try backup.write(to: manifest, options: .atomic)
+                        BrowserStartupTrace.mark("extension_background_retry_failed", detail: error.localizedDescription)
+                        throw error
+                    }
+                }
+                try Task.checkCancellation()
                 throw WebExtensionInstallationFailure(stage: .background(path), underlying: reported)
             }
         }
@@ -3296,6 +3426,7 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
             label: action.label.nonEmpty ?? context.webExtension.displayName?.nonEmpty ?? "Soulo",
             icon: action.icon(for: CGSize(width: 36, height: 36)),
             badgeText: action.badgeText,
+            badgeTextColor: compatibilityHost.badgeTextColor(for: context, tab: tab),
             presentsPopup: action.presentsPopup,
             isEnabled: action.isEnabled
         )
@@ -3323,8 +3454,12 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
     }
 
     func unload(id: UUID) {
-        WebExtensionPopupPresenter.dismissPopup(ownedBy: id)
         pendingLoads.removeValue(forKey: id)?.task.cancel()
+        removeContext(id: id)
+    }
+
+    private func removeContext(id: UUID) {
+        WebExtensionPopupPresenter.dismissPopup(ownedBy: id)
         permissionObservers.removeValue(forKey: id)?.forEach { NotificationCenter.default.removeObserver($0) }
         accessSettings[id] = nil
         accessHandlers[id] = nil
@@ -3389,6 +3524,17 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
               let tabManager else { throw NativeWebExtensionHostError.tabUnavailable }
         tabManager.switchToTab(at: index, userInitiated: false)
         activate(nativeTab)
+    }
+
+    fileprivate func revealForegroundTab(_ tab: NativeExtensionTab, for context: WKWebExtensionContext) {
+        guard let manager = tabManager, let tabID = tab.browserTabID,
+              manager.activeTab?.id == tabID else { return }
+        DispatchQueue.main.async { [weak manager] in
+            WebExtensionPopupPresenter.dismissPopupAfterNavigation(ownedBy: UUID(uuidString: context.uniqueIdentifier)) {
+                guard let manager, manager.activeTab?.id == tabID else { return }
+                manager.extensionForegroundNavigation.send(())
+            }
+        }
     }
 
     fileprivate func closeBrowserTab(_ nativeTab: NativeExtensionTab) throws {
@@ -3469,23 +3615,20 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
                 completionHandler(nil, NativeWebExtensionHostError.browserUnavailable)
                 return
             }
-            WebExtensionPopupPresenter.dismissCurrentPopup { [weak self] in
-                guard let self else {
-                    completionHandler(nil, NativeWebExtensionHostError.browserUnavailable)
-                    return
+            do {
+                let parent = configuration.parentTab as? NativeExtensionTab
+                let tab = try self.createBrowserTab(
+                    url: configuration.url,
+                    active: configuration.shouldBeActive,
+                    parent: parent
+                )
+                tab.setInitialMuted(configuration.shouldBeMuted)
+                completionHandler(tab, nil)
+                if configuration.shouldBeActive {
+                    self.revealForegroundTab(tab, for: context)
                 }
-                do {
-                    let parent = configuration.parentTab as? NativeExtensionTab
-                    let tab = try self.createBrowserTab(
-                        url: configuration.url,
-                        active: configuration.shouldBeActive,
-                        parent: parent
-                    )
-                    tab.setInitialMuted(configuration.shouldBeMuted)
-                    completionHandler(tab, nil)
-                } catch {
-                    completionHandler(nil, error)
-                }
+            } catch {
+                completionHandler(nil, error)
             }
         }
     }
@@ -3504,17 +3647,12 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
                 completionHandler(NativeWebExtensionHostError.browserUnavailable)
                 return
             }
-            WebExtensionPopupPresenter.dismissCurrentPopup { [weak self] in
-                guard let self else {
-                    completionHandler(NativeWebExtensionHostError.browserUnavailable)
-                    return
-                }
-                do {
-                    _ = try self.createBrowserTab(url: url, active: true)
-                    completionHandler(nil)
-                } catch {
-                    completionHandler(error)
-                }
+            do {
+                let tab = try self.createBrowserTab(url: url, active: true)
+                completionHandler(nil)
+                self.revealForegroundTab(tab, for: context)
+            } catch {
+                completionHandler(error)
             }
         }
     }
@@ -3669,6 +3807,10 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
             webView: browserWindow.activeNativeTab?.webView(for: context),
             blobSources: browserWindow.tabs(for: context).compactMap { $0.webView?(for: context) },
             tabMetadata: { self.tabMetadata(for: context, indexes: $0) },
+            badgeTab: { index in
+                let tabs = self.browserWindow.tabs(for: context)
+                return tabs.indices.contains(index) ? tabs[index] : nil
+            },
             replyHandler: replyHandler
         ) {
             return
@@ -3739,6 +3881,7 @@ struct WebExtensionActionPresentation {
     let label: String
     let icon: UIImage?
     let badgeText: String
+    let badgeTextColor: UIColor?
     let presentsPopup: Bool
     let isEnabled: Bool
 }
@@ -3763,16 +3906,41 @@ enum NativeWebExtensionIssuePolicy {
     @MainActor @available(iOS 18.4, *)
     static func validatedExtension(at url: URL) async throws -> WKWebExtension {
         do {
-            let object = try await WKWebExtension(resourceBaseURL: url)
-            if let failure = firstFatalIssue(in: object.errors) { throw failure }
-            return object
+            do { return try await loadManifest(at: url) }
+            catch {
+                guard isBackgroundPersistenceError(error) else { throw error }
+                let manifest = url.appendingPathComponent("manifest.json")
+                try Task.checkCancellation()
+                guard let original = try WebExtensionPackagePreparer.prepareNonpersistentWebRequest(at: manifest) else {
+                    throw error
+                }
+                do {
+                    let object = try await loadManifest(at: url)
+                    try Task.checkCancellation()
+                    return object
+                } catch {
+                    try original.write(to: manifest, options: .atomic)
+                    throw error
+                }
+            }
         } catch {
             if error is CancellationError { throw error }
-            let issue = error as NSError
-            let underlying: Error = issue.domain == webExtensionErrorDomain && issue.code == 8
+            let underlying: Error = isBackgroundPersistenceError(error)
                 ? BrowserExtensionError.incompatiblePersistentBackground : error
             throw WebExtensionInstallationFailure(stage: .manifest, underlying: underlying)
         }
+    }
+
+    private static func isBackgroundPersistenceError(_ error: Error) -> Bool {
+        let issue = error as NSError
+        return issue.domain == webExtensionErrorDomain && issue.code == 8
+    }
+
+    @MainActor @available(iOS 18.4, *)
+    private static func loadManifest(at url: URL) async throws -> WKWebExtension {
+        let object = try await WKWebExtension(resourceBaseURL: url)
+        if let failure = firstFatalIssue(in: object.errors) { throw failure }
+        return object
     }
 
     @available(iOS 18.4, *)
@@ -3922,6 +4090,15 @@ enum WebExtensionPopupPresenter {
     private static var presentedPopupOwner: UUID?
     private static weak var downloadFolderHost: UIHostingController<WebExtensionDownloadFolderView>?
 
+    @available(iOS 18.4, *)
+    static func contextDescriptor(for context: WKWebExtensionContext) -> [String: Any]? {
+        guard presentedPopupOwner?.uuidString == context.uniqueIdentifier,
+              let popup = presentedPopup as? UINavigationController,
+              popup.presentingViewController != nil, !popup.isBeingDismissed,
+              let content = popup.topViewController as? WebExtensionPopupContentController else { return nil }
+        return content.contextDescriptor(baseURL: context.baseURL)
+    }
+
     static func presentDownloadFolder(at directory: URL, completion: @escaping (Error?) -> Void, attempt: Int = 0) {
         guard let presenter = foregroundPresenter() else { completion(unavailableError); return }
         if presenter.isBeingPresented || presenter.isBeingDismissed {
@@ -4042,9 +4219,35 @@ enum WebExtensionPopupPresenter {
         dismissCurrentPopup(completion: {})
     }
 
+    fileprivate static func dismissPopupAfterNavigation(ownedBy id: UUID?, completion: @escaping () -> Void) {
+        guard id != nil, presentedPopupOwner == id,
+              let popup = presentedPopup as? WebExtensionPopupNavigationController,
+              popup.presentingViewController != nil else {
+            completion()
+            return
+        }
+        if popup.isBeingDismissed {
+            if popup.transitionCoordinator?.animate(alongsideTransition: nil, completion: { _ in completion() }) != true {
+                completion()
+            }
+            return
+        }
+        popup.dismiss(animated: true) { [weak popup] in
+            if let popup {
+                popup.closeContent()
+                didDismiss(popup)
+            }
+            completion()
+        }
+    }
+
     fileprivate static func dismissPopup(containing content: UIViewController) {
         guard (presentedPopup as? UINavigationController)?.topViewController === content else { return }
-        dismissCurrentPopup(completion: {})
+        if let ownerID = presentedPopupOwner {
+            dismissPopupAfterNavigation(ownedBy: ownerID, completion: {})
+        } else {
+            dismissCurrentPopup(completion: {})
+        }
     }
 
     fileprivate static func didDismiss(_ popup: UIViewController) {
@@ -4054,17 +4257,16 @@ enum WebExtensionPopupPresenter {
     }
 
     static func dismissCurrentPopup(completion: @escaping () -> Void) {
-        guard let popup = presentedPopup,
-              popup.presentingViewController != nil,
-              !popup.isBeingDismissed else {
-            presentedPopup = nil
-            presentedPopupOwner = nil
+        let popup = presentedPopup
+        presentedPopup = nil
+        presentedPopupOwner = nil
+        // Unloading an extension can overlap a dismissal transition. Close
+        // its WebKit action while the context is still loaded.
+        (popup as? WebExtensionPopupNavigationController)?.closeContent()
+        guard let popup, popup.presentingViewController != nil, !popup.isBeingDismissed else {
             completion()
             return
         }
-        presentedPopup = nil
-        presentedPopupOwner = nil
-        (popup as? WebExtensionPopupNavigationController)?.closeContent()
         popup.dismiss(animated: true, completion: completion)
     }
 
@@ -4123,20 +4325,29 @@ private struct WebExtensionDownloadFolderView: View {
 @MainActor
 @available(iOS 18.4, *)
 private final class WebExtensionPopupContentController: UIViewController {
+    private static let closedWebViews = NSHashTable<WKWebView>.weakObjects()
     private let webView: WKWebView
     private let action: WKWebExtension.Action
     private var closed = false
     private var delegateProxy: WebExtensionPopupUIDelegate?
+    private var navigationProxy: WebExtensionPopupNavigationDelegate?
+    private var attemptedProcessRecovery = false
+    private var measuredPopupWidth: CGFloat?
+    private var popupLayoutRevision = 0
+    private let popupContextID = UUID().uuidString
+    private let isIncognito = UserDefaults.standard.bool(forKey: "is_incognito")
 
     init(webView: WKWebView, action: WKWebExtension.Action) {
         self.webView = webView
         self.action = action
         super.init(nibName: nil, bundle: nil)
         preferredContentSize = CGSize(width: 640, height: 480)
-        // WebKit can return a still-retained action webview after closePopup.
-        // Each new presentation needs a fresh document; duplicate requests
-        // return the current controller before reaching this initializer.
-        webView.reload()
+        // WebKit may reuse the view from a closed popup. Leave the initial
+        // navigation of a new popup intact.
+        if Self.closedWebViews.contains(webView) {
+            Self.closedWebViews.remove(webView)
+            webView.reload()
+        }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -4145,10 +4356,24 @@ private final class WebExtensionPopupContentController: UIViewController {
         !closed && candidate.popupWebView === webView
     }
 
+    func contextDescriptor(baseURL: URL) -> [String: Any]? {
+        guard !closed, let url = webView.url, url.scheme == baseURL.scheme, url.host == baseURL.host,
+              let origin = baseURL.host,
+              let scheme = baseURL.scheme else { return nil }
+        return [
+            "contextId": popupContextID, "contextType": "POPUP", "documentUrl": url.absoluteString,
+            "documentOrigin": "\(scheme)://\(origin)", "tabId": -1, "windowId": -1, "frameId": 0,
+            "incognito": isIncognito
+        ]
+    }
+
     func closeIfNeeded() {
         guard !closed else { return }
         closed = true
+        Self.closedWebViews.add(webView)
         delegateProxy?.restore(on: webView)
+        navigationProxy?.restore(on: webView)
+        if webView.pageZoom != 1 { webView.pageZoom = 1 }
         webView.stopLoading()
         action.closePopup()
     }
@@ -4166,6 +4391,21 @@ private final class WebExtensionPopupContentController: UIViewController {
         }
         delegateProxy = proxy
         webView.uiDelegate = proxy
+        let navigation = WebExtensionPopupNavigationDelegate(original: webView.navigationDelegate, onLoad: { [weak self] in
+            self?.adaptTooltipsForTouch()
+            self?.fitPopupDocument(force: true)
+        }) { [weak self] in
+            guard let self, !self.closed else { return }
+            if !self.attemptedProcessRecovery {
+                self.attemptedProcessRecovery = true
+                if self.webView.isLoading || self.webView.reload() != nil { return }
+            }
+            self.closeIfNeeded()
+            WebExtensionPopupPresenter.dismissPopup(containing: self)
+        }
+        navigationProxy = navigation
+        webView.navigationDelegate = navigation
+        adaptTooltipsForTouch()
         view.addSubview(webView)
         NSLayoutConstraint.activate([
             webView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 12),
@@ -4173,6 +4413,85 @@ private final class WebExtensionPopupContentController: UIViewController {
             webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             webView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
         ])
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        fitPopupDocument()
+    }
+
+    private func fitPopupDocument(force: Bool = false) {
+        let width = webView.bounds.width
+        guard !closed, width > 0, force || measuredPopupWidth != width,
+              let document = webView.url, document.scheme == "webkit-extension" else { return }
+        measuredPopupWidth = width
+        popupLayoutRevision += 1
+        let revision = popupLayoutRevision
+        if webView.pageZoom != 1 { webView.pageZoom = 1 }
+        // Fit a desktop popup's fixed document width. Inner scrolling panels
+        // can keep their own overflow without shrinking the whole popup.
+        webView.evaluateJavaScript("""
+        Math.max(document.documentElement.clientWidth, document.body?.getBoundingClientRect().width ?? 0)
+        """, in: nil, in: .defaultClient) { [weak self] result in
+            guard let self, !self.closed, self.popupLayoutRevision == revision, self.webView.url == document,
+                  let contentWidth = try? result.get() as? Double, contentWidth.isFinite, contentWidth > width + 1
+            else { return }
+            self.webView.pageZoom = max(0.7, (width - 1) / contentWidth)
+        }
+    }
+
+    private func adaptTooltipsForTouch() {
+        // WebKit can consume the first tap when a hover handler makes a
+        // tooltip appear. Keep touch controls actionable in the popup.
+        webView.evaluateJavaScript("""
+        (() => {
+            if (location.protocol !== 'webkit-extension:' || globalThis.__souloTouchTooltipStyle) return;
+            const style = new CSSStyleSheet();
+            const hideTooltip = '[role="tooltip"] { display: none !important; }';
+            const hideOnTouchScreens = '@media (hover: none) { ' + hideTooltip + ' }';
+            style.replaceSync(hideOnTouchScreens);
+            document.adoptedStyleSheets = [...document.adoptedStyleSheets, style];
+            let reset;
+            addEventListener('touchstart', () => {
+                // An iPad with a trackpad can report hover support even for a finger tap.
+                clearTimeout(reset);
+                style.replaceSync(hideTooltip);
+                reset = setTimeout(() => style.replaceSync(hideOnTouchScreens), 700);
+            }, { capture: true, passive: true });
+            let tap;
+            addEventListener('pointerdown', event => {
+                tap = undefined;
+                if (!event.isTrusted || event.pointerType !== 'touch' || !event.isPrimary) return;
+                const control = event.target.closest?.('[role="button"], [role="menuitem"], [role="tab"]');
+                if (!(control instanceof HTMLElement) ||
+                    control.matches('button, a, input, label, [aria-disabled="true"]') ||
+                    !control.querySelector('[role="img"][aria-label], svg[aria-label], img[alt]')) return;
+                tap = {control, id: event.pointerId, x: event.clientX, y: event.clientY};
+            }, { capture: true, passive: true });
+            addEventListener('pointermove', event => {
+                if (tap && event.pointerId === tap.id &&
+                    Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > 10) tap = undefined;
+            }, { capture: true, passive: true });
+            addEventListener('pointercancel', () => { tap = undefined; }, { capture: true, passive: true });
+            addEventListener('click', event => {
+                if (tap?.control.contains(event.target)) tap = undefined;
+            }, true);
+            addEventListener('pointerup', event => {
+                const candidate = tap;
+                if (!event.isTrusted || !candidate || event.pointerId !== candidate.id) return;
+                // Give WebKit's native click priority. Some desktop icon
+                // controls still turn a tap into focus even with hover hidden.
+                setTimeout(() => {
+                    if (tap !== candidate) return;
+                    tap = undefined;
+                    const {control, x, y} = candidate;
+                    if (!event.defaultPrevented && control.isConnected &&
+                        control.contains(document.elementFromPoint(x, y))) control.click();
+                }, 400);
+            }, { capture: true, passive: true });
+            globalThis.__souloTouchTooltipStyle = true;
+        })();
+        """, in: nil, in: .defaultClient, completionHandler: nil)
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -4210,6 +4529,43 @@ private final class WebExtensionPopupUIDelegate: NSObject, WKUIDelegate {
     }
 
     func webViewDidClose(_ webView: WKWebView) { onClose() }
+}
+
+@MainActor
+@available(iOS 18.4, *)
+private final class WebExtensionPopupNavigationDelegate: NSObject, WKNavigationDelegate {
+    private let original: (any WKNavigationDelegate)?
+    private let onLoad: () -> Void
+    private let recover: () -> Void
+
+    init(original: (any WKNavigationDelegate)?, onLoad: @escaping () -> Void, recover: @escaping () -> Void) {
+        self.original = original
+        self.onLoad = onLoad
+        self.recover = recover
+        super.init()
+    }
+
+    override func responds(to selector: Selector!) -> Bool {
+        super.responds(to: selector) || original?.responds(to: selector) == true
+    }
+
+    override func forwardingTarget(for selector: Selector!) -> Any? {
+        original?.responds(to: selector) == true ? original : super.forwardingTarget(for: selector)
+    }
+
+    func restore(on webView: WKWebView) {
+        if webView.navigationDelegate === self { webView.navigationDelegate = original }
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        original?.webView?(webView, didFinish: navigation)
+        onLoad()
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        original?.webViewWebContentProcessDidTerminate?(webView)
+        recover()
+    }
 }
 
 @MainActor
@@ -4553,8 +4909,26 @@ private final class NativeExtensionTab: NSObject, WKWebExtensionTab {
             completionHandler(nil, NativeWebExtensionHostError.tabUnavailable)
             return
         }
-        webView.takeSnapshot(with: configuration) { image, error in
-            completionHandler(image, error)
+        let viewport = WebPageCaptureService.captureBounds(for: webView.bounds)
+        guard viewport.width > 1, viewport.height > 1 else {
+            completionHandler(nil, WebPageCaptureError.emptyPage)
+            return
+        }
+        // Supply the visible bounds when WebKit gives the extension host a default configuration.
+        let options = (configuration.copy() as? WKSnapshotConfiguration) ?? configuration
+        if options.rect.isEmpty || options.rect.isNull { options.rect = viewport }
+        if options.snapshotWidth == nil { options.snapshotWidth = NSNumber(value: Double(options.rect.width)) }
+        Task { @MainActor in
+            do {
+                let image = try await WebPageCaptureService.captureViewport(webView, configuration: options)
+                guard let bitmap = image.cgImage, bitmap.width > 0, bitmap.height > 0 else {
+                    completionHandler(nil, WebPageCaptureError.captureFailed)
+                    return
+                }
+                completionHandler(image, nil)
+            } catch {
+                completionHandler(nil, error)
+            }
         }
     }
 
@@ -4566,18 +4940,18 @@ private final class NativeExtensionTab: NSObject, WKWebExtensionTab {
         // Open standalone extension applications separately, preserving the
         // source. Keep the native API's tab ID on the requested destination.
         let sourceURL = webView?.url ?? runtime?.browserTab(for: self)?.webViewModel.currentURL
-        if url.scheme == context.baseURL.scheme, url.host?.lowercased() == context.baseURL.host?.lowercased(),
-           ["http", "https"].contains(sourceURL?.scheme?.lowercased() ?? "") {
+        let opensOwnDocument = url.scheme == context.baseURL.scheme
+            && url.host?.lowercased() == context.baseURL.host?.lowercased()
+        if opensOwnDocument, ["http", "https"].contains(sourceURL?.scheme?.lowercased() ?? "") {
             DispatchQueue.main.async { [weak self] in
                 guard let self, let runtime = self.runtime else {
                     completionHandler(NativeWebExtensionHostError.tabUnavailable); return
                 }
-                WebExtensionPopupPresenter.dismissCurrentPopup {
-                    do {
-                        try runtime.openExtensionDocument(url, from: self)
-                        completionHandler(nil)
-                    } catch { completionHandler(error) }
-                }
+                do {
+                    try runtime.openExtensionDocument(url, from: self)
+                    completionHandler(nil)
+                    runtime.revealForegroundTab(self, for: context)
+                } catch { completionHandler(error) }
             }
             return
         }
@@ -4590,6 +4964,7 @@ private final class NativeExtensionTab: NSObject, WKWebExtensionTab {
             return
         }
         completionHandler(nil)
+        if opensOwnDocument { runtime?.revealForegroundTab(self, for: context) }
     }
 
     func reload(
@@ -4640,6 +5015,10 @@ private final class NativeExtensionTab: NSObject, WKWebExtensionTab {
         do {
             try runtime?.activateBrowserTab(self)
             completionHandler(runtime == nil ? NativeWebExtensionHostError.browserUnavailable : nil)
+            if let url = url(for: context), url.scheme == context.baseURL.scheme,
+               url.host?.lowercased() == context.baseURL.host?.lowercased() {
+                runtime?.revealForegroundTab(self, for: context)
+            }
         } catch {
             completionHandler(error)
         }

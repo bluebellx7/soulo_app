@@ -6,7 +6,7 @@ import html
 import json
 from pathlib import Path
 import re
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, urljoin, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / 'website'
@@ -189,28 +189,41 @@ def build_extensions():
     edge = '<svg class="store-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 15c-1 6-8 9-14 6-5-2-7-7-5-12 0 6 9 6 13 5 4-1 7-3 6 1Z" fill="#159c8b"/><path d="M3 15C-1 7 5 1 12 1c7 0 11 5 11 10 0 4-4 7-8 6 6-4 2-9-3-8-4 0-6 3-6 5 0 2 1 3 3 4-3 0-5-1-6-3Z" fill="#168bd2"/><path d="M11 9c6-1 9 4 4 8-3 1-7 0-8-2-2-3 0-6 4-6Z" fill="#0864b4"/></svg>'
     cards = []
     for item in data['extensions']:
-        assert item['store'] in ('chrome', 'edge') and urlparse(item['url']).scheme == 'https'
+        is_download = item['store'] == 'soulo'
+        if is_download:
+            assert item['url'].startswith('downloads/') and item['url'].endswith('.zip')
+            assert (SITE/item['url']).is_file()
+        else:
+            assert item['store'] in ('chrome', 'edge') and urlparse(item['url']).scheme == 'https'
         assert (SITE/item['icon']).is_file()
         name, en = item['name'], item.get('name_en', item['name'])
-        deep_link = 'soulo://install-extension?url=' + quote(item['url'], safe='')
+        soulo_version = item.get('souloVersion', data['souloVersion'])
+        logos = {'chrome': chrome, 'edge': edge, 'soulo': ''}
+        store_label = {'chrome': 'Chrome', 'edge': 'Edge', 'soulo': 'Soulo'}[item['store']]
+        deep_link = 'soulo://install-extension?url=' + quote(urljoin(BASE, item['url']), safe='')
+        install = f'<a class="catalog-button primary" href="{esc(deep_link)}" data-install-extension="{esc(item["id"])}"{bilingual("在 Soulo 中安装", "Install in Soulo")}>在 Soulo 中安装</a>'
+        if is_download:
+            secondary = f'<a class="catalog-button" href="{esc(item["url"])}" download{bilingual("下载 ZIP", "Download ZIP")}>下载 ZIP</a>'
+        else:
+            secondary = f'<a class="catalog-button" href="{esc(item["url"])}" target="_blank" rel="noopener noreferrer"{bilingual("官方商店", "Official store")}>官方商店</a>'
         checks = ''.join(f'<li{bilingual(zh, en)}>{esc(zh)}</li>' for zh, en in zip(item['tested'], item['tested_en']))
         cards.append(f'''<article class="extension-card" id="{esc(item['id'])}">
-          <div class="extension-identity"><img class="extension-logo" src="{esc(item['icon'])}" width="44" height="44" alt="" /><div><div class="extension-heading"><h2{bilingual(name, en)}>{esc(name)}</h2><span class="extension-source" title="{esc(item['storeName'])}" aria-label="{esc(item['storeName'])}">{chrome if item['store'] == 'chrome' else edge}<span>{'Chrome' if item['store'] == 'chrome' else 'Edge'}</span></span></div><p class="extension-subtitle"{bilingual(item['subtitle'], item['subtitle_en'])}>{esc(item['subtitle'])}</p></div></div>
+          <div class="extension-identity"><img class="extension-logo" src="{esc(item['icon'])}" width="44" height="44" alt="" /><div><div class="extension-heading"><h2{bilingual(name, en)}>{esc(name)}</h2><span class="extension-source" title="{esc(item['storeName'])}" aria-label="{esc(item['storeName'])}">{logos[item['store']]}<span>{store_label}</span></span></div><p class="extension-subtitle"{bilingual(item['subtitle'], item['subtitle_en'])}>{esc(item['subtitle'])}</p></div></div>
           <p class="extension-description"{bilingual(item['description'], item['description_en'])}>{esc(item['description'])}</p>
           <ul class="extension-tested" aria-label="已验证功能"{label_language('已验证功能', 'Tested features')}>{checks}</ul>
-          <p class="extension-version"{bilingual('验证版本：'+item['version']+' ／ Soulo '+data['souloVersion'], 'Tested: '+item['version']+' / Soulo '+data['souloVersion'])}>验证版本：{esc(item['version'])} ／ Soulo {esc(data['souloVersion'])}</p>
-          <div class="extension-actions"><a class="catalog-button primary" href="{esc(deep_link)}" data-install-extension="{esc(item['id'])}"{bilingual('在 Soulo 中安装', 'Install in Soulo')}>在 Soulo 中安装</a><a class="catalog-button" href="{esc(item['url'])}" target="_blank" rel="noopener noreferrer"{bilingual('官方商店', 'Official store')}>官方商店</a></div>
+          <p class="extension-version"{bilingual('验证版本：'+item['version']+' ／ Soulo '+soulo_version, 'Tested: '+item['version']+' / Soulo '+soulo_version)}>验证版本：{esc(item['version'])} ／ Soulo {esc(soulo_version)}</p>
+          <div class="extension-actions">{install}{secondary}</div>
           <p class="extension-note"{bilingual(item['note'], item['note_en'])}>{esc(item['note'])}</p>
         </article>''')
-    description = 'Soulo 扩展收录已验证的 FastStream 网页视频播放器与猫抓资源助手，标明 Chrome、Edge 官方来源，提供 Soulo 内安装入口与扩展推荐。'
+    description = '查看在 Soulo 实测的浏览器扩展、验证版本和功能范围，以及对应的商店或下载入口。'
     graph = {'@context': 'https://schema.org', '@graph': [
         {'@type': 'CollectionPage', '@id': BASE+'extensions.html#webpage', 'url': BASE+'extensions.html', 'name': 'Soulo 扩展', 'description': description, 'inLanguage': ['zh-CN', 'en'], 'dateModified': data['updated']},
         {'@type': 'ItemList', 'name': '已验证的 Soulo 扩展', 'numberOfItems': len(data['extensions']), 'itemListElement': [
-            {'@type': 'ListItem', 'position': i+1, 'item': {'@type': 'SoftwareApplication', 'name': item['name'], 'url': item['url'], 'softwareVersion': item['version'], 'applicationCategory': 'BrowserApplication'}}
+            {'@type': 'ListItem', 'position': i+1, 'item': {'@type': 'SoftwareApplication', 'name': item['name'], 'url': urljoin(BASE,item['url']), 'softwareVersion': item['version'], 'applicationCategory': 'BrowserApplication'}}
             for i, item in enumerate(data['extensions'])]}
     ]}
     tokens = {'kind':'extensions', 'page_title':'Soulo 扩展 - 已验证的手机浏览器扩展', 'page_description':description,
-              'structured_data':jsonld(graph), 'page_locales':jsonld({'zh':{'page.title':'Soulo 扩展 - 已验证的手机浏览器扩展','page.description':description}, 'en':{'page.title':'Soulo Extensions - Tested mobile browser extensions','page.description':'Find tested FastStream and Cat Catch extensions, their official Chrome and Edge listings, installation in Soulo, and recommendations.'}, 'categories':{}}),
+              'structured_data':jsonld(graph), 'page_locales':jsonld({'zh':{'page.title':'Soulo 扩展 - 已验证的手机浏览器扩展','page.description':description}, 'en':{'page.title':'Soulo Extensions - Tested mobile browser extensions','page.description':'Find extensions tested in Soulo, see which features were verified, and find their store or download links.'}, 'categories':{}}),
               'navigation':navigation('extensions.html'), 'catalog':'\n'.join(cards)}
     template = (ROOT/'scripts/templates/extensions.html').read_text()
     for key, value in tokens.items(): template = template.replace('{{'+key+'}}', value)
@@ -290,8 +303,8 @@ def build_stocks():
     return build_search_directory(
         data, 'stocks', '股票导航', 'Stocks',
         '行情、复盘与公共数据', 'Market Quotes, Reviews & Public Data',
-        '从 StockClaw 开始，查 A 股与全球市场行情、复盘资料和公共统计数据。',
-        'Start with StockClaw for A-share market reviews, then explore global quotes and public statistics.',
+        '从牛盘盘开始，查 A 股与全球市场行情、复盘资料和公共统计数据。',
+        'Start with 牛盘盘 for A-share market reviews, then explore global quotes and public statistics.',
         '试试网站名称、域名，或“A 股”“宏观数据”等关键词。',
         'Try a site name, domain, or a keyword such as US stocks or economic data.',
     )

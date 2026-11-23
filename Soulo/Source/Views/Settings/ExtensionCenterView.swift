@@ -12,10 +12,12 @@ private enum ExtensionCenterTab: String, CaseIterable, Identifiable {
 private enum ExtensionImportKind { case webExtension, userScript }
 
 struct ExtensionCenterView: View {
+    @EnvironmentObject private var tabManager: TabManager
     @AppStorage("builtin_reader_enabled") private var readerEnabled = false
     @AppStorage(VideoPlaybackPreferences.showsWebDownloadControlsKey) private var showsVideoDownloadControls = true
 
     var onOpenInBrowser: ((URL) -> Void)? = nil
+    var onForegroundNavigation: (() -> Void)? = nil
 
     @ObservedObject private var service = BrowserExtensionService.shared
     @ObservedObject private var siteOptimizations = SiteOptimizationSettings.shared
@@ -110,17 +112,8 @@ struct ExtensionCenterView: View {
         } message: {
             Text(errorMessage ?? "")
         }
-        .alert(
-            LanguageManager.shared.localizedString("extension_install_success"),
-            isPresented: Binding(
-                get: { successMessage != nil },
-                set: { if !$0 { successMessage = nil } }
-            )
-        ) {
-            Button(LanguageManager.shared.localizedString("done"), role: .cancel) {}
-        } message: {
-            Text(successMessage ?? "")
-        }
+        .statusNotice($successMessage)
+        .onReceive(tabManager.extensionForegroundNavigation) { onForegroundNavigation?() }
         .alert(
             LanguageManager.shared.localizedString("userscript_delete_title"),
             isPresented: Binding(
@@ -281,7 +274,7 @@ struct ExtensionCenterView: View {
         return HStack(spacing: 12) {
             if let action {
                 Button {
-                    service.performWebExtensionAction(item.id)
+                    service.performWebExtensionAction(item.id, in: tabManager)
                 } label: {
                     webExtensionActionLabel(item, action: action)
                 }
@@ -648,7 +641,7 @@ struct WebExtensionStoreInstallView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var linkText: String
     @State private var isInstalling = false
-    @State private var installedName: String?
+    @State private var installNotice: String?
     @State private var errorMessage: String?
     @State private var installationTask: Task<Void, Never>?
     @State private var cancelRequested = false
@@ -713,7 +706,7 @@ struct WebExtensionStoreInstallView: View {
                     }
                     .accessibilityIdentifier("extensions.store-install")
                     .buttonStyle(CompactActionButtonStyle(prominent: true))
-                    .disabled(isInstalling || linkText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(isInstalling || installNotice != nil || linkText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 .padding(20)
             }
@@ -733,17 +726,7 @@ struct WebExtensionStoreInstallView: View {
         }
         .interactiveDismissDisabled(isInstalling)
         .onDisappear { installationTask?.cancel() }
-        .alert(
-            LanguageManager.shared.localizedString("extension_install_success"),
-            isPresented: Binding(
-                get: { installedName != nil },
-                set: { if !$0 { installedName = nil } }
-            )
-        ) {
-            Button(LanguageManager.shared.localizedString("done")) { dismiss() }
-        } message: {
-            Text(installedName ?? "")
-        }
+        .statusNotice($installNotice) { dismiss() }
         .alert(
             LanguageManager.shared.localizedString("extension_install_failed"),
             isPresented: Binding(
@@ -766,7 +749,7 @@ struct WebExtensionStoreInstallView: View {
             defer { isInstalling = false; installationTask = nil }
             do {
                 let record = try await WebExtensionStoreInstallService.shared.install(from: source)
-                installedName = record.name
+                installNotice = AppAccessibility.formatted("extension_installed_success_desc", record.name)
                 HapticsManager.success()
             } catch {
                 if Task.isCancelled || error is CancellationError {
@@ -785,8 +768,7 @@ struct BrowserPackageInstallView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var isInstalling = false
-    @State private var installedName = ""
-    @State private var showSuccess = false
+    @State private var installNotice: String?
     @State private var errorMessage: String?
     @State private var scriptPreview: UserScriptInstallPreview?
     @State private var nativePreview: WebExtensionInstallPreview?
@@ -894,7 +876,7 @@ struct BrowserPackageInstallView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(CompactActionButtonStyle(prominent: true))
-                .disabled(isInstalling || (candidate.kind == .userScript && scriptPreview == nil))
+                .disabled(isInstalling || installNotice != nil || (candidate.kind == .userScript && scriptPreview == nil))
                 .padding(.horizontal, 20)
 
                 Spacer(minLength: 8)
@@ -927,14 +909,7 @@ struct BrowserPackageInstallView: View {
             WebExtensionReviewView(preview: preview) { _ in dismiss() }
         }
         .interactiveDismissDisabled(isInstalling)
-        .alert(
-            LanguageManager.shared.localizedString("extension_install_success"),
-            isPresented: $showSuccess
-        ) {
-            Button(LanguageManager.shared.localizedString("done")) { dismiss() }
-        } message: {
-            Text(AppAccessibility.formatted("extension_installed_success_desc", installedName))
-        }
+        .statusNotice($installNotice) { dismiss() }
         .alert(
             LanguageManager.shared.localizedString(
                 candidate.kind == .userScript ? "userscript_install_failed" : "extension_install_failed"
@@ -998,7 +973,7 @@ struct BrowserPackageInstallView: View {
                         from: candidate.fileURL,
                         sourceURL: candidate.sourceURL
                     )
-                    installedName = script.name
+                    installNotice = AppAccessibility.formatted("extension_installed_success_desc", script.name)
                 case .webExtension:
                     nativePreview = try await BrowserExtensionService.shared.previewWebExtension(
                         from: candidate.fileURL, sourceURL: candidate.sourceURL)
@@ -1006,7 +981,6 @@ struct BrowserPackageInstallView: View {
                     return
                 }
                 HapticsManager.success()
-                showSuccess = true
             } catch {
                 errorMessage = error.localizedDescription
                 HapticsManager.error()

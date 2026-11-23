@@ -1,4 +1,1 @@
-• Förbättrad övergång till helskärm, buffring och meny för uppspelningshastighet för onlinevideor.
-• Förbättrad igenkänning av magnetlänkar och sökning efter andra deltagare för BitTorrent-nedladdningar.
-• Användarskript kan använda GM_webRequest för att avbryta Fetch- och XHR-förfrågningar från huvudramen eller omdirigera dem till samma ursprung.
-• Förbättrad kompatibilitet med webbläsartillägg, bland annat filnamn vid hämtning och inläsning av sidor utanför skärmen.
+Förbättrad inläsning av skript när webbsidor öppnas och bättre kompatibilitet med webbläsartillägg.

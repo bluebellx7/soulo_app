@@ -1,4 +1,1 @@
-• Peralihan ke layar penuh, buffering, dan menu kecepatan pemutaran video online telah ditingkatkan.
-• Pengenalan tautan magnet dan pencarian peer untuk unduhan BitTorrent telah ditingkatkan.
-• Skrip pengguna dapat memakai GM_webRequest untuk membatalkan permintaan Fetch dan XHR dari bingkai utama atau mengalihkannya ke origin yang sama.
-• Kompatibilitas ekstensi browser ditingkatkan, termasuk penamaan file unduhan dan pemuatan halaman di luar layar.
+Pemuatan skrip saat membuka halaman web dan kompatibilitas dengan ekstensi browser telah ditingkatkan.

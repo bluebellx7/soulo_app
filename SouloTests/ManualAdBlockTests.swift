@@ -211,15 +211,22 @@ final class ManualAdBlockTests: XCTestCase {
     }
 
     func testFixedBottomAdRemainsReachableAbovePickerControls() async throws {
-        let web = try await fixture()
         // Use an unrecognized name so automatic filtering does not hide this
         // fixture before the user can manually select it.
-        try await js("""
-        document.body.insertAdjacentHTML('beforeend', '<aside id="bottom-promotion" style="position:fixed;bottom:0;left:0;width:100%;height:70px;z-index:999999;background:orange">Promotion</aside>'); null
-        """, web)
+        let page = """
+        <!DOCTYPE html><meta name="viewport" content="width=device-width, initial-scale=1">
+        <body><p>Fixture content</p>
+        <aside id="bottom-promotion" style="position:fixed;bottom:0;left:0;width:100%;height:70px;z-index:999999;background:orange">Promotion</aside>
+        </body>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/page": Data(page.utf8)])
+        let url = try await server.start().appendingPathComponent("page")
+        defer { server.stop() }
+        let defaults = UserDefaults.standard
+        let previousFiltering = defaults.object(forKey: "ad_block_enabled")
+        defaults.set(true, forKey: "ad_block_enabled")
+        defer { defaults.set(previousFiltering, forKey: "ad_block_enabled") }
         let model = WebViewModel()
-        model.webView = web
-        model.updateCurrentURL(web.url)
         let container = try LibraryStore(inMemory: true)
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let previous = scene.windows.first(where: \.isKeyWindow)
@@ -234,37 +241,46 @@ final class ManualAdBlockTests: XCTestCase {
             window.isHidden = true; window.rootViewController = nil
             model.releaseWebViewRuntime(); previous?.makeKeyAndVisible()
         }
-        try await Task.sleep(for: .milliseconds(350))
-        try await configure(web)
-        for _ in 0..<100 {
-            if let width = try await js("innerWidth", web) as? Double, abs(width - web.bounds.width) < 2 { break }
-            try await Task.sleep(for: .milliseconds(20))
+        model.loadURL(url)
+        for _ in 0..<300 {
+            if model.hasVisibleContent, model.webView?.window === window { break }
+            try await Task.sleep(for: .milliseconds(50))
         }
+        let web = try XCTUnwrap(model.webView)
+        XCTAssertTrue(web.window === window, "The picker must target the displayed browser")
+        XCTAssertTrue(model.canMarkAdvertisement, "Picking is disabled for \(String(describing: web.url))")
+        let ready = try await js("Boolean(window.__souloManualAds && document.querySelector('#bottom-promotion'))", web) as? Bool
+        XCTAssertEqual(ready, true)
+        let heightBeforePicker = web.bounds.height
         model.beginMarkingAdvertisement()
         for _ in 0..<100 {
             if !model.manualAdBusy { break }
             try await Task.sleep(for: .milliseconds(20))
         }
-        XCTAssertNotNil(model.manualAdSelection)
-        try await Task.sleep(for: .milliseconds(300))
-        host.view.frame = window.bounds
-        host.view.setNeedsLayout()
-        host.view.layoutIfNeeded()
-        for _ in 0..<100 {
+        _ = try XCTUnwrap(model.manualAdSelection, "The live document must enter picking mode")
+        var initialHeight: Double?
+        for _ in 0..<500 {
+            host.view.layoutIfNeeded()
             if let height = try await js("innerHeight", web) as? Double,
-               abs(height - web.bounds.height) < 2 { break }
+               height < heightBeforePicker - 100, abs(height - web.bounds.height) < 2 {
+                initialHeight = height
+                break
+            }
             try await Task.sleep(for: .milliseconds(20))
         }
-        let initialHeight = try await js("innerHeight", web) as? Double
+        let reservedHeight = try XCTUnwrap(initialHeight, "WebKit must acknowledge the space reserved for picker controls")
+        func adCenter() async throws -> CGPoint {
+            let result = try await js("(() => { const r = document.querySelector('#bottom-promotion').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()", web)
+            let coordinates = try XCTUnwrap(result as? [Double])
+            return CGPoint(x: coordinates[0], y: coordinates[1])
+        }
         for selected in [false, true] {
-            if selected { _ = try await pick("#bottom-promotion", in: web) }
+            if selected { await model.pickAdvertisement(at: try await adCenter()) }
             try await Task.sleep(for: .milliseconds(300))
             host.view.layoutIfNeeded()
             let currentHeight = try await js("innerHeight", web) as? Double
-            XCTAssertEqual(currentHeight, initialHeight, "Selecting must not resize the reserved web viewport")
-            let result = try await js("(() => { const r = document.querySelector('#bottom-promotion').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()", web)
-            let coordinates = try XCTUnwrap(result as? [Double])
-            let point = web.convert(CGPoint(x: coordinates[0], y: coordinates[1]), to: window)
+            XCTAssertEqual(currentHeight, reservedHeight, "Selecting must not resize the reserved web viewport")
+            let point = web.convert(try await adCenter(), to: window)
             let hit = window.hitTest(point, with: nil)
             XCTAssertTrue(hit === web || hit?.isDescendant(of: web) == true,
                 "Picker hit: \(String(describing: hit)); point=\(point), webFrame=\(web.frame), webBounds=\(web.bounds), attached=\(web.window === window), selection=\(selected)")

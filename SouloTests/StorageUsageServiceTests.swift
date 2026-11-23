@@ -27,6 +27,41 @@ final class StorageUsageServiceTests: XCTestCase {
         XCTAssertEqual(calls, 12, "The real callback must release the lock for future cleanup")
     }
 
+    @MainActor func testSiteCleanupTimeoutKeepsOtherScopesQueuedUntilWebKitFinishes() async {
+        let coordinator = WebsiteDataCleanupCoordinator()
+        let domain = "first.example"
+        var finishNative: CheckedContinuation<Void, Never>?
+        var order: [String] = []
+        let timedOut = await coordinator.clearSite(domain: domain, types: [WKWebsiteDataTypeFetchCache],
+                                                   timeoutNanoseconds: 30_000_000) {
+            order.append("start")
+            await withCheckedContinuation { finishNative = $0 }
+            order.append("finish")
+            return .init()
+        }
+        XCTAssertNotNil(finishNative)
+        XCTAssertTrue(timedOut.retainedCategories.contains(.websiteStorage))
+        XCTAssertFalse(timedOut.failures.isEmpty)
+
+        let repeated = await coordinator.clearSite(domain: domain, types: [WKWebsiteDataTypeFetchCache]) {
+            order.append("duplicate")
+            return .init()
+        }
+        XCTAssertEqual(repeated.failures, timedOut.failures)
+        let distinct = Task { @MainActor in
+            await coordinator.clearSite(domain: domain, types: [WKWebsiteDataTypeIndexedDBDatabases]) {
+                order.append("different types")
+                return .init()
+            }
+        }
+        for _ in 0..<20 { await Task.yield() }
+        XCTAssertEqual(order, ["start"])
+        finishNative?.resume()
+        let report = await distinct.value
+        XCTAssertTrue(report.failures.isEmpty)
+        XCTAssertEqual(order, ["start", "finish", "different types"])
+    }
+
     @MainActor func testWebsiteCleanupCoalescesRepeatedRequestsAndSerializesOtherMutations() async throws {
         let coordinator = WebsiteDataCleanupCoordinator()
         var calls = 0, ticks = 0
@@ -101,37 +136,61 @@ final class StorageUsageServiceTests: XCTestCase {
         defer{first.stopLoading();second.stopLoading()}
         first.load(URLRequest(url:base.appendingPathComponent("index.html")))
         second.load(URLRequest(url:try XCTUnwrap(localhost.url).appendingPathComponent("index.html")))
+        let database = "website-storage-fixture-" + UUID().uuidString
         let seed=#"""
         localStorage.setItem('storage-fixture','keep');document.cookie='storage_fixture=keep;path=/';
-        await new Promise((resolve,reject)=>{const r=indexedDB.open('website-storage-fixture',1);
+        await new Promise((resolve,reject)=>{const r=indexedDB.open(database,1);
           r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onerror=()=>reject(r.error);
-          r.onsuccess=()=>{const db=r.result,t=db.transaction('files','readwrite');t.objectStore('files').put(new Blob(['m'.repeat(700000)]),'media');t.oncomplete=()=>{db.close();resolve();};};});
+          r.onblocked=()=>reject(new Error('IndexedDB open blocked'));
+          r.onsuccess=()=>{const db=r.result,t=db.transaction('files','readwrite');
+            t.onabort=()=>{db.close();reject(t.error||new Error('IndexedDB transaction aborted'));};
+            t.oncomplete=()=>{db.close();resolve();};
+            t.objectStore('files').put(new Blob(['m'.repeat(700000)]),'media');};});
         if (window.caches) { const c=await caches.open('storage-cache-fixture'); await c.put('/fixture-media',new Response('x'.repeat(100000))); }
         return true;
         """#
+        func evaluate(_ script: String, in web: WKWebView, stage: String) async throws -> Any {
+            let finished = expectation(description: stage)
+            var result: Result<Any, Error>?
+            web.callAsyncJavaScript(script, arguments: ["database": database], in: nil, in: .page) {
+                result = $0
+                finished.fulfill()
+            }
+            await fulfillment(of: [finished], timeout: 15)
+            return try XCTUnwrap(result, stage).get()
+        }
         for web in [first,second] {
+            var ready = false
             for _ in 0..<200 {
-                if (try? await web.evaluateJavaScript("!!document.getElementById('ready')")) as? Bool == true {break}
+                if (try? await web.evaluateJavaScript("!!document.getElementById('ready')")) as? Bool == true {
+                    ready = true
+                    break
+                }
                 try await Task.sleep(for:.milliseconds(30))
             }
-            _ = try await web.callAsyncJavaScript(seed,arguments:[:],in:nil,contentWorld:.page)
+            let host = web.url?.host ?? "unknown"
+            guard ready else { XCTFail("Storage fixture did not load for \(host)"); return }
+            _ = try await evaluate(seed, in: web, stage: "Write website data for \(host)")
         }
+        print("Website storage regression: enumerate website records")
         let entries=await WebsiteStorageService.entries()
         let firstEntry=try XCTUnwrap(entries.first{$0.domain=="127.0.0.1"}),secondEntry=try XCTUnwrap(entries.first{$0.domain=="localhost"})
         XCTAssertGreaterThanOrEqual(firstEntry.indexedDBBytes ?? -1,700000)
         XCTAssertGreaterThanOrEqual(secondEntry.indexedDBBytes ?? -1,700000)
+        print("Website storage regression: clear only 127.0.0.1 IndexedDB")
         try await WebsiteStorageService.clear(firstEntry,types:[WKWebsiteDataTypeIndexedDBDatabases])
         let check="return {names:(await indexedDB.databases()).map(v=>v.name),local:localStorage.getItem('storage-fixture'),cookie:document.cookie};"
-        let cleared=try await first.callAsyncJavaScript(check,arguments:[:],in:nil,contentWorld:.page) as? [String:Any]
-        let kept=try await second.callAsyncJavaScript(check,arguments:[:],in:nil,contentWorld:.page) as? [String:Any]
-        XCTAssertFalse((cleared?["names"] as? [String] ?? []).contains("website-storage-fixture"))
-        XCTAssertTrue((kept?["names"] as? [String] ?? []).contains("website-storage-fixture"))
+        let cleared = try await evaluate(check, in: first, stage: "Read selectively cleared origin") as? [String:Any]
+        let kept = try await evaluate(check, in: second, stage: "Read the untouched origin") as? [String:Any]
+        XCTAssertFalse((cleared?["names"] as? [String] ?? []).contains(database))
+        XCTAssertTrue((kept?["names"] as? [String] ?? []).contains(database))
         XCTAssertEqual(cleared?["local"] as? String,"keep")
         XCTAssertTrue((cleared?["cookie"] as? String ?? "").contains("storage_fixture=keep"))
-        _ = await StorageUsageService.clearWebsiteData()
+        let report = await StorageUsageService.clearWebsiteData()
+        XCTAssertTrue(report.failures.isEmpty, "\(report.failures)")
         for web in [first, second] {
-            let value = try await web.callAsyncJavaScript("return {names:(await indexedDB.databases()).map(v=>v.name),local:localStorage.getItem('storage-fixture'),cookie:document.cookie,caches:window.caches?await caches.keys():[]};", arguments: [:], in: nil, contentWorld: .page) as? [String: Any]
-            XCTAssertFalse((value?["names"] as? [String] ?? []).contains("website-storage-fixture"))
+            let value = try await evaluate("return {names:(await indexedDB.databases()).map(v=>v.name),local:localStorage.getItem('storage-fixture'),cookie:document.cookie,caches:window.caches?await caches.keys():[]};", in: web, stage: "Verify full cleanup for \(web.url?.host ?? "unknown")") as? [String: Any]
+            XCTAssertFalse((value?["names"] as? [String] ?? []).contains(database))
             XCTAssertTrue(value?["local"] is NSNull)
             XCTAssertFalse((value?["cookie"] as? String ?? "").contains("storage_fixture=keep"))
             XCTAssertFalse((value?["caches"] as? [String] ?? []).contains("storage-cache-fixture"))

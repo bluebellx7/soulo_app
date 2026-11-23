@@ -10,6 +10,7 @@ struct ArticleReaderView: View {
     @AppStorage("reader.theme") private var theme = "paper"
     @State private var appearance = false
     @State private var saveNotice: String?
+    @State private var saveError: String?
     @AppStorage("reader.font") private var font = "serif"
     @State private var progress = 0.0
     @State private var contents = false
@@ -78,7 +79,7 @@ struct ArticleReaderView: View {
                                 try await ReadingListStore.shared.save(url: article.url, title: article.title,
                                     text: reader.articles.map { $0.title + "\n\n" + $0.text }.joined(separator: "\n\n"))
                                 saveNotice = FeatureText.text("Saved for offline reading")
-                            } catch { saveNotice = error.localizedDescription }
+                            } catch { saveError = error.localizedDescription }
                             }
                         } label: { Image(systemName: "text.badge.plus") }
                         .disabled(reader.articles.isEmpty || reader.loading)
@@ -92,9 +93,10 @@ struct ArticleReaderView: View {
                         }
                     }
                 }
-                .alert(FeatureText.text("Reading list"), isPresented: Binding(get: { saveNotice != nil }, set: { if !$0 { saveNotice = nil } })) {
-                    Button(ToolText.text("done")) { saveNotice = nil }
-                } message: { Text(saveNotice ?? "") }
+                .statusNotice($saveNotice)
+                .alert(FeatureText.text("Reading list"), isPresented: Binding(get: { saveError != nil }, set: { if !$0 { saveError = nil } })) {
+                    Button(ToolText.text("done")) { saveError = nil }
+                } message: { Text(saveError ?? "") }
                 .sheet(isPresented: $appearance) {
                     NavigationStack {
                         Form {
@@ -171,13 +173,16 @@ struct ArticleSurface: UIViewRepresentable {
         coordinator.onOpenLink = onOpenLink
         coordinator.onProgress = onProgress
         coordinator.targetChapter = targetChapter
-        coordinator.jumpIfNeeded(view)
+        if targetChapter == nil { coordinator.lastJump = nil }
         let colors = theme == "dark" ? ("#171918", "#d8ddd9") : theme == "light" ? ("#fff", "#202124") : ("#f6f1e7", "#29251f")
         let fontSize = min(36, max(14, size.isFinite ? size : 18))
         let lineHeight = min(2.5, max(1.2, line.isFinite ? line : 1.6))
         let family = font == "sans" ? "-apple-system, system-ui, sans-serif" : font == "mono" ? "ui-monospace, Menlo, monospace" : "Georgia, \"Songti SC\", \"Noto Serif CJK SC\", serif"
         let key = articles.map(\.id.description).joined() + "-\(fontSize)-\(lineHeight)-\(theme)-\(font)"
-        guard coordinator.key != key else { return }
+        guard coordinator.key != key else {
+            coordinator.jumpIfNeeded(view)
+            return
+        }
         coordinator.key = key
         coordinator.revision += 1
         coordinator.arguments = [
@@ -241,7 +246,6 @@ struct ArticleSurface: UIViewRepresentable {
             onProgress?(value)
         }
         func jumpIfNeeded(_ view: WKWebView) {
-            if targetChapter == nil { lastJump = nil }
             guard ready, !updating, let targetChapter, targetChapter != lastJump else { return }
             lastJump = targetChapter
             view.callAsyncJavaScript("document.querySelector('[data-reader-id=\"' + chapter + '\"]')?.scrollIntoView({block:'start'});", arguments: ["chapter": targetChapter.uuidString], in: nil, in: .defaultClient) { _ in }

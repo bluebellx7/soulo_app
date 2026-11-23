@@ -298,7 +298,9 @@ struct WebViewContainer: View {
     }
 
     private var browserPageLayers: some View {
-        ZStack(alignment: .bottom) {
+        let loadError = webViewModel.isLoading ? nil : webViewModel.errorMessage.flatMap { $0.isEmpty ? nil : $0 }
+        let webPageCovered = isShowingNewTabPage || loadError != nil
+        return ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
                 if !isFullscreen {
                     WebViewProgressBar(
@@ -316,13 +318,18 @@ struct WebViewContainer: View {
                         viewModel: webViewModel,
                         onAccessibilityPlatformPage: onAccessibilityPlatformPage,
                         obscuredBottomInset: webViewObscuredBottomInset,
-                        onFullscreenHandleSwipe: canRevealFullscreenHandle ? revealFullscreenHandleAfterSwipe : nil
+                        onFullscreenHandleSwipe: canRevealFullscreenHandle ? revealFullscreenHandleAfterSwipe : nil,
+                        onVideoToolsUsed: { url, title in
+                            guard isActiveTab, !searchVM.isIncognito else { return }
+                            SearchHistoryService.recordWebVisit(url: url, title: title, usedVideoTools: true, context: modelContext)
+                        }
                     )
                         .id(webViewModel.runtimeRevision)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .ignoresSafeArea(.container, edges: extendsPageUnderBottomSafeArea ? .bottom : [])
                         .opacity(isShowingNewTabPage ? 0 : 1)
-                        .allowsHitTesting(!isShowingNewTabPage)
+                        .allowsHitTesting(!webPageCovered)
+                        .accessibilityHidden(webPageCovered)
                         .overlay {
                             ZStack {
                                 if webViewModel.showSnapshotWhileRestoring,
@@ -354,11 +361,9 @@ struct WebViewContainer: View {
                         .transition(.opacity)
                     }
 
-                    if let error = webViewModel.errorMessage,
-                       !error.isEmpty,
-                       !webViewModel.isLoading {
+                    if let loadError {
                         BrowserLoadErrorView(
-                            message: error,
+                            message: loadError,
                             url: webViewModel.errorPageURL,
                             onRetry: { webViewModel.retryCurrentPage() },
                             onGoHome: onGoHome,
@@ -679,6 +684,7 @@ struct WebViewContainer: View {
         }
         .onAppear {
             updateFullscreenPresentation(isFullscreen: isFullscreen)
+            if isActiveTab { webViewModel.refreshExtensionRuntimeIfNeeded() }
         }
         .onDisappear {
             webViewModel.clearVideoHoldSpeed()
@@ -716,6 +722,11 @@ struct WebViewContainer: View {
         }
         .onCompatibleChange(of: webViewModel.estimatedProgress) { _, progress in
             if progress >= 0.98 { onPageLoaded?() }
+        }
+        .onCompatibleChange(of: webViewModel.pageTitle) { _, title in
+            if !title.isEmpty, webViewModel.hasVisibleContent || !webViewModel.isLoading {
+                onPageLoaded?()
+            }
         }
         .modifier(BrowserHandoffModifier(
             url: BrowserHandoff.eligibleURL(webViewModel.currentURL, isPrivate: searchVM.isIncognito),
@@ -878,6 +889,8 @@ struct WebViewContainer: View {
                 ExtensionCenterView(onOpenInBrowser: { url in
                     tabManager?.openURLFromBrowserControls(url, searchID: searchVM.searchID, inNewTab: true)
                     showExtensionCenter = false
+                }, onForegroundNavigation: {
+                    showExtensionCenter = false
                 })
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
@@ -904,6 +917,9 @@ struct WebViewContainer: View {
         }
         .navigationDestination(isPresented: $showWiFiTransfer) {
             WiFiTransferView(directory: BookLibrary.directory).toolbar(.visible, for: .navigationBar)
+        }
+        .sheet(item: $webViewModel.searchPlatformDraft) { draft in
+            AddCustomPlatformView(draft: draft)
         }
         .sheet(isPresented: $showSummarySheet) { PageSummaryView(viewModel: webViewModel) }
         .sheet(isPresented: $showArticleReader) {
@@ -938,7 +954,9 @@ struct WebViewContainer: View {
                 downloadAction: {
                     try? await WebResourceDownloadService.shared.download(request.resource,
                         pageURL: request.resource.sourcePageURL, webView: webViewModel.webView)
-                }, souloStartAt: request.fullscreen ? request.time : nil, souloPlaying: request.playing, initialRate: request.rate, episodeList: webViewModel.episodeList,
+                }, souloStartAt: request.fullscreen ? request.time : nil, souloPlaying: request.playing, initialRate: request.rate,
+                initialFullscreenLandscape: UIDevice.current.userInterfaceIdiom == .phone ? request.orientation?.prefersLandscape : nil,
+                episodeList: webViewModel.episodeList,
                 showsEpisodes: request.showsEpisodes)
                 .onAppear { videoPlaybackOrientation = request.orientation }
         }
@@ -999,15 +1017,9 @@ struct WebViewContainer: View {
             HapticsManager.medium()
         }
         .onReceive(NotificationCenter.default.publisher(for: .browserExtensionsChanged)) { _ in
-            // Rebuild every loaded tab. Otherwise an inactive tab would keep
-            // the old WKUserScript set when it becomes active later.
-            if let tabManager {
-                for tab in tabManager.tabs where tab.webViewModel.currentURL != nil {
-                    tab.webViewModel.rebuildWebViewRuntime()
-                }
-            } else if webViewModel.currentURL != nil {
-                webViewModel.rebuildWebViewRuntime()
-            }
+            guard tabManager == nil else { return }
+            webViewModel.invalidateExtensionRuntime()
+            if isActiveTab { webViewModel.refreshExtensionRuntimeIfNeeded() }
         }
     }
 
@@ -1305,7 +1317,7 @@ struct WebViewContainer: View {
             onShowExtensions: { showExtensionCenter = true },
             onGoHome: onGoHome,
             onNewTab: tabManager.map { manager in
-                { manager.createTab(); searchVM.isSearching = true }
+                { manager.openNewTab(); searchVM.isSearching = true }
             },
             onEditAddress: { presentAddressEditor() },
             onAddressTranslation: { handleAddressTranslationAction() },
@@ -1500,7 +1512,7 @@ struct WebViewContainer: View {
         switch action {
         case .closeTab: if let tabID { tabManager?.closeTab(id: tabID) }
         case .tabs: tabManager?.showTabOverview = true
-        case .newTab: tabManager?.createTab(); searchVM.isSearching = true
+        case .newTab: tabManager?.openNewTab(); searchVM.isSearching = true
         case .back: webViewModel.goBack()
         case .forward: webViewModel.goForward()
         case .reload: webViewModel.reload()

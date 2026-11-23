@@ -1,4 +1,1 @@
-• Verkkovideoiden koko näytön tilaan siirtymistä, puskurointia ja toistonopeusvalikkoa on parannettu.
-• Magnet-linkkien tunnistusta ja vertaisten hakua BitTorrent-latauksissa on parannettu.
-• Käyttäjäkomentosarjat voivat GM_webRequest-toiminnolla perua pääkehyksen Fetch- ja XHR-pyyntöjä tai ohjata ne saman alkuperän osoitteeseen.
-• Paransimme selainlaajennusten yhteensopivuutta, mukaan lukien ladattavien tiedostojen nimet ja näytön ulkopuolisten sivujen lataus.
+Paransimme komentosarjojen lataamista verkkosivuja avattaessa sekä yhteensopivuutta selainlaajennusten kanssa.

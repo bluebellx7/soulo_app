@@ -143,6 +143,8 @@ enum BrowserAddressDisplay {
 }
 
 struct WebViewToolbar: View {
+    private enum MoreMenuPage { case main, siteInformation, pageTools }
+
     @Environment(\.openWindow) private var openWindow
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @ObservedObject var viewModel: WebViewModel
@@ -163,9 +165,7 @@ struct WebViewToolbar: View {
     @State private var pendingPlatformAction: (() -> Void)?
     @State private var presentPlatformsAfterKeyboard = false
     @State private var presentSiteInformationAfterKeyboard = false
-    @State private var showMoreSiteInformation = false
-    @State private var menuAnchorGeneration = 0
-    @State private var menuAnchorNeedsRefresh = false
+    @State private var moreMenuPage: MoreMenuPage = .main
     @State private var pendingMoreMenuAction: (() -> Void)?
     @State private var menuKeyboardVisible = false
     @State private var presentMenuAfterKeyboard = false
@@ -222,7 +222,6 @@ struct WebViewToolbar: View {
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
                 guard menuKeyboardVisible || presentMenuAfterKeyboard || presentPlatformsAfterKeyboard || presentSiteInformationAfterKeyboard else { return }
                 menuKeyboardVisible = false; showMoreMenu = false; showPlatformMenu = false
-                menuAnchorNeedsRefresh = true
                 if presentSiteInformationAfterKeyboard {
                     presentSiteInformationAfterKeyboard = false
                     DispatchQueue.main.async { showSiteInformation = true }
@@ -542,7 +541,7 @@ struct WebViewToolbar: View {
     // MARK: - More Actions Menu
 
     private func dismissSiteInformation(then action: @escaping () -> Void) {
-        if showMoreSiteInformation { performMoreMenuAction(action); return }
+        if moreMenuPage == .siteInformation { performMoreMenuAction(action); return }
         pendingSiteAction = action
         showSiteInformation = false
     }
@@ -649,19 +648,18 @@ struct WebViewToolbar: View {
                 moreMenuPopoverContent
             }
             .accessibilityIdentifier(isFullscreen ? "fullscreen.handle" : "browser.more")
-            .id(menuAnchorGeneration)
-
         )
     }
 
     private var moreMenuPopoverContent: AnyView {
         let panel: AnyView
-        if showMoreSiteInformation {
+        if moreMenuPage == .siteInformation {
             panel = AnyView(siteInformationPanel)
         } else {
+            let content = moreMenuPage == .pageTools ? AnyView(pageToolsPanel) : AnyView(moreMenuPanel)
             panel = AnyView(ViewThatFits(in: .vertical) {
-                moreMenuPanel
-                ScrollView { moreMenuPanel }
+                content
+                ScrollView { content }
             })
         }
         // The UIKit popover draws the background for both the panel and its arrow.
@@ -803,7 +801,7 @@ struct WebViewToolbar: View {
         let isSecurePage = viewModel.currentURL?.scheme == "https"
         let urlText = viewModel.currentURL?.absoluteString
         return HStack(spacing: 4) {
-            Button { HapticsManager.light(); showMoreSiteInformation = true } label: {
+            Button { HapticsManager.light(); moreMenuPage = .siteInformation } label: {
                 Image(systemName: isIncognito ? "eye.slash.fill" : isSecurePage ? "lock.fill" : "globe")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(isIncognito ? Color.teal : Color.primary.opacity(0.72))
@@ -833,59 +831,8 @@ struct WebViewToolbar: View {
     }
 
     private var pageToolsMenu: some View {
-        Menu {
-            Group {
-                Button { performMoreMenuAction { onManageAdBlock?() } } label: {
-                    menuLabel("ad_block_management", systemImage: "shield.lefthalf.filled")
-                }
-                .disabled(onManageAdBlock == nil)
-                .accessibilityIdentifier("browser.ad-block-management")
-                Button { performMoreMenuAction { onTranslatePage?() } } label: {
-                    menuLabel("web_translate", systemImage: "character.bubble")
-                }.disabled(onTranslatePage == nil)
-                Button { performMoreMenuAction { showZoomControls = true } } label: {
-                    menuLabel("web_zoom", systemImage: "plus.magnifyingglass")
-                }
-                if let tabManager {
-                    Button { performMoreMenuAction { tabManager.startFindInPage() } } label: {
-                        menuLabel("find_in_page", systemImage: "doc.text.magnifyingglass")
-                    }
-                }
-            }
-            Divider()
-            if viewModel.episodeList != nil {
-                Button { performMoreMenuAction { viewModel.showEpisodes = true } } label: {
-                    Label(ToolText.text("episodes"), systemImage: "list.number")
-                }
-            }
-            if pageAvailability.shouldShowMediaRate(for: viewModel.currentURL) {
-                Button { performMoreMenuAction { showMediaRateControls = true } } label: {
-                    Label {
-                        Text(ToolText.text("web_media_speed") + (pageAvailability.mediaCount > 0 ? " · " + webMediaRate.formatted() + "×" : ""))
-                    } icon: {
-                        menuIcon("speedometer", isActive: nil, activeColor: .label)
-                    }
-                }
-                .accessibilityIdentifier("browser.media-speed")
-            }
-            Button { performMoreMenuAction { onInspectResources?() } } label: {
-                menuLabel("resource_inspector_title", systemImage: "dot.radiowaves.left.and.right")
-            }.disabled(onInspectResources == nil)
-            Button { performMoreMenuAction { onCapturePage?() } } label: {
-                menuLabel("web_capture", systemImage: "camera.viewfinder")
-            }.disabled(onCapturePage == nil)
-            Button { performMoreMenuAction { onSummarizePage?() } } label: {
-                menuLabel("summarize", systemImage: "text.alignleft")
-            }
-            .disabled(onSummarizePage == nil || !["http", "https"].contains(viewModel.currentURL?.scheme?.lowercased() ?? ""))
-            .accessibilityIdentifier("browser.page-summary")
-            Divider()
-            Group {
-                Button { performMoreMenuAction { onShowExtensions?() } } label: {
-                    menuLabel("userscripts", systemImage: "puzzlepiece.extension")
-                }.disabled(onShowExtensions == nil)
-                .accessibilityIdentifier("browser.extensions")
-            }
+        Button {
+            moreMenuPage = .pageTools
         } label: {
             moreMenuRowLabel(
                 "browser_page_tools",
@@ -893,11 +840,53 @@ struct WebViewToolbar: View {
                 showsDisclosure: true
             )
         }
-        .menuOrder(.fixed)
         .disabled(viewModel.currentURL == nil)
         .opacity(viewModel.currentURL == nil ? 0.35 : 1)
         .buttonStyle(.plain)
         .accessibilityIdentifier("browser.moreMenu.pageTools")
+    }
+
+    private var pageToolsPanel: some View {
+        VStack(spacing: 1) {
+            Button { moreMenuPage = .main } label: {
+                moreMenuRowLabel("browser_page_tools", systemImage: "chevron.left")
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(ToolText.text("browser_back"))
+            .accessibilityIdentifier("browser.moreMenu.pageTools.back")
+
+            moreMenuDivider
+            moreMenuActionRow("ad_block_management", systemImage: "shield.lefthalf.filled", isEnabled: onManageAdBlock != nil) { onManageAdBlock?() }
+                .accessibilityIdentifier("browser.ad-block-management")
+            moreMenuActionRow("web_translate", systemImage: "character.bubble", isEnabled: onTranslatePage != nil) { onTranslatePage?() }
+            moreMenuActionRow("web_zoom", systemImage: "plus.magnifyingglass") { showZoomControls = true }
+            if let tabManager {
+                moreMenuActionRow("find_in_page", systemImage: "doc.text.magnifyingglass") { tabManager.startFindInPage() }
+            }
+
+            moreMenuDivider
+            if viewModel.episodeList != nil {
+                moreMenuActionRow("episodes", systemImage: "list.number", localizedTitle: ToolText.text("episodes")) { viewModel.showEpisodes = true }
+            }
+            if pageAvailability.shouldShowMediaRate(for: viewModel.currentURL) {
+                let rateTitle = ToolText.text("web_media_speed") + (pageAvailability.mediaCount > 0 ? " · " + webMediaRate.formatted() + "×" : "")
+                moreMenuActionRow("web_media_speed", systemImage: "speedometer", localizedTitle: rateTitle) { showMediaRateControls = true }
+                    .accessibilityIdentifier("browser.media-speed")
+            }
+            moreMenuActionRow("resource_inspector_title", systemImage: "dot.radiowaves.left.and.right", isEnabled: onInspectResources != nil) { onInspectResources?() }
+            moreMenuActionRow("web_capture", systemImage: "camera.viewfinder", isEnabled: onCapturePage != nil) { onCapturePage?() }
+            moreMenuActionRow("summarize", systemImage: "text.alignleft",
+                              isEnabled: onSummarizePage != nil && ["http", "https"].contains(viewModel.currentURL?.scheme?.lowercased() ?? "")) { onSummarizePage?() }
+                .accessibilityIdentifier("browser.page-summary")
+
+            moreMenuDivider
+            moreMenuActionRow("userscripts", systemImage: "puzzlepiece.extension", isEnabled: onShowExtensions != nil) { onShowExtensions?() }
+                .accessibilityIdentifier("browser.extensions")
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 10)
+        .frame(width: 320)
+        .fixedSize(horizontal: true, vertical: true)
     }
 
     private var readerCommandAvailable: Bool {
@@ -985,7 +974,7 @@ struct WebViewToolbar: View {
                                 if !item.action.badgeText.isEmpty {
                                     Text(item.action.badgeText)
                                         .font(.system(size: 7, weight: .bold))
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(item.action.badgeTextColor.map(Color.init(uiColor:)) ?? .white)
                                         .lineLimit(1)
                                         .minimumScaleFactor(0.6)
                                         .padding(.horizontal, 3)
@@ -1001,6 +990,7 @@ struct WebViewToolbar: View {
                         .disabled(!item.action.isEnabled)
                         .opacity(item.action.isEnabled ? 1 : 0.38)
                         .accessibilityLabel(item.action.label)
+                        .accessibilityIdentifier("browser.moreMenu.extensionAction." + item.record.id.uuidString)
                         .accessibilityValue(item.action.badgeText)
                         .help(item.action.label)
                         .contextMenu {
@@ -1132,6 +1122,7 @@ struct WebViewToolbar: View {
         isEnabled: Bool = true,
         isActive: Bool = false,
         activeColor: UIColor = AppTheme.uiAccent,
+        localizedTitle: String? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button {
@@ -1141,7 +1132,8 @@ struct WebViewToolbar: View {
                 titleKey,
                 systemImage: systemImage,
                 isActive: isActive,
-                activeColor: activeColor
+                activeColor: activeColor,
+                localizedTitle: localizedTitle
             )
         }
         .buttonStyle(.plain)
@@ -1154,7 +1146,8 @@ struct WebViewToolbar: View {
         systemImage: String,
         showsDisclosure: Bool = false,
         isActive: Bool = false,
-        activeColor: UIColor = AppTheme.uiAccent
+        activeColor: UIColor = AppTheme.uiAccent,
+        localizedTitle: String? = nil
     ) -> some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage)
@@ -1162,7 +1155,7 @@ struct WebViewToolbar: View {
                 .foregroundStyle(isActive ? Color(uiColor: activeColor) : Color.primary)
                 .frame(width: 28, height: 28)
 
-            Text(LanguageManager.shared.localizedString(titleKey))
+            Text(localizedTitle ?? LanguageManager.shared.localizedString(titleKey))
                 .font(.system(size: 16, weight: .regular))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -1231,13 +1224,10 @@ struct WebViewToolbar: View {
 
     private func presentMoreMenuOnStableAnchor() {
         guard pendingMoreMenuAction == nil else { return }
-        if menuAnchorNeedsRefresh {
-            menuAnchorNeedsRefresh = false
-            menuAnchorGeneration &+= 1
-            DispatchQueue.main.async { showMoreMenu = true }
-        } else {
-            showMoreMenu = true
-        }
+        // The UIKit presenter tracks its source view through keyboard layout
+        // changes. Replacing the anchor can leave two presenters on one binding.
+        moreMenuPage = .main
+        showMoreMenu = true
     }
 
     private func performMoreMenuAction(_ action: @escaping () -> Void) {
@@ -1246,7 +1236,6 @@ struct WebViewToolbar: View {
     }
 
     private func completeMoreMenuAction() {
-        showMoreSiteInformation = false
         guard let action = pendingMoreMenuAction else { return }
         pendingMoreMenuAction = nil
         DispatchQueue.main.async(execute: action)
@@ -1256,7 +1245,7 @@ struct WebViewToolbar: View {
         showMoreMenu = false
         // Let the native More popover finish dismissing before an extension presents its popup.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            extensionService.performWebExtensionAction(id)
+            extensionService.performWebExtensionAction(id, in: tabManager)
         }
     }
 

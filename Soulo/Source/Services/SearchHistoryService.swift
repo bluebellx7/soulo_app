@@ -16,21 +16,43 @@ struct SearchHistoryService {
 
     // MARK: - Add Entry
 
-    static func addEntry(keyword: String, platformID: UUID?, context: NSManagedObjectContext) {
+    @discardableResult
+    static func addEntry(keyword: String, platformID: UUID?, context: NSManagedObjectContext,
+                         searchedAt: Date = Date()) -> SearchHistoryRecord? {
         let trimmed = keyword.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-
-        // Check for duplicate keyword within the last minute
-        let oneMinuteAgo = Date().addingTimeInterval(-60)
-        var descriptor = SearchHistoryRecord.request(predicate: NSPredicate(format: "visitedURLString == nil AND keyword == %@ AND timestamp >= %@", trimmed, oneMinuteAgo as NSDate))
-        descriptor.fetchLimit = 1
-        if let existing = try? context.fetch(descriptor), !existing.isEmpty {
-            return
+        guard !trimmed.isEmpty else { return nil }
+        let platform = platformID.map { NSPredicate(format: "platformID == %@", $0 as NSUUID) }
+            ?? NSPredicate(format: "platformID == nil")
+        let request = SearchHistoryRecord.request(
+            predicate: NSCompoundPredicate(andPredicateWithSubpredicates: [
+                NSPredicate(format: "visitedURLString == nil AND keyword ==[c] %@", trimmed), platform
+            ]),
+            sortBy: [NSSortDescriptor(key: "timestamp", ascending: false)]
+        )
+        guard let matches = try? context.fetch(request) else { return nil }
+        let item: SearchHistoryRecord
+        if let latest = matches.first {
+            item = latest
+            if searchedAt >= latest.timestamp {
+                latest.keyword = trimmed
+                latest.timestamp = searchedAt
+            }
+        } else {
+            item = SearchHistoryRecord(keyword: trimmed, platformID: platformID, timestamp: searchedAt)
+            context.insert(item)
         }
-
-        let item = SearchHistoryRecord(keyword: trimmed, platformID: platformID)
-        context.insert(item)
-        try? context.save()
+        let duplicates = matches.dropFirst()
+        let identifiers = duplicates.map { "search-history-\($0.id.uuidString)" }
+        duplicates.forEach { context.delete($0) }
+        do {
+            try context.save()
+            if !identifiers.isEmpty {
+                CSSearchableIndex.default().deleteSearchableItems(withIdentifiers: identifiers, completionHandler: nil)
+            }
+            return item
+        } catch {
+            return nil
+        }
     }
 
     // MARK: - Fetch Recent
@@ -75,6 +97,7 @@ struct SearchHistoryService {
         url: URL,
         title: String?,
         visitedAt: Date = Date(),
+        usedVideoTools: Bool = false,
         context: NSManagedObjectContext
     ) {
         guard !(UserDefaults.standard.bool(forKey: BrowsingHistoryExitPolicy.preferenceKey)
@@ -98,19 +121,22 @@ struct SearchHistoryService {
         let displayTitle = normalizedPageTitle(title, url: url)
 
         if let existing = matches.first {
-            existing.keyword = displayTitle
-            existing.timestamp = visitedAt
+            if visitedAt >= existing.timestamp {
+                // A load-progress callback can arrive before WebKit supplies the title.
+                if let displayTitle { existing.keyword = displayTitle }
+                existing.timestamp = visitedAt
+            }
+            if !existing.usedVideoTools {
+                existing.usedVideoTools = usedVideoTools || matches.dropFirst().contains(where: \.usedVideoTools)
+            }
             for duplicate in matches.dropFirst() {
                 context.delete(duplicate)
             }
         } else {
-            context.insert(
-                SearchHistoryRecord(
-                    keyword: displayTitle,
-                    timestamp: visitedAt,
-                    visitedURLString: canonicalURL
-                )
-            )
+            let item = SearchHistoryRecord(keyword: displayTitle ?? url.host ?? url.absoluteString,
+                                           timestamp: visitedAt, visitedURLString: canonicalURL)
+            item.usedVideoTools = usedVideoTools
+            context.insert(item)
         }
         try? context.save()
     }
@@ -134,6 +160,18 @@ struct SearchHistoryService {
     static func isVisibleInHistory(_ item: SearchHistoryRecord, referenceDate: Date = Date()) -> Bool {
         guard item.isWebVisit else { return true }
         return item.timestamp >= referenceDate.addingTimeInterval(-browsingHistoryLifetime)
+    }
+
+    enum EntryIdentity: Hashable {
+        case page(String)
+        case search(String, UUID?)
+    }
+
+    static func identity(of entry: SearchHistoryRecord) -> EntryIdentity {
+        if let address = entry.visitedURLString {
+            return .page(URL(string: address).flatMap(canonicalHistoryURLString(for:)) ?? address)
+        }
+        return .search(entry.keyword.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), entry.platformID)
     }
 
     static func canonicalHistoryURLString(for url: URL) -> String? {
@@ -227,7 +265,7 @@ struct SearchHistoryService {
         )
         guard let all = try? context.fetch(descriptor) else { return }
         var changed = false
-        var seenURLs = Set<String>()
+        var latestByURL: [String: SearchHistoryRecord] = [:]
         for item in all where item.isWebVisit {
             guard item.timestamp >= cutoff,
                   let storedURL = item.visitedURLString,
@@ -239,12 +277,13 @@ struct SearchHistoryService {
                 continue
             }
 
-            if seenURLs.contains(canonicalURL) {
+            if let latest = latestByURL[canonicalURL] {
+                if item.usedVideoTools, !latest.usedVideoTools { latest.usedVideoTools = true }
                 context.delete(item)
                 changed = true
                 continue
             }
-            seenURLs.insert(canonicalURL)
+            latestByURL[canonicalURL] = item
 
             if storedURL != canonicalURL {
                 item.visitedURLString = canonicalURL
@@ -256,12 +295,12 @@ struct SearchHistoryService {
         }
     }
 
-    private static func normalizedPageTitle(_ title: String?, url: URL) -> String {
+    private static func normalizedPageTitle(_ title: String?, url: URL) -> String? {
         let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !trimmed.isEmpty, trimmed.caseInsensitiveCompare(url.absoluteString) != .orderedSame {
             return trimmed
         }
-        return url.host ?? url.absoluteString
+        return nil
     }
 }
 

@@ -8,8 +8,11 @@ struct ManualAdPickerBar: View {
         VStack(spacing: 10) {
             if let savedID = model.manualAdSavedRuleID {
                 HStack {
-                    Label(ToolText.text("manual_ad_saved"), systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.primary)
+                    Label {
+                        Text(ToolText.text("manual_ad_saved"))
+                    } icon: {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    }
                     Spacer()
                 }
                 HStack(spacing: 16) {

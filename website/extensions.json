@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-15",
+  "updated": "2026-11-22",
   "souloVersion": "1.2.15",
   "extensions": [
     {
@@ -52,6 +52,149 @@
       ],
       "note": "可用资源取决于网站；分离的音视频可能需要合并。",
       "note_en": "Available resources depend on the site; separate audio and video may need merging."
+    },
+    {
+      "id": "tampermonkey",
+      "name": "篡改猴",
+      "name_en": "Tampermonkey",
+      "subtitle": "用户脚本管理",
+      "subtitle_en": "Userscript manager",
+      "version": "5.5.1",
+      "souloVersion": "1.2.19",
+      "store": "chrome",
+      "storeName": "Chrome Web Store",
+      "url": "https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo",
+      "icon": "images/extension-icons/tampermonkey.png",
+      "description": "安装、编辑和管理用户脚本，在授权的网站上运行。",
+      "description_en": "Install, edit, and manage userscripts and run them on sites you allow.",
+      "tested": [
+        "保存与运行用户脚本",
+        "刷新后保留脚本数据",
+        "启停扩展与网站授权"
+      ],
+      "tested_en": [
+        "Saving and running userscripts",
+        "Script data after reload",
+        "Enable, disable, and site access"
+      ],
+      "note": "脚本的可用功能取决于站点权限和所用接口。仍有部分 Chrome 专用接口受 iOS 限制。",
+      "note_en": "Script functionality depends on site access and the APIs used. Some Chrome-specific APIs remain limited on iOS."
+    },
+    {
+      "id": "imageye",
+      "name": "Imageye 批量图片下载器",
+      "name_en": "Image downloader - Imageye",
+      "subtitle": "网页图片查找与保存",
+      "subtitle_en": "Find and save webpage images",
+      "version": "7.5.7",
+      "souloVersion": "1.2.19",
+      "store": "chrome",
+      "storeName": "Chrome Web Store",
+      "url": "https://chromewebstore.google.com/detail/image-downloader-imageye/agionbommeaifngbhincahgmoflcikhm",
+      "icon": "images/extension-icons/imageye.png",
+      "description": "从工具栏打开 Imageye，查看当前网页找到的图片并选择保存。",
+      "description_en": "Open Imageye from the toolbar to view images found on the current page and choose which to save.",
+      "tested": [
+        "工具栏弹窗与图片识别",
+        "图片保存与文件命名"
+      ],
+      "tested_en": [
+        "Toolbar popup and image detection",
+        "Image saving and filenames"
+      ],
+      "note": "可识别的图片和批量保存效果取决于网页。",
+      "note_en": "Image detection and bulk saving depend on the webpage."
+    },
+    {
+      "id": "search-platform-capture",
+      "name": "Soulo 搜索平台助手",
+      "name_en": "Soulo Search Platform",
+      "subtitle": "从网页添加搜索平台",
+      "subtitle_en": "Add a search platform from a webpage",
+      "version": "1.0.2",
+      "souloVersion": "1.2.19",
+      "store": "soulo",
+      "storeName": "Soulo",
+      "url": "downloads/soulo-search-platform.zip",
+      "icon": "images/extension-icons/soulo-search-platform.png",
+      "description": "在网站搜索框输入 %s 并提交。结果地址出现搜索词后，点击提示里的「添加平台」，确认名称和分组后保存。",
+      "description_en": "Search for %s on a website. When the result URL includes the search term, tap Add platform, review its name and group, then save.",
+      "tested": ["网址中的查询参数和路径", "添加平台前确认"],
+      "tested_en": ["URL query and path placeholders", "Review before saving"],
+      "note": "适用于同源且在结果网址中保留搜索词的网站。",
+      "note_en": "Works with same-origin searches whose result URL includes the search term."
+    },
+    {
+      "id": "gofullpage",
+      "name": "GoFullPage",
+      "subtitle": "网页整页截图",
+      "subtitle_en": "Full-page screenshots",
+      "version": "8.11",
+      "souloVersion": "1.2.20",
+      "store": "chrome",
+      "storeName": "Chrome Web Store",
+      "url": "https://chromewebstore.google.com/detail/gofullpage-full-page-scre/fdpohaocaechififmbbbbbknoalclacl",
+      "icon": "images/extension-icons/gofullpage.png",
+      "description": "从网页工具栏启动整页截图，在结果页预览并导出图片或 PDF。",
+      "description_en": "Capture the full webpage from the toolbar, then preview and export it as an image or PDF.",
+      "tested": ["工具栏启动整页截图", "预览截图并导出 PNG、PDF"],
+      "tested_en": ["Full-page capture from the toolbar", "Preview with PNG and PDF export"],
+      "note": "PNG 和 PDF 导出已在 iPadOS 26.6.1 真机及 iOS 18.6 模拟器通过。预览无需下载权限，导出时按提示授权。高级编辑需要 GoFullPage Premium。",
+      "note_en": "PNG and PDF export were verified on iPadOS 26.6.1 hardware and an iOS 18.6 simulator. Preview works without download permission. Grant permission when exporting. Advanced editing requires GoFullPage Premium."
+    },
+    {
+      "id": "video-speed-controller",
+      "name": "Video Speed Controller",
+      "subtitle": "网页视频倍速",
+      "subtitle_en": "Web video speed controls",
+      "version": "0.11.2",
+      "souloVersion": "1.2.19",
+      "store": "chrome",
+      "storeName": "Chrome Web Store",
+      "url": "https://chromewebstore.google.com/detail/video-speed-controller/nffaoalbilbmmfgbnbgppjihopabppdk",
+      "icon": "images/extension-icons/video-speed-controller.png",
+      "description": "通过扩展弹窗选择预设倍速，或逐步调整网页视频的播放速度。",
+      "description_en": "Use the extension popup to choose a preset speed or adjust web video playback in small steps.",
+      "tested": ["弹窗预设倍速", "逐档加速、减速与恢复 1 倍"],
+      "tested_en": ["Playback speed presets in the popup", "Speed up, slow down, and reset to 1×"],
+      "note": "倍速操作在 iOS 18.6 模拟器的 HTML5 视频中实测。不同网站的播放器支持情况可能不同。",
+      "note_en": "Speed controls were tested with HTML5 video in the iOS 18.6 simulator. Site player compatibility can vary."
+    },
+    {
+      "id": "selection-colors",
+      "name": "Selection Colors",
+      "subtitle": "网页文字选中色",
+      "subtitle_en": "Text selection colors",
+      "version": "4.0",
+      "souloVersion": "1.2.19",
+      "store": "chrome",
+      "storeName": "Chrome Web Store",
+      "url": "https://chromewebstore.google.com/detail/selection-colors/fmmdobdphciajmkcmomkofkhpmhhajbg",
+      "icon": "images/extension-icons/selection-colors.png",
+      "description": "调整选中文字的前景色、背景色和透明度，并在弹窗中预览。",
+      "description_en": "Adjust the text color, background color, and opacity of selected text and preview the result in the popup.",
+      "tested": ["文字和背景颜色、透明度及预览", "保存配置并在网页刷新后生效"],
+      "tested_en": ["Text and background colors, opacity, and preview", "Saved settings applied after page reload"],
+      "note": "修改后刷新网页。已验证本地保存和应用效果，跨设备同步待验证。",
+      "note_en": "Reload the page after making changes. Local settings and their effect on pages were tested. Cross-device sync remains unverified."
+    },
+    {
+      "id": "dark-reader",
+      "name": "Dark Reader",
+      "subtitle": "网页深色模式",
+      "subtitle_en": "Dark mode for webpages",
+      "version": "4.9.135",
+      "souloVersion": "1.2.19",
+      "store": "chrome",
+      "storeName": "Chrome Web Store",
+      "url": "https://chromewebstore.google.com/detail/dark-reader/eimadpbcbfnmbkopoojfekhnkhdbieeh",
+      "icon": "images/extension-icons/dark-reader.png",
+      "description": "为网页应用深色主题，可以从工具栏弹窗按网站开启或关闭。",
+      "description_en": "Apply a dark theme to webpages and control it per site from the toolbar popup.",
+      "tested": ["网页实际应用深色样式", "从弹窗关闭当前网站的深色主题"],
+      "tested_en": ["Dark styles applied to a webpage", "Turn off the theme for the current site from the popup"],
+      "note": "在 iOS 18.6 模拟器实测了网页深色和站点开关。显示效果会随网站样式而变化。",
+      "note_en": "Page darkening and the per-site switch were tested in the iOS 18.6 simulator. Results can vary with the website's styling."
     }
   ]
 }

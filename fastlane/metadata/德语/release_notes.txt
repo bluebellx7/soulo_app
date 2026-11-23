@@ -1,4 +1,1 @@
-• Verbesserte Vollbildwechsel, Pufferung und Auswahl der Wiedergabegeschwindigkeit bei Onlinevideos.
-• Magnet-Links werden besser erkannt und Peers für BitTorrent-Downloads leichter gefunden.
-• Benutzerskripte können mit GM_webRequest Fetch- und XHR-Anfragen des Hauptrahmens abbrechen oder innerhalb desselben Ursprungs umleiten.
-• Verbesserte Kompatibilität mit Browsererweiterungen, unter anderem bei Download-Dateinamen und beim Laden von Seiten außerhalb der sichtbaren Ansicht.
+Skripte werden beim Öffnen von Webseiten besser geladen. Auch die Kompatibilität mit Browsererweiterungen wurde verbessert.

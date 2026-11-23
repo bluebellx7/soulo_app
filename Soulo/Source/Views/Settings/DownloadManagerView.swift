@@ -35,6 +35,7 @@ struct DownloadManagerContentView: View {
     @State private var newTask = false
     @State private var previewItem: BrowserDownloadItem?
     @State private var extensionPackage: BrowserDownloadItem?
+    @State private var extensionInstallNotice: String?
     @State private var playingDownload: BrowserDownloadItem?
     @State private var shareItem: BrowserDownloadItem?
     @State private var showDownloadsFolder = false
@@ -144,10 +145,8 @@ struct DownloadManagerContentView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .libraryListLayout(embedded: embeddedInLibrary)
         .mediaPlayerNavigation(enabled: !embeddedInLibrary)
-        .compatibleListSectionSpacing(20)
-        .compatibleScrollTopMargin(24)
         .toolbar {
             if libraryPageIsActive {
                 ToolbarItem(placement: .primaryAction) {
@@ -173,8 +172,11 @@ struct DownloadManagerContentView: View {
             DownloadShareSheet(items: [item.localURL])
         }
         .sheet(item: $extensionPackage) { item in
-            LocalWebExtensionInstallView(url: item.localURL)
+            LocalWebExtensionInstallView(url: item.localURL) { record in
+                extensionInstallNotice = AppAccessibility.formatted("extension_installed_success_desc", record.name)
+            }
         }
+        .statusNotice($extensionInstallNotice, identifier: "downloads.extension-installed")
         .modifier(DownloadMediaNavigation(preview: $previewItem, playing: $playingDownload, kinds: fileKinds))
         .fileImporter(isPresented: $showDownloadsFolder, allowedContentTypes: [.data]) { result in
             Task {

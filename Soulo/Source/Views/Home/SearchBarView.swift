@@ -3,10 +3,10 @@ import SwiftUI
 struct SearchBarView: View {
     @ObservedObject var input: SearchInputState
     @EnvironmentObject private var tabManager: TabManager
-    var isCompact: Bool = false
     var isIncognito: Bool = false
     var isRecording: Bool = false
     var respondsToHomeFocus: Bool = true
+    var searchActionsArrowEdge: Edge = .top
     var onSubmit: () -> Void
     var onMicTap: (() -> Void)? = nil
     var onClear: (() -> Void)?
@@ -34,27 +34,27 @@ struct SearchBarView: View {
     @AppStorage(PlatformBarPreferences.visibilityKey) private var showPlatformBar = true
 
     private var isLight: Bool {
-        !isCompact && wallpaperManager.prefersDarkForeground(for: WallpaperAppearance(colorScheme))
+        wallpaperManager.prefersDarkForeground(for: WallpaperAppearance(colorScheme))
     }
 
     // Adaptive colors based on mode
     private var iconColor: Color {
-        isCompact ? Color(UIColor.secondaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.85))
+        isLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.85)
     }
     private var iconActiveColor: Color {
-        isCompact ? Color(UIColor.label) : (isLight ? Color(hex: "2E2A47").opacity(0.85) : .white.opacity(0.9))
+        isLight ? Color(hex: "2E2A47").opacity(0.85) : .white.opacity(0.9)
     }
     private var textColor: Color {
-        isCompact ? Color(UIColor.label) : (isLight ? Color(hex: "2E2A47") : .white)
+        isLight ? Color(hex: "2E2A47") : .white
     }
     private var placeholderColor: Color {
-        isCompact ? Color(UIColor.tertiaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.7) : .white.opacity(0.75))
+        isLight ? Color(hex: "2E2A47").opacity(0.7) : .white.opacity(0.75)
     }
     private var clearColor: Color {
-        isCompact ? Color(UIColor.tertiaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.8))
+        isLight ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.8)
     }
     private var dividerColor: Color {
-        isCompact ? Color(UIColor.separator) : (isLight ? Color(hex: "2E2A47").opacity(0.15) : .white.opacity(0.15))
+        isLight ? Color(hex: "2E2A47").opacity(0.15) : .white.opacity(0.15)
     }
 
     var body: some View {
@@ -80,7 +80,7 @@ struct SearchBarView: View {
                         isIncognito ? "privacy_exit_incognito" : "privacy_enter_incognito"
                     )
                 )
-                .compatiblePopover(isPresented: $showSearchActions, attachmentAnchor: .rect(.bounds), arrowEdge: .top,
+                .compatiblePopover(isPresented: $showSearchActions, attachmentAnchor: .rect(.bounds), arrowEdge: searchActionsArrowEdge,
                     usesAppAppearance: true) {
                     searchActionsPanel(onIncognitoTap: onIncognitoTap, onScanTap: onScanTap)
                         .compatiblePopoverAdaptation()
@@ -96,7 +96,7 @@ struct SearchBarView: View {
             SearchInputField(
                 input: input,
                 placeholder: LanguageManager.shared.localizedString("search_placeholder"),
-                fontSize: isCompact ? 14 : 15,
+                fontSize: 15,
                 textColor: UIColor(textColor),
                 placeholderColor: UIColor(placeholderColor),
                 focusRequest: focusRequest,
@@ -112,7 +112,7 @@ struct SearchBarView: View {
             )
             .onReceive(NotificationCenter.default.publisher(for: .focusHomeSearch)) { notification in
                 if let target = notification.object as? TabManager, target !== tabManager { return }
-                guard respondsToHomeFocus && !isCompact else { return }
+                guard respondsToHomeFocus else { return }
                 isFocused = true
                 focusRequest &+= 1
             }
@@ -175,30 +175,22 @@ struct SearchBarView: View {
 
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, isCompact ? 6 : 10)
+        .padding(.vertical, 10)
         .background {
-            if isCompact {
-                ZStack {
-                    Capsule().fill(.ultraThinMaterial)
-                    Capsule().stroke(Color(UIColor.separator).opacity(0.3), lineWidth: 0.5)
-                }
-                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
-            } else {
-                ZStack {
-                    if isLight {
-                        Capsule().fill(.white.opacity(0.75))
-                        Capsule().stroke(Color(hex: "2E2A47").opacity(isFocused ? 0.35 : 0.15), lineWidth: 0.5)
-                    } else {
-                        Capsule().fill(.ultraThinMaterial).environment(\.colorScheme, .dark)
-                        Capsule().fill(.white.opacity(0.08))
-                        Capsule().stroke(.white.opacity(isFocused ? 0.3 : 0.12), lineWidth: 0.5)
-                    }
+            ZStack {
+                if isLight {
+                    Capsule().fill(.white.opacity(0.75))
+                    Capsule().stroke(Color(hex: "2E2A47").opacity(isFocused ? 0.35 : 0.15), lineWidth: 0.5)
+                } else {
+                    Capsule().fill(.ultraThinMaterial).environment(\.colorScheme, .dark)
+                    Capsule().fill(.white.opacity(0.08))
+                    Capsule().stroke(.white.opacity(isFocused ? 0.3 : 0.12), lineWidth: 0.5)
                 }
             }
         }
-        .compatibleFocusFeedback(trigger: focusFeedback, enabled: !reduceMotion && !isCompact)
+        .compatibleFocusFeedback(trigger: focusFeedback, enabled: !reduceMotion)
         .onCompatibleChange(of: isFocused) { _, focused in
-            if focused && !isCompact && !reduceMotion { focusFeedback &+= 1 }
+            if focused && !reduceMotion { focusFeedback &+= 1 }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isFocused)
         .alert(ToolText.text("auto_hide_platform_bar"), isPresented: $showAutoHidePlatformHint) {
@@ -224,7 +216,7 @@ struct SearchBarView: View {
                         .padding(.horizontal, 16)
                         .frame(height: 46)
                 }
-                .buttonStyle(HomePressButtonStyle(enabled: !isCompact))
+                .buttonStyle(HomePressButtonStyle())
             }
 
             if let onScanTap {
@@ -239,7 +231,7 @@ struct SearchBarView: View {
                         .padding(.horizontal, 16)
                         .frame(height: 46)
                 }
-                .buttonStyle(HomePressButtonStyle(enabled: !isCompact))
+                .buttonStyle(HomePressButtonStyle())
                 .accessibilityIdentifier("search.scan")
             }
 
@@ -306,12 +298,14 @@ struct SearchBarView: View {
                             .padding(.horizontal, 16)
                             .frame(height: 46)
                     }
-                    .buttonStyle(HomePressButtonStyle(enabled: !isCompact))
+                    .buttonStyle(HomePressButtonStyle())
                 }
             }
         }
         .frame(width: 280)
         .padding(.vertical, 6)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("search.actions.panel")
     }
 
     private func searchActionRow(title: String, systemImage: String?, action: @escaping () -> Void) -> some View {
@@ -328,6 +322,6 @@ struct SearchBarView: View {
             .frame(height: 46)
             .contentShape(Rectangle())
         }
-        .buttonStyle(HomePressButtonStyle(enabled: !isCompact))
+        .buttonStyle(HomePressButtonStyle())
     }
 }

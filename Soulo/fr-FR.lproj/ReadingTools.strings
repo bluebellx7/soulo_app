@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Capsule";
 "home_toolbar_icons" = "Icônes seules";
 "home_toolbar_bottom" = "En bas";
-"home_toolbar_belowSearch" = "Sous la recherche";
 "home_toolbar_free" = "Placement libre";
+"home_toolbar_search_bottom" = "En bas";
+"home_toolbar_alignment" = "Alignement de la barre";
 "home_toolbar_leading" = "Aligner au début";
 "home_toolbar_center" = "Centrer";
 "home_toolbar_trailing" = "Aligner à la fin";
 "home_toolbar_drag_position" = "Faites glisser la barre pour la placer.";
 "home_toolbar_drag_buttons" = "Touchez pour changer un bouton. Faites-le glisser pour le déplacer.";
+"home_toolbar_style" = "Style";
+"home_toolbar_visibility" = "Afficher/Masquer";
+"home_toolbar_visibility_page" = "Éléments de l’accueil";
+"home_toolbar_visibility_search_area" = "Zone de recherche";
+"home_toolbar_visibility_title" = "Titre";
+"home_toolbar_visibility_subtitle" = "Sous-titre";
+"home_toolbar_visibility_search" = "Barre de recherche";
+"home_toolbar_visibility_search_hint" = "Balayez vers le haut ou le bas sur la page d’accueil pour afficher la barre de recherche.";
+"home_toolbar_visibility_recovery" = "Appuyez longuement sur un espace vide de l’accueil pour ouvrir le menu.";
 "home_toolbar_search" = "Trouver une page";
 "group_default_search" = "Recherche par défaut";
 "group_search_settings" = "Paramètres du groupe";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Verre dépoli";
 "wallpaper_blur_amount" = "Intensité du flou";
 
+"home_quick_search_guide" = "Saisissez un mot-clé sur l’accueil pour afficher les plateformes sous la barre de recherche. Touchez une plateforme pour y lancer la recherche.";
 "auto_hide_platform_bar_hint" = "Si l’option est activée, la barre se masque uniquement après un appui sur le contenu web et si le domaine de la page ne correspond à aucune plateforme de la barre actuelle. Une correspondance maintient ou rétablit son affichage. Le défilement et les redirections automatiques ne la masquent pas.";
 
 "ad_subscription_add" = "Ajouter une liste";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Pages web";
 "manual_backups_empty" = "Aucune sauvegarde manuelle";
 "browsing_display_settings_legacy" = "Affichage de navigation";
+"media_lock_orientation" = "Verrouiller l’orientation";
+"media_unlock_orientation" = "Déverrouiller l’orientation";
+
+"music_queue" = "Liste de lecture";
+"music_previous_track" = "Piste précédente";
+"music_next_track" = "Piste suivante";

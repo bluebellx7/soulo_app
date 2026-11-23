@@ -5,7 +5,6 @@ import PhotosUI
 struct WallpaperSettingsView: View {
     @ObservedObject var wallpaperManager = WallpaperManager.shared
     var showsFavoritesOnly = false
-    var embedded = false
     @AppStorage("fav_section_collapsed") private var isFavCollapsed = false
     
     @Environment(\.colorScheme) private var colorScheme
@@ -164,7 +163,8 @@ struct WallpaperSettingsView: View {
                 }
             } else { sourceOptions }
         }
-        .modifier(SettingsPageTitle(embedded: embedded, title: LText(showsFavoritesOnly ? "wallpaper_favorites" : "settings_wallpaper")))
+        .navigationTitle(LText(showsFavoritesOnly ? "wallpaper_favorites" : "settings_wallpaper"))
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear { editingAppearance = WallpaperAppearance(colorScheme) }
         .task(id: wallpaperManager.source) { if !showsFavoritesOnly { await wallpaperManager.ensureCandidatesLoaded() } }
         .task(id: "\(wallpaperManager.source.rawValue)-\(wallpaperManager.customPhotoRevision)") {
@@ -602,7 +602,8 @@ struct WallpaperSourceSample: View {
                         WallpaperPhotoLayer(image: image, size: geometry.size, blurRadius: blurRadius * scale)
                         Color.black.opacity(overlayOpacity)
                         if overlayOpacity > 0 {
-                            let isLight = image.cgImage.map { WallpaperContrast.imageLightness($0, overlayAmount: overlayOpacity).masked } ?? false
+                            let isLight = image.cgImage.flatMap(WallpaperContrast.ImageSample.init)?
+                                .prefersDarkText(overlayAmount: overlayOpacity) ?? false
                             WallpaperReadabilityScrim(source: source, appearance: appearance, isLight: isLight, scale: scale)
                                 .opacity(min(1, overlayOpacity / WallpaperContrast.defaultImageOverlayAmount))
                         }

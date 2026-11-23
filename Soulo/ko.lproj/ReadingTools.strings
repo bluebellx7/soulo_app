@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "캡슐";
 "home_toolbar_icons" = "아이콘만";
 "home_toolbar_bottom" = "화면 하단";
-"home_toolbar_belowSearch" = "검색창 아래";
 "home_toolbar_free" = "자유 배치";
+"home_toolbar_search_bottom" = "화면 하단";
+"home_toolbar_alignment" = "도구 막대 정렬";
 "home_toolbar_leading" = "시작에 맞춤";
 "home_toolbar_center" = "가운데";
 "home_toolbar_trailing" = "끝에 맞춤";
 "home_toolbar_drag_position" = "도구 막대를 끌어 위치를 정하세요.";
 "home_toolbar_drag_buttons" = "탭하여 버튼을 바꾸고 끌어서 순서를 조정하세요.";
+"home_toolbar_style" = "모양";
+"home_toolbar_visibility" = "표시/숨기기";
+"home_toolbar_visibility_page" = "홈 구성 요소";
+"home_toolbar_visibility_search_area" = "검색 영역";
+"home_toolbar_visibility_title" = "제목";
+"home_toolbar_visibility_subtitle" = "부제목";
+"home_toolbar_visibility_search" = "검색창";
+"home_toolbar_visibility_search_hint" = "홈에서 위나 아래로 쓸어넘기면 검색 막대가 표시됩니다.";
+"home_toolbar_visibility_recovery" = "홈에서 빈 공간을 길게 눌러 메뉴를 여세요.";
 "home_toolbar_search" = "페이지 찾기";
 "group_default_search" = "기본 검색";
 "group_search_settings" = "그룹 설정";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "반투명 유리";
 "wallpaper_blur_amount" = "흐림 강도";
 
+"home_quick_search_guide" = "홈에서 검색어를 입력하면 검색 막대 아래에 플랫폼이 표시됩니다. 플랫폼을 탭하면 해당 플랫폼에서 검색합니다.";
 "auto_hide_platform_bar_hint" = "켜면 웹페이지 내용을 직접 탭하고 현재 페이지의 도메인이 현재 플랫폼 막대의 어떤 플랫폼과도 일치하지 않을 때만 숨깁니다. 하나라도 일치하면 막대를 계속 표시하거나 다시 표시합니다. 스크롤과 자동 리디렉션은 막대를 숨기지 않습니다.";
 
 "ad_subscription_add" = "필터 목록 추가";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "웹페이지";
 "manual_backups_empty" = "수동 백업이 없습니다";
 "browsing_display_settings_legacy" = "브라우징 화면 표시";
+"media_lock_orientation" = "화면 방향 잠금";
+"media_unlock_orientation" = "화면 방향 잠금 해제";
+
+"music_queue" = "재생 목록";
+"music_previous_track" = "이전 곡";
+"music_next_track" = "다음 곡";

@@ -521,15 +521,21 @@ final class DownloadPlaybackTests: XCTestCase {
     func testPrepareCompletedHLSForExportUI() async throws {
         try XCTSkipIf(ProcessInfo.processInfo.environment["SOULO_MP4_UI_FIXTURE"] != "1", "Prepare a completed download for the separate UI runner")
         let fixture = try encryptedPackage()
-        defer { try? FileManager.default.removeItem(at: fixture.root) }
-        let server = try DownloadPlaybackHTTPFixture(files: fixture.files)
-        let root = try await server.start(); defer { server.stop() }
         let manager = DownloadManagerService.shared
-        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("master.m3u8"), title: "Export UI fixture", posterURL: nil, delivery: .hls)
-        let reference = try await StreamingMediaDownloadService.shared.downloadHLS(resource: resource,
-            preferredFilename: "MP4ExportUIQA-\(UUID().uuidString.prefix(6)).mp4", pageURL: nil, webView: WKWebView())
-        XCTAssertEqual(reference.pathExtension, OfflineHLSReference.fileExtension)
+        let filename = "MP4ExportLegacyUIQA-\(UUID().uuidString.prefix(6)).\(OfflineHLSReference.fileExtension)"
+        let (item, reference) = manager.beginDownload(suggestedFilename: filename, sourceURL: nil, transport: .hls)
+        do {
+            // New downloads may already be MP4. Exercise the export menu with a legacy offline package.
+            try writeConversionReference(fixture, at: reference)
+            manager.markFinished(id: item.id)
+        } catch {
+            manager.delete(item)
+            try? FileManager.default.removeItem(at: fixture.root)
+            throw error
+        }
         XCTAssertEqual(manager.downloads.first { $0.localURL == reference }?.status, .finished)
+        // The UI runner launches a separate app process immediately after this test exits.
+        XCTAssertTrue(UserDefaults.standard.synchronize())
     }
     func testEncryptedHLSExportsOfflineMP4WithEveryVideoFrameAndOriginalPreserved() async throws {
         let fixture = try encryptedPackage()
@@ -691,6 +697,8 @@ final class DownloadPlaybackTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: reference), bytes)
         let restored = DownloadManagerService(userDefaults: defaults, storageDirectory: storage)
         XCTAssertEqual(restored.downloads.first(where: { $0.id == converted.id }), converted)
+        XCTAssertEqual(restored.downloads.first(where: { $0.id == original.id }), original)
+        XCTAssertEqual(try Data(contentsOf: reference), bytes)
     }
 
     private func writeConversionReference(_ fixture: (root: URL, package: URL, files: [String: Data]), at url: URL) throws -> URL {
@@ -1467,6 +1475,10 @@ final class DownloadPlaybackTests: XCTestCase {
         try await checkConcurrentHLS(authenticated: false)
     }
 
+    func testNativeBackgroundHLSCompletesWithIndependentDownloadAsset() async throws {
+        try await checkConcurrentHLS(authenticated: false, userAgent: AppConstants.mobileWebViewUserAgent)
+    }
+
     func testOnlineFullscreenKeepsPlayingThroughShortHLSDelay() async throws {
         try await checkFullscreenWithHeldSegment(expectsReconnect: false)
     }
@@ -1529,8 +1541,15 @@ final class DownloadPlaybackTests: XCTestCase {
         }
         window.rootViewController = host
         window.makeKeyAndVisible()
-        try await waitFor("Video must play before the origin holds its last segment") {
-            host.presentedViewController != nil && position() > 3
+        do {
+            try await waitFor("Video must play before the origin holds its last segment") {
+                host.presentedViewController != nil && position() > 3
+            }
+        } catch {
+            let item = session.player.currentItem
+            let buffered = item?.loadedTimeRanges.map { $0.timeRangeValue.duration.seconds } ?? []
+            print("HLS fullscreen startup: system=\(usesSystem) presented=\(host.presentedViewController != nil) position=\(position()) rate=\(session.player.rate) waiting=\(String(describing: session.player.reasonForWaitingToPlay)) buffered=\(buffered) requests=\(server.receivedRequests.map(\.path))")
+            throw error
         }
         let originalDecoder = try XCTUnwrap(decoder())
         XCTAssertNotEqual(usesSystem ? session.videoLoading : session.soulo?.videoLoading, .complete)
@@ -1578,7 +1597,8 @@ final class DownloadPlaybackTests: XCTestCase {
         if let package { OfflineHLSReference.removeDownloadedPackage(at: package) }
     }
 
-    private func checkConcurrentHLS(authenticated: Bool) async throws {
+    private func checkConcurrentHLS(authenticated: Bool, userAgent: String = "Soulo-HLS-Regression/1.0") async throws {
+        let expectsNativeTask = !authenticated && userAgent == AppConstants.mobileWebViewUserAgent
         var files: [String: Data] = [:]
         var playlist = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-PLAYLIST-TYPE:VOD\n"
         for index in 0..<4 {
@@ -1594,7 +1614,7 @@ final class DownloadPlaybackTests: XCTestCase {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = authenticated ? .nonPersistent() : .default()
         let web = WKWebView(frame: .zero, configuration: config)
-        web.customUserAgent = "Soulo-HLS-Regression/1.0"
+        web.customUserAgent = userAgent
         if authenticated {
             let cookie = try XCTUnwrap(HTTPCookie(properties: [.domain: "127.0.0.1", .path: "/",
                                                              .name: "hlsPlayback", .value: "allowed"]))
@@ -1640,6 +1660,10 @@ final class DownloadPlaybackTests: XCTestCase {
         let source = try XCTUnwrap(manager.playbackSource(for: item.id))
         XCTAssertNotNil(source.downloadAsset)
         XCTAssertFalse(source.asset === source.downloadAsset, "AVPlayer must not share the native download resource")
+        if expectsNativeTask {
+            XCTAssertFalse(AuthenticatedHLSDownloadService.shared.owns(item.id),
+                           "This fixture must exercise AVAssetDownloadURLSession")
+        }
         XCTAssertEqual(item.hlsUsesPersistentCookies, !authenticated)
         XCTAssertFalse(String(decoding: try JSONEncoder().encode(item), as: UTF8.self).contains("allowed"))
         if authenticated {
@@ -1662,7 +1686,11 @@ final class DownloadPlaybackTests: XCTestCase {
         XCTAssertNil(session.error)
         let requests = server.receivedRequests
         XCTAssertGreaterThanOrEqual(requests.filter { $0.path == "/video.m3u8" }.count, 2)
-        XCTAssertTrue(requests.allSatisfy { $0.headers["user-agent"] == web.customUserAgent }, String(describing: requests))
+        if expectsNativeTask {
+            XCTAssertTrue(requests.contains { $0.headers["user-agent"] == userAgent })
+        } else {
+            XCTAssertTrue(requests.allSatisfy { $0.headers["user-agent"] == userAgent }, String(describing: requests))
+        }
         if authenticated { XCTAssertTrue(requests.allSatisfy { $0.headers["cookie"]?.contains("hlsPlayback=allowed") == true }) }
         session.stop()
         server.stop()

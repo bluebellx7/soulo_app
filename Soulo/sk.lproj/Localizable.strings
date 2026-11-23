@@ -241,8 +241,6 @@
 "login_required_toast" = "Najprv sa prihláste a potom znova hľadajte";
 "status_enabled" = "Povolené";
 "status_disabled" = "Zakázané";
-"show_top_search_bar" = "Zobraziť horný panel vyhľadávania";
-"show_top_search_bar_desc" = "Keď je skrytý, použite spodný ovládací prvok adresy na vyhľadávanie alebo spustenie hlasového vstupu";
 "ad_block_master_disabled_desc" = "Ak chcete používať a spravovať odbery filtrov nižšie, zapnite blokovanie reklám.";
 "custom_groups" = "Vlastné skupiny";
 "no_groups" = "Žiadne vlastné skupiny";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Úspešne importované platformy %d";
 "paste_from_clipboard" = "Prilepiť zo schránky";
 "none" = "žiadne";
-"show_group_picker_home" = "Zobraziť výber skupiny na domovskej stránke";
-"show_group_picker_home_desc" = "Zobrazte karty skupín platforiem na domovskej obrazovke pre rýchle prepínanie";
 "error_no_internet" = "Žiadne internetové pripojenie. Skontrolujte svoju sieť.";
 "error_timeout" = "Časový limit spojenia vypršal. Skúste to znova.";
 "error_ssl" = "Zabezpečené pripojenie zlyhalo. Táto stránka nemusí byť bezpečná.";

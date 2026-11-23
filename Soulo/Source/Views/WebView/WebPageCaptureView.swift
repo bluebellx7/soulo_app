@@ -148,15 +148,14 @@ enum WebPageCaptureService {
         let bounds = captureBounds(for: webView.bounds)
         guard bounds.width > 1, bounds.height > 1 else { throw WebPageCaptureError.emptyPage }
         webView.layoutIfNeeded()
-        await waitForRenderingCycle(in: webView)
 
         let warm = WebAppearanceService.hasWarmOverlay(on: webView)
         switch mode {
         case .viewport:
-            let configuration = snapshotConfiguration(for: bounds)
-            let image = try await snapshot(webView, configuration: configuration)
+            let image = try await captureViewport(webView, configuration: snapshotConfiguration(for: bounds))
             return WebPageCaptureResult(image: WebAppearanceService.applyingWarmColor(to: image, enabled: warm), mode: mode, wasHeightLimited: false)
         case .fullPage:
+            await waitForRenderingCycle(in: webView)
             await prepareResourcesForCapture(
                 in: webView,
                 maximumHeight: maximumFullPageHeight
@@ -182,6 +181,19 @@ enum WebPageCaptureService {
                 wasHeightLimited: contentHeight > captureHeight + 1
             )
         }
+    }
+
+    static func captureViewport(_ webView: WKWebView, configuration: WKSnapshotConfiguration) async throws -> UIImage {
+        if #available(iOS 26.0, *) {
+            let topEdge = webView.scrollView.topEdgeEffect
+            let wasHidden = topEdge.isHidden
+            topEdge.isHidden = true
+            defer { topEdge.isHidden = wasHidden }
+            await waitForRenderingCycle(in: webView)
+            return try await snapshot(webView, configuration: configuration)
+        }
+        await waitForRenderingCycle(in: webView)
+        return try await snapshot(webView, configuration: configuration)
     }
 
     private static func snapshot(
@@ -556,7 +568,8 @@ struct WebPageCapturePreview: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showShareSheet = false
     @State private var isSaving = false
-    @State private var saveMessage: String?
+    @State private var saveNotice: String?
+    @State private var saveError: String?
     @State private var saveSucceeded = false
 
     var body: some View {
@@ -620,16 +633,17 @@ struct WebPageCapturePreview: View {
                             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                 }
+                .statusNotice($saveNotice)
                 .alert(
-                    LanguageManager.shared.localizedString(saveSucceeded ? "web_capture_saved" : "save_failed"),
+                    LanguageManager.shared.localizedString("save_failed"),
                     isPresented: Binding(
-                        get: { saveMessage != nil },
-                        set: { if !$0 { saveMessage = nil } }
+                        get: { saveError != nil },
+                        set: { if !$0 { saveError = nil } }
                     )
                 ) {
                     Button(LanguageManager.shared.localizedString("confirm"), role: .cancel) {}
                 } message: {
-                    Text(saveMessage ?? "")
+                    Text(saveError ?? "")
                 }
                 .sheet(isPresented: $showShareSheet) {
                     CaptureShareSheet(items: [result.image])
@@ -694,11 +708,11 @@ struct WebPageCapturePreview: View {
             do {
                 try await WebPageCaptureService.saveToPhotoLibrary(result.image)
                 saveSucceeded = true
-                saveMessage = LanguageManager.shared.localizedString("web_capture_saved_desc")
+                saveNotice = LanguageManager.shared.localizedString("web_capture_saved_desc")
                 HapticsManager.success()
             } catch {
                 saveSucceeded = false
-                saveMessage = error.localizedDescription
+                saveError = error.localizedDescription
                 HapticsManager.error()
             }
             isSaving = false

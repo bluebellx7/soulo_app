@@ -308,33 +308,41 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                         .appendingPathComponent("SouloHLSDownloads", isDirectory: true)
                         .appendingPathComponent(itemID.uuidString, isDirectory: true)
                     try? FileManager.default.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
-                    self.hlsTransfers[task.taskIdentifier] = HLSTransfer(
+                    let sourceURL = URL(string: item.sourceURLString)
+                    let transfer = HLSTransfer(
                         itemID: itemID,
-                        sourceURL: URL(string: item.sourceURLString),
+                        sourceURL: sourceURL,
                         destinationURL: item.localURL,
                         stagingDirectoryURL: stagingDirectory,
                         continuation: nil
                     )
-                    if let assetTask = task as? AVAssetDownloadTask {
-                        let resource = WebMediaResource(kind: .video, url: assetTask.urlAsset.url,
+                    self.hlsTransfers[task.taskIdentifier] = transfer
+                    // Restored AVFoundation tasks on iOS 18 can return a nil
+                    // NSURL through the nonnull AVURLAsset.URL getter.
+                    if let assetTask = task as? AVAssetDownloadTask, let sourceURL, sourceURL.scheme != nil {
+                        let resource = WebMediaResource(kind: .video, url: sourceURL,
                                                         title: item.fileName, posterURL: nil, delivery: .hls)
                         // Never borrow regular browsing cookies for private or
                         // legacy downloads whose browsing context is unknown.
                         let store = item.hlsUsesPersistentCookies == true
                             ? WKWebsiteDataStore.default().httpCookieStore : nil
                         let options = await WebResourceMediaService.networkAssetOptions(for: resource, cookieStore: store)
+                        guard self.hlsTransfers[task.taskIdentifier] === transfer,
+                              !transfer.isCanceled, transfer.finalizationTask == nil else { continue }
                         let context = VideoPlaybackRequestContext(
                             url: resource.url, referrer: nil,
                             userAgent: options[AVURLAssetHTTPUserAgentKey] as? String ?? AppConstants.mobileWebViewUserAgent,
                             cookies: options[AVURLAssetHTTPCookiesKey] as? [HTTPCookie] ?? [])
                         let playback = AVURLAsset(url: resource.url, options: options)
                         let loader = HLSKeyResourceLoader(context: context)
-                        assetTask.urlAsset.resourceLoader.setDelegate(loader, queue: .main)
+                        let downloadAsset = assetTask.perform(#selector(getter: AVAssetDownloadTask.urlAsset))?
+                            .takeUnretainedValue() as? AVURLAsset
+                        downloadAsset?.resourceLoader.setDelegate(loader, queue: .main)
                         playback.resourceLoader.setDelegate(loader, queue: .main)
-                        self.hlsTransfers[task.taskIdentifier]?.requestContext = context
-                        self.hlsTransfers[task.taskIdentifier]?.keyLoader = loader
+                        transfer.requestContext = context
+                        transfer.keyLoader = loader
                         manager.registerPlaybackSource(id: itemID, asset: playback,
-                                                       persistPosition: false, downloadAsset: assetTask.urlAsset,
+                                                       persistPosition: false, downloadAsset: downloadAsset,
                                                        resourceLease: loader)
                     }
                     if manager.downloads.first(where: { $0.id == itemID })?.status == .inProgress,

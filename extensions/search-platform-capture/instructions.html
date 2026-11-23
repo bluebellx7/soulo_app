@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Soulo Search Platform</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --paper: #fff;
+            --text: #20232b;
+            --muted: #505967;
+            --line: #dce2ec;
+            --marker: #eaf2ff;
+            --accent: #174fa8;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --paper: #222630;
+                --text: #f5f7fb;
+                --muted: #bcc6d7;
+                --line: #4a556a;
+                --marker: #2b3d61;
+                --accent: #b3d1ff;
+            }
+        }
+        body { margin: 0; background: var(--paper); color: var(--text); font: 1rem/1.55 system-ui, sans-serif; }
+        main { box-sizing: border-box; inline-size: min(100vw, 23rem); margin-inline: auto; padding: 1.25rem; }
+        h1 { margin: 0 0 .75rem; font-size: 1.2rem; line-height: 1.25; }
+        ol { margin: 0; padding-inline-start: 1.65em; }
+        li { padding-inline-start: .25em; }
+        li + li { margin-block-start: .55em; }
+        li::marker { color: var(--accent); font-weight: 650; }
+        code { padding: .1em .35em; border-radius: .3em; background: var(--marker); color: var(--accent); white-space: nowrap; }
+        p { margin: .9rem 0 0; padding-block-start: .75rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .9rem; }
+    </style>
+    <script src="instructions.js" defer></script>
+</head>
+<body>
+    <main lang="en">
+        <h1>How to add a search platform</h1>
+        <ol>
+            <li>Open the website in Soulo.</li>
+            <li>Enter <code>%s</code> in the website’s search box and submit the search.</li>
+            <li>Tap <strong>Add platform</strong>, review the name and group, then save.</li>
+        </ol>
+        <p>The search term must appear in the results page address on the same site.</p>
+    </main>
+    <main lang="zh-Hans" hidden>
+        <h1>怎样添加搜索平台</h1>
+        <ol>
+            <li>在 Soulo 打开要添加的网站。</li>
+            <li>在网站的搜索框输入 <code>%s</code>，然后提交搜索。</li>
+            <li>点击「添加平台」，确认名称和分组后保存。</li>
+        </ol>
+        <p>搜索需要在当前网站完成，结果网址中要保留搜索词。</p>
+    </main>
+</body>
+</html>

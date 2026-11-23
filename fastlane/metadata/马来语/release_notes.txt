@@ -1,4 +1,1 @@
-• Peralihan ke skrin penuh, penimbalan dan menu kelajuan main balik video dalam talian telah ditambah baik.
-• Pengecaman pautan magnet dan carian rakan setara untuk muat turun BitTorrent telah ditambah baik.
-• Skrip pengguna boleh menggunakan GM_webRequest untuk membatalkan permintaan Fetch dan XHR daripada bingkai utama atau mengubah halanya ke asal yang sama.
-• Keserasian sambungan pelayar dipertingkat, termasuk penamaan fail muat turun dan pemuatan halaman di luar skrin.
+Pemuatan skrip ketika membuka halaman web dan keserasian dengan sambungan pelayar telah dipertingkat.

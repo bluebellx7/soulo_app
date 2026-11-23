@@ -241,8 +241,6 @@
 "login_required_toast" = "Kirjaudu ensin sisään ja etsi sitten uudelleen";
 "status_enabled" = "Käytössä";
 "status_disabled" = "Ei käytössä";
-"show_top_search_bar" = "Näytä suosituin hakupalkki";
-"show_top_search_bar_desc" = "Kun se on piilotettu, käytä alempaa osoitesäädintä etsiäksesi tai aloittaaksesi äänisyötön";
 "ad_block_master_disabled_desc" = "Ota Ad Block käyttöön, jos haluat käyttää ja hallita alla olevia suodatintilauksia.";
 "custom_groups" = "Mukautetut ryhmät";
 "no_groups" = "Ei mukautettuja ryhmiä";
@@ -364,8 +362,6 @@
 "batch_import_result" = "%d alustaa tuotu onnistuneesti";
 "paste_from_clipboard" = "Liitä leikepöydältä";
 "none" = "Ei mitään";
-"show_group_picker_home" = "Näytä Ryhmävalitsin etusivulla";
-"show_group_picker_home_desc" = "Näytä alustaryhmän välilehdet aloitusnäytössä nopeaa vaihtoa varten";
 "error_no_internet" = "Ei internetyhteyttä. Tarkista verkkosi.";
 "error_timeout" = "Yhteys aikakatkaistiin. Yritä uudelleen.";
 "error_ssl" = "Suojattu yhteys epäonnistui. Tämä sivusto ei ehkä ole turvallinen.";

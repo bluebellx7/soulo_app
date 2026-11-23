@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "ക്യാപ്‌സ്യൂൾ";
 "home_toolbar_icons" = "ഐക്കണുകൾ മാത്രം";
 "home_toolbar_bottom" = "താഴെ";
-"home_toolbar_belowSearch" = "തിരയലിന് താഴെ";
 "home_toolbar_free" = "സ്വതന്ത്ര സ്ഥാനം";
+"home_toolbar_search_bottom" = "താഴെ";
+"home_toolbar_alignment" = "ടൂൾബാർ വിന്യാസം";
 "home_toolbar_leading" = "തുടക്കത്തിലേക്ക്";
 "home_toolbar_center" = "മധ്യത്തിലേക്ക്";
 "home_toolbar_trailing" = "അവസാനത്തിലേക്ക്";
 "home_toolbar_drag_position" = "ടൂൾബാർ വേണ്ട സ്ഥാനത്തേക്ക് വലിക്കുക.";
 "home_toolbar_drag_buttons" = "ബട്ടൺ മാറ്റാൻ തൊടുക. ക്രമം മാറ്റാൻ വലിക്കുക.";
+"home_toolbar_style" = "ശൈലി";
+"home_toolbar_visibility" = "കാണിക്കുക/മറയ്ക്കുക";
+"home_toolbar_visibility_page" = "ഹോം പേജിലെ ഘടകങ്ങൾ";
+"home_toolbar_visibility_search_area" = "തിരയൽ ഭാഗം";
+"home_toolbar_visibility_title" = "തലക്കെട്ട്";
+"home_toolbar_visibility_subtitle" = "ഉപതലക്കെട്ട്";
+"home_toolbar_visibility_search" = "തിരയൽ ബാർ";
+"home_toolbar_visibility_search_hint" = "തിരയൽ ബാർ കാണിക്കാൻ ഹോം പേജിൽ മുകളിലേക്കോ താഴേക്കോ സ്വൈപ്പ് ചെയ്യുക.";
+"home_toolbar_visibility_recovery" = "മെനു തുറക്കാൻ ഹോമിലെ ഒഴിഞ്ഞ ഭാഗത്ത് സ്‌പർശിച്ചു പിടിക്കുക.";
 "home_toolbar_search" = "ഒരു പേജ് കണ്ടെത്തുക";
 "group_default_search" = "സ്ഥിരസ്ഥിതി തിരയൽ";
 "group_search_settings" = "ഗ്രൂപ്പ് ക്രമീകരണങ്ങൾ";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "മങ്ങിയ ഗ്ലാസ്";
 "wallpaper_blur_amount" = "മങ്ങലിന്റെ തീവ്രത";
 
+"home_quick_search_guide" = "ഹോം പേജിൽ ഒരു വാക്ക് നൽകിയാൽ തിരയൽ ബാറിന് താഴെ പ്ലാറ്റ്‌ഫോമുകൾ കാണാം. തിരയാൻ ഒരു പ്ലാറ്റ്‌ഫോം തൊടുക.";
 "auto_hide_platform_bar_hint" = "ഓണാക്കിയാൽ, പേജിലെ ഉള്ളടക്കത്തിൽ നേരിട്ട് ടാപ്പ് ചെയ്യുകയും പേജിന്റെ ഡൊമെയ്ൻ നിലവിലെ ബാറിലെ ഒരു പ്ലാറ്റ്‌ഫോമുമായും പൊരുത്തപ്പെടാതിരിക്കുകയും ചെയ്യുമ്പോൾ മാത്രം ബാർ മറയും. ഏതെങ്കിലും പ്ലാറ്റ്‌ഫോമുമായി പൊരുത്തപ്പെട്ടാൽ ബാർ ദൃശ്യമായി തുടരും അല്ലെങ്കിൽ വീണ്ടും കാണിക്കും. സ്ക്രോളിങ്ങും സ്വയമേവയുള്ള റീഡയറക്ടുകളും ബാർ മറയ്ക്കില്ല.";
 
 "ad_subscription_add" = "ഫിൽട്ടർ പട്ടിക ചേർക്കുക";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "വെബ്‌പേജുകൾ";
 "manual_backups_empty" = "മാനുവൽ ബാക്കപ്പുകൾ ഇല്ല";
 "browsing_display_settings_legacy" = "ബ്രൗസിംഗ് പ്രദർശനം";
+"media_lock_orientation" = "സ്ക്രീൻ ദിശ ലോക്ക് ചെയ്യുക";
+"media_unlock_orientation" = "സ്ക്രീൻ ദിശ അൺലോക്ക് ചെയ്യുക";
+
+"music_queue" = "പ്ലേലിസ്റ്റ്";
+"music_previous_track" = "മുമ്പത്തെ പാട്ട്";
+"music_next_track" = "അടുത്ത പാട്ട്";

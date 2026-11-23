@@ -1,4 +1,1 @@
-• Vylepšené prepínanie na celú obrazovku, načítavanie do vyrovnávacej pamäte a ponuka rýchlosti pri online videách.
-• Vylepšené rozpoznávanie odkazov magnet a vyhľadávanie partnerov pri sťahovaní cez BitTorrent.
-• Používateľské skripty môžu pomocou GM_webRequest zrušiť požiadavky Fetch a XHR hlavného rámca alebo ich presmerovať na rovnaký zdroj.
-• Zlepšili sme kompatibilitu rozšírení prehliadača vrátane názvov sťahovaných súborov a načítavania stránok mimo obrazovky.
+Zlepšili sme načítavanie skriptov pri otváraní webových stránok a kompatibilitu s rozšíreniami prehliadača.

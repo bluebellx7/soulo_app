@@ -587,6 +587,8 @@ final class ExtensionManagementTests: XCTestCase {
         let jsonURL = root.appendingPathComponent("extensions.json")
         try FileManager.default.removeItem(at: jsonURL)
         try FileManager.default.createDirectory(at: jsonURL, withIntermediateDirectories: true)
+        XCTAssertNoThrow(try service.setStoredValues(["key": #"{"value":1}"#], scriptID: script.id))
+        XCTAssertNoThrow(try service.deleteStoredValuesPersisting(forKeys: ["missing"], scriptID: script.id))
         XCTAssertThrowsError(try service.setStoredValues(["key": #"{"value":2}"#], scriptID: script.id))
         XCTAssertThrowsError(try service.deleteStoredValuesPersisting(forKeys: ["key"], scriptID: script.id))
         XCTAssertEqual(service.userScript(id: script.id)?.storedValues?["key"], #"{"value":1}"#)
@@ -691,13 +693,13 @@ final class ExtensionManagementTests: XCTestCase {
         XCTAssertEqual(js.evaluateScript("GM_getValue('key')")?.toInt32(), 99)
     }
 
-    func testCompatibilityDoesNotRewriteThirdPartySourceAndCommandsRegistrationIsSafe() throws {
+    func testCompatibilityDoesNotRewriteThirdPartySourceAndCommandsRegistrationIsSafe() async throws {
         let root = try temporaryRoot(), source = try package(root)
         let original = #"const text='.commands.onCommand.addListener'; chrome.commands.onCommand.addListener(()=>{});"#
         try Data(original.utf8).write(to: source.appendingPathComponent("content.js"))
         let destination = root.appendingPathComponent("prepared")
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-        let prepared = try WebExtensionPackagePreparer.prepare(sourceURL: source, in: destination)
+        let prepared = try await WebExtensionPackagePreparer.prepare(sourceURL: source, in: destination)
         XCTAssertEqual(try String(contentsOf: prepared.appendingPathComponent("content.js"), encoding: .utf8), original)
         let js = try XCTUnwrap(JSContext())
         js.evaluateScript("var chrome={runtime:{getManifest:function(){return {};}}}; var console={error:function(){}};")
@@ -724,6 +726,8 @@ final class ExtensionManagementTests: XCTestCase {
         // @grant GM_addValueChangeListener
         // ==/UserScript==
         window.storageEvents=[];
+        window.initialFixture=GM_getValue('key','missing');
+        window.fixtureRuns=(window.fixtureRuns||0)+1;
         GM_addValueChangeListener('key',function(k,a,b,r){window.storageEvents.push([b===undefined?'deleted':b,r]);});
         window.readFixture=function(){return GM_getValue('key','missing');};
         window.writeFixture=function(value){return GM.setValue('key',value).then(function(){return true;});};
@@ -732,7 +736,7 @@ final class ExtensionManagementTests: XCTestCase {
         window.scriptReady=true;
         """
         let script = try service.saveUserScript(id: nil, fallbackName: "Storage regression", source: source,
-            explicitPatterns: nil, injectionTime: .documentEnd)
+            explicitPatterns: nil, injectionTime: .documentStart)
         defer { service.deleteUserScript(script.id) }
         let models = [WebViewModel(), WebViewModel()]
         let coordinators = models.map(WebViewRepresentable.Coordinator.init)
@@ -740,7 +744,7 @@ final class ExtensionManagementTests: XCTestCase {
             let configuration = WKWebViewConfiguration()
             configuration.userContentController.addScriptMessageHandler(coordinator, contentWorld: .page, name: "souloUserScriptAPI")
             configuration.userContentController.addUserScript(WKUserScript(source: UserScriptRuntime.wrappedSource(for: script,
-                bridgeToken: coordinator.userScriptBridgeToken), injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .page))
+                bridgeToken: coordinator.userScriptBridgeToken), injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .page))
             let web = AccessibleWebView(frame: CGRect(x: 0, y: 0, width: 400, height: 600), configuration: configuration)
             model.webView = web; web.navigationDelegate = coordinator
             return web
@@ -769,12 +773,20 @@ final class ExtensionManagementTests: XCTestCase {
         try await eventually("remote delete") { (try? await webs[0].evaluateJavaScript("readFixture()==='missing'")) as? Bool == true }
         let deleteEvents = try await webs[0].evaluateJavaScript("JSON.stringify(storageEvents)") as? String
         XCTAssertEqual(deleteEvents, "[[42,false],[\"deleted\",true]]")
-        // A later navigation must compile the latest stored values rather than the initial snapshot.
+        let previousScripts = webs[1].configuration.userContentController.userScripts.map(\.source)
+        _ = try await webs[0].callAsyncJavaScript("""
+            for (let value=0;value<24;value++) await window.writeFixture(value);
+            """, in: nil, contentWorld: .page)
         _ = try await webs[0].callAsyncJavaScript("return await window.writeFixture(99);", in: nil, contentWorld: .page)
+        try await eventually("latest remote value") { (try? await webs[1].evaluateJavaScript("readFixture()===99")) as? Bool == true }
+        XCTAssertEqual(webs[1].configuration.userContentController.userScripts.map(\.source), previousScripts)
         let rawInstance = try await webs[1].evaluateJavaScript("window.scriptInstance") as? String
         let instance = try XCTUnwrap(rawInstance)
         webs[1].reload()
-        try await eventually("reloaded snapshot") { (try? await webs[1].evaluateJavaScript("window.scriptReady===true && scriptInstance!=='\(instance)' && readFixture()===99")) as? Bool == true }
+        try await eventually("reloaded snapshot") { (try? await webs[1].evaluateJavaScript("window.scriptReady===true && scriptInstance!=='\(instance)' && window.initialFixture===99 && window.fixtureRuns===1")) as? Bool == true }
+        XCTAssertEqual(webs[1].configuration.userContentController.userScripts.filter {
+            $0.source.hasPrefix(UserScriptRuntime.sourcePrefix(for: script.id))
+        }.count, 1)
         var failing = script; failing.source = "throw new Error('fixture-script-failure');"
         _ = try await webs[0].evaluateJavaScript(UserScriptRuntime.wrappedSource(for: failing, bridgeToken: coordinators[0].userScriptBridgeToken))
         try await eventually("runtime error") { service.userScriptRuntimeErrors[script.id]?.contains("fixture-script-failure") == true }
@@ -832,7 +844,7 @@ final class ExtensionManagementTests: XCTestCase {
         defer{web.stopLoading();window.isHidden=true;window.rootViewController=nil;previous?.makeKeyAndVisible()}
         web.load(URLRequest(url:base.appendingPathComponent("index.html")))
         try await eventually { (try? await web.evaluateJavaScript("document.querySelector('video')?.getBoundingClientRect().height>200")) as? Bool == true }
-        _ = try await web.evaluateJavaScript("globalThis.chrome={runtime:{getURL:path=>'webkit-extension://layout-fixture/'+path}};")
+        _ = try await web.evaluateJavaScript("globalThis.chrome={runtime:{getURL:path=>'webkit-extension://layout-fixture/'+path}};void 0;")
         _ = try await web.evaluateJavaScript(WebExtensionPackagePreparer.mediaLayoutSourceForTesting)
         let originalHeight = try await web.evaluateJavaScript("document.querySelector('video').getBoundingClientRect().height") as? Double
         XCTAssertEqual(originalHeight ?? 0,202.5,accuracy:1)

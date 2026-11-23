@@ -40,6 +40,7 @@ enum SouloURLRoute: Equatable {
         switch command {
         case "", "home": return .home
         case "action": return nil // Reserved for App Intents/share-extension handoff.
+        case SearchPlatformDraft.command: return nil // Requires a link tap in the browser.
         case "search":
             let value = argument(["q", "text", "query"])?.trimmingCharacters(in: .whitespacesAndNewlines)
             return .search(value.flatMap { $0.isEmpty ? nil : $0 })

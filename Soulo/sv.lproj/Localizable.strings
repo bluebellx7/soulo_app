@@ -241,8 +241,6 @@
 "login_required_toast" = "Logga in först och sök sedan igen";
 "status_enabled" = "Aktiverad";
 "status_disabled" = "Inaktiverad";
-"show_top_search_bar" = "Visa översta sökfältet";
-"show_top_search_bar_desc" = "När den är dold, använd den nedre adresskontrollen för att söka eller starta röstinmatning";
 "ad_block_master_disabled_desc" = "Aktivera Ad Block för att använda och hantera filterprenumerationerna nedan.";
 "custom_groups" = "Anpassade grupper";
 "no_groups" = "Inga anpassade grupper";
@@ -364,8 +362,6 @@
 "batch_import_result" = "%d-plattformar har importerats";
 "paste_from_clipboard" = "Klistra in från Urklipp";
 "none" = "Inga";
-"show_group_picker_home" = "Visa gruppväljare på hemmet";
-"show_group_picker_home_desc" = "Visa plattformsgruppflikar på startskärmen för snabb växling";
 "error_no_internet" = "Ingen internetuppkoppling. Kontrollera ditt nätverk.";
 "error_timeout" = "Anslutningen tog timeout. Försök igen.";
 "error_ssl" = "Säker anslutning misslyckades. Den här webbplatsen kanske inte är säker.";

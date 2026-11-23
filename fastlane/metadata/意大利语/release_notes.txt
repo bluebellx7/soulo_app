@@ -1,4 +1,1 @@
-• Migliorati il passaggio a schermo intero, il buffering e il menu della velocità di riproduzione dei video online.
-• Migliorati il riconoscimento dei link magnet e la ricerca dei peer per i download BitTorrent.
-• Gli script utente possono usare GM_webRequest per annullare le richieste Fetch e XHR del frame principale o reindirizzarle alla stessa origine.
-• Migliorata la compatibilità con le estensioni del browser, inclusi i nomi dei file scaricati e il caricamento di pagine fuori schermo.
+Migliorato il caricamento degli script all’apertura delle pagine web e la compatibilità con le estensioni del browser.

@@ -103,7 +103,7 @@ final class TabOverviewLayoutUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         defer { XCUIDevice.shared.orientation = .portrait }
         let server = try DownloadPlaybackHTTPFixture(files: ["/overview": Data("<meta name='viewport' content='width=device-width,initial-scale=1'><title>Overview layout QA</title><h1>Overview layout QA</h1>".utf8)])
-        let root = try await server.start(); defer { server.stop() }
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
         app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-is_incognito", "NO",
             "-wallpaper_source", "gradient", "-wallpaper_refresh_interval", "0", "-icloud_sync_enabled", "NO",
@@ -117,11 +117,21 @@ final class TabOverviewLayoutUITests: XCTestCase {
         let card = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label BEGINSWITH %@",
             "tabs.card.", "Overview layout QA")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 3))
-        card.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0)).withOffset(CGVector(dx: -22, dy: 22)).tap()
+        XCTAssertTrue(card.isSelected)
+        let search = app.textFields["tabs.search"]
+        XCTAssertLessThan(search.frame.minY - app.frame.minY, 102)
+        card.press(forDuration: 0.8)
+        let close = app.buttons["Close Tab"].firstMatch
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        close.tap()
         let undo = app.buttons["tabs.tab_restore_last"]
         XCTAssertTrue(undo.waitForExistence(timeout: 3)); assertDockFits(app)
         undo.tap()
-        XCTAssertTrue(card.waitForExistence(timeout: 3))
+        XCTAssertTrue(undo.waitForNonExistence(timeout: 5))
+        app.buttons["tabs.done"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["Overview layout QA"].firstMatch.waitForExistence(timeout: 15))
+        app.buttons["browser.tabs"].tap()
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
         capture(app, "overview-portrait-carousel"); assertDockFits(app)
         app.buttons["tabs.view-mode"].tap()
         capture(app, "overview-portrait-grouped"); assertDockFits(app)
@@ -136,7 +146,6 @@ final class TabOverviewLayoutUITests: XCTestCase {
         let portrait = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in app.frame.height > app.frame.width }, object: nil)
         await fulfillment(of: [portrait], timeout: 5)
         try await Task.sleep(for: .milliseconds(500))
-        let search = app.textFields["tabs.search"]
         search.tap(); search.typeText("Overview layout")
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 3))
         capture(app, "overview-with-search-keyboard"); assertDockFits(app, aboveKeyboard: true)

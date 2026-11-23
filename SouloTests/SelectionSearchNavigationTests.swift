@@ -6,7 +6,6 @@ import WebKit
 
 @MainActor final class SelectionSearchNavigationTests: XCTestCase {
     private struct ResultsHost: View {
-        @Namespace private var namespace
         @StateObject private var speech = SpeechRecognitionService()
         @EnvironmentObject private var search: SearchViewModel
         var useHome = false
@@ -17,7 +16,7 @@ import WebKit
             } else {
                 NavigationStack {
                     if !onlyWhenSearching || search.isSearching {
-                        SearchResultsView(searchBarNamespace: namespace, speechService: speech)
+                        SearchResultsView(speechService: speech)
                     } else {
                         Color.clear
                     }

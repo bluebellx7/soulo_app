@@ -10,6 +10,8 @@ struct BrowserTab: Identifiable, Equatable {
     let webViewModel: WebViewModel
     var keyword: String?
     var platform: SearchPlatform?
+    /// The main-frame browser tab that initiated this new navigation, if known.
+    let navigationOpenerID: UUID?
     /// Search request already current when browser chrome explicitly loaded this tab.
     var browserControlSearchID: UUID?
     var createdAt: Date
@@ -17,13 +19,15 @@ struct BrowserTab: Identifiable, Equatable {
     var suspendedURL: URL?
     var lastAccessedAt = Date()
 
-    init(id: UUID = UUID(), keyword: String? = nil, platform: SearchPlatform? = nil, webViewModel: WebViewModel? = nil) {
+    init(id: UUID = UUID(), keyword: String? = nil, platform: SearchPlatform? = nil,
+         webViewModel: WebViewModel? = nil, navigationOpenerID: UUID? = nil) {
         self.id = id
         let webViewModel = webViewModel ?? WebViewModel()
         webViewModel.configureSnapshotPersistence(id: id)
         self.webViewModel = webViewModel
         self.keyword = keyword
         self.platform = platform
+        self.navigationOpenerID = navigationOpenerID
         self.createdAt = Date()
     }
 
@@ -99,6 +103,7 @@ final class TabManager: ObservableObject {
     @Published private(set) var overviewGroupNames: [String: String] = [:]
     @Published private(set) var pinnedOverviewGroupIDs: Set<String> = []
     @Published private(set) var collapsedOverviewGroupIDs: Set<String> = []
+    let extensionForegroundNavigation = PassthroughSubject<Void, Never>()
 
     private weak var findWebView: WKWebView?
 
@@ -112,6 +117,8 @@ final class TabManager: ObservableObject {
     static let maxAliveTabs = ProcessInfo.processInfo.physicalMemory >= 4 * 1_024 * 1_024 * 1_024 ? 8 : 5
     private var memoryWarningObserver: AnyCancellable?
     private var desktopModeObserver: AnyCancellable?
+    private var extensionConfigurationObserver: AnyCancellable?
+    private var extensionRefreshTask: Task<Void, Never>?
     private var recentTabIDs: [UUID] = []
     private var saveTask: Task<Void, Never>?
     private var backgroundObserver: AnyCancellable?
@@ -145,6 +152,10 @@ final class TabManager: ObservableObject {
         desktopModeObserver = NotificationCenter.default.publisher(for: .souloDesktopModeChanged)
             .sink { [weak self] _ in
                 Task { @MainActor in self?.synchronizeDesktopMode() }
+            }
+        extensionConfigurationObserver = NotificationCenter.default.publisher(for: .browserExtensionsChanged)
+            .sink { [weak self] _ in
+                MainActor.assumeIsolated { self?.scheduleExtensionRuntimeRefresh() }
             }
         backgroundObserver = NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
             .sink { [weak self] _ in
@@ -304,9 +315,17 @@ final class TabManager: ObservableObject {
     }
 
     @discardableResult
-    func createTab(url: URL? = nil, keyword: String? = nil, platform: SearchPlatform? = nil, switchTo: Bool = true, webViewModel: WebViewModel? = nil) -> BrowserTab {
+    func openNewTab(extensionService: BrowserExtensionService? = nil) -> BrowserTab {
+        let service = extensionService ?? BrowserExtensionService.existingShared
+        return createTab(url: service?.preferredNewTabURL())
+    }
+
+    @discardableResult
+    func createTab(url: URL? = nil, keyword: String? = nil, platform: SearchPlatform? = nil,
+                   switchTo: Bool = true, webViewModel: WebViewModel? = nil, navigationOpenerID: UUID? = nil) -> BrowserTab {
         let sourceID = activeTab?.id
-        var tab = BrowserTab(keyword: keyword, platform: platform, webViewModel: webViewModel)
+        var tab = BrowserTab(keyword: keyword, platform: platform, webViewModel: webViewModel,
+                             navigationOpenerID: navigationOpenerID)
         if url?.scheme?.lowercased() == "webkit-extension", let sourceID {
             tab.webViewModel.returnToSourceTab = { [weak self] in
                 guard let self, self.tabs.contains(where: { $0.id == sourceID }) else { return false }
@@ -650,13 +669,31 @@ final class TabManager: ObservableObject {
         let previewRange = max(0, activeTabIndex - 3)...min(tabs.count - 1, activeTabIndex + 3)
         for i in tabs.indices {
             if !previewRange.contains(i) { tabs[i].webViewModel.releaseSnapshotMemory() }
-            tabs[i].webViewModel.mediaSession.setActive(i == activeTabIndex)
+            let model = tabs[i].webViewModel
+            model.mediaSession.setActive(i == activeTabIndex)
             if i == activeTabIndex {
                 if !tabs[i].isAlive { restoreTabMemory(at: i) }
-            } else if !warmIDs.contains(tabs[i].id), tabs[i].isAlive,
-                      !tabs[i].webViewModel.isDownloading, tabs[i].webViewModel.activeDownloadCount == 0 {
-                suspendTab(at: i)
+                model.refreshExtensionRuntimeIfNeeded()
+            } else if tabs[i].isAlive, !model.isDownloading, model.activeDownloadCount == 0 {
+                let emptyTab = model.currentURL == nil && !model.isLoading && !model.isScriptOpenedWindow
+                    && !model.hasPresentedContent && model.errorMessage == nil
+                if emptyTab || !warmIDs.contains(tabs[i].id) {
+                    suspendTab(at: i, capturePage: !emptyTab)
+                }
             }
+        }
+    }
+
+    private func scheduleExtensionRuntimeRefresh() {
+        for tab in tabs { tab.webViewModel.invalidateExtensionRuntime() }
+        guard extensionRefreshTask == nil else { return }
+        // Rebuild only the visible browser surface. Retained tabs adopt the
+        // new document-start configuration when they become active again.
+        extensionRefreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.extensionRefreshTask = nil
+            guard let model = self.activeWebViewModel, model.webView?.window != nil else { return }
+            model.refreshExtensionRuntimeIfNeeded()
         }
     }
 
@@ -672,7 +709,7 @@ final class TabManager: ObservableObject {
         }
     }
 
-    private func suspendTab(at index: Int) {
+    private func suspendTab(at index: Int, capturePage: Bool = true) {
         guard tabs.indices.contains(index) else { return }
         let tabID = tabs[index].id
         let webViewModel = tabs[index].webViewModel
@@ -681,8 +718,10 @@ final class TabManager: ObservableObject {
         tabs[index].isAlive = false
         Task { @MainActor [weak self, weak webViewModel] in
             guard let webViewModel else { return }
-            await webViewModel.captureSnapshot()
-            await webViewModel.mediaSession.capture()
+            if capturePage {
+                await webViewModel.captureSnapshot()
+                await webViewModel.mediaSession.capture()
+            }
             guard let self, let currentIndex = self.tabs.firstIndex(where: { $0.id == tabID }),
                   !self.tabs[currentIndex].isAlive else { return }
             webViewModel.releaseWebViewRuntime()
@@ -897,15 +936,21 @@ final class TabManager: ObservableObject {
         let allPlatforms = PlatformDataStore.shared.allPlatforms()
 
         var restoredTabs: [BrowserTab] = []
+        var restoredIDs: Set<UUID> = []
+        var restoredActiveIndex: Int?
         restoredTabs.reserveCapacity(state.tabs.count)
-        for saved in state.tabs {
+        for (savedIndex, saved) in state.tabs.enumerated() {
             let restoredURL = saved.urlString.flatMap(URL.init(string:))
             guard Self.isRestorableAcrossLaunches(restoredURL) else { continue }
             let platform = saved.platformName.flatMap { name in
                 allPlatforms.first { $0.name == (name == "platform_shenma" ? "platform_quark" : name) }
             }
+            // The tab bar and snapshots both use each UUID as a unique key.
+            // Keep both pages if a saved session contains a repeated ID.
+            var id = UUID(uuidString: saved.id) ?? UUID()
+            while !restoredIDs.insert(id).inserted { id = UUID() }
             var tab = BrowserTab(
-                id: UUID(uuidString: saved.id) ?? UUID(),
+                id: id,
                 keyword: saved.keyword,
                 platform: platform
             )
@@ -919,15 +964,12 @@ final class TabManager: ObservableObject {
             }
             tab.isAlive = false
             tab.suspendedURL = restoredURL
+            if savedIndex == state.activeIndex { restoredActiveIndex = restoredTabs.count }
             restoredTabs.append(tab)
         }
         tabs = restoredTabs
 
-        if state.tabs.indices.contains(state.activeIndex),
-           let savedActiveID = UUID(uuidString: state.tabs[state.activeIndex].id),
-           let index = tabs.firstIndex(where: { $0.id == savedActiveID }) {
-            activeTabIndex = index
-        }
+        if let restoredActiveIndex { activeTabIndex = restoredActiveIndex }
     }
 
     private static func isRestorableAcrossLaunches(_ url: URL?) -> Bool {

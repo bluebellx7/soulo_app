@@ -8,7 +8,12 @@ import CoreData
 @MainActor final class WebsiteDataCleanupCoordinator {
     private var locked = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
-    private enum Scope: Hashable { case all, cache }
+    private enum Scope: Hashable {
+        case all, cache
+        case site(String, Set<String>)
+
+        var category: StorageUsageCategory { self == .cache ? .webData : .websiteStorage }
+    }
     private struct Job {
         let id: UUID
         let response: Task<StorageCleanupReport, Never>
@@ -34,13 +39,17 @@ import CoreData
         await report(scope: .cache, timeoutNanoseconds: 20_000_000_000, operation)
     }
 
+    func clearSite(domain: String, types: Set<String>, timeoutNanoseconds: UInt64 = 20_000_000_000,
+                   _ operation: @escaping @MainActor () async -> StorageCleanupReport) async -> StorageCleanupReport {
+        await report(scope: .site(domain, types), timeoutNanoseconds: timeoutNanoseconds, operation)
+    }
+
     private func report(scope: Scope, timeoutNanoseconds: UInt64,
                         _ operation: @escaping @MainActor () async -> StorageCleanupReport) async -> StorageCleanupReport {
         if let existing = jobs[scope] { return await existing.response.value }
         let id = UUID(), result = ResultDelivery()
         let response = Task { @MainActor in
-            await result.wait(timeoutNanoseconds: timeoutNanoseconds,
-                              category: scope == .all ? .websiteStorage : .webData)
+            await result.wait(timeoutNanoseconds: timeoutNanoseconds, category: scope.category)
         }
         jobs[scope] = Job(id: id, response: response)
         // The worker owns the mutation lock until WebKit actually calls back.
@@ -529,8 +538,14 @@ struct WebsiteStorageSnapshot: Sendable {
 /// Unrecognized layouts remain unknown; files are never deleted directly.
 enum WebsiteStorageService {
     @MainActor private static let cleanup = WebsiteDataCleanupCoordinator()
-    static let cacheTypes: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache,
-        WKWebsiteDataTypeOfflineWebApplicationCache, WKWebsiteDataTypeFetchCache, WKWebsiteDataTypeServiceWorkerRegistrations]
+    private struct CleanupError: LocalizedError {
+        let message: String
+        var errorDescription: String? { message }
+    }
+    private static let sharedNetworkCacheTypes: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]
+    static let cacheTypes = sharedNetworkCacheTypes.union([
+        WKWebsiteDataTypeOfflineWebApplicationCache, WKWebsiteDataTypeFetchCache, WKWebsiteDataTypeServiceWorkerRegistrations
+    ])
 
     @MainActor static func snapshot(onList: (([WebsiteStorageEntry]) -> Void)? = nil) async -> WebsiteStorageSnapshot {
         let sites = await entries(onList: onList)
@@ -563,35 +578,36 @@ enum WebsiteStorageService {
                 ? $0.domain.localizedStandardCompare($1.domain) == .orderedAscending : ($0.bytes?.total ?? -1) > ($1.bytes?.total ?? -1) }
     }
 
-    @MainActor private static func records() async -> [WKWebsiteDataRecord] {
+    @MainActor private static func records(ofTypes types: Set<String> = WKWebsiteDataStore.allWebsiteDataTypes()) async -> [WKWebsiteDataRecord] {
         await withCheckedContinuation { continuation in
-            WKWebsiteDataStore.default().fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { continuation.resume(returning: $0) }
+            WKWebsiteDataStore.default().fetchDataRecords(ofTypes: types) { continuation.resume(returning: $0) }
         }
     }
 
     @MainActor static func clear(_ entry: WebsiteStorageEntry, types: Set<String>) async throws {
-        StorageUsageService.invalidateInventory()
-        defer { StorageUsageService.invalidateInventory() }
-        try await cleanup.perform {
+        let report = await cleanup.clearSite(domain: entry.domain, types: types) {
+            StorageUsageService.invalidateInventory()
+            defer { StorageUsageService.invalidateInventory() }
             if types == cacheTypes, let id = UUID(uuidString: entry.domain), #available(iOS 18.4, *) {
-                try await NativeWebExtensionRuntime.shared.clearTemporaryCaches(identifiers: [id])
-                return
+                do { try await NativeWebExtensionRuntime.shared.clearTemporaryCaches(identifiers: [id]) }
+                catch { return .init(retainedCategories: [.extensions], failures: [error.localizedDescription]) }
+                return .init()
             }
-            let matching = await records().filter { $0.displayName == entry.domain }
-            guard !matching.isEmpty else { return }
-            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-                WKWebsiteDataStore.default().removeData(ofTypes: types, for: matching) { continuation.resume() }
-            }
+            let matching = await records(ofTypes: types).filter { $0.displayName == entry.domain }
+            await clearOrdinaryRecords(matching, types: types)
+            return .init()
         }
+        if let message = report.failures.first { throw CleanupError(message: message) }
     }
 
     @discardableResult @MainActor static func clearBrowserCaches() async -> StorageCleanupReport {
         await cleanup.clearCaches {
             defer { StorageUsageService.invalidateInventory() }
             await clearFoundationCache(cookies: false)
-            let listed = await records()
+            let types = cacheTypes.subtracting(sharedNetworkCacheTypes)
+            let listed = await records(ofTypes: types)
             let matching = listed.filter { UUID(uuidString: $0.displayName) == nil }
-            await clearOrdinaryRecords(matching, types: cacheTypes)
+            await clearOrdinaryRecords(matching, types: types)
             await clearSharedNetworkCache()
             return retainedExtensionReport(listed)
         }
@@ -603,30 +619,33 @@ enum WebsiteStorageService {
     @MainActor static func clearAll() async -> StorageCleanupReport {
         await cleanup.clearAll {
             defer { StorageUsageService.invalidateInventory() }
+            BrowserStartupTrace.mark("website_cleanup_start")
             await clearFoundationCache(cookies: true)
-            let types = WKWebsiteDataStore.allWebsiteDataTypes()
-            let listed = await records()
+            BrowserStartupTrace.mark("website_cleanup_foundation_finished")
+            let types = WKWebsiteDataStore.allWebsiteDataTypes().subtracting(sharedNetworkCacheTypes)
+            let listed = await records(ofTypes: types)
+            BrowserStartupTrace.mark("website_cleanup_records_fetched", detail: "\(listed.count)")
             let report = retainedExtensionReport(listed)
             let sites = listed.filter { UUID(uuidString: $0.displayName) == nil }
-            // Use the same public per-site deletion path as the working site
-            // detail action. Avoid a single all-types/all-origins purge while
-            // dozens of browser tabs still own their database connections.
             await clearOrdinaryRecords(sites, types: types)
+            BrowserStartupTrace.mark("website_cleanup_sites_finished", detail: "\(sites.count)")
             await clearSharedNetworkCache()
+            BrowserStartupTrace.mark("website_cleanup_network_cache_finished")
             return report
         }
     }
 
     @MainActor private static func clearOrdinaryRecords(_ records: [WKWebsiteDataRecord], types: Set<String>) async {
         let store = WKWebsiteDataStore.default()
-        for record in records.sorted(by: { $0.displayName < $1.displayName }) {
-            let matchingTypes = record.dataTypes.intersection(types)
+        // Group only the selected website records that have the same data types.
+        // WebKit can then clear those sites in one pass without repeatedly
+        // visiting the same web processes or opening another extension context.
+        let byTypes = Dictionary(grouping: records) { $0.dataTypes.intersection(types) }
+        for (matchingTypes, matchingRecords) in byTypes {
             guard !matchingTypes.isEmpty else { continue }
-            // Let a confirmation dismiss and navigation/events run between
-            // sites. Only one WebKit deletion request is in flight at a time.
             await Task.yield()
             await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
-                store.removeData(ofTypes: matchingTypes, for: [record]) { c.resume() }
+                store.removeData(ofTypes: matchingTypes, for: matchingRecords) { c.resume() }
             }
         }
     }
@@ -653,7 +672,7 @@ enum WebsiteStorageService {
 
     @MainActor private static func clearSharedNetworkCache() async {
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
-            WKWebsiteDataStore.default().removeData(ofTypes: [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache],
+            WKWebsiteDataStore.default().removeData(ofTypes: sharedNetworkCacheTypes,
                                                    modifiedSince: .distantPast) { c.resume() }
         }
     }

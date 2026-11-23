@@ -167,6 +167,7 @@ struct WebResourceInspectorView: View {
     @State private var isSelectingImages = false
     @State private var selectedImageIDs = Set<String>()
     @State private var batchSaveMessage: String?
+    @State private var batchSaveNotice: String?
 
     init(webViewModel: WebViewModel) {
         _viewModel = StateObject(
@@ -269,6 +270,7 @@ struct WebResourceInspectorView: View {
         .safeAreaInset(edge: .bottom) {
             if isSelectingImages { imageBatchBar }
         }
+        .statusNotice($batchSaveNotice)
         .alert(ToolText.text("image_batch_result"), isPresented: Binding(
             get: { batchSaveMessage != nil }, set: { if !$0 { batchSaveMessage = nil } }
         )) {
@@ -519,6 +521,8 @@ struct WebResourceInspectorView: View {
                 batchSaveMessage = WebResourceDownloadError.photoAccessDenied.localizedDescription
             } else if result.wasCancelled {
                 batchSaveMessage = String(format: ToolText.text("image_batch_cancelled"), result.savedIDs.count)
+            } else if result.failedIDs.isEmpty {
+                batchSaveNotice = summary
             } else {
                 batchSaveMessage = summary
             }
@@ -1412,6 +1416,7 @@ struct WebResourceMediaPlayerView: View {
     var souloStartAt: Double?
     var souloPlaying = true
     var initialRate: Float?
+    var initialFullscreenLandscape: Bool?
     var episodeList: WebEpisodeList?
     var showsEpisodes = false
     private var player: AVPlayer { MediaSession.shared.player }
@@ -1448,6 +1453,7 @@ struct WebResourceMediaPlayerView: View {
         souloStartAt: Double? = nil,
         souloPlaying: Bool = true,
         initialRate: Float? = nil,
+        initialFullscreenLandscape: Bool? = nil,
         episodeList: WebEpisodeList? = nil,
         showsEpisodes: Bool = false,
         restoredContext: WebMediaPlaybackContext? = nil,
@@ -1461,6 +1467,7 @@ struct WebResourceMediaPlayerView: View {
         self.souloStartAt = souloStartAt
         self.souloPlaying = souloPlaying
         self.initialRate = initialRate
+        self.initialFullscreenLandscape = initialFullscreenLandscape
         self.episodeList = episodeList
         self.showsEpisodes = showsEpisodes
         self.restoringPlayback = restoredContext != nil
@@ -1502,12 +1509,14 @@ struct WebResourceMediaPlayerView: View {
                                              initialSouloSource: directSouloSource,
                                              initialRate: selectedEpisodeID == nil ? initialRate : nil,
                                              restoredSoulo: restoringPlayback ? MediaSession.shared.soulo : nil,
-                                             initialFullscreen: currentResource.kind == .video || souloStartAt != nil,
+                                             initialFullscreen: currentResource.kind == .video,
+                                             initialFullscreenLandscape: initialFullscreenLandscape,
                                              fullscreenOnly: currentResource.kind == .video,
                                              initialSystemPlayer: restoringPlayback && directSouloSource == nil
                                                  && MediaSession.shared.soulo == nil,
                                              initialEpisodes: showsEpisodes,
-                                             initialTitle: currentResource.title, ownsExplicitSource: true, externalPlaylist: videoPlaylist,
+                                             initialTitle: currentResource.title, audioOnly: currentResource.kind == .audio,
+                                             ownsExplicitSource: true, externalPlaylist: videoPlaylist,
                                              onFullscreenClose: { episodeTask?.cancel(); dismiss() },
                                              downloadAction: { downloadCurrentMedia() },
                                              downloadIsVideo: currentResource.kind == .video)
@@ -1515,9 +1524,10 @@ struct WebResourceMediaPlayerView: View {
                             .background(.black)
                     } else { Color.black }
 
-                    if isPreparing {
+                    if isPreparing || (resource.kind == .video && !useYouTubeWebPlayback && playbackError.isEmpty) {
                         ProgressView()
                             .tint(.white)
+                            .accessibilityIdentifier("media.web.preparing")
                     } else if !playbackError.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "play.slash.fill")
@@ -1538,7 +1548,7 @@ struct WebResourceMediaPlayerView: View {
 
                 // Media URLs remain available through Share; video playback has
                 // only fullscreen chrome, never a URL-bearing preview page.
-                if currentResource.kind != .video {
+                if currentResource.kind != .video && !hasPreparedPlayer {
                     HStack(spacing: 12) {
                         Button {
                             UIPasteboard.general.string = currentResource.url.absoluteString
@@ -1588,10 +1598,9 @@ struct WebResourceMediaPlayerView: View {
             .overlay(alignment: .top) {
                 if resource.kind == .video, !embedded {
                     HStack(spacing: 12) {
-                        VideoPlayerIconButton(symbol: "xmark", label: ToolText.text("close"), identifier: "media.web.close") {
+                        VideoFullscreenBackTitle(title: currentResource.title, identifier: "media.web.close") {
                             episodeTask?.cancel(); dismiss()
                         }
-                        .frame(width: 44, height: 44)
                         Spacer(minLength: 0)
                         if !playbackError.isEmpty || useYouTubeWebPlayback {
                             mediaActions
@@ -1607,6 +1616,7 @@ struct WebResourceMediaPlayerView: View {
                 )
             )
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar(currentResource.kind == .audio && hasPreparedPlayer ? .hidden : .automatic, for: .navigationBar)
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
                     mediaActions

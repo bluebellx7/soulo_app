@@ -50,11 +50,14 @@ final class FeatureGuidanceUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["settings.backups.explanation"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["settings.backups.save"].isHittable)
         capture(app, name: "backup-guidance-light")
-        let clear = app.buttons["settings.backups.clear"]
-        XCTAssertTrue(clear.exists)
-        if clear.isEnabled {
+        let manage = app.buttons["settings.backups.manage"]
+        XCTAssertTrue(manage.exists)
+        if manage.isEnabled {
+            manage.tap()
+            let clear = app.buttons["settings.backups.clear"].firstMatch
+            XCTAssertTrue(clear.waitForExistence(timeout: 5))
             clear.tap()
-            XCTAssertTrue(app.staticTexts["All local settings backups will be deleted. Your current settings will stay the same."].waitForExistence(timeout: 3))
+            XCTAssertTrue(app.buttons["settings.backups.confirm-clear"].firstMatch.waitForExistence(timeout: 5))
             if app.buttons["Cancel"].exists { app.buttons["Cancel"].firstMatch.tap() }
             else {
                 // An anchored confirmation on iOS 26 can omit the cancel row.
@@ -63,7 +66,7 @@ final class FeatureGuidanceUITests: XCTestCase {
             }
             XCTAssertTrue(app.buttons["settings.backups.confirm-clear"].waitForNonExistence(timeout: 3))
             XCTAssertTrue(app.buttons["settings.backups.save"].exists)
-            XCTAssertTrue(clear.isEnabled, "Cancel must keep existing backups")
+            XCTAssertTrue(manage.isEnabled, "Cancel must keep existing backups")
         }
         app.navigationBars.buttons.firstMatch.tap()
         searchSettings(app, query: "Quick Actions", destination: "quickActions")

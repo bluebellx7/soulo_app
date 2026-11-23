@@ -120,6 +120,7 @@ private struct WebImagePreviewPage: View {
     @State private var sharing = false
     @State private var saving = false
     @State private var notice: String?
+    @State private var saveError: String?
 
     var body: some View {
         ZStack {
@@ -145,7 +146,7 @@ private struct WebImagePreviewPage: View {
                         do {
                             try await WebResourceDownloadService.shared.saveImageToPhotos(original.url)
                             notice = LanguageManager.shared.localizedString("resource_saved_to_photos")
-                        } catch { notice = error.localizedDescription }
+                        } catch { saveError = error.localizedDescription }
                     }
                 } label: {
                     actionLabel(LanguageManager.shared.localizedString("save_to_photos"), icon: "square.and.arrow.down")
@@ -165,8 +166,9 @@ private struct WebImagePreviewPage: View {
         .sheet(isPresented: $sharing) {
             if let original { PreviewImageShare(file: original) }
         }
-        .alert(notice ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
-            Button(ToolText.text("close"), role: .cancel) { notice = nil }
+        .statusNotice($notice)
+        .alert(saveError ?? "", isPresented: Binding(get: { saveError != nil }, set: { if !$0 { saveError = nil } })) {
+            Button(ToolText.text("close"), role: .cancel) { saveError = nil }
         }
         .task(id: "\(isActive)-\(attempt)") {
             image = nil; original = nil; error = nil

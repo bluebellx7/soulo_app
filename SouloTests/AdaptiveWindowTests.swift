@@ -214,10 +214,9 @@ final class AdaptiveWindowTests: XCTestCase {
 
     func testFullscreenBrowserRespectsUnequalSideSafeAreas() async throws {
         struct Harness: View {
-            @Namespace var namespace
             let speech = SpeechRecognitionService()
             var body: some View {
-                SearchResultsView(searchBarNamespace: namespace, speechService: speech)
+                SearchResultsView(speechService: speech)
             }
         }
         let defaults = UserDefaults.standard

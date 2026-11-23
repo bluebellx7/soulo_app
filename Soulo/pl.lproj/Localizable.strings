@@ -241,8 +241,6 @@
 "login_required_toast" = "Najpierw zaloguj się, a następnie wyszukaj ponownie";
 "status_enabled" = "Włączone";
 "status_disabled" = "Niepełnosprawny";
-"show_top_search_bar" = "Pokaż górny pasek wyszukiwania";
-"show_top_search_bar_desc" = "Gdy jest ukryty, użyj dolnej kontroli adresu, aby wyszukać lub rozpocząć wprowadzanie głosowe";
 "ad_block_master_disabled_desc" = "Włącz blok reklam, aby używać poniższych subskrypcji filtrów i zarządzać nimi.";
 "custom_groups" = "Grupy niestandardowe";
 "no_groups" = "Brak grup niestandardowych";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Pomyślnie zaimportowano platformy %d";
 "paste_from_clipboard" = "Wklej ze schowka";
 "none" = "Żadne";
-"show_group_picker_home" = "Pokaż selektor grup na stronie głównej";
-"show_group_picker_home_desc" = "Wyświetlaj karty grup platform na ekranie głównym w celu szybkiego przełączania";
 "error_no_internet" = "Brak połączenia z Internetem. Sprawdź swoją sieć.";
 "error_timeout" = "Upłynął limit czasu połączenia. Spróbuj ponownie.";
 "error_ssl" = "Bezpieczne połączenie nie powiodło się. Ta strona może nie być bezpieczna.";

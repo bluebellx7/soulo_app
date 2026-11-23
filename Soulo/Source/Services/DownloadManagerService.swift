@@ -435,8 +435,9 @@ final class DownloadManagerService: ObservableObject {
         guard !hasUnreadableHistory else { return }
         downloads.removeAll { item in
             guard item.status == .finished else { return false }
+            // A present HLS package may still export to MP4 when AVPlayer cannot open it offline.
             if item.localURL.pathExtension.lowercased() == OfflineHLSReference.fileExtension,
-               (try? OfflineHLSReference.playableAsset(for: item.localURL)) == nil {
+               (try? OfflineHLSReference.packageURL(for: item.localURL)) == nil {
                 try? FileManager.default.removeItem(at: item.localURL)
                 return true
             }

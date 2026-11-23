@@ -26,7 +26,7 @@ final class LibraryStore {
         container.persistentStoreDescriptions = [description]
         let importMarker: Bool?
         if description.type == NSSQLiteStoreType, let url = description.url {
-            importMarker = try Self.migrateBookmarkFavoritesIfNeeded(at: url)
+            importMarker = try Self.migrateLibraryIfNeeded(at: url)
         } else { importMarker = nil }
         var loadingError: Error?
         container.loadPersistentStores { _, error in loadingError = error }
@@ -123,13 +123,17 @@ final class LibraryStore {
 
     /// The previous model was built in code and has no .mom version in the
     /// bundle. Supply it explicitly for the one-time inferred migration.
-    private static func migrateBookmarkFavoritesIfNeeded(at url: URL) throws -> Bool? {
+    private static func migrateLibraryIfNeeded(at url: URL) throws -> Bool? {
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
         let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(ofType: NSSQLiteStoreType, at: url)
         guard !model.isConfiguration(withName: nil, compatibleWithStoreMetadata: metadata) else { return nil }
-        guard let previous = [makeModel(includeFavorite: false, includeOrder: false), makeModel(includeOrder: false)]
+        guard let previous = [
+            makeModel(includeFavorite: false, includeOrder: false, includeVideoToolHistory: false),
+            makeModel(includeOrder: false, includeVideoToolHistory: false),
+            makeModel(includeVideoToolHistory: false)
+        ]
             .first(where: { $0.isConfiguration(withName: nil, compatibleWithStoreMetadata: metadata) }) else { return nil }
-        let directory = url.deletingLastPathComponent().appendingPathComponent("SouloBookmarkMigration-\(UUID())")
+        let directory = url.deletingLastPathComponent().appendingPathComponent("SouloLibraryMigration-\(UUID())")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let migrated = directory.appendingPathComponent("library.sqlite")
@@ -142,7 +146,8 @@ final class LibraryStore {
         return metadata[legacyImportKey] as? Bool
     }
 
-    static func makeModel(includeFavorite: Bool = true, includeOrder: Bool = true) -> NSManagedObjectModel {
+    static func makeModel(includeFavorite: Bool = true, includeOrder: Bool = true,
+                          includeVideoToolHistory: Bool = true) -> NSManagedObjectModel {
         func attribute(_ name: String, _ type: NSAttributeType, optional: Bool = false) -> NSAttributeDescription {
             let attribute = NSAttributeDescription()
             attribute.name = name
@@ -163,6 +168,11 @@ final class LibraryStore {
             attribute("timestamp", .dateAttributeType), attribute("platformID", .UUIDAttributeType, optional: true),
             attribute("visitedURLString", .stringAttributeType, optional: true)
         ])
+        if includeVideoToolHistory {
+            let usedVideoTools = attribute("usedVideoTools", .booleanAttributeType)
+            usedVideoTools.defaultValue = false
+            history.properties.append(usedVideoTools)
+        }
         let favicon = attribute("faviconData", .binaryDataAttributeType, optional: true)
         favicon.allowsExternalBinaryDataStorage = true
         let bookmarks = entity(BookmarkRecord.entityName, BookmarkRecord.self, [
@@ -211,6 +221,7 @@ final class SearchHistoryRecord: NSManagedObject, LibraryRecord {
     @NSManaged var timestamp: Date
     @NSManaged var platformID: UUID?
     @NSManaged var visitedURLString: String?
+    @NSManaged var usedVideoTools: Bool
 
     convenience init(keyword: String, platformID: UUID? = nil, timestamp: Date = Date(), visitedURLString: String? = nil) {
         self.init(entity: LibraryStore.model.entitiesByName[Self.entityName]!, insertInto: nil)

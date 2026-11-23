@@ -443,13 +443,23 @@
 "home_toolbar_capsule" = "Capsule";
 "home_toolbar_icons" = "Icons only";
 "home_toolbar_bottom" = "Bottom";
-"home_toolbar_belowSearch" = "Below Search";
 "home_toolbar_free" = "Free Placement";
+"home_toolbar_search_bottom" = "Page Bottom";
+"home_toolbar_alignment" = "Toolbar Alignment";
 "home_toolbar_leading" = "Align start";
 "home_toolbar_center" = "Center";
 "home_toolbar_trailing" = "Align end";
 "home_toolbar_drag_position" = "Drag the toolbar to place it.";
 "home_toolbar_drag_buttons" = "Tap to change a button. Drag to reorder.";
+"home_toolbar_style" = "Style";
+"home_toolbar_visibility" = "Show/Hide";
+"home_toolbar_visibility_page" = "Home Elements";
+"home_toolbar_visibility_search_area" = "Search Area";
+"home_toolbar_visibility_title" = "Title";
+"home_toolbar_visibility_subtitle" = "Subtitle";
+"home_toolbar_visibility_search" = "Search Bar";
+"home_toolbar_visibility_search_hint" = "Swipe up or down on Home to show the search bar.";
+"home_toolbar_visibility_recovery" = "Touch and hold a blank spot on Home to open the menu.";
 "home_toolbar_search" = "Find a page";
 
 "group_default_search" = "Default search";
@@ -579,6 +589,7 @@
 "wallpaper_image_blur" = "Frosted Glass";
 "wallpaper_blur_amount" = "Blur Strength";
 
+"home_quick_search_guide" = "Enter a keyword on Home to see platforms below the search bar. Tap a platform to search there.";
 "auto_hide_platform_bar_hint" = "When enabled, the platform bar hides only after you tap webpage content and the page’s domain matches none of the platforms in the current bar. A match keeps or restores the bar. Scrolling and automatic redirects do not hide it.";
 
 "ad_subscription_add" = "Add filter list";
@@ -687,3 +698,9 @@
 "browsing_web_display" = "Webpages";
 "manual_backups_empty" = "No manual backups yet";
 "browsing_display_settings_legacy" = "Browsing Display";
+"media_lock_orientation" = "Lock orientation";
+"media_unlock_orientation" = "Unlock orientation";
+
+"music_queue" = "Playlist";
+"music_previous_track" = "Previous Track";
+"music_next_track" = "Next Track";

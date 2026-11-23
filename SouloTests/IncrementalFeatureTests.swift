@@ -128,9 +128,14 @@ final class IncrementalFeatureTests: XCTestCase {
         try await wait { first.screen?.view.window === window }
         let controller = try XCTUnwrap(first.screen)
         XCTAssertTrue(root.view.window === window, "The destination decoder must be able to mount before the old player closes")
-        first.setLandscape(true)
-        try await wait { scene.interfaceOrientation.isLandscape }
-        XCTAssertEqual(controller.supportedInterfaceOrientations, .landscape)
+        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
+        if isPhone {
+            first.setLandscape(true)
+            try await wait { scene.interfaceOrientation.isLandscape }
+            XCTAssertEqual(controller.supportedInterfaceOrientations, .landscape)
+        }
+        let fullscreenOrientation = scene.interfaceOrientation
+        let fullscreenMask = controller.supportedInterfaceOrientations
         first.beginHandoff(owner: firstOwner)
         first.release(owner: firstOwner)
         XCTAssertTrue(root.presentedViewController === controller, "Retiring the old adapter must not dismiss the shared window")
@@ -139,13 +144,16 @@ final class IncrementalFeatureTests: XCTestCase {
             onClose: { reason in closed.append("new"); reasons.append(reason) }))
         XCTAssertTrue(next === first)
         XCTAssertTrue(next.screen === controller)
-        XCTAssertEqual(controller.supportedInterfaceOrientations, .landscape, "A decoder change must keep the selected fullscreen direction")
+        XCTAssertEqual(controller.supportedInterfaceOrientations, fullscreenMask, "A decoder change must keep the selected fullscreen direction")
+        XCTAssertEqual(scene.interfaceOrientation, fullscreenOrientation)
         first.release(owner: firstOwner)
         XCTAssertTrue(root.presentedViewController === controller)
-        next.setLandscape(false)
-        try await wait { scene.interfaceOrientation == .portrait }
-        XCTAssertTrue(root.presentedViewController === controller, "Changing direction must not exit fullscreen")
-        XCTAssertEqual(controller.supportedInterfaceOrientations, .portrait)
+        if isPhone {
+            next.setLandscape(false)
+            try await wait { scene.interfaceOrientation == .portrait }
+            XCTAssertTrue(root.presentedViewController === controller, "Changing direction must not exit fullscreen")
+            XCTAssertEqual(controller.supportedInterfaceOrientations, .portrait)
+        }
         next.dismiss(owner: nextOwner)
         try await wait { root.presentedViewController == nil }
         await VideoOrientation.waitForRestoration(in: scene)
@@ -158,11 +166,13 @@ final class IncrementalFeatureTests: XCTestCase {
         try await wait { closing.screen?.view.window === window }
         closing.dismiss(owner: closeOwner, reason: .closePlayback)
         try await wait { root.presentedViewController == nil }
+        await VideoOrientation.waitForRestoration(in: scene)
         XCTAssertEqual(reasons, [.exitFullscreen, .closePlayback], "Closing playback and shrinking video are separate actions")
 
     }
 
     @MainActor func testForegroundRestoresLandscapeWithoutDeviceRotationAndRespectsManualPortrait() async throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "Exercises iPhone scene rotation")
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.keyWindow, original = scene.interfaceOrientation
         let window = UIWindow(windowScene: scene), root = OrientationTestController()
@@ -364,21 +374,30 @@ final class IncrementalFeatureTests: XCTestCase {
     @MainActor func testExplicitPictureInPictureContinuesUntilStoppedInBackground() async throws {
         try XCTSkipUnless(AVPictureInPictureController.isPictureInPictureSupported(), "System PiP is unavailable on this test device; real PiP requires a supported device")
         let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
-        let session = MediaSession.shared, oldRate = session.rate
+        let session = MediaSession.shared, oldRate = session.rate, oldLoop = session.loop
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIHostingController(rootView: InlineVideoSurface().frame(height: 220))
+        window.makeKeyAndVisible()
         session.stop(); session.setBackgrounded(false); session.setRate(1)
-        defer { session.setBackgrounded(false); session.stop(); session.setRate(oldRate) }
+        session.loop = true
+        defer {
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+            session.setBackgrounded(false); session.stop(); session.setRate(oldRate); session.loop = oldLoop
+        }
         session.open(url: video, persistPosition: false)
         try await wait { session.hasVideo && session.player.currentTime().seconds > 0.2 }
-        let layer = AVPlayerLayer(player: session.player)
-        let controller = try XCTUnwrap(AVPictureInPictureController(playerLayer: layer))
         let pip = session.pictureInPicture
-        pip.pictureInPictureControllerWillStartPictureInPicture(controller)
+        pip.requestStart()
         session.setBackgrounded(true)
         XCTAssertTrue(session.isPlaybackRequested, "PiP startup must not be interrupted by backgrounding")
-        pip.pictureInPictureControllerDidStartPictureInPicture(controller)
+        try await wait { pip.active || pip.errorMessage != nil }
+        XCTAssertTrue(pip.active, pip.errorMessage ?? "PiP did not become active")
         let start = session.player.currentTime().seconds
         try await wait { session.player.currentTime().seconds > start + 0.2 }
-        pip.pictureInPictureControllerDidStopPictureInPicture(controller)
+        pip.stop()
+        try await wait { !session.isPlaybackRequested }
         XCTAssertFalse(session.isPlaybackRequested)
         XCTAssertEqual(session.player.rate, 0, "Closing PiP in the background must not leave video audio playing")
     }
@@ -386,7 +405,10 @@ final class IncrementalFeatureTests: XCTestCase {
     @MainActor func testUnknownDurationNeverShowsACompletedTimeline() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
-        let root = UIHostingController(rootView: VideoPlaybackTimeline(elapsed: 4, duration: 0, identifier: "timeline.unknown", seek: { _ in XCTFail("Unknown duration cannot seek") }))
+        let completedCache = VideoCacheCoverage(isComplete: true)
+        let root = UIHostingController(rootView: VideoPlaybackTimeline(elapsed: 4, duration: 0,
+            identifier: "timeline.unknown", cacheProgress: .init(cache: completedCache),
+            seek: { _ in XCTFail("Unknown duration cannot seek") }))
         window.rootViewController = root; window.makeKeyAndVisible()
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
         try await Task.sleep(for: .milliseconds(100))
@@ -396,9 +418,23 @@ final class IncrementalFeatureTests: XCTestCase {
         }
         let control = try XCTUnwrap(slider(in: root.view))
         XCTAssertFalse(control.isEnabled); XCTAssertEqual(control.value, 0)
-        root.rootView = VideoPlaybackTimeline(elapsed: 4, duration: 20, identifier: "timeline.unknown", seek: { _ in })
+        func bufferedTrack() -> CAShapeLayer? {
+            let green = UIColor.systemGreen.resolvedColor(with: control.traitCollection).cgColor
+            return control.superview?.layer.sublayers?.compactMap { $0 as? CAShapeLayer }
+                .first { $0.path != nil && $0.fillColor == green }
+        }
+        XCTAssertNil(bufferedTrack())
+        root.rootView = VideoPlaybackTimeline(elapsed: 4, duration: 20, identifier: "timeline.unknown",
+            cacheProgress: .init(duration: 20, cache: completedCache), seek: { _ in })
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertTrue(control.isEnabled); XCTAssertEqual(control.value, 4, accuracy: 0.01)
+        let cacheBounds = try XCTUnwrap(bufferedTrack()?.path).boundingBoxOfPath
+        let trackBounds = control.trackRect(forBounds: control.bounds)
+        XCTAssertEqual(cacheBounds.minX, trackBounds.minX, accuracy: 0.01)
+        XCTAssertEqual(cacheBounds.maxX, trackBounds.maxX, accuracy: 0.01)
+        XCTAssertEqual(cacheBounds.minY, trackBounds.minY, accuracy: 0.01)
+        XCTAssertEqual(cacheBounds.maxY, trackBounds.maxY, accuracy: 0.01)
+        XCTAssertEqual(control.maximumTrackTintColor, .clear)
     }
 
     @MainActor func testTimelineResumesProgressAfterCancelledScrubbing() async throws {
@@ -523,6 +559,7 @@ final class IncrementalFeatureTests: XCTestCase {
     }
 
     @MainActor func testFullscreenFollowsBothDeviceSidesAndStopsFollowingAfterExit() async throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "Exercises iPhone scene rotation")
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.keyWindow, original = scene.interfaceOrientation
         let window = UIWindow(windowScene: scene), root = OrientationTestController()
@@ -549,10 +586,19 @@ final class IncrementalFeatureTests: XCTestCase {
             let expected: UIInterfaceOrientation = direction == .landscapeLeft ? .landscapeRight : .landscapeLeft
             try await wait { scene.interfaceOrientation == expected }
         }
+        rotation.stopTracking()
+        physical = .landscapeLeft
+        NotificationCenter.default.post(name: UIDevice.orientationDidChangeNotification, object: UIDevice.current)
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertEqual(scene.interfaceOrientation, .landscapeLeft)
+        rotation.setFullscreenOrientation(true, in: scene, sourceView: nil, fullscreenController: fullscreen) {
+            errors.append($0.localizedDescription)
+        }
+        try await wait { scene.interfaceOrientation == .landscapeRight }
         physical = .faceUp
         NotificationCenter.default.post(name: UIDevice.orientationDidChangeNotification, object: UIDevice.current)
         try await Task.sleep(for: .milliseconds(150))
-        XCTAssertEqual(scene.interfaceOrientation, .landscapeLeft, "Laying the phone flat must keep the current side")
+        XCTAssertEqual(scene.interfaceOrientation, .landscapeRight, "Laying the phone flat must keep the current side")
         rotation.end()
         fullscreen.dismiss(animated: false)
         try await wait { scene.interfaceOrientation == pageOrientation }
@@ -563,6 +609,7 @@ final class IncrementalFeatureTests: XCTestCase {
         XCTAssertTrue(errors.isEmpty, errors.joined(separator: "\n"))
     }
     @MainActor func testAlreadyFullscreenRestoresBrowserInsteadOfNativeKeyWindow() async throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "Exercises iPhone scene rotation")
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.keyWindow, original = scene.interfaceOrientation
         let browser = UIWindow(windowScene: scene), page = OrientationTestController()
@@ -595,6 +642,56 @@ final class IncrementalFeatureTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(200))
         XCTAssertEqual(scene.interfaceOrientation, .portrait)
         XCTAssertTrue(errors.isEmpty, errors.joined(separator: "\n"))
+    }
+
+    @MainActor func testFullscreenUsesStableMotionAndReversesWhenSceneRotationIsDeferred() async throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "Exercises the iPhone fullscreen scene")
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, initial = scene.interfaceOrientation
+        let window = UIWindow(windowScene: scene), root = OrientationTestController()
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        var requests: [UIInterfaceOrientationMask] = []
+        var reversed = false
+        let rotation = WebVideoFullscreenOrientation(deviceOrientation: { .landscapeLeft },
+            requestOrientation: { mask, _ in requests.append(mask) })
+        rotation.setReversedLandscape = { reversed = $0 }
+        defer {
+            rotation.end()
+            root.dismiss(animated: false)
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+            VideoOrientation.request(VideoOrientation.mask(for: initial), in: scene) { _ in }
+        }
+        VideoOrientation.request(.landscapeRight, in: scene) { _ in }
+        try await wait { scene.interfaceOrientation == .landscapeRight }
+        rotation.prepare(token: "motion-no-uikit-notification", scene: scene, prefersLandscape: true)
+        let player = OrientationTestController()
+        player.modalPresentationStyle = .overFullScreen
+        root.present(player, animated: false)
+        rotation.begin(token: "motion-no-uikit-notification", controller: player) { XCTFail($0.localizedDescription) }
+
+        rotation.receiveLandscapeGravity(x: 0.95, y: 0.04, at: 1)
+        rotation.receiveLandscapeGravity(x: 0.01, y: -0.98, at: 1.04)
+        rotation.receiveLandscapeGravity(x: 0.03, y: 0.04, at: 1.1)
+        XCTAssertTrue(requests.isEmpty, "A transient tilt or flat hold must not request a new orientation")
+
+        rotation.receiveLandscapeGravity(x: 0.96, y: 0.02, at: 2)
+        rotation.receiveLandscapeGravity(x: 0.96, y: 0.02, at: 2.18)
+        try await wait { reversed }
+        XCTAssertFalse(requests.isEmpty)
+        XCTAssertTrue(requests.allSatisfy { $0 == .landscapeLeft })
+        XCTAssertEqual(scene.interfaceOrientation, .landscapeRight, "The canvas must support the other side while the scene stays put")
+
+        VideoOrientation.request(.landscapeLeft, in: scene) { _ in }
+        try await wait { scene.interfaceOrientation == .landscapeLeft && !reversed }
+        rotation.stopTracking()
+        let count = requests.count
+        rotation.receiveLandscapeGravity(x: -0.98, y: -0.01, at: 3)
+        rotation.receiveLandscapeGravity(x: -0.98, y: -0.01, at: 3.2)
+        try await Task.sleep(for: .milliseconds(180))
+        XCTAssertEqual(requests.count, count, "Locked playback must stop receiving rotation requests")
     }
 
     @MainActor func testFullscreenLandscapeRespectsDeviceSideAndKeepsFlatOrientation() {
@@ -779,7 +876,7 @@ final class IncrementalFeatureTests: XCTestCase {
         // UIKit also observes this system notification and requires delivery
         // on the main thread, just as during an actual app interruption.
         NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
-        try await wait { !session.temporaryRate }
+        try await wait { !session.temporaryRate && session.player.rate == 1.5 }
         XCTAssertEqual(session.player.rate, 1.5)
         let image = try await session.captureFrame()
         XCTAssertGreaterThan(image.size.width, 0)
@@ -905,18 +1002,17 @@ extension IncrementalFeatureTests {
         let cache = VideoCacheCoverage(ranges: [0..<2, 12..<16])
         let progress = VideoCacheProgress(duration: 20, buffered: [buffered], cache: cache)
         XCTAssertEqual(progress.timeFractions, [0..<0.1, 0.6..<1])
-        XCTAssertEqual(try XCTUnwrap(progress.coveredFraction), 0.5, accuracy: 0.0001)
+        XCTAssertNil(progress.fileFraction)
         let fileWithPlaybackBuffer = VideoCacheProgress(duration: 20, buffered: [buffered], cache: .init(fileFraction: 0.8))
         XCTAssertEqual(fileWithPlaybackBuffer.timeFractions, [0.75..<1])
-        XCTAssertEqual(fileWithPlaybackBuffer.coveredFraction, 0.8)
+        XCTAssertEqual(fileWithPlaybackBuffer.fileFraction, 0.8)
         let byteOnly = VideoCacheProgress(duration: 20, cache: .init(fileFraction: 0.4))
         XCTAssertTrue(byteOnly.timeFractions.isEmpty)
-        XCTAssertEqual(byteOnly.coveredFraction, 0.4)
+        XCTAssertEqual(byteOnly.fileFraction, 0.4)
         XCTAssertTrue(VideoCacheProgress(duration: .infinity, cache: .init(isComplete: true)).timeFractions.isEmpty)
         let complete = VideoCacheProgress(duration: 20, cache: .init(isComplete: true))
         XCTAssertEqual(complete.timeFractions, [0..<1])
-        XCTAssertEqual(complete.coveredFraction, 1)
-        XCTAssertNil(VideoCacheProgress().coveredFraction)
+        XCTAssertNil(complete.fileFraction)
     }
 
     @MainActor func testSelectingSupportedVideoRateClearsRateErrorWithoutClearingPlaybackError() {

@@ -444,13 +444,9 @@ class SearchViewModel: ObservableObject {
     // MARK: - Private Helpers
 
     private func recordHistory(keyword: String, context: NSManagedObjectContext) {
-        let item = SearchHistoryRecord(keyword: keyword)
-        context.insert(item)
-        do {
-            try context.save()
-            // F2: Index in Spotlight
-            SpotlightIndexingService.indexHistoryItem(keyword: keyword, id: item.id)
-        } catch {}
+        if let item = SearchHistoryService.addEntry(keyword: keyword, platformID: nil, context: context) {
+            SpotlightIndexingService.indexHistoryItem(keyword: item.keyword, id: item.id)
+        }
     }
 
     private static func stableHash(for text: String) -> String {

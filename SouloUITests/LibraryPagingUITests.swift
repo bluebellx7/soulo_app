@@ -5,6 +5,74 @@ import UIKit
 final class LibraryPagingUITests: XCTestCase {
     private let sections = ["bookmarks", "history", "downloads", "files"]
 
+    func testImportsPhotoAndVideoFromTheSystemPicker() throws {
+        guard ProcessInfo.processInfo.environment["SOULO_ALBUM_IMPORT_FIXTURE"] == "1" else {
+            throw XCTSkip("Requires a JPEG and a video seeded as the two newest assets")
+        }
+        continueAfterFailure = false
+        let app = launch(); defer { app.terminate() }
+        try open("files", app: app)
+        app.buttons["files.import"].firstMatch.tap()
+        let importPhotos = app.buttons["Import Photos"].firstMatch
+        XCTAssertTrue(importPhotos.waitForExistence(timeout: 5), app.debugDescription)
+        importPhotos.tap()
+
+        let assets = app.images.matching(identifier: "PXGGridLayout-Info")
+        let latest = assets.element(boundBy: 0), next = assets.element(boundBy: 1)
+        XCTAssertTrue(next.waitForExistence(timeout: 10), app.debugDescription)
+        let labels = [latest.label, next.label]
+        XCTAssertTrue(labels.contains { $0.hasPrefix("Photo,") || $0.hasPrefix("照片,") }, app.debugDescription)
+        XCTAssertTrue(labels.contains { $0.hasPrefix("Video,") || $0.hasPrefix("视频,") }, app.debugDescription)
+        latest.tap()
+        next.tap()
+        let addSelection = app.buttons.matching(NSPredicate(format: "label IN %@", ["Add", "添加"])).firstMatch
+        XCTAssertTrue(addSelection.waitForExistence(timeout: 5), app.debugDescription)
+        addSelection.tap()
+
+        let photo = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label MATCHES[c] %@",
+            "files.item.", ".*\\.jpe?g,.*")).firstMatch
+        let video = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label MATCHES[c] %@",
+            "files.item.", ".*\\.(mp4|mov),.*")).firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(video.waitForExistence(timeout: 15), app.debugDescription)
+    }
+
+    func testTransfersImportedAlbumFilesOverWiFi() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let photoPath = environment["SOULO_ALBUM_PHOTO_PATH"],
+              let videoPath = environment["SOULO_ALBUM_VIDEO_PATH"] else {
+            throw XCTSkip("Requires the imported album fixtures and a Wi-Fi interface")
+        }
+        continueAfterFailure = false
+        let app = launch(); defer { app.terminate() }
+        try open("files", app: app)
+        app.buttons["files.wifi"].tap()
+        let start = app.buttons["Start transfer"].firstMatch
+        XCTAssertTrue(start.waitForExistence(timeout: 5), app.debugDescription)
+        start.tap()
+        let address = app.buttons["Copy address"].firstMatch
+        let pairingCode = app.buttons["Copy pairing code"].firstMatch
+        XCTAssertTrue(address.waitForExistence(timeout: 10), app.debugDescription)
+        let base = try XCTUnwrap(URL(string: try XCTUnwrap(address.value as? String)))
+        let code = try XCTUnwrap(pairingCode.value as? String)
+
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.invalidateAndCancel() }
+        var pairing = URLRequest(url: base.appendingPathComponent("pair"), timeoutInterval: 5)
+        pairing.httpMethod = "POST"
+        pairing.httpBody = Data(code.utf8)
+        let (_, authorization) = try await session.data(for: pairing)
+        XCTAssertEqual((authorization as? HTTPURLResponse)?.statusCode, 200)
+        for (name, path) in [("album-fixture-photo.jpeg", photoPath), ("album-fixture-video.mp4", videoPath)] {
+            var components = try XCTUnwrap(URLComponents(url: base.appendingPathComponent("file"), resolvingAgainstBaseURL: false))
+            components.queryItems = [URLQueryItem(name: "name", value: name)]
+            let request = URLRequest(url: try XCTUnwrap(components.url), timeoutInterval: 10)
+            let (received, response) = try await session.data(for: request)
+            XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+            XCTAssertEqual(received, try Data(contentsOf: URL(fileURLWithPath: path)))
+        }
+    }
+
     func testReadingListOpensFromTheLazyBookmarkPage() throws {
         let app = launch(); defer { app.terminate() }
         app.open(try XCTUnwrap(URL(string: "soulo://bookmarks")))
@@ -100,6 +168,37 @@ final class LibraryPagingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["media.file.airplay"].exists, "A new session must use automatic selection after casting")
     }
 
+    func testMusicPlayerUpdatesTrackArtworkAndKeepsPlayingWhenClosed() throws {
+        let app = launch(); defer { app.terminate() }
+        try open("files", app: app)
+        let folder = app.buttons["files.item.Music-QA"]
+        guard folder.waitForExistence(timeout: 5) else { throw XCTSkip("Requires opt-in Music-QA fixtures") }
+        folder.tap()
+        let firstFile = app.buttons.matching(NSPredicate(format: "identifier CONTAINS %@", "files.item.01.mp3")).firstMatch
+        firstFile.tap()
+
+        let title = app.staticTexts["media.music.title"]
+        let timeline = app.sliders["media.music.timeline"]
+        func checkTrack(_ name: String, screenshot: String) {
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                title.exists && title.label == name && timeline.exists && timeline.isEnabled
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 12), .completed, app.debugDescription)
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            shot.name = screenshot; shot.lifetime = .keepAlways; add(shot)
+        }
+        checkTrack("After the Rain", screenshot: "Music - First Embedded Cover")
+        app.buttons["media.music.next"].tap()
+        checkTrack("Sunlit Window", screenshot: "Music - Second Embedded Cover")
+        app.buttons["media.music.queue"].tap()
+        app.buttons["media.music.queue.2"].tap()
+        checkTrack("03 Quiet Evening", screenshot: "Music - Illustration Cover")
+        app.buttons["media.music.close"].tap()
+        XCTAssertTrue(firstFile.waitForExistence(timeout: 5), app.debugDescription)
+        let pause = app.buttons.matching(NSPredicate(format: "identifier == %@ AND label == %@", "media.mini-player", "Pause"))
+        XCTAssertTrue(pause.firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+    }
+
     private func launch() -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
@@ -146,13 +245,39 @@ final class LibraryPagingUITests: XCTestCase {
     }
 
     func testSwipingAndTappingKeepPageSelectionAndToolbarInSync() throws {
-        let app = launch()
+        let app = launch(); defer { app.terminate() }
         try open("bookmarks", app: app)
+        let tabs = sections.map { app.buttons["library.section." + $0] }
+        let tabFrames = tabs.map(\.frame)
+        let viewport = app.descendants(matching: .any)["library.pages"].firstMatch
+        func searchRow(_ section: String) -> XCUIElement {
+            let search = ["bookmarks": "favorites.search", "history": "history.search"][section] ?? "library.search"
+            return app.collectionViews.cells.containing(.textField, identifier: search).firstMatch
+        }
+        let firstRow = searchRow("bookmarks")
+        XCTAssertTrue(firstRow.waitForExistence(timeout: 5))
+        let rowWidth = firstRow.frame.width
+        for tab in tabs { XCTAssertGreaterThanOrEqual(tab.frame.height, 44) }
+        func assertLayout(_ section: String) {
+            let row = searchRow(section)
+            XCTAssertTrue(row.waitForExistence(timeout: 5))
+            XCTAssertEqual(row.frame.width, rowWidth, accuracy: 1, section)
+            XCTAssertEqual(row.frame.midX, viewport.frame.midX, accuracy: 1, section)
+            for (tab, baseline) in zip(tabs, tabFrames) {
+                let frame = tab.frame
+                XCTAssertEqual(frame.minX, baseline.minX, accuracy: 0.5, section)
+                XCTAssertEqual(frame.minY, baseline.minY, accuracy: 0.5, section)
+                XCTAssertEqual(frame.width, baseline.width, accuracy: 0.5, section)
+                XCTAssertEqual(frame.height, baseline.height, accuracy: 0.5, section)
+            }
+        }
+        assertLayout("bookmarks")
         XCTAssertTrue(app.buttons["favorites.manage"].exists)
         XCTAssertFalse(app.buttons["files.import"].exists)
         for section in sections.dropFirst() {
             page(left: true, app: app)
             assertSelected(section, app: app)
+            assertLayout(section)
         }
         XCTAssertTrue(app.buttons["files.import"].exists)
         XCTAssertFalse(app.buttons["favorites.manage"].exists)

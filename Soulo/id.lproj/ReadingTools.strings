@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapsul";
 "home_toolbar_icons" = "Hanya ikon";
 "home_toolbar_bottom" = "Di bawah";
-"home_toolbar_belowSearch" = "Di bawah pencarian";
 "home_toolbar_free" = "Posisi bebas";
+"home_toolbar_search_bottom" = "Di bawah";
+"home_toolbar_alignment" = "Perataan Bilah Alat";
 "home_toolbar_leading" = "Rata awal";
 "home_toolbar_center" = "Tengah";
 "home_toolbar_trailing" = "Rata akhir";
 "home_toolbar_drag_position" = "Seret bilah alat ke posisi yang diinginkan.";
 "home_toolbar_drag_buttons" = "Ketuk untuk mengganti tombol. Seret untuk mengurutkan.";
+"home_toolbar_style" = "Gaya";
+"home_toolbar_visibility" = "Tampil/Sembunyi";
+"home_toolbar_visibility_page" = "Elemen Beranda";
+"home_toolbar_visibility_search_area" = "Area Pencarian";
+"home_toolbar_visibility_title" = "Judul";
+"home_toolbar_visibility_subtitle" = "Subjudul";
+"home_toolbar_visibility_search" = "Bilah pencarian";
+"home_toolbar_visibility_search_hint" = "Geser ke atas atau ke bawah di halaman beranda untuk menampilkan bilah pencarian.";
+"home_toolbar_visibility_recovery" = "Sentuh dan tahan area kosong di Beranda untuk membuka menu.";
 "home_toolbar_search" = "Temukan halaman";
 "group_default_search" = "Pencarian bawaan";
 "group_search_settings" = "Pengaturan Grup";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Kaca Buram";
 "wallpaper_blur_amount" = "Kekuatan Buram";
 
+"home_quick_search_guide" = "Masukkan kata kunci di Beranda untuk melihat platform di bawah bilah pencarian. Ketuk platform untuk mencari di sana.";
 "auto_hide_platform_bar_hint" = "Saat diaktifkan, bilah hanya disembunyikan setelah Anda mengetuk konten halaman web dan domain halaman tidak cocok dengan platform mana pun di bilah saat ini. Jika cocok, bilah tetap atau kembali ditampilkan. Menggulir dan pengalihan otomatis tidak menyembunyikannya.";
 
 "ad_subscription_add" = "Tambah daftar filter";
@@ -621,3 +632,9 @@
 "browsing_web_display" = "Halaman Web";
 "manual_backups_empty" = "Belum ada cadangan manual";
 "browsing_display_settings_legacy" = "Tampilan Penjelajahan";
+"media_lock_orientation" = "Kunci orientasi";
+"media_unlock_orientation" = "Buka kunci orientasi";
+
+"music_queue" = "Daftar putar";
+"music_previous_track" = "Lagu sebelumnya";
+"music_next_track" = "Lagu berikutnya";

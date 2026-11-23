@@ -241,8 +241,6 @@
 "login_required_toast" = "먼저 로그인한 후 다시 검색하세요";
 "status_enabled" = "활성화";
 "status_disabled" = "비활성화";
-"show_top_search_bar" = "상단 검색창 표시";
-"show_top_search_bar_desc" = "숨겨도 하단 주소 표시줄에서 검색하거나 음성 입력을 사용할 수 있습니다";
 "ad_block_master_disabled_desc" = "광고 차단을 켜야 아래 필터 구독을 사용하고 관리할 수 있습니다.";
 "custom_groups" = "사용자 지정 그룹";
 "no_groups" = "사용자 지정 그룹 없음";
@@ -364,8 +362,6 @@
 "batch_import_result" = "플랫폼 %d개를 가져왔습니다";
 "paste_from_clipboard" = "클립보드에서 붙여넣기";
 "none" = "None";
-"show_group_picker_home" = "홈에 그룹 선택 표시";
-"show_group_picker_home_desc" = "Display platform group tabs on the home screen";
 "error_no_internet" = "인터넷에 연결되어 있지 않습니다. 네트워크를 확인하세요.";
 "error_timeout" = "연결 시간이 초과되었습니다. 다시 시도하세요.";
 "error_ssl" = "Secure connection failed.";

@@ -241,8 +241,6 @@
 "login_required_toast" = "Prosimo, da se najprej prijavite in nato znova poiščete";
 "status_enabled" = "Omogočeno";
 "status_disabled" = "Onemogočen";
-"show_top_search_bar" = "Pokaži zgornjo iskalno vrstico";
-"show_top_search_bar_desc" = "Ko je skrito, uporabite spodnji kontrolnik naslova za iskanje ali začetek glasovnega vnosa";
 "ad_block_master_disabled_desc" = "Vklopite Ad Block, če želite uporabljati in upravljati spodnje naročnine na filtre.";
 "custom_groups" = "Skupine po meri";
 "no_groups" = "Brez skupin po meri";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Uspešno uvožene platforme %d";
 "paste_from_clipboard" = "Prilepi iz odložišča";
 "none" = "Noben";
-"show_group_picker_home" = "Pokaži izbirnik skupin na domači strani";
-"show_group_picker_home_desc" = "Prikažite zavihke skupine platform na začetnem zaslonu za hitro preklapljanje";
 "error_no_internet" = "Ni internetne povezave. Preverite svoje omrežje.";
 "error_timeout" = "Povezava je potekla. prosim poskusite ponovno";
 "error_ssl" = "Varna povezava ni uspela. To spletno mesto morda ni varno.";

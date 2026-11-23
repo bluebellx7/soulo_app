@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "ক্যাপসুল";
 "home_toolbar_icons" = "শুধু আইকন";
 "home_toolbar_bottom" = "নিচে";
-"home_toolbar_belowSearch" = "অনুসন্ধানের নিচে";
 "home_toolbar_free" = "ইচ্ছামতো স্থাপন";
+"home_toolbar_search_bottom" = "নিচে";
+"home_toolbar_alignment" = "টুলবারের সারিবদ্ধকরণ";
 "home_toolbar_leading" = "শুরুতে সারিবদ্ধ";
 "home_toolbar_center" = "মাঝে";
 "home_toolbar_trailing" = "শেষে সারিবদ্ধ";
 "home_toolbar_drag_position" = "অবস্থান বদলাতে টুলবারটি টানুন।";
 "home_toolbar_drag_buttons" = "বোতাম বদলাতে ট্যাপ করুন, সাজাতে টানুন।";
+"home_toolbar_style" = "স্টাইল";
+"home_toolbar_visibility" = "দেখান/লুকান";
+"home_toolbar_visibility_page" = "হোমের উপাদান";
+"home_toolbar_visibility_search_area" = "অনুসন্ধানের অংশ";
+"home_toolbar_visibility_title" = "শিরোনাম";
+"home_toolbar_visibility_subtitle" = "উপশিরোনাম";
+"home_toolbar_visibility_search" = "সার্চ বার";
+"home_toolbar_visibility_search_hint" = "অনুসন্ধান বার দেখাতে হোম পেজে ওপরে বা নিচে সোয়াইপ করুন।";
+"home_toolbar_visibility_recovery" = "মেনুর জন্য হোমের ফাঁকা জায়গা চেপে ধরুন।";
 "home_toolbar_search" = "একটি পৃষ্ঠা খুঁজুন";
 "group_default_search" = "ডিফল্ট অনুসন্ধান";
 "group_search_settings" = "গ্রুপ সেটিংস";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "ঝাপসা কাচ";
 "wallpaper_blur_amount" = "ঝাপসার মাত্রা";
 
+"home_quick_search_guide" = "হোম পেজে কীওয়ার্ড লিখলে অনুসন্ধান বারের নিচে প্ল্যাটফর্ম দেখা যাবে। অনুসন্ধান করতে একটি প্ল্যাটফর্মে ট্যাপ করুন।";
 "auto_hide_platform_bar_hint" = "চালু থাকলে, ওয়েবপেজের বিষয়বস্তুতে নিজে ট্যাপ করার পরেই প্ল্যাটফর্ম বার লুকাবে, যদি পেজের ডোমেন বর্তমান বারের কোনো প্ল্যাটফর্মের সঙ্গে না মেলে। কোনোটি মিললে বার দেখা যাবে বা আবার ফিরে আসবে। স্ক্রল বা স্বয়ংক্রিয় রিডাইরেক্ট বার লুকাবে না।";
 
 "ad_subscription_add" = "ফিল্টার তালিকা যোগ করুন";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "ওয়েবপৃষ্ঠা";
 "manual_backups_empty" = "এখনও ম্যানুয়াল ব্যাকআপ নেই";
 "browsing_display_settings_legacy" = "ব্রাউজিংয়ের প্রদর্শন";
+"media_lock_orientation" = "পর্দার অভিমুখ লক করুন";
+"media_unlock_orientation" = "পর্দার অভিমুখ আনলক করুন";
+
+"music_queue" = "প্লেলিস্ট";
+"music_previous_track" = "আগের গান";
+"music_next_track" = "পরের গান";

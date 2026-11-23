@@ -50,7 +50,7 @@ The combined directory lists 49 distinct sites across eight categories. Magnet e
 URL: https://soulo.dkluge.com/stocks.html
 Data: https://soulo.dkluge.com/stocks.json
 
-StockClaw is the first entry for A-share market monitoring and reviews, followed by East Money and 10jqka. TradingView and Google Finance cover market quotes and charts. The National Bureau of Statistics, the Shanghai, Shenzhen, and Hong Kong stock exchanges, and FRED provide public statistics and economic data. Professional data sources also include East Money Data Center, CSI index profiles, ChinaMoney Shibor, ChinaBond yield curves, SHFE trading statistics, CFTC trader positions, BIS international financial statistics, IMF datasets, and World Bank development indicators. All nineteen entries use locally cached website icons. The directory provides links to each site's public entry point.
+牛盘盘 is the first entry for A-share market monitoring and reviews, followed by East Money and 10jqka. TradingView and Google Finance cover market quotes and charts. The National Bureau of Statistics, the Shanghai, Shenzhen, and Hong Kong stock exchanges, and FRED provide public statistics and economic data. Professional data sources also include East Money Data Center, CSI index profiles, ChinaMoney Shibor, ChinaBond yield curves, SHFE trading statistics, CFTC trader positions, BIS international financial statistics, IMF datasets, and World Bank development indicators. All nineteen entries use locally cached website icons. The directory provides links to each site's public entry point.
 
 ## App privacy and website analytics
 
@@ -93,4 +93,4 @@ The navigation link opens the DKluge tool collection, which includes image, PDF,
 
 The shared navigation has seven icon-labeled destinations. On compact screens an accessible Directory menu exposes the same links; without JavaScript, those links remain visible.
 
-- [Soulo 扩展](https://soulo.dkluge.com/extensions.html)：已验证的 FastStream（Chrome）与猫抓（Edge），官方来源、Soulo 内安装及扩展推荐。
+- [Soulo 扩展](https://soulo.dkluge.com/extensions.html)：收录实测过的浏览器扩展，逐项列出验证版本、已通过的功能、适用范围及官方来源。

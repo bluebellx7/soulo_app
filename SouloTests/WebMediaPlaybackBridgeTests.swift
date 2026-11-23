@@ -5,6 +5,48 @@ import UIKit
 @testable import Soulo
 
 @MainActor final class WebMediaPlaybackBridgeTests: XCTestCase {
+    func testEmbeddedPlayerSuppressesOnlyTheVideoItFullyCovers() async throws {
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        configuration.userContentController.addUserScript(WKUserScript(source: WebVideoOrientationRuntime.script(),
+            injectionTime: .atDocumentEnd, forMainFrameOnly: false, in: WebVideoOrientationRuntime.world))
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 700), configuration: configuration)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(web)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        web.loadHTMLString("""
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <style>body{margin:0}#original,#replacement{position:absolute;top:60px;left:20px;width:350px;height:220px}#replacement{z-index:10;border:0;background:#121212}</style>
+        <video id="original"></video>
+        <iframe id="replacement" srcdoc="<body style='margin:0'><video style='width:350px;height:220px'></video>"></iframe>
+        """, baseURL: URL(string: "https://tool-visibility.test"))
+        let inspect = """
+        (() => {
+          const frame=document.getElementById('replacement');
+          const shown=doc=>[...doc.querySelectorAll('[data-soulo-video-rotate]')].filter(
+            group=>doc.defaultView.getComputedStyle(group).display!=='none').length;
+          return [shown(document),shown(frame.contentDocument)];
+        })()
+        """
+        func waitForTools(_ expected: [Int]) async throws -> [Int]? {
+            var counts: [Int]?
+            for _ in 0..<70 {
+                counts = try? await web.evaluateJavaScript(inspect) as? [Int]
+                if counts == expected { break }
+                try await Task.sleep(for: .milliseconds(40))
+            }
+            return counts
+        }
+        let covered = try await waitForTools([0, 1])
+        XCTAssertEqual(covered, [0, 1])
+        _ = try await web.evaluateJavaScript("document.getElementById('replacement').style.width='165px';null")
+        let partlyCovered = try await waitForTools([1, 1])
+        XCTAssertEqual(partlyCovered, [1, 1])
+    }
+
     func testEpisodeInspectionFindsTheCurrentOpaqueHLSControllerSource() async throws {
         let web = WKWebView()
         let stream = "https://media.example/hls/getM3u8?time=123&url=selected.m3u8"

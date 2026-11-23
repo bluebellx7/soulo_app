@@ -16,6 +16,16 @@ struct CloudSettingsBackup: Codable, Identifiable {
 final class CloudSettingsBackupStore {
     static let maximumRecentBackups = 20
     static let maximumPortableBackupSize = 16 * 1024 * 1024
+    struct RecoveryDay: Identifiable {
+        let id: Date
+        let latest: CloudSettingsBackup
+        let earlier: [CloudSettingsBackup]
+    }
+
+    private enum SaveMode {
+        case initial, manual, daily, checkpoint
+    }
+
     private struct PortableBackup: Codable {
         let format: String
         let version: Int
@@ -28,9 +38,11 @@ final class CloudSettingsBackupStore {
     private static let portableFormat = "com.dkluge.Soulo.settings-backup"
     let directory: URL
     private let fileManager: FileManager
+    private let calendar: Calendar
 
-    init(directory: URL? = nil, fileManager: FileManager = .default) {
+    init(directory: URL? = nil, fileManager: FileManager = .default, calendar: Calendar = .autoupdatingCurrent) {
         self.fileManager = fileManager
+        self.calendar = calendar
         self.directory = directory ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Soulo/SettingsBackups", isDirectory: true)
     }
@@ -44,24 +56,59 @@ final class CloudSettingsBackupStore {
             .sorted { $0.createdAt == $1.createdAt ? $0.id.uuidString > $1.id.uuidString : $0.createdAt > $1.createdAt }
     }
 
+    static func recoveryDays(from newestFirst: [CloudSettingsBackup],
+                             calendar: Calendar = .autoupdatingCurrent) -> [RecoveryDay] {
+        let grouped = Dictionary(grouping: newestFirst.filter { $0.isManual != true }) {
+            calendar.startOfDay(for: $0.createdAt)
+        }
+        return grouped.compactMap { day, backups in
+            backups.first.map { RecoveryDay(id: day, latest: $0, earlier: Array(backups.dropFirst())) }
+        }.sorted { $0.id > $1.id }
+    }
+
     @discardableResult
     func save(_ values: CloudSettingsSyncEngine.Values, initial: Bool = false, manual: Bool = false,
               date: Date = Date()) throws -> CloudSettingsBackup {
+        try save(values, mode: initial ? .initial : (manual ? .manual : .checkpoint), date: date)
+    }
+
+    @discardableResult
+    func saveDaily(_ values: CloudSettingsSyncEngine.Values, date: Date = Date()) throws -> CloudSettingsBackup {
+        try save(values, mode: .daily, date: date)
+    }
+
+    private func save(_ values: CloudSettingsSyncEngine.Values, mode: SaveMode, date: Date) throws -> CloudSettingsBackup {
         _ = try CloudSettingsSyncEngine.flattened(values)
         let existing = try list()
-        if initial, let pinned = existing.first(where: \.isInitial) { return pinned }
-        if !initial, let latest = existing.first(where: { ($0.isManual == true) == manual }),
-           CloudSettingsSyncEngine.equal(try CloudSettingsSyncEngine.values(latest.propertyList), values) { return latest }
+        switch mode {
+        case .initial:
+            if let pinned = existing.first(where: \.isInitial) { return pinned }
+        case .daily:
+            // Reuse a readable recovery copy for this local day, including
+            // the initial copy on the day settings sync was first enabled.
+            for backup in existing where backup.isManual != true && calendar.isDate(backup.createdAt, inSameDayAs: date) {
+                if (try? CloudSettingsSyncEngine.flattened(CloudSettingsSyncEngine.values(backup.propertyList))) != nil {
+                    return backup
+                }
+            }
+        case .manual, .checkpoint:
+            if let latest = existing.first(where: { ($0.isManual == true) == (mode == .manual) }),
+               let previous = try? CloudSettingsSyncEngine.values(latest.propertyList),
+               CloudSettingsSyncEngine.equal(previous, values) { return latest }
+        }
         let backup = CloudSettingsBackup(id: UUID(), createdAt: date,
-                                         propertyList: try CloudSettingsSyncEngine.propertyList(values), isInitial: initial,
-                                         isManual: manual && !initial)
+                                         propertyList: try CloudSettingsSyncEngine.propertyList(values),
+                                         isInitial: mode == .initial, isManual: mode == .manual)
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         try JSONEncoder().encode(backup).write(to: url(for: backup), options: .atomic)
-        // Keep manual copies until explicitly deleted. Automatic sync traffic
-        // rotates only recovery snapshots, retaining the initial copy as well.
-        let retainedExisting = Self.maximumRecentBackups - (!initial && !manual ? 1 : 0)
-        for old in existing.filter({ !$0.isInitial && $0.isManual != true }).dropFirst(retainedExisting) {
-            try? fileManager.removeItem(at: url(for: old))
+        // Historical duplicates share a retention slot. Keep the earlier
+        // recovery points within the retained days, plus the initial copy.
+        let savedRecoveryDay = mode == .daily || mode == .checkpoint ? calendar.startOfDay(for: date) : nil
+        let otherDays = Self.recoveryDays(from: existing.filter { !$0.isInitial }, calendar: calendar)
+            .filter { $0.id != savedRecoveryDay }
+        let retainedExisting = Self.maximumRecentBackups - (savedRecoveryDay == nil ? 0 : 1)
+        for day in otherDays.dropFirst(retainedExisting) {
+            for old in [day.latest] + day.earlier { try? fileManager.removeItem(at: url(for: old)) }
         }
         return backup
     }
@@ -70,6 +117,7 @@ final class CloudSettingsBackupStore {
         let saved = try JSONDecoder().decode(CloudSettingsBackup.self, from: Data(contentsOf: url(for: backup)))
         guard saved.version == 1, saved.id == backup.id else { throw CocoaError(.coderReadCorrupt) }
         let values = try CloudSettingsSyncEngine.values(saved.propertyList)
+            .filter { !CloudSettingsSyncEngine.retiredKeys.contains($0.key) }
         _ = try CloudSettingsSyncEngine.flattened(values)
         return values
     }
@@ -99,16 +147,18 @@ final class CloudSettingsBackupStore {
         guard data.count <= Self.maximumPortableBackupSize else { throw CocoaError(.fileReadTooLarge) }
         let portable = try JSONDecoder().decode(PortableBackup.self, from: data)
         let allowed = Set(CloudSyncService.syncedKeys), included = Set(portable.includedKeys)
+        let readableKeys = allowed.union(CloudSettingsSyncEngine.retiredKeys)
         guard portable.format == Self.portableFormat, portable.version == 1, portable.scope == "settings",
               portable.createdAt.timeIntervalSince1970.isFinite, !included.isEmpty,
-              included.count == portable.includedKeys.count, included.isSubset(of: allowed) else {
+              included.count == portable.includedKeys.count, included.isSubset(of: readableKeys) else {
             throw CocoaError(.coderReadCorrupt)
         }
-        let incoming = try CloudSettingsSyncEngine.values(portable.propertyList)
-        guard Set(incoming.keys).isSubset(of: included) else { throw CocoaError(.coderReadCorrupt) }
+        let allIncoming = try CloudSettingsSyncEngine.values(portable.propertyList)
+        guard Set(allIncoming.keys).isSubset(of: included) else { throw CocoaError(.coderReadCorrupt) }
+        let incoming = allIncoming.filter { allowed.contains($0.key) }
         try validatePortableValues(incoming)
         var restored = currentValues.filter { allowed.contains($0.key) }
-        for key in included { restored[key] = incoming[key] }
+        for key in included.intersection(allowed) { restored[key] = incoming[key] }
         // Validate the resulting snapshot. A valid backup must still be able
         // to replace a corrupt current value inside its declared scope.
         try validatePortableValues(restored)

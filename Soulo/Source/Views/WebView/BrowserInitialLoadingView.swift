@@ -39,7 +39,6 @@ private struct LoadingBrandMark: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = false
-    @State private var rotating = false
 
     private var shouldAnimate: Bool { isVisible && scenePhase == .active && !reduceMotion }
 
@@ -55,6 +54,18 @@ private struct LoadingBrandMark: View {
     }
 
     var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !shouldAnimate)) { timeline in
+            let turnDuration = 0.8
+            let elapsed = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: turnDuration)
+            artwork.rotationEffect(.degrees(shouldAnimate ? elapsed / turnDuration * 360 : 0))
+        }
+        .frame(width: 64, height: 64)
+        .clipped()
+        .onAppear { isVisible = true }
+        .onDisappear { isVisible = false }
+    }
+
+    private var artwork: some View {
         ZStack {
             mark
                 .colorMultiply(colorScheme == .dark ? .white : Color(hex: "F5E6C8"))
@@ -71,14 +82,5 @@ private struct LoadingBrandMark: View {
         }
         .frame(width: 108, height: 108)
         .opacity(0.9)
-        .rotationEffect(.degrees(rotating ? 360 : 0))
-        .animation(shouldAnimate ? .linear(duration: 0.8).repeatForever(autoreverses: false) : nil, value: rotating)
-        .frame(width: 64, height: 64)
-        .clipped()
-        .onAppear { isVisible = true }
-        .onDisappear { isVisible = false }
-        .onCompatibleChange(of: shouldAnimate, initial: true) { _, animate in
-            rotating = animate
-        }
     }
 }

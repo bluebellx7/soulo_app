@@ -28,7 +28,7 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         root = try fixture.start()
         app.launchArguments = ["-app_language", "en-US", "-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-is_incognito", "NO", "-privacy_https_upgrade_enabled", "NO",
             "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES", "-wallpaper_source", "gradient", "-wallpaper_refresh_interval", "0",
-            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO"]
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-tab_overview_grouped", "NO", "-restore_last_page_on_launch", "NO"]
         app.launch()
     }
 
@@ -50,6 +50,22 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         XCTAssertTrue(element.isHittable, app.debugDescription)
         // Coordinate taps exercise hit testing instead of accessibility activation.
         element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+    }
+
+    private var tabOverviewButton: XCUIElement {
+        let browser = app.buttons["browser.tabs"]
+        let home = app.descendants(matching: .any)["home.tabs"].firstMatch
+        let available = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            browser.isHittable || home.isHittable
+        }, object: nil)
+        _ = XCTWaiter.wait(for: [available], timeout: 10)
+        return browser.isHittable ? browser : home
+    }
+
+    private func createBlankTab() {
+        tap(tabOverviewButton)
+        tap(app.buttons["tabs.options"])
+        tap(app.buttons["tabs.new-tab"])
     }
 
     private func checkMoreAndTabs() {
@@ -206,8 +222,11 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         XCTAssertTrue(heading.waitForExistence(timeout: 20), app.debugDescription)
         XCTAssertTrue(initialLoading.waitForNonExistence(timeout: 5))
         tap(app.webViews.links["Open slow page"].firstMatch)
+        let pending = XCTNSPredicateExpectation(predicate: NSPredicate { [weak self] _, _ in
+            self?.fixture.hasPendingSlowResource == true
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [pending], timeout: 10), .completed)
         XCTAssertFalse(navigationPreview.exists, "Loading must keep the live page interactive")
-        XCTAssertTrue(fixture.hasPendingSlowResource)
         XCTAssertFalse(initialLoading.exists)
         let next = XCTAttachment(screenshot: app.screenshot())
         next.name = "navigation-without-frozen-cover"; next.lifetime = .keepAlways; add(next)
@@ -294,15 +313,19 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
                 tap(app.buttons["browser.moreMenu.\(page)"])
                 let action = app.buttons[item].firstMatch
                 XCTAssertTrue(action.waitForExistence(timeout: 5), app.debugDescription)
-                // Keep the native dropdown open across a page-availability poll.
+                // Keep the tools visible across a page-availability poll.
                 Thread.sleep(forTimeInterval: 1.2)
                 XCTAssertTrue(action.isHittable, app.debugDescription)
-                XCTAssertFalse(app.buttons["browser.moreMenu.back"].exists)
                 if iteration == 0 {
                     let screenshot = XCTAttachment(screenshot: app.screenshot())
                     screenshot.name = "more-dropdown-\(page)"
                     screenshot.lifetime = .keepAlways
                     add(screenshot)
+                }
+                if page == "pageTools" {
+                    tap(app.buttons["browser.moreMenu.pageTools.back"])
+                    tap(app.buttons["browser.moreMenu.pageTools"])
+                    XCTAssertTrue(action.isHittable, app.debugDescription)
                 }
                 outside.tap()
                 let panel = app.popovers.firstMatch
@@ -319,12 +342,44 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         shot.name = "more-dropdown-zoom-action"; shot.lifetime = .keepAlways; add(shot)
     }
 
+    func testPageToolsCanReturnToMoreOnIQiyi() throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_PAGE_TOOLS_QA"] == "1" else {
+            throw XCTSkip("Opt-in live iQiyi page")
+        }
+        try open(url: XCTUnwrap(URL(string: "https://m.iqiyi.com/")))
+        let more = app.buttons["browser.more"].firstMatch
+        let tools = app.buttons["browser.moreMenu.pageTools"]
+        let back = app.buttons["browser.moreMenu.pageTools.back"]
+        for _ in 0..<2 {
+            tap(more)
+            for _ in 0..<2 {
+                tap(tools)
+                XCTAssertTrue(app.buttons["Page Zoom"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+                tap(back)
+            }
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.15)).tap()
+            XCTAssertTrue(app.popovers.firstMatch.waitForNonExistence(timeout: 5), app.debugDescription)
+            XCTAssertEqual(app.state, .runningForeground)
+        }
+        tap(more)
+        tap(tools)
+        tap(app.buttons["Page Zoom"].firstMatch)
+        XCTAssertTrue(app.buttons["Zoom In"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+    }
+
     func testFindInPageSearchesNavigatesAndDoesNotLeaveMenuBehind() throws {
         try open("find")
         XCTAssertTrue(app.webViews.staticTexts["needle first"].firstMatch.waitForExistence(timeout: 20))
-        func openFind() -> XCUIElement {
+        func openPageTools() {
             tap(app.buttons["More"].firstMatch)
-            tap(app.buttons["browser.moreMenu.pageTools"])
+            let tools = app.buttons["browser.moreMenu.pageTools"]
+            XCTAssertTrue(tools.waitForExistence(timeout: 5), app.debugDescription)
+            let frame = tools.frame
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+            XCTAssertTrue(app.buttons["browser.moreMenu.pageTools.back"].waitForExistence(timeout: 5), app.debugDescription)
+        }
+        func openFind() -> XCUIElement {
+            openPageTools()
             tap(app.buttons["Find in Page"].firstMatch)
             let field = app.searchFields["find.searchField"]
             XCTAssertTrue(field.waitForExistence(timeout: 5), app.debugDescription)
@@ -338,14 +393,30 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         shot.name = "system-find-native-panel"; shot.lifetime = .keepAlways; add(shot)
         let count = app.staticTexts["find.resultLabel"]
         XCTAssertTrue(count.waitForExistence(timeout: 5))
-        let matches = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "1 of 3"), object: count)
-        XCTAssertEqual(XCTWaiter.wait(for: [matches], timeout: 5), .completed, app.debugDescription)
+        func assertVisibleMatch(_ index: Int, text: String) {
+            let page = app.webViews.firstMatch
+            let match = page.staticTexts[text].firstMatch
+            let appBounds = app.frame
+            let result = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                guard count.label == "\(index) of 3", match.exists else { return false }
+                let visibleBounds = page.frame.intersection(appBounds)
+                let matchFrame = match.frame
+                let matchCenter = CGPoint(x: matchFrame.midX, y: matchFrame.midY)
+                return visibleBounds.contains(matchCenter) && matchCenter.y < field.frame.minY
+            }, object: nil)
+            // The system Find navigator can dim the page and make its text
+            // non-hittable while WebKit scrolls the selected match into view.
+            XCTAssertEqual(XCTWaiter.wait(for: [result], timeout: 5), .completed, app.debugDescription)
+        }
+        assertVisibleMatch(1, text: "needle first")
         let next = app.buttons["find.nextButton"]
         let previous = app.buttons["find.previousButton"]
-        tap(next)
-        XCTAssertTrue(app.webViews.staticTexts["NEEDLE second"].firstMatch.isHittable, app.debugDescription)
-        tap(previous)
-        XCTAssertTrue(app.webViews.staticTexts["needle first"].firstMatch.isHittable, app.debugDescription)
+        XCTAssertTrue(next.waitForExistence(timeout: 5))
+        next.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        assertVisibleMatch(2, text: "NEEDLE second")
+        XCTAssertTrue(previous.waitForExistence(timeout: 5))
+        previous.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        assertVisibleMatch(1, text: "needle first")
         tap(app.buttons["find.doneButton"])
         XCTAssertTrue(field.waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
@@ -353,8 +424,8 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         again.typeText("second")
         tap(app.buttons["find.doneButton"])
         XCTAssertTrue(again.waitForNonExistence(timeout: 5))
-        tap(app.buttons["More"].firstMatch)
-        tap(app.buttons["browser.moreMenu.pageTools"])
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        openPageTools()
         tap(app.buttons["Page Zoom"].firstMatch)
         XCTAssertTrue(app.buttons["Zoom In"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
     }
@@ -369,8 +440,7 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         let before = XCTAttachment(screenshot: app.screenshot())
         before.name = "overview-saved-screenshot"; before.lifetime = .keepAlways; add(before)
         app.terminate(); app.launch()
-        let homeTabs = app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+,? Tabs")).firstMatch
-        tap(homeTabs)
+        tap(tabOverviewButton)
         XCTAssertTrue(preview.waitForExistence(timeout: 10), app.debugDescription)
         let after = XCTAttachment(screenshot: app.screenshot())
         after.name = "overview-restored-screenshot"; after.lifetime = .keepAlways; add(after)
@@ -387,7 +457,7 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
             NSPredicate(format: "label BEGINSWITH %@", fixture.coverTitle + ",")).firstMatch
         XCTAssertTrue(preview.waitForExistence(timeout: 10), app.debugDescription)
         app.terminate(); app.launch()
-        tap(app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+,? Tabs")).firstMatch)
+        tap(tabOverviewButton)
         XCTAssertTrue(preview.waitForExistence(timeout: 10), "A page that never finishes loading must retain its cover across restart")
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "slow-loading-tab-cover-after-restart"; screenshot.lifetime = .keepAlways; add(screenshot)
@@ -421,13 +491,12 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         }
         tap(app.buttons["tabs.done"])
         for index in 1..<pages.count {
-            tap(app.buttons["browser.tabs"])
-            tap(app.buttons["tabs.tab_new_tab"])
+            createBlankTab()
             try loadPage(index)
         }
         tap(app.buttons["browser.tabs"])
         let toggle = app.buttons["tabs.view-mode"]
-        XCTAssertLessThan(toggle.frame.midX, app.buttons["tabs.tab_new_tab"].frame.midX)
+        XCTAssertLessThan(toggle.frame.midX, app.buttons["tabs.browser_home"].frame.midX)
         tap(toggle)
         let groups = app.scrollViews["tabs.groups"]
         XCTAssertTrue(groups.waitForExistence(timeout: 5))
@@ -538,8 +607,7 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).tap() }
         tap(app.buttons["tabs.done"])
         for number in 2...3 {
-            tap(app.buttons["browser.tabs"])
-            tap(app.buttons["tabs.tab_new_tab"])
+            createBlankTab()
             var url = try XCTUnwrap(URLComponents(url: root, resolvingAgainstBaseURL: false))
             url.host = "localhost"; url.path = "/recent/\(number)"
             try open(url: XCTUnwrap(url.url))
@@ -580,7 +648,16 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         func load(_ number: Int) throws {
             var url = try XCTUnwrap(URLComponents(url: root, resolvingAgainstBaseURL: false))
             url.host = hosts[number - 1]; url.path = "/recent/\(number)"
-            try open(url: XCTUnwrap(url.url))
+            let page = try XCTUnwrap(url.url)
+            if number == 1 {
+                try open(url: page)
+            } else {
+                // Open subsequent pages from the running blank tab. Shortcut launches
+                // can restart the simulator app in the middle of this scrolling scenario.
+                let field = app.textFields["search.query"].firstMatch
+                tap(field)
+                field.typeText(page.absoluteString + "\n")
+            }
             XCTAssertTrue(app.webViews.staticTexts["Recent page \(number)"].firstMatch.waitForExistence(timeout: 20), app.debugDescription)
         }
         try load(1)
@@ -593,10 +670,10 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         // Older blank tabs provide real vertical overflow in portrait without
         // depending on rotation support or extra loopback aliases.
         for _ in 0..<6 {
-            tap(app.buttons["browser.tabs"]); tap(app.buttons["tabs.tab_new_tab"])
+            createBlankTab()
         }
         for number in 2...6 {
-            tap(app.buttons["browser.tabs"]); tap(app.buttons["tabs.tab_new_tab"])
+            createBlankTab()
             try load(number)
         }
         func checkTop(_ first: Int, _ second: Int) {
@@ -717,11 +794,10 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         XCTAssertTrue(app.popovers.firstMatch.waitForNonExistence(timeout: 5))
         tap(app.buttons["tabs.done"])
         for _ in 0..<25 {
-            tap(app.buttons["browser.tabs"])
-            tap(app.buttons["tabs.tab_new_tab"])
+            createBlankTab()
         }
-        XCTAssertTrue(app.buttons["browser.tabs"].label.hasPrefix("26 "), app.debugDescription)
-        tap(app.buttons["browser.tabs"])
+        XCTAssertTrue(tabOverviewButton.label.hasPrefix("26 "), app.debugDescription)
+        tap(tabOverviewButton)
         if app.scrollViews["tabs.groups"].exists { tap(app.buttons["tabs.view-mode"]) }
         let scrubber = app.sliders["tabs.position"]
         XCTAssertTrue(scrubber.waitForExistence(timeout: 5), app.debugDescription)
@@ -740,7 +816,7 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
 
     func testHomeSearchCreatesTabAndAddressSearchKeepsIt() throws {
         app.terminate()
-        app.launchArguments += ["-is_incognito", "YES", "-show_top_tab_bar", "YES"]
+        app.launchArguments += ["-is_incognito", "YES", "-show_top_tab_bar", "YES", "-show_top_search_bar", "YES"]
         app.launch()
 
         let homeField = app.textFields["Private search or enter URL"].firstMatch
@@ -755,6 +831,7 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         homeField.typeText(root.appendingPathComponent("second").absoluteString + "\n")
         XCTAssertTrue(app.webViews.staticTexts["Second page"].firstMatch.waitForExistence(timeout: 20))
         XCTAssertEqual(tabs.label, "2 Tabs", "Searching from Home should preserve the original tab")
+        XCTAssertFalse(app.textFields["search.query"].exists, "The retired preference must not restore the top search box")
 
         tap(app.buttons["Edit Address or Search"].firstMatch)
         let address = app.textFields["addressEditor.query"].firstMatch
@@ -790,12 +867,11 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
         let ready = DispatchSemaphore(value: 0)
         listener.stateUpdateHandler = { state in if case .ready = state { ready.signal() } }
         listener.newConnectionHandler = { [weak self] connection in
-            guard let self else { return }
+            guard let self else { connection.cancel(); return }
             self.connections.append(connection)
             connection.start(queue: self.queue)
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, _, _ in
-                guard let self, let data else { connection.cancel(); return }
-                let path = String(decoding: data, as: UTF8.self).split(separator: " ").dropFirst().first.map(String.init) ?? "/"
+            self.receiveRequestTarget(on: connection) { [weak self] path in
+                guard let self else { connection.cancel(); return }
                 if path.hasPrefix("/retryable?") {
                     self.receivedRecoveryTargets.append(path)
                     if !self.recoveryEnabled { connection.cancel(); return }
@@ -871,7 +947,10 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
                 let type = path == "/slow.js" ? "application/javascript" : "text/html; charset=utf-8"
                 var response = Data("HTTP/1.1 200 OK\r\nContent-Type: \(type)\r\nContent-Length: \(bytes.count)\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n".utf8)
                 response.append(bytes)
-                let send = { connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() }) }
+                let send = {
+                    connection.send(content: response, contentContext: .finalMessage,
+                        completion: .contentProcessed { error in if error != nil { connection.cancel() } })
+                }
                 if path == "/slow.js" || path == "/never-commits" {
                     self.slowRequests += 1
                     self.queue.asyncAfter(deadline: .now() + 180) { [weak self] in
@@ -887,6 +966,27 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
             throw NSError(domain: "ToolbarHTTPFixture", code: 1)
         }
         return URL(string: "http://127.0.0.1:\(port.rawValue)")!
+    }
+
+    private func receiveRequestTarget(on connection: NWConnection, buffered: Data = Data(),
+                                      completion: @escaping @Sendable (String) -> Void) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536 - buffered.count) { [weak self] data, _, done, error in
+            guard let self else { connection.cancel(); return }
+            var bytes = buffered
+            if let data { bytes.append(data) }
+            guard let headerEnd = bytes.range(of: Data("\r\n\r\n".utf8)) else {
+                if done || error != nil || bytes.count == 65536 {
+                    connection.cancel()
+                } else {
+                    self.receiveRequestTarget(on: connection, buffered: bytes, completion: completion)
+                }
+                return
+            }
+            let header = String(decoding: bytes[..<headerEnd.lowerBound], as: UTF8.self)
+            let requestLine = header.components(separatedBy: "\r\n")[0].split(separator: " ")
+            guard requestLine.count == 3 else { connection.cancel(); return }
+            completion(String(requestLine[1]))
+        }
     }
 
     func stop() {

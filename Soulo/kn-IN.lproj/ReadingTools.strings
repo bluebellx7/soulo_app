@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "ಕ್ಯಾಪ್ಸುಲ್";
 "home_toolbar_icons" = "ಐಕಾನ್‌ಗಳು ಮಾತ್ರ";
 "home_toolbar_bottom" = "ಕೆಳಗೆ";
-"home_toolbar_belowSearch" = "ಹುಡುಕಾಟದ ಕೆಳಗೆ";
 "home_toolbar_free" = "ಮುಕ್ತ ಸ್ಥಾನ";
+"home_toolbar_search_bottom" = "ಕೆಳಗೆ";
+"home_toolbar_alignment" = "ಟೂಲ್‌ಬಾರ್ ಜೋಡಣೆ";
 "home_toolbar_leading" = "ಆರಂಭಕ್ಕೆ ಹೊಂದಿಸಿ";
 "home_toolbar_center" = "ಮಧ್ಯಕ್ಕೆ ಹೊಂದಿಸಿ";
 "home_toolbar_trailing" = "ಕೊನೆಗೆ ಹೊಂದಿಸಿ";
 "home_toolbar_drag_position" = "ಟೂಲ್‌ಬಾರ್ ಅನ್ನು ಬೇಕಾದ ಸ್ಥಳಕ್ಕೆ ಎಳೆಯಿರಿ.";
 "home_toolbar_drag_buttons" = "ಬಟನ್ ಬದಲಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ. ಕ್ರಮ ಬದಲಿಸಲು ಎಳೆಯಿರಿ.";
+"home_toolbar_style" = "ಶೈಲಿ";
+"home_toolbar_visibility" = "ತೋರಿಸಿ/ಮರೆಮಾಡಿ";
+"home_toolbar_visibility_page" = "ಮುಖಪುಟದ ಅಂಶಗಳು";
+"home_toolbar_visibility_search_area" = "ಹುಡುಕಾಟದ ಭಾಗ";
+"home_toolbar_visibility_title" = "ಶೀರ್ಷಿಕೆ";
+"home_toolbar_visibility_subtitle" = "ಉಪಶೀರ್ಷಿಕೆ";
+"home_toolbar_visibility_search" = "ಹುಡುಕಾಟ ಪಟ್ಟಿ";
+"home_toolbar_visibility_search_hint" = "ಹುಡುಕಾಟ ಪಟ್ಟಿಯನ್ನು ತೋರಿಸಲು ಮುಖಪುಟದಲ್ಲಿ ಮೇಲೆ ಅಥವಾ ಕೆಳಗೆ ಸ್ವೈಪ್ ಮಾಡಿ.";
+"home_toolbar_visibility_recovery" = "ಮೆನು ತೆರೆಯಲು ಮುಖಪುಟದ ಖಾಲಿ ಜಾಗವನ್ನು ಒತ್ತಿಹಿಡಿಯಿರಿ.";
 "home_toolbar_search" = "ಪುಟವನ್ನು ಹುಡುಕಿ";
 "group_default_search" = "ಡೀಫಾಲ್ಟ್ ಹುಡುಕಾಟ";
 "group_search_settings" = "ಗುಂಪು ಸೆಟ್ಟಿಂಗ್‌ಗಳು";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "ಮಸುಕಾದ ಗಾಜು";
 "wallpaper_blur_amount" = "ಮಸುಕಿನ ತೀವ್ರತೆ";
 
+"home_quick_search_guide" = "ಮುಖಪುಟದಲ್ಲಿ ಕೀವರ್ಡ್ ನಮೂದಿಸಿದರೆ ಹುಡುಕಾಟ ಪಟ್ಟಿಯ ಕೆಳಗೆ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗಳು ಕಾಣಿಸುತ್ತವೆ. ಹುಡುಕಲು ಒಂದು ಪ್ಲಾಟ್‌ಫಾರ್ಮ್ ಟ್ಯಾಪ್ ಮಾಡಿ.";
 "auto_hide_platform_bar_hint" = "ಸಕ್ರಿಯಗೊಳಿಸಿದಾಗ, ಪುಟದ ವಿಷಯವನ್ನು ನೀವೇ ಟ್ಯಾಪ್ ಮಾಡಿದ ನಂತರ ಮತ್ತು ಪ್ರಸ್ತುತ ಪುಟದ ಡೊಮೇನ್ ಬಾರ್‌ನ ಯಾವುದೇ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗೆ ಹೊಂದಿಕೆಯಾಗದಿದ್ದಾಗ ಮಾತ್ರ ಬಾರ್ ಮರೆಮಾಡುತ್ತದೆ. ಯಾವುದಾದರೂ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗೆ ಹೊಂದಿದರೆ ಬಾರ್ ಗೋಚರವಾಗಿಯೇ ಉಳಿಯುತ್ತದೆ ಅಥವಾ ಮತ್ತೆ ಕಾಣಿಸುತ್ತದೆ. ಸ್ಕ್ರೋಲಿಂಗ್ ಮತ್ತು ಸ್ವಯಂಚಾಲಿತ ಮರುನಿರ್ದೇಶನಗಳು ಬಾರ್ ಅನ್ನು ಮರೆಮಾಡುವುದಿಲ್ಲ.";
 
 "ad_subscription_add" = "ಫಿಲ್ಟರ್ ಪಟ್ಟಿ ಸೇರಿಸಿ";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "ವೆಬ್‌ಪುಟಗಳು";
 "manual_backups_empty" = "ಇನ್ನೂ ಹಸ್ತಚಾಲಿತ ಬ್ಯಾಕಪ್ ಇಲ್ಲ";
 "browsing_display_settings_legacy" = "ಬ್ರೌಸಿಂಗ್ ಪ್ರದರ್ಶನ";
+"media_lock_orientation" = "ಪರದೆಯ ದಿಕ್ಕನ್ನು ಲಾಕ್ ಮಾಡಿ";
+"media_unlock_orientation" = "ಪರದೆಯ ದಿಕ್ಕಿನ ಲಾಕ್ ತೆರವುಗೊಳಿಸಿ";
+
+"music_queue" = "ಪ್ಲೇಪಟ್ಟಿ";
+"music_previous_track" = "ಹಿಂದಿನ ಹಾಡು";
+"music_next_track" = "ಮುಂದಿನ ಹಾಡು";

@@ -1,4 +1,1 @@
-• Amélioration du passage en plein écran, de la mise en mémoire tampon et du menu de vitesse de lecture des vidéos en ligne.
-• Meilleure reconnaissance des liens magnet et meilleure détection des pairs pour les téléchargements BitTorrent.
-• Les scripts utilisateur peuvent utiliser GM_webRequest pour annuler des requêtes Fetch et XHR du cadre principal ou les rediriger vers la même origine.
-• Compatibilité améliorée des extensions du navigateur, notamment pour les noms des fichiers téléchargés et le chargement de pages hors écran.
+Amélioration du chargement des scripts à l’ouverture des pages web et de la compatibilité avec les extensions de navigateur.

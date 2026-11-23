@@ -241,8 +241,6 @@
 "login_required_toast" = "Vă rugăm să vă conectați mai întâi, apoi să căutați din nou";
 "status_enabled" = "Activat";
 "status_disabled" = "Dezactivat";
-"show_top_search_bar" = "Afișați bara de căutare de top";
-"show_top_search_bar_desc" = "Când este ascuns, utilizați comanda de jos pentru adresă pentru a căuta sau a începe introducerea vocală";
 "ad_block_master_disabled_desc" = "Activați Blocarea anunțurilor pentru a utiliza și gestiona abonamentele de filtrare de mai jos.";
 "custom_groups" = "Grupuri personalizate";
 "no_groups" = "Fără grupuri personalizate";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Platforme %d importate cu succes";
 "paste_from_clipboard" = "Lipiți din Clipboard";
 "none" = "Niciuna";
-"show_group_picker_home" = "Afișați selectorul de grup pe Acasă";
-"show_group_picker_home_desc" = "Afișați filele grupurilor de platforme pe ecranul de start pentru comutare rapidă";
 "error_no_internet" = "Fără conexiune la internet. Vă rugăm să vă verificați rețeaua.";
 "error_timeout" = "Conexiunea a expirat. Vă rugăm să încercați din nou.";
 "error_ssl" = "Conexiunea securizată a eșuat. Este posibil ca acest site să nu fie sigur.";

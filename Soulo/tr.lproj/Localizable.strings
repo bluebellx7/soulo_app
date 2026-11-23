@@ -241,8 +241,6 @@
 "login_required_toast" = "Lütfen önce giriş yapın, sonra tekrar arayın";
 "status_enabled" = "Etkin";
 "status_disabled" = "Devre dışı";
-"show_top_search_bar" = "Üst arama çubuğunu göster";
-"show_top_search_bar_desc" = "Gizliyken arama veya sesli giriş için alttaki adres çubuğunu kullanın";
 "ad_block_master_disabled_desc" = "Aşağıdaki filtre aboneliklerini kullanmak ve yönetmek için reklam engellemeyi açın.";
 "custom_groups" = "Özel Gruplar";
 "no_groups" = "Özel Grup Yok";
@@ -364,8 +362,6 @@
 "batch_import_result" = "%d platform başarıyla içe aktarıldı";
 "paste_from_clipboard" = "Panodan Yapıştır";
 "none" = "Yok";
-"show_group_picker_home" = "Ana Ekranda Grup Seçiciyi Göster";
-"show_group_picker_home_desc" = "Hızlı geçiş için ana ekranda platform grup sekmelerini göster";
 "error_no_internet" = "İnternet bağlantısı yok. Lütfen ağınızı kontrol edin.";
 "error_timeout" = "Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.";
 "error_ssl" = "Güvenli bağlantı başarısız. Bu site güvenli olmayabilir.";

@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Capsule";
 "home_toolbar_icons" = "Alleen symbolen";
 "home_toolbar_bottom" = "Onderaan";
-"home_toolbar_belowSearch" = "Onder zoeken";
 "home_toolbar_free" = "Vrij plaatsen";
+"home_toolbar_search_bottom" = "Onderaan";
+"home_toolbar_alignment" = "Werkbalk uitlijnen";
 "home_toolbar_leading" = "Uitlijnen aan begin";
 "home_toolbar_center" = "Centreren";
 "home_toolbar_trailing" = "Uitlijnen aan eind";
 "home_toolbar_drag_position" = "Sleep de werkbalk naar de gewenste plek.";
 "home_toolbar_drag_buttons" = "Tik om een knop te wijzigen. Sleep om te ordenen.";
+"home_toolbar_style" = "Stijl";
+"home_toolbar_visibility" = "Toon/verberg";
+"home_toolbar_visibility_page" = "Onderdelen van de startpagina";
+"home_toolbar_visibility_search_area" = "Zoekgebied";
+"home_toolbar_visibility_title" = "Titel";
+"home_toolbar_visibility_subtitle" = "Ondertitel";
+"home_toolbar_visibility_search" = "Zoekbalk";
+"home_toolbar_visibility_search_hint" = "Veeg op de startpagina omhoog of omlaag om de zoekbalk te tonen.";
+"home_toolbar_visibility_recovery" = "Houd een lege plek op de startpagina ingedrukt om het menu te openen.";
 "home_toolbar_search" = "Zoek een pagina";
 "group_default_search" = "Standaardzoekopdracht";
 "group_search_settings" = "Groepsinstellingen";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Matglas";
 "wallpaper_blur_amount" = "Vervagingssterkte";
 
+"home_quick_search_guide" = "Typ een zoekterm op de startpagina om platforms onder de zoekbalk te zien. Tik op een platform om daar te zoeken.";
 "auto_hide_platform_bar_hint" = "Als dit is ingeschakeld, verbergt de balk pas nadat je op webpagina-inhoud tikt en het domein met geen enkel platform in de huidige balk overeenkomt. Bij een overeenkomst blijft de balk zichtbaar of verschijnt deze opnieuw. Scrollen en automatische omleidingen verbergen de balk niet.";
 
 "ad_subscription_add" = "Filterlijst toevoegen";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Webpagina’s";
 "manual_backups_empty" = "Nog geen handmatige backups";
 "browsing_display_settings_legacy" = "Browserweergave";
+"media_lock_orientation" = "Schermstand vergrendelen";
+"media_unlock_orientation" = "Schermstand ontgrendelen";
+
+"music_queue" = "Afspeellijst";
+"music_previous_track" = "Vorig nummer";
+"music_next_track" = "Volgend nummer";

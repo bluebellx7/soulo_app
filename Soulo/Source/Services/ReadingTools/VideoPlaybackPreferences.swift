@@ -111,12 +111,6 @@ struct VideoCacheProgress: Equatable {
     var timeFractions: [Range<Double>] = []
     var fileFraction: Double?
 
-    var coveredFraction: Double? {
-        if let fileFraction { return fileFraction }
-        guard !timeFractions.isEmpty else { return nil }
-        return min(1, timeFractions.reduce(0) { $0 + ($1.upperBound - $1.lowerBound) })
-    }
-
     init(duration: Double = 0, buffered: [CMTimeRange] = [], cache: VideoCacheCoverage = .init()) {
         fileFraction = cache.fileFraction
         guard duration.isFinite, duration > 0 else { return }

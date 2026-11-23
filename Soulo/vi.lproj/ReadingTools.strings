@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Dạng viên";
 "home_toolbar_icons" = "Chỉ biểu tượng";
 "home_toolbar_bottom" = "Dưới cùng";
-"home_toolbar_belowSearch" = "Dưới ô tìm kiếm";
 "home_toolbar_free" = "Đặt tự do";
+"home_toolbar_search_bottom" = "Dưới cùng";
+"home_toolbar_alignment" = "Căn chỉnh thanh công cụ";
 "home_toolbar_leading" = "Căn đầu";
 "home_toolbar_center" = "Căn giữa";
 "home_toolbar_trailing" = "Căn cuối";
 "home_toolbar_drag_position" = "Kéo thanh công cụ đến vị trí mong muốn.";
 "home_toolbar_drag_buttons" = "Chạm để đổi nút. Kéo để sắp xếp lại.";
+"home_toolbar_style" = "Kiểu";
+"home_toolbar_visibility" = "Hiện/Ẩn";
+"home_toolbar_visibility_page" = "Thành phần trang chủ";
+"home_toolbar_visibility_search_area" = "Khu vực tìm kiếm";
+"home_toolbar_visibility_title" = "Tiêu đề";
+"home_toolbar_visibility_subtitle" = "Tiêu đề phụ";
+"home_toolbar_visibility_search" = "Thanh tìm kiếm";
+"home_toolbar_visibility_search_hint" = "Vuốt lên hoặc xuống trên trang chủ để hiện thanh tìm kiếm.";
+"home_toolbar_visibility_recovery" = "Chạm và giữ khoảng trống trên trang chủ để mở menu.";
 "home_toolbar_search" = "Tìm một trang";
 "group_default_search" = "Tìm kiếm mặc định";
 "group_search_settings" = "Cài đặt nhóm";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Kính mờ";
 "wallpaper_blur_amount" = "Mức độ làm mờ";
 
+"home_quick_search_guide" = "Nhập từ khóa trên trang chủ để hiện các nền tảng dưới thanh tìm kiếm. Chạm vào một nền tảng để tìm kiếm ở đó.";
 "auto_hide_platform_bar_hint" = "Khi bật, thanh chỉ ẩn sau khi bạn trực tiếp chạm vào nội dung trang và tên miền không khớp với nền tảng nào trên thanh hiện tại. Nếu khớp với bất kỳ nền tảng nào, thanh được giữ hoặc hiện lại. Cuộn và chuyển hướng tự động không làm ẩn thanh.";
 
 "ad_subscription_add" = "Thêm danh sách lọc";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Trang web";
 "manual_backups_empty" = "Chưa có bản sao lưu thủ công";
 "browsing_display_settings_legacy" = "Hiển thị duyệt web";
+"media_lock_orientation" = "Khóa hướng màn hình";
+"media_unlock_orientation" = "Mở khóa hướng màn hình";
+
+"music_queue" = "Danh sách phát";
+"music_previous_track" = "Bài trước";
+"music_next_track" = "Bài tiếp theo";

@@ -241,8 +241,6 @@
 "login_required_toast" = "Vui lòng đăng nhập trước, sau đó tìm kiếm lại";
 "status_enabled" = "Đã bật";
 "status_disabled" = "Đã tắt";
-"show_top_search_bar" = "Hiện thanh tìm kiếm phía trên";
-"show_top_search_bar_desc" = "Khi ẩn, dùng thanh địa chỉ phía dưới để tìm kiếm hoặc nhập bằng giọng nói";
 "ad_block_master_disabled_desc" = "Bật chặn quảng cáo để sử dụng và quản lý các đăng ký bộ lọc bên dưới.";
 "custom_groups" = "Nhóm tùy chỉnh";
 "no_groups" = "Không có nhóm tùy chỉnh";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Đã nhập %d nền tảng";
 "paste_from_clipboard" = "Dán từ bộ nhớ tạm";
 "none" = "None";
-"show_group_picker_home" = "Hiện lựa chọn nhóm trên trang chủ";
-"show_group_picker_home_desc" = "Display platform group tabs on the home screen";
 "error_no_internet" = "Không có kết nối Internet. Vui lòng kiểm tra mạng.";
 "error_timeout" = "Kết nối đã hết thời gian chờ. Vui lòng thử lại.";
 "error_ssl" = "Secure connection failed.";

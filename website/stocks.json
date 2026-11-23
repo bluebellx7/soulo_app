@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-11",
+  "updated": "2026-11-20",
   "categories": [
     {
       "id": "mainland",
@@ -29,9 +29,9 @@
   "sites": [
     {
       "id": "stockclaw",
-      "name": "StockClaw",
-      "name_en": "StockClaw",
-      "url": "https://stockclaw.dkluge.com/",
+      "name": "牛盘盘",
+      "name_en": "牛盘盘",
+      "url": "https://niupanpan.com/",
       "category": "mainland",
       "description": "A 股看盘与复盘，查看竞价、涨停、题材热度和个股 K 线。",
       "description_en": "Follow A-share auctions, limit-up stocks, active themes, and candlestick charts.",
@@ -45,7 +45,7 @@
         "Market review",
         "Themes"
       ],
-      "mark": "SC",
+      "mark": "牛",
       "icon": "images/stock-icons/stockclaw.png"
     },
     {

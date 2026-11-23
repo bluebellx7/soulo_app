@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Κάψουλα";
 "home_toolbar_icons" = "Μόνο εικονίδια";
 "home_toolbar_bottom" = "Κάτω";
-"home_toolbar_belowSearch" = "Κάτω από την αναζήτηση";
 "home_toolbar_free" = "Ελεύθερη τοποθέτηση";
+"home_toolbar_search_bottom" = "Κάτω";
+"home_toolbar_alignment" = "Στοίχιση γραμμής εργαλείων";
 "home_toolbar_leading" = "Στοίχιση στην αρχή";
 "home_toolbar_center" = "Κέντρο";
 "home_toolbar_trailing" = "Στοίχιση στο τέλος";
 "home_toolbar_drag_position" = "Σύρε τη γραμμή εργαλείων στη θέση που θέλεις.";
 "home_toolbar_drag_buttons" = "Πάτησε για αλλαγή κουμπιού. Σύρε για αναδιάταξη.";
+"home_toolbar_style" = "Στυλ";
+"home_toolbar_visibility" = "Εμφάνιση/Απόκρυψη";
+"home_toolbar_visibility_page" = "Στοιχεία αρχικής σελίδας";
+"home_toolbar_visibility_search_area" = "Περιοχή αναζήτησης";
+"home_toolbar_visibility_title" = "Τίτλος";
+"home_toolbar_visibility_subtitle" = "Υπότιτλος";
+"home_toolbar_visibility_search" = "Γραμμή αναζήτησης";
+"home_toolbar_visibility_search_hint" = "Σύρετε προς τα πάνω ή προς τα κάτω στην αρχική σελίδα για να εμφανίσετε τη γραμμή αναζήτησης.";
+"home_toolbar_visibility_recovery" = "Πατήστε παρατεταμένα σε κενό σημείο της αρχικής σελίδας για το μενού.";
 "home_toolbar_search" = "Βρείτε μια σελίδα";
 "group_default_search" = "Προεπιλεγμένη αναζήτηση";
 "group_search_settings" = "Ρυθμίσεις ομάδας";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Θολό γυαλί";
 "wallpaper_blur_amount" = "Ένταση θόλωσης";
 
+"home_quick_search_guide" = "Πληκτρολογήστε μια λέξη στην αρχική σελίδα για να εμφανιστούν πλατφόρμες κάτω από τη γραμμή αναζήτησης. Αγγίξτε μια πλατφόρμα για αναζήτηση.";
 "auto_hide_platform_bar_hint" = "Όταν είναι ενεργό, η γραμμή κρύβεται μόνο αφού πατήσετε στο περιεχόμενο της ιστοσελίδας και εφόσον ο τομέας της δεν ταιριάζει με καμία πλατφόρμα της τρέχουσας γραμμής. Αν ταιριάζει, η γραμμή παραμένει ορατή ή επανεμφανίζεται. Η κύλιση και οι αυτόματες ανακατευθύνσεις δεν την κρύβουν.";
 
 "ad_subscription_add" = "Προσθήκη λίστας φίλτρων";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Ιστοσελίδες";
 "manual_backups_empty" = "Δεν υπάρχουν χειροκίνητα αντίγραφα";
 "browsing_display_settings_legacy" = "Εμφάνιση περιήγησης";
+"media_lock_orientation" = "Κλείδωμα προσανατολισμού";
+"media_unlock_orientation" = "Ξεκλείδωμα προσανατολισμού";
+
+"music_queue" = "Λίστα αναπαραγωγής";
+"music_previous_track" = "Προηγούμενο κομμάτι";
+"music_next_track" = "Επόμενο κομμάτι";

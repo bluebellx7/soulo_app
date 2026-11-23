@@ -113,9 +113,11 @@ final class WebAppearanceService: ObservableObject {
         if scriptInstallations.object(forKey: controller)?.matches(options, scripts: scripts) != true {
             let existing = scripts.filter { $0.source.hasPrefix(Self.scriptPrefix) }
             if existing.count != (source.isEmpty ? 0 : 1) || existing.first?.source != (source.isEmpty ? nil : source) {
-                let others = scripts.filter { !$0.source.hasPrefix(Self.scriptPrefix) }
-                controller.removeAllUserScripts()
-                others.forEach(controller.addUserScript)
+                if !existing.isEmpty {
+                    let others = scripts.filter { !$0.source.hasPrefix(Self.scriptPrefix) }
+                    controller.removeAllUserScripts()
+                    others.forEach(controller.addUserScript)
+                }
                 if !source.isEmpty {
                     controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: true))
                 }

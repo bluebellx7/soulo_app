@@ -241,8 +241,6 @@
 "login_required_toast" = "Bitte melden Sie sich zunächst an und suchen Sie dann erneut";
 "status_enabled" = "Aktiviert";
 "status_disabled" = "Deaktiviert";
-"show_top_search_bar" = "Obere Suchleiste anzeigen";
-"show_top_search_bar_desc" = "Wenn ausgeblendet, über die untere Adressleiste suchen oder die Spracheingabe starten";
 "ad_block_master_disabled_desc" = "Aktivieren Sie den Werbeblocker, um die Filterlisten unten zu verwenden und zu verwalten.";
 "custom_groups" = "Benutzerdefinierte Gruppen";
 "no_groups" = "Keine benutzerdefinierten Gruppen";
@@ -364,8 +362,6 @@
 "batch_import_result" = "%d Plattformen importiert";
 "paste_from_clipboard" = "Aus Zwischenablage einfügen";
 "none" = "None";
-"show_group_picker_home" = "Gruppenauswahl auf Startseite";
-"show_group_picker_home_desc" = "Display platform group tabs on the home screen";
 "error_no_internet" = "Keine Internetverbindung. Bitte prüfen Sie Ihr Netzwerk.";
 "error_timeout" = "Zeitüberschreitung. Bitte versuchen Sie es erneut.";
 "error_ssl" = "Secure connection failed.";

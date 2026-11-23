@@ -1162,7 +1162,7 @@ final class WebViewModelTests: XCTestCase {
     func testFullPageCaptureIncludesHorizontalAndVerticalEdges() async throws {
         let html = #"""
         <!doctype html><html><head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, shrink-to-fit=no">
         <style>
         html,body{margin:0;padding:0;width:780px;min-width:780px;height:1200px;background:#fff}
         .edge{position:absolute;z-index:1}

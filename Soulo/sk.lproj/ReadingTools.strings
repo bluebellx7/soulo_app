@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapsula";
 "home_toolbar_icons" = "Len ikony";
 "home_toolbar_bottom" = "Dole";
-"home_toolbar_belowSearch" = "Pod vyhľadávaním";
 "home_toolbar_free" = "Voľné umiestnenie";
+"home_toolbar_search_bottom" = "Dole";
+"home_toolbar_alignment" = "Zarovnanie panela nástrojov";
 "home_toolbar_leading" = "Zarovnať na začiatok";
 "home_toolbar_center" = "Na stred";
 "home_toolbar_trailing" = "Zarovnať na koniec";
 "home_toolbar_drag_position" = "Presuňte panel na vybrané miesto.";
 "home_toolbar_drag_buttons" = "Ťuknutím zmeníte tlačidlo, potiahnutím ho presuniete.";
+"home_toolbar_style" = "Štýl";
+"home_toolbar_visibility" = "Zobraziť/skryť";
+"home_toolbar_visibility_page" = "Prvky domovskej stránky";
+"home_toolbar_visibility_search_area" = "Oblasť vyhľadávania";
+"home_toolbar_visibility_title" = "Nadpis";
+"home_toolbar_visibility_subtitle" = "Podnadpis";
+"home_toolbar_visibility_search" = "Vyhľadávací panel";
+"home_toolbar_visibility_search_hint" = "Potiahnutím nahor alebo nadol na domovskej stránke zobrazíte vyhľadávacie pole.";
+"home_toolbar_visibility_recovery" = "Podržaním prázdneho miesta na domovskej stránke otvoríte menu.";
 "home_toolbar_search" = "Nájdite stránku";
 "group_default_search" = "Predvolené vyhľadávanie";
 "group_search_settings" = "Nastavenia skupiny";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Matné sklo";
 "wallpaper_blur_amount" = "Intenzita rozmazania";
 
+"home_quick_search_guide" = "Po zadaní kľúčového slova na domovskej stránke sa pod poľom vyhľadávania zobrazia platformy. Klepnutím spustíte vyhľadávanie na platforme.";
 "auto_hide_platform_bar_hint" = "Po zapnutí sa lišta skryje iba po klepnutí na obsah stránky, ak jej doména nezodpovedá žiadnej platforme na aktuálnej lište. Zhoda s ľubovoľnou platformou lištu ponechá alebo znova zobrazí. Posúvanie a automatické presmerovania ju neskryjú.";
 
 "ad_subscription_add" = "Pridať zoznam filtrov";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Webové stránky";
 "manual_backups_empty" = "Zatiaľ žiadne ručné zálohy";
 "browsing_display_settings_legacy" = "Zobrazenie prehliadania";
+"media_lock_orientation" = "Uzamknúť orientáciu";
+"media_unlock_orientation" = "Odomknúť orientáciu";
+
+"music_queue" = "Zoznam skladieb";
+"music_previous_track" = "Predchádzajúca skladba";
+"music_next_track" = "Nasledujúca skladba";

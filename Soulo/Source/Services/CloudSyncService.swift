@@ -118,9 +118,9 @@ final class CloudSyncService: NSObject, ObservableObject {
         "home_title",
         "home_subtitle",
         "show_bookmarks_on_home",
-        "show_group_picker_on_home",
+        "show_group_picker_on_home", // Keep older backups and synced clients readable.
         "show_recent_searches_on_home",
-        "show_top_search_bar", "auto_hide_platform_bar", "show_top_tab_bar",
+        "auto_hide_platform_bar", "show_top_tab_bar",
         PlatformBarPreferences.homeQuickSearchKey,
         BrowserInitialPreferences.restoreLastPageKey,
         "keep_fullscreen_browsing", "extend_page_background", "page_background_gradient", "freeze_page_background_on_scroll",
@@ -224,7 +224,6 @@ final class CloudSyncService: NSObject, ObservableObject {
         do {
             lastObserved = CloudSettingsSyncEngine.snapshot(defaults)
             try backups.save(lastObserved, initial: true, date: now())
-            try backups.save(lastObserved, date: now())
             if let data = defaults.data(forKey: Self.localJournalKey) {
                 let saved = try JSONDecoder().decode(CloudSettingsJournal.self, from: data)
                 if saved.writerID == writerID {
@@ -232,7 +231,7 @@ final class CloudSyncService: NSObject, ObservableObject {
                     if let snapshot = defaults.data(forKey: Self.localSnapshotKey), var next = journal {
                         let before = try CloudSettingsSyncEngine.values(snapshot)
                         if try CloudSettingsSyncEngine.recordEdits(from: before, to: lastObserved, in: &next, date: now()) {
-                            try self.backups.save(before, date: now())
+                            try backups.saveDaily(before, date: now())
                             journal = next
                         }
                     }
@@ -242,6 +241,7 @@ final class CloudSyncService: NSObject, ObservableObject {
             } else {
                 journal = try CloudSettingsSyncEngine.seed(lastObserved, writerID: writerID, date: now())
             }
+            try backups.saveDaily(lastObserved, date: now())
             isStarted = true
             remoteObserver = NotificationCenter.default.addObserver(
                 forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification, object: nil, queue: .main
@@ -291,7 +291,7 @@ final class CloudSyncService: NSObject, ObservableObject {
                 lastObserved = current
                 return
             }
-            try backups.save(lastObserved, date: now())
+            try backups.saveDaily(lastObserved, date: now())
             self.journal = journal
             lastObserved = current
             try persistJournal()
@@ -324,8 +324,8 @@ final class CloudSyncService: NSObject, ObservableObject {
             let local = CloudSettingsSyncEngine.snapshot(defaults)
             let merged = try CloudSettingsSyncEngine.merged(journals, onto: local)
             guard !CloudSettingsSyncEngine.equal(local, merged) else { return }
-            // Fail closed: a disk/backup error must not discard the only good copy.
-            try backups.save(local, date: now())
+            // A daily recovery copy must exist before applying cloud settings.
+            try backups.saveDaily(local, date: now())
             isApplyingRemote = true
             defer { isApplyingRemote = false }
             CloudSettingsSyncEngine.write(merged, to: defaults)
@@ -341,6 +341,12 @@ final class CloudSyncService: NSObject, ObservableObject {
         startIfEnabled()
         store.synchronize()
         processRemoteChanges()
+        if isStarted {
+            do {
+                try backups.saveDaily(lastObserved, date: now())
+                backupRevision += 1
+            } catch { hasSyncIssue = true }
+        }
         flushUpload()
     }
 

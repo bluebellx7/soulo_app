@@ -241,8 +241,6 @@
 "login_required_toast" = "Nejprve se prosím přihlaste a poté znovu vyhledejte";
 "status_enabled" = "Povoleno";
 "status_disabled" = "Zakázáno";
-"show_top_search_bar" = "Zobrazit horní vyhledávací lištu";
-"show_top_search_bar_desc" = "Když je skrytý, použijte spodní ovladač adresy k vyhledávání nebo spuštění hlasového vstupu";
 "ad_block_master_disabled_desc" = "Chcete-li používat a spravovat níže uvedená předplatná filtrů, zapněte blokování reklam.";
 "custom_groups" = "Vlastní skupiny";
 "no_groups" = "Žádné vlastní skupiny";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Úspěšně importované platformy %d";
 "paste_from_clipboard" = "Vložit ze schránky";
 "none" = "žádný";
-"show_group_picker_home" = "Zobrazit výběr skupiny na domovské stránce";
-"show_group_picker_home_desc" = "Zobrazte na domovské obrazovce karty skupin platforem pro rychlé přepínání";
 "error_no_internet" = "Žádné připojení k internetu. Zkontrolujte prosím svou síť.";
 "error_timeout" = "Vypršel časový limit připojení. Zkuste to prosím znovu.";
 "error_ssl" = "Zabezpečené připojení se nezdařilo. Tento web nemusí být bezpečný.";

@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "カプセル";
 "home_toolbar_icons" = "アイコンのみ";
 "home_toolbar_bottom" = "画面下部";
-"home_toolbar_belowSearch" = "検索欄の下";
 "home_toolbar_free" = "自由に配置";
+"home_toolbar_search_bottom" = "画面下部";
+"home_toolbar_alignment" = "ツールバーの揃え方";
 "home_toolbar_leading" = "先頭に揃える";
 "home_toolbar_center" = "中央に揃える";
 "home_toolbar_trailing" = "末尾に揃える";
 "home_toolbar_drag_position" = "ツールバーをドラッグして配置します。";
 "home_toolbar_drag_buttons" = "タップで変更、ドラッグで並べ替え。";
+"home_toolbar_style" = "外観";
+"home_toolbar_visibility" = "表示／非表示";
+"home_toolbar_visibility_page" = "ホームの項目";
+"home_toolbar_visibility_search_area" = "検索エリア";
+"home_toolbar_visibility_title" = "タイトル";
+"home_toolbar_visibility_subtitle" = "サブタイトル";
+"home_toolbar_visibility_search" = "検索バー";
+"home_toolbar_visibility_search_hint" = "ホームで上下にスワイプすると、検索バーが表示されます。";
+"home_toolbar_visibility_recovery" = "ホームの空白部分を長押しするとメニューが開きます。";
 "home_toolbar_search" = "ページを探す";
 "group_default_search" = "デフォルトの検索";
 "group_search_settings" = "グループ設定";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "すりガラス";
 "wallpaper_blur_amount" = "ぼかしの強さ";
 
+"home_quick_search_guide" = "ホームでキーワードを入力すると、検索バーの下にプラットフォームが表示されます。タップしたプラットフォームで検索できます。";
 "auto_hide_platform_bar_hint" = "オンにすると、ウェブページの内容を手動でタップし、そのページのドメインが現在のバー内のどのプラットフォームにも一致しない場合にのみバーを隠します。一致するものがあれば、表示を維持または復元します。スクロールや自動リダイレクトでは隠れません。";
 
 "ad_subscription_add" = "フィルタを追加";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "ウェブページ";
 "manual_backups_empty" = "手動バックアップはありません";
 "browsing_display_settings_legacy" = "ブラウズ画面の表示";
+"media_lock_orientation" = "画面の向きをロック";
+"media_unlock_orientation" = "画面の向きのロックを解除";
+
+"music_queue" = "プレイリスト";
+"music_previous_track" = "前の曲";
+"music_next_track" = "次の曲";

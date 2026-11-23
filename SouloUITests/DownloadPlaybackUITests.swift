@@ -193,14 +193,20 @@ final class DownloadPlaybackUITests: XCTestCase {
     @MainActor
     func testExistingDownloadedHLSExportsMP4FromItsMenuAndKeepsOriginal() async throws {
         continueAfterFailure = false
-        let name = "MP4ExportUIQA"
+        let name = "MP4ExportLegacyUIQA"
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
         app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-privacy_https_upgrade_enabled", "NO",
-            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-video.defaultPlayer", "system"]
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO"]
         app.launch(); defer { app.terminate() }
         app.open(try XCTUnwrap(URL(string: "soulo://downloads")))
+        let search = app.textFields["library.search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 10), app.debugDescription)
+        search.tap()
+        search.typeText(name + "\n")
         let original = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@ AND label CONTAINS %@", "downloads.open.", name, ".soulohls")).firstMatch
         guard original.waitForExistence(timeout: 10) else { XCTFail(app.debugDescription); return }
+        let originalName = try XCTUnwrap(original.label.split(separator: ",").first)
+        let convertedName = originalName.replacingOccurrences(of: ".soulohls", with: ".mp4")
         let export = app.buttons[original.identifier.replacingOccurrences(of: "downloads.open.", with: "downloads.export.")]
         guard export.waitForExistence(timeout: 10) else { XCTFail(app.debugDescription); return }
         export.tap()
@@ -210,13 +216,29 @@ final class DownloadPlaybackUITests: XCTestCase {
         mp4.tap()
         let share = app.otherElements["ActivityListView"].firstMatch
         guard share.waitForExistence(timeout: 10) else { XCTFail(app.debugDescription); return }
+        let caption = app.otherElements["LP.CaptionBar.TopCaption"].firstMatch
+        XCTAssertTrue(caption.waitForExistence(timeout: 10), app.debugDescription)
         let shareShot = XCTAttachment(screenshot: app.screenshot()); shareShot.name = "Converted MP4 share preview"; shareShot.lifetime = .keepAlways; add(shareShot)
-        app.buttons["header.closeButton"].firstMatch.tap()
+        let close = app.descendants(matching: .any)["header.closeButton"].firstMatch
+        if close.exists && close.isHittable {
+            close.tap()
+        } else {
+            let start = share.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.02))
+            let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+        XCTAssertTrue(share.waitForNonExistence(timeout: 10))
         XCTAssertTrue(original.waitForExistence(timeout: 5), "The original HLS remains in Downloads")
-        let converted = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@ AND label CONTAINS %@", "downloads.open.", name, ".mp4")).firstMatch
-        XCTAssertTrue(converted.waitForExistence(timeout: 5), app.debugDescription)
+        let converted = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label BEGINSWITH %@", "downloads.open.", convertedName + ",")).firstMatch
+        let visible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in converted.isHittable }, object: nil)
+        await fulfillment(of: [visible], timeout: 10)
         converted.tap()
-        XCTAssertTrue(app.otherElements["media.preview"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(app.otherElements["media.fullscreen.canvas"].waitForExistence(timeout: 10), app.debugDescription)
+        let elapsed = app.staticTexts.matching(NSPredicate(format: "identifier ENDSWITH %@", ".timeline.elapsed")).firstMatch
+        let playbackAdvanced = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            elapsed.exists && !["0:00", "00:00", "--:--"].contains(elapsed.label)
+        }, object: nil)
+        await fulfillment(of: [playbackAdvanced], timeout: 10)
         let playerShot = XCTAttachment(screenshot: app.screenshot()); playerShot.name = "Exported MP4 plays offline"; playerShot.lifetime = .keepAlways; add(playerShot)
     }
     @MainActor
@@ -500,7 +522,7 @@ final class DownloadPlaybackUITests: XCTestCase {
     func testWebFullscreenUsesAutomaticPlayerAndClosesDirectly() async throws {
         continueAfterFailure = false
         let video = try await longVideoFixtureData()
-        let html = "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head><body><video src='/clip.mp4' controls preload='auto' loop playsinline style='width:100%'></video></body></html>"
+        let html = "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'><title>Rotation test video</title></head><body><video src='/clip.mp4' controls preload='auto' loop playsinline style='width:100%'></video></body></html>"
         let captured = ProcessInfo.processInfo.environment["SOULO_CAPTURED_PLAYER_DIR"].map { URL(fileURLWithPath: $0) }
         var files = ["/page.html": Data(html.utf8), "/clip.mp4": video]
         if let captured {
@@ -521,6 +543,7 @@ final class DownloadPlaybackUITests: XCTestCase {
             "-soulo_primary_browser_window_id", UUID().uuidString, "-is_incognito", "NO",
             "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES", "-wallpaper_source", "gradient", "-wallpaper_refresh_interval", "0",
             "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-ad_block_enabled", "NO"]
+        app.launchEnvironment["SOULO_BROWSER_TRACE"] = "1"
         XCUIDevice.shared.orientation = .portrait
         app.launch()
         defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
@@ -566,6 +589,10 @@ final class DownloadPlaybackUITests: XCTestCase {
             }, object: nil)], timeout: 4)
             XCTAssertTrue(closeButton.isHittable, "Portrait must remain in the same fullscreen session")
             XCTAssertTrue(rotate.isHittable, "Fullscreen must offer rotation in portrait too")
+            let portraitShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            portraitShot.name = "Shared fullscreen controls in portrait"
+            portraitShot.lifetime = .keepAlways
+            add(portraitShot)
             let portraitMenu = app.buttons["media.fullscreen.options"]
             portraitMenu.tap()
             let panel = app.otherElements["media.fullscreen.options.panel"].firstMatch
@@ -577,6 +604,10 @@ final class DownloadPlaybackUITests: XCTestCase {
             await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                 app.frame.width > app.frame.height
             }, object: nil)], timeout: 4)
+            let directionLock = app.buttons["media.fullscreen.orientation-lock"]
+            XCTAssertTrue(directionLock.waitForExistence(timeout: 4), app.debugDescription)
+            directionLock.tap()
+            XCTAssertEqual(directionLock.label, "Unlock orientation")
             // Leave while actually playing, rather than masking a missing
             // background pause by pausing the fixture before switching apps.
             let timeline = app.sliders["media.mkv.timeline"]
@@ -591,11 +622,60 @@ final class DownloadPlaybackUITests: XCTestCase {
             settings.launch()
             XCUIDevice.shared.orientation = .portrait
             app.activate()
-            XCTAssertGreaterThan(app.frame.width, app.frame.height, "Returning from another app must retain landscape")
+            await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                app.frame.width > app.frame.height
+            }, object: nil)], timeout: 6)
+            func positionWithControls() async -> String? {
+                let elapsedLabel = "identifier: 'media.mkv.timeline.elapsed', label: '"
+                for _ in 0..<3 {
+                    // The controls may hide between two XCTest queries. Read
+                    // the visible time and control state from one snapshot.
+                    let snapshot = app.debugDescription
+                    if let label = snapshot.range(of: elapsedLabel),
+                       let end = snapshot[label.upperBound...].firstIndex(of: "'") {
+                        return String(snapshot[label.upperBound..<end])
+                    }
+                    if !snapshot.contains("identifier: 'media.mkv.fullscreen.close'") {
+                        canvas.tap()
+                    }
+                    try? await Task.sleep(for: .milliseconds(200))
+                }
+                return nil
+            }
+            let firstPosition = await positionWithControls()
+            XCTAssertNotNil(firstPosition)
+            var advanced = false
+            for _ in 0..<8 {
+                try? await Task.sleep(for: .milliseconds(350))
+                if let position = await positionWithControls(), position != firstPosition {
+                    advanced = true
+                    break
+                }
+            }
+            XCTAssertTrue(advanced, "The original timeline must advance after returning")
+            await pauseWithVisibleControls()
+            XCTAssertTrue(directionLock.waitForExistence(timeout: 4))
+            directionLock.tap()
+            let unlocked = app.buttons.matching(NSPredicate(format: "identifier == %@ AND label == %@",
+                "media.fullscreen.orientation-lock", "Lock orientation")).firstMatch
+            XCTAssertTrue(unlocked.waitForExistence(timeout: 4))
+            for side in [UIDeviceOrientation.landscapeRight, .landscapeLeft] {
+                XCUIDevice.shared.orientation = side
+                try? await Task.sleep(for: .milliseconds(450))
+                XCTAssertGreaterThan(app.frame.width, app.frame.height)
+            }
+            XCUIDevice.shared.orientation = .portrait
+            try? await Task.sleep(for: .milliseconds(500))
+            XCTAssertGreaterThan(app.frame.width, app.frame.height, "Unlocked landscape follows both sides without going to portrait")
             if !closeButton.exists { canvas.tap() }
-            XCTAssertTrue(closeButton.waitForExistence(timeout: 5))
-            XCTAssertEqual(play.label, "Play", "Ordinary video must pause in the background and stay paused on return")
-            XCTAssertTrue(rotate.isHittable)
+            XCTAssertTrue(closeButton.waitForExistence(timeout: 3))
+            rotate.tap()
+            await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                app.frame.height > app.frame.width
+            }, object: nil)], timeout: 6)
+            if !closeButton.exists { canvas.tap() }
+            XCTAssertTrue(closeButton.waitForExistence(timeout: 3))
+            rotate.tap()
             XCTAssertTrue(clock.waitForExistence(timeout: 3))
         }
         func checkMenuDismissal() async throws {

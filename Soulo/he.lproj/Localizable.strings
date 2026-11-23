@@ -241,8 +241,6 @@
 "login_required_toast" = "אנא היכנס תחילה, ולאחר מכן חפש שוב";
 "status_enabled" = "מופעל";
 "status_disabled" = "מושבת";
-"show_top_search_bar" = "הצג את סרגל החיפוש העליון";
-"show_top_search_bar_desc" = "כאשר מוסתר, השתמש בפקד הכתובת התחתון כדי לחפש או להתחיל קלט קולי";
 "ad_block_master_disabled_desc" = "הפעל את חסימת המודעות כדי להשתמש ולנהל את מנויי הסינון למטה.";
 "custom_groups" = "קבוצות מותאמות אישית";
 "no_groups" = "אין קבוצות מותאמות אישית";
@@ -364,8 +362,6 @@
 "batch_import_result" = "פלטפורמות %d יובאו בהצלחה";
 "paste_from_clipboard" = "הדבק מהלוח";
 "none" = "אין";
-"show_group_picker_home" = "הצג את בוחר הקבוצות בדף הבית";
-"show_group_picker_home_desc" = "הצג כרטיסיות קבוצת פלטפורמה במסך הבית למעבר מהיר";
 "error_no_internet" = "אין חיבור לאינטרנט. אנא בדוק את הרשת שלך.";
 "error_timeout" = "תם הזמן הקצוב לחיבור. אנא נסה שוב.";
 "error_ssl" = "חיבור מאובטח נכשל. ייתכן שהאתר הזה לא בטוח.";

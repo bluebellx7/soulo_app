@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import WebKit
 
@@ -27,14 +28,18 @@ final class WebExtensionBlobBridge {
     private struct Entry {
         let owner: String
         let url: URL
+        let isCapture: Bool
+        let size: Int64
         var touched: Date
     }
     private var entries: [String: Entry] = [:]
     private var workers: [UUID: (String, WebExtensionURLDownload)] = [:]
     private var reaper: Task<Void, Never>?
+    private static let captureByteLimit: Int64 = 96 * 1024 * 1024
 
     func handle(_ values: [String: Any], context: WKWebExtensionContext, sources: [WKWebView],
-                access: WebExtensionAccess?, reply: @escaping (Any?, Error?) -> Void) {
+                access: WebExtensionAccess?, ownedCaptureOnly: Bool = false,
+                reply: @escaping (Any?, Error?) -> Void) {
         let owner = context.uniqueIdentifier
         switch values["operation"] as? String {
         case "open":
@@ -44,6 +49,7 @@ final class WebExtensionBlobBridge {
             }
             func matches(_ page: URL?) -> Bool { page?.scheme == origin.scheme && page?.host == origin.host && page?.port == origin.port }
             let ownOrigin = matches(context.baseURL)
+            if ownedCaptureOnly && !ownOrigin { reply(nil, URLError(.noPermissionsToReadFile)); return }
             let source = sources.first { view in
                 guard let page = view.url, ["http","https"].contains(page.scheme ?? ""), matches(page),
                       view.configuration.websiteDataStore.isPersistent, access?.blocks(page) != true else { return false }
@@ -52,16 +58,26 @@ final class WebExtensionBlobBridge {
             guard ownOrigin || source != nil else { reply(nil, URLError(.noPermissionsToReadFile)); return }
             let token = UUID(), key = token.uuidString
             let destination = FileManager.default.temporaryDirectory.appendingPathComponent("extension-blob-" + key)
-            let worker = WebExtensionURLDownload(temporaryDestination: destination, url: url, completed: { [weak self] file, mime, count in
+            let worker = WebExtensionURLDownload(temporaryDestination: destination, url: url,
+                byteLimit: ownedCaptureOnly ? Self.captureByteLimit : nil, completed: { [weak self] file, mime, count in
                 guard let self else { try? FileManager.default.removeItem(at: file); return }
-                self.entries[key] = Entry(owner: owner, url: file, touched: Date())
+                if ownedCaptureOnly {
+                    let reserved = self.entries.values.filter { $0.owner == owner && $0.isCapture }
+                        .reduce(0) { $0 + $1.size }
+                    guard count > 0, count <= Self.captureByteLimit, reserved + count <= Self.captureByteLimit else {
+                        try? FileManager.default.removeItem(at: file)
+                        reply(nil, URLError(.dataLengthExceedsMaximum)); return
+                    }
+                }
+                self.entries[key] = Entry(owner: owner, url: file, isCapture: ownedCaptureOnly, size: count, touched: Date())
                 self.startReaper()
                 reply(["token":key,"type":mime,"size":count], nil)
             }, rejected: { reply(nil, $0) }, ended: { [weak self] in self?.workers.removeValue(forKey: token) })
             workers[token] = (owner, worker)
             worker.start(context: context, source: source)
         case "read", "close":
-            guard let key = values["token"] as? String, var entry = entries[key], entry.owner == owner else {
+            guard let key = values["token"] as? String, var entry = entries[key],
+                  entry.owner == owner, entry.isCapture == ownedCaptureOnly else {
                 reply(nil, URLError(.noPermissionsToReadFile)); return
             }
             if values["operation"] as? String == "close" {
@@ -259,6 +275,399 @@ enum WebExtensionBlobScript {
     """#
 }
 
+/// Restore a capture when WebKit presents the result in another data partition.
+enum WebExtensionGoFullPageAdapter {
+    static let manifestKey = "__soulo_go_full_page_capture_handoff"
+    private static let module = "popup.88c38d4b.js"
+    private static let moduleHash = "f070000932c31767f578e26a808c39ab761d76193b148176646cb06f07f60515"
+    private static let insertionPoint = "const m=new WeakMap,y=new WeakMap,"
+    private static let adapterStart = "const m=new WeakMap,y=new WeakMap;\n/* Soulo capture handoff */\n"
+    private static let adapterEnd = "\n/* End Soulo capture handoff */\nconst "
+
+    static func prepare(in root: URL, manifest: inout [String: Any]) throws {
+        manifest.removeValue(forKey: manifestKey)
+        guard manifest["version"] as? String == "8.11",
+              let popup = (manifest["action"] as? [String: Any])?["default_popup"] as? String,
+              popup == "popup.html",
+              (manifest["permissions"] as? [String])?.contains("unlimitedStorage") == true else { return }
+        let url = root.appendingPathComponent(module)
+        guard let current = try? String(contentsOf: url, encoding: .utf8) else { return }
+        var publisher = current
+        if let start = publisher.range(of: adapterStart),
+           let end = publisher.range(of: adapterEnd, range: start.upperBound..<publisher.endIndex) {
+            publisher.replaceSubrange(start.lowerBound..<end.upperBound, with: insertionPoint)
+        }
+        guard SHA256.hash(data: Data(publisher.utf8)).map({ String(format: "%02x", $0) }).joined() == moduleHash,
+              let marker = publisher.range(of: insertionPoint) else { return }
+        var prepared = publisher
+        prepared.replaceSubrange(marker, with: adapterStart + script + adapterEnd)
+        if current != prepared {
+            try Data(prepared.utf8).write(to: url, options: .atomic)
+        }
+        manifest[manifestKey] = true
+    }
+
+    private static let script = #"""
+    (() => {
+      const isPopup = location.pathname === '/popup.html';
+      const isCapture = location.pathname === '/capture.html';
+      if (!isPopup && !isCapture) return;
+      const runtime = globalThis.chrome?.runtime, storage = globalThis.chrome?.storage?.local;
+      if (!runtime?.sendNativeMessage || !storage) return;
+      const storagePrefix = '__souloGoFullPageCapture.';
+      const indexKey = storagePrefix + 'index';
+      const parameter = 'souloCapture';
+      const retained = 5 * 60 * 1000;
+      const pending = new Map(), tickets = new WeakMap();
+      const request = values => new Promise((resolve, reject) => runtime.sendNativeMessage(
+        'com.dkluge.Soulo.WebExtensionCompatibility', {souloCompatibility: 1, api: 'ownedCapture', ...values},
+        value => {
+          const error = runtime.lastError?.message || value?.error;
+          if (error) reject(new Error(error));
+          else resolve(value?.value ?? value);
+        }
+      ));
+      const close = file => request({operation: 'close', token: file.token}).catch(() => {});
+      const get = async key => (await storage.get(key))[key];
+      async function stage(blob) {
+        const url = URL.createObjectURL(blob);
+        try { return await request({operation: 'open', url}); }
+        finally { URL.revokeObjectURL(url); }
+      }
+      async function read(file) {
+        const parts = [];
+        for (let offset = 0; offset < file.size;) {
+          const result = await request({operation: 'read', token: file.token, offset});
+          const bytes = Uint8Array.from(atob(result.data), value => value.charCodeAt(0));
+          if (!bytes.length || offset + bytes.length > file.size) throw new Error('Incomplete screenshot');
+          parts.push(bytes);
+          offset += bytes.length;
+        }
+        return new Blob(parts, {type: file.type});
+      }
+      if (isPopup) {
+        const save = p.prototype.save;
+        const display = Object.getOwnPropertyDescriptor(p.prototype, 'displayURL');
+        Object.defineProperty(p.prototype, 'displayURL', {...display, get() {
+          const source = display.get.call(this);
+          const ticket = tickets.get(this);
+          if (!ticket) return source;
+          const url = new URL(source);
+          url.searchParams.set(parameter, ticket);
+          return url.href;
+        }});
+        p.prototype.save = async function(...arguments_) {
+          const hasNewImages = m.has(this);
+          const result = await save.apply(this, arguments_);
+          const images = hasNewImages ? y.get(this) : null;
+          if (!images?.length || images.reduce((total, blob) => total + blob.size, 0) > 96 * 1024 * 1024) return result;
+          const files = [];
+          try {
+            for (const image of images) files.push(await stage(image));
+            const ticket = crypto.randomUUID(), time = Date.now();
+            const index = await get(indexKey) || [];
+            const recent = index.filter(item => time - item.time <= retained);
+            const expired = index.filter(item => time - item.time > retained).map(item => storagePrefix + item.ticket);
+            await storage.set({
+              [storagePrefix + ticket]: {time, capture: JSON.parse(JSON.stringify(this)), files},
+              [indexKey]: [...recent, {time, ticket}]
+            });
+            tickets.set(this, ticket);
+            if (expired.length) await storage.remove(expired).catch(() => {});
+          } catch (_) {
+            await Promise.all(files.map(close));
+          }
+          return result;
+        };
+        return;
+      }
+      const lookup = p.lookup;
+      p.lookup = async function(id) {
+        const ticket = new URLSearchParams(location.search).get(parameter);
+        if (!ticket || !/^[0-9a-f-]{36}$/i.test(ticket)) return lookup.call(this, id);
+        if (pending.has(ticket)) return pending.get(ticket);
+        const promise = (async () => {
+          const existing = await lookup.call(this, id);
+          const stored = await get(storagePrefix + ticket).catch(() => null);
+          if (!stored || Date.now() - stored.time > retained ||
+              stored.capture.id !== Number(id)) return existing;
+          try {
+            const capture = {...stored.capture, time: new Date(stored.capture.time)};
+            if (existing?.url === capture.url && existing.time?.getTime() === capture.time.getTime() &&
+                (await existing._indexeddb_getBlobs(true)).length === stored.files.length) return existing;
+            if (existing && (existing.url !== capture.url || existing.time?.getTime() !== capture.time.getTime())) delete capture.id;
+            const blobs = await Promise.all(stored.files.map(read));
+            const key = await d.transaction('rw', d.captures, d.captureBlobs, async () => {
+              const key = await d.captures.put(capture);
+              await d.captureBlobs.bulkPut(blobs.map((blob, index) => ({captureId: key, index, blob, size: blob.size})));
+              return key;
+            });
+            if (key !== Number(id)) {
+              const address = new URL(location.href);
+              address.searchParams.set('id', key);
+              address.searchParams.delete(parameter);
+              history.replaceState(null, '', address.href);
+            }
+            return lookup.call(this, key);
+          } catch (_) {
+            return existing;
+          } finally {
+            await Promise.all(stored.files.map(close));
+            await storage.remove(storagePrefix + ticket).catch(() => {});
+          }
+        })();
+        pending.set(ticket, promise);
+        return promise;
+      };
+    })();
+    """#
+}
+
+/// Quick Snip's embedded editor sees its own partition of IndexedDB. Keep the
+/// active capture in the publisher's background database when editing in a frame.
+enum WebExtensionQuickSnipAdapter {
+    private static let editorPath = "view/library.html"
+    private static let storePath = "scripts/blobDb.js"
+    private static let filename = "__soulo_quick_snip_capture.js"
+    private static let storeHash = "d803d3261f550e8efd677a372e31482cdb33cb5637558f5da23bea848aa0c309"
+
+    static func eventPageScripts(worker: URL, manifest: [String: Any]) -> [String]? {
+        // The worker can idle while the user draws a selection. WebKit reliably
+        // delivers the resulting region request to the same program as an event page.
+        guard worker.lastPathComponent == "mainServiceWorker.js",
+              manifest["version"] as? String == "1.6.2",
+              let source = try? String(contentsOf: worker, encoding: .utf8),
+              SHA256.hash(data: Data(source.utf8)).map({ String(format: "%02x", $0) }).joined()
+                == "82ce675f61dc49638214e750ce3643d9d68c2fccae4b23bf8141ea303574c9d1",
+              let expression = try? NSRegularExpression(pattern: #""([^"]+\.js)""#) else { return nil }
+        return expression.matches(in: source, range: NSRange(source.startIndex..., in: source)).compactMap { match in
+            Range(match.range(at: 1), in: source).map { String(source[$0]) }
+        }
+    }
+
+    static func prepare(in root: URL, manifest: [String: Any]) throws -> String {
+        guard let popup = (manifest["action"] as? [String: Any])?["default_popup"] as? String,
+              popup.drop(while: { $0 == "/" }) == "view/popup.html",
+              (manifest["permissions"] as? [String])?.contains("unlimitedStorage") == true,
+              let store = try? Data(contentsOf: root.appendingPathComponent(storePath)),
+              SHA256.hash(data: store).map({ String(format: "%02x", $0) }).joined() == storeHash else { return "" }
+
+        let editorURL = root.appendingPathComponent(editorPath)
+        guard var html = try? String(contentsOf: editorURL, encoding: .utf8),
+              let scriptTag = html.range(of: "<script src=\"/\(storePath)\"></script>") else { return "" }
+
+        try Data(javaScript.utf8).write(to: root.appendingPathComponent(filename), options: .atomic)
+        if !html.contains(filename) {
+            html.insert(contentsOf: "\n<script src=\"/\(filename)\"></script>", at: scriptTag.upperBound)
+            try Data(html.utf8).write(to: editorURL, options: .atomic)
+        }
+        try enableTouchSelection(in: root)
+        return "\n" + javaScript
+    }
+
+    private static func enableTouchSelection(in root: URL) throws {
+        let url = root.appendingPathComponent("content/dynamic.js")
+        guard let current = try? String(contentsOf: url, encoding: .utf8) else { return }
+        let start = "\n          /* Soulo touch selection */"
+        let end = "\n          /* End Soulo touch selection */"
+        var source = current
+        if let opening = source.range(of: start),
+           let closing = source.range(of: end, range: opening.upperBound..<source.endIndex) {
+            source.removeSubrange(opening.lowerBound..<closing.upperBound)
+        }
+        guard SHA256.hash(data: Data(source.utf8)).map({ String(format: "%02x", $0) }).joined()
+                == "a111152505f119f06b33f2c51ea155dc10a8910bbd2f7e5a1f645bcbf2ffb4a4",
+              let registration = source.range(of: #"document.addEventListener("mousedown", mousedown, false);"#)
+        else { return }
+        source.insert(contentsOf: start + touchSelection + end, at: registration.upperBound)
+        if current != source { try Data(source.utf8).write(to: url, options: .atomic) }
+    }
+
+    private static let touchSelection = #"""
+
+          const host = qsRegionHost.el();
+          host.style.touchAction = "none";
+          host.querySelector(".qs-region-guide-3").style.touchAction = "none";
+          let pointerID = null;
+          host.addEventListener("pointerdown", event => {
+            if (event.pointerType !== "touch" || !event.isPrimary || pointerID !== null) return;
+            pointerID = event.pointerId;
+            try { host.setPointerCapture(pointerID); } catch (_) {}
+            mousedown(event);
+          });
+          host.addEventListener("pointermove", event => {
+            if (event.pointerId === pointerID) update(event);
+          });
+          host.addEventListener("pointerup", event => {
+            if (event.pointerId !== pointerID) return;
+            pointerID = null;
+            update(event);
+            remove();
+          });
+          function cancelSelection(event) {
+            if (event.pointerId !== pointerID) return;
+            pointerID = null;
+            guide.remove();
+            monitor.remove();
+            qsRegionHost.remove();
+          }
+          host.addEventListener("pointercancel", cancelSelection);
+          host.addEventListener("lostpointercapture", cancelSelection);
+    """#
+
+    private static let javaScript = #"""
+    ;(() => {
+      const runtime = (globalThis.chrome || globalThis.browser)?.runtime;
+      if (!runtime?.connect || !runtime.onConnect) return;
+      const editor = new URL(runtime.getURL('view/library.html'));
+      const channel = '__soulo_quick_snip_capture';
+      const chunkSize = 96 * 1024;
+      // The publisher keeps at most 100 MiB of full-page captures.
+      const maximumBytes = 100 * 1024 * 1024;
+
+      function captureID(address) {
+        if (address.protocol !== editor.protocol || address.host !== editor.host || address.pathname !== editor.pathname ||
+            address.searchParams.get('overlay') !== '1') return null;
+        const id = address.searchParams.get('capture') || address.searchParams.get('fp');
+        return id?.length <= 256 ? id : null;
+      }
+
+      async function encodeChunk(blob) {
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        let text = '';
+        for (let offset = 0; offset < bytes.length; offset += 8192) {
+          text += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+        }
+        return btoa(text);
+      }
+
+      function decodeChunk(text) {
+        if (typeof text !== 'string' || text.length > chunkSize * 4 / 3) throw new Error('Invalid screenshot chunk');
+        return Uint8Array.from(atob(text), byte => byte.charCodeAt(0));
+      }
+
+      if (typeof document !== 'undefined' && location.pathname === editor.pathname) {
+        if (window === window.top) return;
+        const id = captureID(new URL(location.href));
+        const store = globalThis.QSBlobStore;
+        if (!id || !store || store.__souloCaptureAdapter) return;
+        Object.defineProperty(store, '__souloCaptureAdapter', {value: true});
+        const original = {get: store.get, put: store.put, delete: store.delete};
+
+        async function transfer(operation) {
+          const port = runtime.connect({name: channel});
+          let pending;
+          let timeout;
+          port.onMessage.addListener(reply => {
+            const current = pending;
+            pending = null;
+            clearTimeout(timeout);
+            if (reply?.error) current?.reject(new Error(reply.error));
+            else current?.resolve(reply?.value);
+          });
+          port.onDisconnect.addListener(() => {
+            clearTimeout(timeout);
+            pending?.reject(new Error(runtime.lastError?.message || 'The screenshot editor lost its background connection'));
+            pending = null;
+          });
+          const send = message => new Promise((resolve, reject) => {
+            pending = {resolve, reject};
+            timeout = setTimeout(() => {
+              pending = null;
+              reject(new Error('The screenshot database did not respond'));
+            }, 8000);
+            try { port.postMessage(message); }
+            catch (error) { clearTimeout(timeout); pending = null; reject(error); }
+          });
+          try { return await operation(send); }
+          finally { port.disconnect(); }
+        }
+
+        store.get = key => key === id ? transfer(async send => {
+          const info = await send({step: 'get'});
+          if (!info) return original.get.call(store, key);
+          const parts = [];
+          for (let offset = 0; offset < info.size; offset += chunkSize) {
+            parts.push(decodeChunk(await send({step: 'read', offset})));
+          }
+          return {...info.record, blob: new Blob(parts, {type: info.type})};
+        }) : original.get.call(store, key);
+        store.put = record => record?.id === id ? transfer(async send => {
+          const {blob, ...metadata} = record;
+          await send({step: 'put', record: metadata, size: blob.size, type: blob.type});
+          for (let offset = 0; offset < blob.size; offset += chunkSize) {
+            await send({step: 'write', bytes: await encodeChunk(blob.slice(offset, offset + chunkSize))});
+          }
+          return send({step: 'commit'});
+        }) : original.put.call(store, record);
+        store.delete = key => key === id ? transfer(send => send({step: 'delete'})) : original.delete.call(store, key);
+        return;
+      }
+
+      runtime.onConnect.addListener(port => {
+        if (port.name !== channel || port.sender?.id !== runtime.id || !port.sender.url) return;
+        const id = captureID(new URL(port.sender.url));
+        if (!id || !Number.isInteger(port.sender.frameId) || port.sender.frameId < 1) return;
+        let readBlob, write, busy = false;
+        let disconnected = false;
+        port.onDisconnect.addListener(() => { disconnected = true; readBlob = undefined; write = undefined; });
+
+        async function handle(message) {
+          const store = globalThis.QSBlobStore;
+          if (!store) throw new Error('The screenshot database is unavailable');
+          switch (message?.step) {
+            case 'get': {
+              const stored = await store.get(id);
+              if (!stored?.blob) return null;
+              const {blob, ...record} = stored;
+              if (blob.size > maximumBytes) throw new Error('The screenshot exceeds the capture budget');
+              readBlob = blob;
+              return {record, size: blob.size, type: blob.type};
+            }
+            case 'read': {
+              const {offset} = message;
+              if (!readBlob || !Number.isSafeInteger(offset) || offset < 0 || offset >= readBlob.size) break;
+              return encodeChunk(readBlob.slice(offset, offset + chunkSize));
+            }
+            case 'put':
+              if (write || message.record?.id !== id || !Number.isSafeInteger(message.size) || message.size < 0 ||
+                  message.size > maximumBytes || typeof message.type !== 'string') break;
+              write = {record: message.record, type: message.type, size: message.size, received: 0, parts: []};
+              return true;
+            case 'write': {
+              if (!write) break;
+              const bytes = decodeChunk(message.bytes);
+              if (!bytes.length || write.received + bytes.length > write.size) break;
+              write.parts.push(bytes);
+              write.received += bytes.length;
+              return true;
+            }
+            case 'commit': {
+              if (!write || write.received !== write.size) break;
+              const {record, parts, type} = write;
+              write = undefined;
+              return store.put({...record, blob: new Blob(parts, {type})});
+            }
+            case 'delete':
+              await store.delete(id);
+              return true;
+          }
+          throw new Error('Invalid screenshot transfer');
+        }
+
+        port.onMessage.addListener(message => {
+          if (busy) return;
+          busy = true;
+          handle(message).then(
+            value => { if (!disconnected) port.postMessage({value}); },
+            error => { if (!disconnected) port.postMessage({error: String(error.message || error)}); }
+          ).catch(() => {}).finally(() => { busy = false; });
+        });
+      });
+    })();
+    """#
+}
+
 enum WebExtensionTemporaryCacheError: LocalizedError {
     case inUse
     var errorDescription: String? {
@@ -306,8 +715,10 @@ enum WebExtensionClipboardPolicy {
       const api=globalThis.chrome||globalThis.browser,clipboard=globalThis.navigator?.clipboard;
       if(!api?.runtime?.getURL||!clipboard)return;
       Object.defineProperty(globalThis,'__souloClipboardReadsGuarded',{value:true});
+      const manifest=api.runtime.getManifest();
+      const canRequestRead=[...(manifest.permissions||[]),...(manifest.optional_permissions||[])].includes('clipboardRead');
       function permitted(){
-        if(typeof api.permissions?.contains!=='function')return Promise.resolve(false);
+        if(!canRequestRead||typeof api.permissions?.contains!=='function')return Promise.resolve(false);
         return new Promise(resolve=>{
           let finished=false;
           const done=value=>{if(finished)return;finished=true;clearTimeout(timer);resolve(value===true);};
@@ -542,6 +953,20 @@ enum WebExtensionDialogLayout {
           const style=document.createElement('style');style.id='__soulo_dialog_layout';
           style.textContent=`
             @media(max-width:600px){
+              /* Desktop headings with a Semi Design action row need to wrap
+                 before either the title or the actions are squeezed. */
+              :where(main,section) > :where(div,header):has(> :is(h1,h2,h3)):has(> .semi-space){
+                display:flex!important;flex-wrap:wrap!important;gap:8px;align-items:flex-start!important;
+              }
+              :where(main,section) > :where(div,header):has(> .semi-space) > :is(h1,h2,h3){
+                flex:0 0 100%!important;min-width:0;margin:0;
+              }
+              :where(main,section) > :where(div,header):has(> :is(h1,h2,h3)):has(> .semi-space) > div:empty{
+                display:none;
+              }
+              :where(main,section) > :where(div,header):has(> :is(h1,h2,h3)) .semi-space{
+                min-width:0;max-width:100%;flex-wrap:wrap!important;
+              }
               :where(dialog,[role="dialog"],[aria-modal="true"],.swal2-popup){
                 box-sizing:border-box!important;min-width:0!important;
                 max-width:calc(var(--soulo-dialog-width,100vw) - 24px)!important;

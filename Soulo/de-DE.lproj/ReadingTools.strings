@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapsel";
 "home_toolbar_icons" = "Nur Symbole";
 "home_toolbar_bottom" = "Unten";
-"home_toolbar_belowSearch" = "Unter der Suche";
 "home_toolbar_free" = "Frei platzieren";
+"home_toolbar_search_bottom" = "Unten";
+"home_toolbar_alignment" = "Symbolleiste ausrichten";
 "home_toolbar_leading" = "Am Anfang ausrichten";
 "home_toolbar_center" = "Zentrieren";
 "home_toolbar_trailing" = "Am Ende ausrichten";
 "home_toolbar_drag_position" = "Ziehe die Leiste an die gewünschte Stelle.";
 "home_toolbar_drag_buttons" = "Tippe zum Ändern. Ziehe zum Umordnen.";
+"home_toolbar_style" = "Stil";
+"home_toolbar_visibility" = "Ein-/Ausblenden";
+"home_toolbar_visibility_page" = "Startseitenelemente";
+"home_toolbar_visibility_search_area" = "Suchbereich";
+"home_toolbar_visibility_title" = "Titel";
+"home_toolbar_visibility_subtitle" = "Untertitel";
+"home_toolbar_visibility_search" = "Suchleiste";
+"home_toolbar_visibility_search_hint" = "Wische auf der Startseite nach oben oder unten, um die Suchleiste einzublenden.";
+"home_toolbar_visibility_recovery" = "Halte eine freie Stelle auf der Startseite gedrückt, um das Menü zu öffnen.";
 "home_toolbar_search" = "Finden Sie eine Seite";
 "group_default_search" = "Standardsuche";
 "group_search_settings" = "Gruppeneinstellungen";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Milchglas";
 "wallpaper_blur_amount" = "Unschärfestärke";
 
+"home_quick_search_guide" = "Gib auf der Startseite einen Suchbegriff ein. Tippe unter der Suchleiste auf eine Plattform, um dort zu suchen.";
 "auto_hide_platform_bar_hint" = "Wenn aktiviert, wird die Leiste erst ausgeblendet, nachdem du auf Webseiteninhalt tippst, und nur, wenn die Domain keiner Plattform der aktuellen Leiste entspricht. Bei einer Übereinstimmung bleibt die Leiste sichtbar oder wird wieder eingeblendet. Scrollen und automatische Weiterleitungen blenden sie nicht aus.";
 
 "ad_subscription_add" = "Filterliste hinzufügen";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Webseiten";
 "manual_backups_empty" = "Noch keine manuellen Backups";
 "browsing_display_settings_legacy" = "Browseranzeige";
+"media_lock_orientation" = "Ausrichtung sperren";
+"media_unlock_orientation" = "Ausrichtung entsperren";
+
+"music_queue" = "Wiedergabeliste";
+"music_previous_track" = "Vorheriger Titel";
+"music_next_track" = "Nächster Titel";

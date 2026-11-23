@@ -443,13 +443,23 @@
 "home_toolbar_capsule" = "连体胶囊";
 "home_toolbar_icons" = "无底色";
 "home_toolbar_bottom" = "屏幕底部";
-"home_toolbar_belowSearch" = "搜索框下方";
 "home_toolbar_free" = "自由放置";
+"home_toolbar_search_bottom" = "页面底部";
+"home_toolbar_alignment" = "工具栏对齐";
 "home_toolbar_leading" = "靠左";
 "home_toolbar_center" = "居中";
 "home_toolbar_trailing" = "靠右";
 "home_toolbar_drag_position" = "拖动工具栏来调整位置。";
 "home_toolbar_drag_buttons" = "点按更换按钮，拖动调整顺序。";
+"home_toolbar_style" = "外观";
+"home_toolbar_visibility" = "显示/隐藏";
+"home_toolbar_visibility_page" = "首页元素";
+"home_toolbar_visibility_search_area" = "搜索区";
+"home_toolbar_visibility_title" = "标题";
+"home_toolbar_visibility_subtitle" = "副标题";
+"home_toolbar_visibility_search" = "搜索框";
+"home_toolbar_visibility_search_hint" = "在首页上下滑动可打开搜索框。";
+"home_toolbar_visibility_recovery" = "长按首页空白处可打开更多菜单。";
 "home_toolbar_search" = "查找页面";
 
 "group_default_search" = "默认搜索";
@@ -579,6 +589,7 @@
 "wallpaper_image_blur" = "毛玻璃";
 "wallpaper_blur_amount" = "模糊强度";
 
+"home_quick_search_guide" = "在首页输入关键词，搜索框下方会显示平台。点按一个平台即可在该平台搜索。";
 "auto_hide_platform_bar_hint" = "开启后，只有手动点击网页内容，且网页域名不匹配当前平台栏中的任何平台时才隐藏；匹配任一平台则保持或恢复显示。滚动和自动跳转不会主动隐藏平台栏。";
 
 "ad_subscription_add" = "添加规则";
@@ -623,7 +634,7 @@
 "platform_bar_disabled_hint" = "平台栏已隐藏。点此打开“%@”，再设置自动隐藏。";
 
 "storage_files_group" = "下载与文件";
-"storage_cache_group" = "缓存与临时文件";
+"storage_cache_group" = "缓存与临时";
 "storage_video_cache" = "视频缓存";
 "storage_saved_group" = "已保存内容";
 
@@ -687,3 +698,9 @@
 "browsing_web_display" = "网页显示";
 "manual_backups_empty" = "尚无手动备份";
 "browsing_display_settings_legacy" = "浏览界面显示";
+"media_lock_orientation" = "锁定方向";
+"media_unlock_orientation" = "解锁方向";
+
+"music_queue" = "播放列表";
+"music_previous_track" = "上一首";
+"music_next_track" = "下一首";

@@ -57,17 +57,20 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         let attachment = XCTAttachment(screenshot: screen)
         attachment.name = "website-element-fullscreen-edges"; attachment.lifetime = .keepAlways; add(attachment)
         let image = try XCTUnwrap(screen.image.cgImage)
-        for y in [0.035, 0.97] {
-            let x = CGFloat(image.width) * 0.23
-            let pixel = try XCTUnwrap(image.cropping(to: CGRect(x: x, y: CGFloat(image.height) * y, width: 1, height: 1)))
-            var rgba = [UInt8](repeating: 0, count: 4)
-            let rendered = rgba.withUnsafeMutableBytes { buffer -> Bool in
-                guard let canvas = CGContext(data: buffer.baseAddress, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
-                    space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
-                canvas.draw(pixel, in: CGRect(x: 0, y: 0, width: 1, height: 1))
-                return true
+        // Sample clear areas between the clock, camera cutout and status icons.
+        for x in [0.31, 0.69] {
+            for y in [0.035, 0.97] {
+                let position = CGRect(x: CGFloat(image.width) * x, y: CGFloat(image.height) * y, width: 1, height: 1)
+                let pixel = try XCTUnwrap(image.cropping(to: position))
+                var rgba = [UInt8](repeating: 0, count: 4)
+                let rendered = rgba.withUnsafeMutableBytes { buffer -> Bool in
+                    guard let canvas = CGContext(data: buffer.baseAddress, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                        space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+                    canvas.draw(pixel, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+                    return true
+                }
+                XCTAssertTrue(rendered && rgba[0] > 160 && rgba[1] < 130 && rgba[2] < 90, "Expected the player at screen position (\(x), \(y)), got \(rgba)")
             }
-            XCTAssertTrue(rendered && rgba[0] > 160 && rgba[1] < 130 && rgba[2] < 90, "Expected the player at \(y) of the screen, got \(rgba)")
         }
         XCTAssertFalse(tools.exists)
         exit.tap()
@@ -209,9 +212,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
             }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [completed], timeout: 5), .completed, app.debugDescription)
             let prefix = "media.mkv"
-            let cacheLabel = app.staticTexts[prefix + ".timeline.cache"]
-            XCTAssertTrue(cacheLabel.waitForExistence(timeout: 5))
-            XCTAssertTrue(cacheLabel.label.contains(1.0.formatted(.percent.precision(.fractionLength(0)))))
+            XCTAssertFalse(app.staticTexts[prefix + ".timeline.cache"].exists)
             let cacheTrack = XCTAttachment(screenshot: app.screenshot())
             cacheTrack.name = "video-cache-track-" + engine; cacheTrack.lifetime = .keepAlways; add(cacheTrack)
             let speedButtonFrame = speed.frame
@@ -2118,9 +2119,12 @@ extension WebEpisodeAndAdNavigationUITests {
         let root = try await server.start(); server.releaseDownloads(); defer { server.stop(); XCUIDevice.shared.orientation = .portrait }
         let engines = ProcessInfo.processInfo.environment["SOULO_VOLUME_SOULO_ONLY"] == "1" ? ["soulo"] : ["system", "soulo"]
         for engine in engines {
+            XCUIDevice.shared.orientation = .portrait
             let app = launch(player: engine, episodeDock: true, grouped: false)
-            XCUIDevice.shared.orientation = .landscapeLeft
             try open(root.appendingPathComponent("detail.html"), app: app)
+            XCTAssertTrue(app.webViews.buttons["Episodes"].firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+            XCUIDevice.shared.orientation = .landscapeLeft
+            XCTAssertGreaterThan(app.frame.width, app.frame.height)
             openEpisodes(app); app.scrollViews.buttons["Episode 1"].firstMatch.tap()
             let prefix = "media.mkv"
             try requireWebFullscreen(app)
@@ -2135,7 +2139,8 @@ extension WebEpisodeAndAdNavigationUITests {
             }
             XCTAssertEqual(play.label, "Play", app.debugDescription)
             let origin = app.coordinate(withNormalizedOffset: .zero)
-            func drag(_ from: CGFloat, _ to: CGFloat, y: CGFloat = 0.52) {
+            // Keep the gesture on the video surface above the transport buttons.
+            func drag(_ from: CGFloat, _ to: CGFloat, y: CGFloat = 0.34) {
                 origin.withOffset(CGVector(dx: app.frame.width * from, dy: app.frame.height * y))
                     .press(forDuration: 0.5, thenDragTo: origin.withOffset(CGVector(dx: app.frame.width * to, dy: app.frame.height * y)),
                            withVelocity: .slow, thenHoldForDuration: 0.1)
@@ -2362,6 +2367,31 @@ extension WebEpisodeAndAdNavigationUITests {
 }
 
 extension WebEpisodeAndAdNavigationUITests {
+    @MainActor func testNewWebTapCanReconsiderCancelledScriptNavigation() async throws {
+        let html = """
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <button onclick="location.href=location.origin.replace('127.0.0.1','localhost')+'/result.html';">Open site</button>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/source.html": Data(html.utf8),
+            "/result.html": Data("<h1>Confirmed result</h1>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch(confirmCrossDomain: true)
+        try open(root.appendingPathComponent("source.html"), app: app)
+        let button = app.webViews.buttons["Open site"].firstMatch
+        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        let confirm = app.buttons["browser.domain-confirmation.continue"]
+        let cancel = app.buttons["browser.domain-confirmation.cancel"]
+        button.tap()
+        XCTAssertTrue(cancel.waitForExistence(timeout: 5), app.debugDescription)
+        cancel.tap()
+        XCTAssertTrue(cancel.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(server.receivedRequests.contains { $0.path == "/result.html" })
+        button.tap()
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), app.debugDescription)
+        confirm.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Confirmed result"].waitForExistence(timeout: 10))
+    }
+
     @MainActor func testPopupConfirmationWaitsOnSourceAndPreservesWebKitPostAndOpener() async throws {
         let html = #"""
         <meta name="viewport" content="width=device-width,initial-scale=1"><title>Window form origin</title>

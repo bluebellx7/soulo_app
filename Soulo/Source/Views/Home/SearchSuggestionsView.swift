@@ -2,8 +2,10 @@ import SwiftUI
 
 struct SearchSuggestionsView: View {
     let recentSearches: [String]
-    var onTap: (String) -> Void
-    var onDelete: (String) -> Void
+    var onTap: ((String) -> Void)? = nil
+    var onDelete: ((String) -> Void)? = nil
+    var horizontalInset = HomeLandingSpacing.contentInset
+    var contrast: WallpaperRegionContrast? = nil
 
     @EnvironmentObject var languageManager: LanguageManager
     @ObservedObject var wallpaperManager = WallpaperManager.shared
@@ -17,41 +19,38 @@ struct SearchSuggestionsView: View {
             VStack(alignment: .leading, spacing: 10) {
                 // Header
                 HStack {
-                    Text(languageManager.localizedString("recent_searches"))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.8))
+                    wallpaperLabel(languageManager.localizedString("recent_searches"), size: 13)
                         .accessibilityIdentifier("home.recent.title")
 
                     Spacer()
 
-                    if recentSearches.count > 6 {
+                    if recentSearches.count > 6, onTap != nil {
                         Button {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 showAll.toggle()
                             }
                         } label: {
-                            Text(languageManager.localizedString(showAll ? "show_less" : "show_more"))
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.8))
+                            wallpaperLabel(languageManager.localizedString(showAll ? "show_less" : "show_more"), size: 12)
                         }
                     }
                 }
-                .padding(.horizontal, 28)
+                .padding(.horizontal, horizontalInset)
 
                 // Tags
                 FlowLayout(spacing: 8) {
                     ForEach(displayedSearches, id: \.self) { keyword in
-                        SuggestionChip(
-                            text: keyword,
-                            onTap: { onTap(keyword) },
-                            onDelete: { onDelete(keyword) }
-                        )
+                        if let onTap, let onDelete {
+                            SuggestionChip(text: keyword, lightWallpaper: isLight, contrast: contrast,
+                                onTap: { onTap(keyword) }, onDelete: { onDelete(keyword) })
+                        } else {
+                            SuggestionChipLabel(text: keyword, lightWallpaper: isLight, contrast: contrast)
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("home.recent.terms")
-                .padding(.horizontal, 28)
+                .padding(.horizontal, horizontalInset)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -60,38 +59,29 @@ struct SearchSuggestionsView: View {
     private var displayedSearches: [String] {
         showAll ? recentSearches : Array(recentSearches.prefix(6))
     }
+
+    private func wallpaperLabel(_ text: String, size: CGFloat) -> some View {
+        WallpaperForegroundRegion(contrast: contrast, fallbackDarkInk: isLight) { darkInk in
+            Text(text)
+                .font(.system(size: size, weight: .medium))
+                .foregroundStyle((darkInk ? Color(hex: "2E2A47") : .white).opacity(contrast == nil ? 0.8 : 1))
+                .shadow(color: (darkInk ? Color.white : .black).opacity(contrast == nil ? 0 : 0.7), radius: 1.2)
+        }
+    }
 }
 
 // MARK: - Suggestion Chip
 
 private struct SuggestionChip: View {
     let text: String
+    let lightWallpaper: Bool
+    let contrast: WallpaperRegionContrast?
     let onTap: () -> Void
     let onDelete: () -> Void
 
-    @ObservedObject private var wallpaperManager = WallpaperManager.shared
-    @Environment(\.colorScheme) private var colorScheme
-    private var isLight: Bool { wallpaperManager.prefersDarkForeground(for: WallpaperAppearance(colorScheme)) }
-
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 4) {
-                Image(systemName: "clock")
-                    .font(.system(size: 10))
-                    .accessibilityHidden(true)
-                Text(text)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: 150)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(isLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
-            .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.7))
-            .clipShape(Capsule())
-            .overlay(Capsule().stroke(isLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.08), lineWidth: 0.5))
-            .contentShape(Capsule())
+            SuggestionChipLabel(text: text, lightWallpaper: lightWallpaper, contrast: contrast)
         }
         // Let the system arbitrate the context menu and the normal Button tap.
         // A high-priority custom long press consumes short taps on iOS 17.4.
@@ -111,6 +101,39 @@ private struct SuggestionChip: View {
         .accessibilityAction { onTap() }
         .accessibilityAction(named: Text(LanguageManager.shared.localizedString("delete"))) {
             onDelete()
+        }
+    }
+}
+
+private struct SuggestionChipLabel: View {
+    let text: String
+    let lightWallpaper: Bool
+    let contrast: WallpaperRegionContrast?
+
+    var body: some View {
+        WallpaperForegroundRegion(contrast: contrast, fallbackDarkInk: lightWallpaper) { darkInk in
+            let color = darkInk ? Color(hex: "2E2A47") : .white
+            let fill = if contrast != nil {
+                darkInk ? Color.white.opacity(0.66) : Color.black.opacity(0.56)
+            } else {
+                darkInk ? Color.black.opacity(0.04) : Color.white.opacity(0.06)
+            }
+            HStack(spacing: 4) {
+                Image(systemName: "clock")
+                    .font(.system(size: 10))
+                    .accessibilityHidden(true)
+                Text(text)
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 150)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .foregroundStyle(color.opacity(contrast == nil ? 0.75 : 1))
+            .background(fill, in: Capsule())
+            .overlay(Capsule().strokeBorder(color.opacity(0.12), lineWidth: 0.5))
+            .contentShape(Capsule())
         }
     }
 }

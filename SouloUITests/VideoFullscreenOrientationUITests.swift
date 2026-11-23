@@ -17,7 +17,8 @@ final class VideoFullscreenOrientationUITests: XCTestCase {
         defer { server.stop() }
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
         app.launchArguments = ["-app_language", "en-US", "-privacy_https_upgrade_enabled", "NO",
-            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-video.defaultPlayer", "system"]
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-video.defaultPlayer", "system",
+            "-restore_last_page_on_launch", "NO", "-icloud_sync_enabled", "NO"]
         app.launch()
         defer { app.terminate() }
         var route = URLComponents()
@@ -27,10 +28,11 @@ final class VideoFullscreenOrientationUITests: XCTestCase {
         let download = app.webViews.links["Download orientation fixture"].firstMatch
         XCTAssertTrue(download.waitForExistence(timeout: 20), app.debugDescription)
         download.tap()
-        let status = app.buttons["browser.downloadStatus"]
-        XCTAssertTrue(status.waitForExistence(timeout: 10), app.debugDescription)
-        status.tap()
+        await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            server.receivedRequests.contains { $0.path == "/clip.mp4" }
+        }, object: nil)], timeout: 10)
         server.releaseDownloads()
+        app.open(try XCTUnwrap(URL(string: "soulo://downloads")))
         let completed = app.buttons.matching(NSPredicate(format:
             "identifier BEGINSWITH %@ AND label CONTAINS %@", "downloads.open.", filename)).firstMatch
         XCTAssertTrue(completed.waitForExistence(timeout: 15), app.debugDescription)
@@ -50,7 +52,19 @@ final class VideoFullscreenOrientationUITests: XCTestCase {
                 try await revealControls(player: player, close: close)
             }
             XCTAssertEqual(app.buttons.matching(identifier: "media.mkv.fullscreen.close").count, 1)
-            close.tap()
+            for _ in 0..<2 {
+                try await revealControls(player: player, close: close)
+                let buttonFrame = close.frame
+                let appFrame = app.frame
+                if !buttonFrame.isEmpty {
+                    // Target the visible control before XCTest's element
+                    // lookup can race the player's automatic hide animation.
+                    app.coordinate(withNormalizedOffset: .zero).withOffset(
+                        CGVector(dx: buttonFrame.midX - appFrame.minX, dy: buttonFrame.midY - appFrame.minY)
+                    ).tap()
+                }
+                if player.waitForNonExistence(timeout: 1) { break }
+            }
             await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                 app.frame.height > app.frame.width && !player.exists && completed.isHittable
             }, object: nil)], timeout: 8)

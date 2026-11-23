@@ -16,6 +16,7 @@ fi
 
 for file in index.html home.css home.js site.css site-ui.js navigation.css sources.html sources.css sources.js sources.json privacy.html \
     movies.html movies.css movies.js movies.json resources.html magnets.html magnets.json pans.html pans.json stocks.html stocks.json reading.html reading.json music.html music.json content-directories.css navigation.js favicon.svg robots.txt sitemap.xml llms.txt llms-full.txt \
+    extensions.html extensions.css extensions.js extensions.json downloads/soulo-search-platform.zip \
     images/soulo-home-zh.webp images/soulo-home-en.webp \
     images/soulo-home-light-zh.webp images/soulo-home-light-en.webp images/app-store-qr.svg \
     images/web/app-icon-108.webp images/web/search-home.webp \
@@ -40,11 +41,11 @@ fi
 while IFS= read -r -d '' file; do
     case "$file" in
         .*|*/.*) continue ;;
-        images/*|favicons/*) ;;
+        images/*|favicons/*|downloads/*.zip) ;;
         */*) continue ;;
     esac
     case "$file" in
-        *.html|*.css|*.js|*.json|*.png|*.webp|*.jpeg|*.jpg|*.svg|*.ico|*.txt|*.xml) ;;
+        downloads/*.zip|*.html|*.css|*.js|*.json|*.png|*.webp|*.jpeg|*.jpg|*.svg|*.ico|*.txt|*.xml) ;;
         *) continue ;;
     esac
     if [[ ! -f "$LOCAL_DIR/$file" || -L "$LOCAL_DIR/$file" ]]; then
@@ -54,6 +55,10 @@ while IFS= read -r -d '' file; do
     mkdir -p -- "$(dirname -- "$work_dir/site/$file")"
     cp -- "$LOCAL_DIR/$file" "$work_dir/site/$file"
 done < "$work_dir/tracked"
+if [[ ! -s "$work_dir/site/downloads/soulo-search-platform.zip" ]]; then
+    echo "扩展下载包未加入网站发布清单" >&2
+    exit 1
+fi
 (
     cd "$work_dir/site"
     find . -type f -exec shasum -a 256 {} + > "$work_dir/sha256"
@@ -111,6 +116,7 @@ images/web/illustration-bookmarks.webp image/webp
 privacy_policy.html text/html
 extensions.html text/html
 extensions.json application/json
+downloads/soulo-search-platform.zip application/zip|application/octet-stream
 movies.html text/html
 resources.html text/html
 stocks.html text/html
@@ -145,6 +151,7 @@ mv -T -- "$stage/site" "$release"
 ln -s "$release" "$stage/next"
 mv -Tf -- "$stage/next" current
 if ! origin_curl "https://$site_host/" | cmp - "$release/index.html" ||
+        ! origin_curl "https://$site_host/downloads/soulo-search-platform.zip" | cmp - "$release/downloads/soulo-search-platform.zip" ||
         ! check_content_types; then
     if [[ -n "$previous" ]]; then
         ln -s "$previous" "$stage/next"

@@ -26,13 +26,9 @@ final class BrowserUIPreferencesTests: XCTestCase {
         XCTAssertEqual(BrowserInitialPreferences.wallpaperSource(in: defaults), .pixabay)
         XCTAssertEqual(BrowserInitialPreferences.wallpaperTopic(in: defaults), "Nature")
         XCTAssertEqual(BrowserInitialPreferences.wallpaperVibeTags(in: defaults), ["Nature"])
-        let searchBar = AppStorage(wrappedValue: BrowserInitialPreferences.showTopSearchBar,
-                                   "show_top_search_bar", store: defaults)
-        XCTAssertFalse(searchBar.wrappedValue)
         XCTAssertNil(defaults.object(forKey: "wallpaper_source"))
         XCTAssertNil(defaults.object(forKey: "wallpaper_topic"))
         XCTAssertNil(defaults.object(forKey: "wallpaper_vibe_tags"))
-        XCTAssertNil(defaults.object(forKey: "show_top_search_bar"))
     }
 
     func testSavedPreferencesTakePriorityOverNewDefaults() throws {
@@ -42,14 +38,8 @@ final class BrowserUIPreferencesTests: XCTestCase {
         defaults.set(WallpaperSource.pexels.rawValue, forKey: "wallpaper_source")
         defaults.set("Architecture", forKey: "wallpaper_topic")
         defaults.set(["Architecture", "Forest"], forKey: "wallpaper_vibe_tags")
-        for enabled in [true, false] {
-            defaults.set(enabled, forKey: "show_top_search_bar")
-            let searchBar = AppStorage(wrappedValue: BrowserInitialPreferences.showTopSearchBar,
-                                       "show_top_search_bar", store: defaults)
-            XCTAssertEqual(searchBar.wrappedValue, enabled)
-            XCTAssertEqual(BrowserInitialPreferences.wallpaperSource(in: defaults), .pexels)
-            XCTAssertEqual(BrowserInitialPreferences.wallpaperTopic(in: defaults), "Architecture")
-        }
+        XCTAssertEqual(BrowserInitialPreferences.wallpaperSource(in: defaults), .pexels)
+        XCTAssertEqual(BrowserInitialPreferences.wallpaperTopic(in: defaults), "Architecture")
         XCTAssertEqual(defaults.string(forKey: "wallpaper_source"), WallpaperSource.pexels.rawValue)
         XCTAssertEqual(defaults.string(forKey: "wallpaper_topic"), "Architecture")
         XCTAssertEqual(BrowserInitialPreferences.wallpaperVibeTags(in: defaults), ["Architecture", "Forest"])

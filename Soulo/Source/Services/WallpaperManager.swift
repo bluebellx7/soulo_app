@@ -121,8 +121,12 @@ class WallpaperManager: ObservableObject {
     }
 
     @Published var currentImage: UIImage? {
-        didSet { updateImageContrast() }
+        didSet {
+            imageContrastSample = nil
+            updateImageContrast()
+        }
     }
+    @Published private(set) var imageContrastSample: WallpaperContrast.ImageSample?
     @Published private(set) var unmaskedImagePrefersDarkText = false
     @Published private(set) var imagePrefersDarkText: [WallpaperAppearance: Bool] = [:]
     private var contrastTask: Task<Void, Never>?
@@ -414,26 +418,28 @@ class WallpaperManager: ObservableObject {
         }
     }
 
-    func refreshRandom() async {
+    func refreshRandom(appearance: WallpaperAppearance? = nil) async {
         guard source.isRemote else {
+            let appearance = appearance ?? displayAppearance
             switch source {
             case .gradient:
                 let presets = GradientPreset.presets
-                let index = presets.firstIndex { $0.id == gradientID(for: displayAppearance) } ?? 0
-                setGradient(presets[(index + 1) % presets.count].id, for: displayAppearance)
+                let index = presets.firstIndex { $0.id == gradientID(for: appearance) } ?? 0
+                setGradient(presets[(index + 1) % presets.count].id, for: appearance)
             case .solid:
-                setSolidColor(String(format: "#%02X%02X%02X", Int.random(in: 0...255), Int.random(in: 0...255), Int.random(in: 0...255)), for: displayAppearance)
+                setSolidColor(String(format: "#%02X%02X%02X", Int.random(in: 0...255), Int.random(in: 0...255), Int.random(in: 0...255)), for: appearance)
             default: break
             }
             return
         }
 
         guard !networkLoading else { return }
+        if appearance != nil, await applyPreloadedWallpaper() { return }
 
         // Manual and automatic refreshes stay entirely within favorites when
         // requested. An empty list intentionally leaves the current image in place.
         if onlyUseFavoriteWallpapers {
-            guard let picked = favoriteWallpaperForRefresh() else { return }
+            guard let picked = favoriteWallpaperForRefresh(), picked.id != currentImageID else { return }
             if let newSource = WallpaperSource(rawValue: picked.source) {
                 source = newSource
             }
@@ -442,64 +448,30 @@ class WallpaperManager: ObservableObject {
         }
 
         // 1. 40% chance to pick from favorites (any source)
-        if !favorites.isEmpty && Double.random(in: 0...1) < favoritePickProbability {
-            if let picked = favorites.randomElement() {
-                if let newSource = WallpaperSource(rawValue: picked.source) {
-                    self.source = newSource
-                }
-                await applyWallpaper(picked)
-                return
+        if !favorites.isEmpty, Double.random(in: 0...1) < favoritePickProbability,
+           let picked = favoriteWallpaperForRefresh(), picked.id != currentImageID {
+            if let newSource = WallpaperSource(rawValue: picked.source) {
+                source = newSource
             }
-        }
-
-        // 2. Refresh based on current or randomized remote source/topic.
-        if let randomRemote = autoRandomRemoteSelection() {
-            source = randomRemote.source
-            switch randomRemote.source {
-            case .pexels:
-                await searchPexels(query: randomRemote.topic)
-            case .pixabay:
-                await searchPixabay(query: randomRemote.topic)
-            case .bing:
-                await fetchBingWallpaper(random: true)
-            default:
-                break
-            }
+            await applyWallpaper(picked)
             return
         }
 
-        // 3. Fast switch among already loaded remote candidates.
-        if source.isRemote && candidateWallpapers.count > 1 {
-            let nextOptions = candidateWallpapers.filter { $0.id != currentImageID }
-            if let picked = nextOptions.randomElement() {
-                await applyWallpaper(picked)
-                if nextOptions.count < 5 {
-                    Task { await fetchNewCandidatesInBackground() }
-                }
-                return
-            }
+        let selection = autoRandomRemoteSelection() ?? (source: source, topic: searchTopic)
+        if selection.source == source, let candidate = candidateWallpapers.filter({
+            $0.source == selection.source.rawValue && $0.id != currentImageID && !blockedIDs.contains($0.id)
+                && (selection.source == .bing || $0.topic == selection.topic)
+        }).randomElement() {
+            await applyWallpaper(candidate)
+            return
         }
 
+        source = selection.source
         switch source {
-        case .pexels:
-            await searchPexels(query: searchTopic)
-        case .pixabay:
-            await searchPixabay(query: searchTopic)
-        case .bing:
-            await fetchBingWallpaper(random: true)
-        case .gradient:
-            let presets = GradientPreset.presets
-            if let current = presets.firstIndex(where: { $0.id == selectedGradientId }) {
-                let next = (current + 1) % presets.count
-                selectedGradientId = presets[next].id
-            } else {
-                selectedGradientId = presets.randomElement()?.id ?? selectedGradientId
-            }
-        case .solid:
-            let r = Int.random(in: 0...255), g = Int.random(in: 0...255), b = Int.random(in: 0...255)
-            solidColor = String(format: "%02X%02X%02X", r, g, b)
-        case .photo:
-            break
+        case .pexels: await searchPexels(query: selection.topic, replacingCurrent: true)
+        case .pixabay: await searchPixabay(query: selection.topic, replacingCurrent: true)
+        case .bing: await fetchBingWallpaper(random: true)
+        default: break
         }
     }
 
@@ -566,27 +538,25 @@ class WallpaperManager: ObservableObject {
         guard source.isRemote, automaticRefreshActive, resources.allowsSpeculation, !networkLoading else { return }
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "wallpaper_last_auto_refresh_at")
 
-        if let wall = preloadedWallpaper,
-           let image = preloadedImage,
-           let imageData = preloadedImageData {
-            if let newSource = WallpaperSource(rawValue: wall.source) {
-                source = newSource
-            }
-            searchTopic = wall.topic
-            currentImageURLString = wall.url
-            withAnimation(.easeInOut(duration: 0.45)) {
-                currentImage = image
-                currentImageID = wall.id
-            }
-            await persistRemoteWallpaper(imageData, wallpaper: wall)
-            resetPreloadedWallpaper()
-            preloadNextAutoWallpaper()
-            return
-        }
+        if await applyPreloadedWallpaper() { return }
 
         resetPreloadedWallpaper()
         await refreshRandom()
         preloadNextAutoWallpaper()
+    }
+
+    private func applyPreloadedWallpaper() async -> Bool {
+        guard let wallpaper = preloadedWallpaper, let image = preloadedImage, let data = preloadedImageData,
+              let newSource = WallpaperSource(rawValue: wallpaper.source),
+              wallpaper.id != currentImageID, !blockedIDs.contains(wallpaper.id) else { return false }
+        resetPreloadedWallpaper()
+        source = newSource
+        searchTopic = wallpaper.topic
+        updateCurrentWallpaper(wallpaper, image: image)
+        await rememberSourcePreview(data, wallpaper: wallpaper)
+        await persistRemoteWallpaper(data, wallpaper: wallpaper)
+        preloadNextAutoWallpaper()
+        return true
     }
 
     private func preloadNextAutoWallpaper() {
@@ -606,7 +576,7 @@ class WallpaperManager: ObservableObject {
                       ) else { return }
                 wall = remote
             }
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, wall.id != currentImageID else { return }
             guard let imageData = await imageData(for: wall),
                   let image = await decodedBackground(imageData) else { return }
             guard !Task.isCancelled else { return }
@@ -659,22 +629,6 @@ class WallpaperManager: ObservableObject {
         }
     }
 
-    private func fetchNewCandidatesInBackground() async {
-        let expectedSource = source
-        let query = searchTopic
-        let newCandidates: [RemoteWallpaper]
-        if source == .pexels {
-            newCandidates = await fetchPexelsCandidates(query: query, page: Int.random(in: 1...10))
-        } else if source == .pixabay {
-            newCandidates = await fetchPixabayCandidates(query: query, page: Int.random(in: 1...5))
-        } else {
-            newCandidates = []
-        }
-        if !Task.isCancelled, source == expectedSource, searchTopic == query, !newCandidates.isEmpty {
-            candidateWallpapers = newCandidates
-        }
-    }
-
     private func fetchPexelsCandidates(query: String, page: Int) async -> [RemoteWallpaper] {
         let encoded = SearchQueryEncoding.encode(query) ?? "nature"
         guard let url = URL(string: "https://api.pexels.com/v1/search?query=\(encoded)&page=\(page)&per_page=15&orientation=portrait") else { return [] }
@@ -714,13 +668,16 @@ class WallpaperManager: ObservableObject {
         var request = URLRequest(url: url); request.timeoutInterval = 15
         guard let (data, _) = try? await session.data(for: request),
               let res = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let images = res["images"] as? [[String: Any]],
-              let first = images.first,
-              let urlBase = first["url"] as? String else { return nil }
+              let images = res["images"] as? [[String: Any]] else { return nil }
+        return images.compactMap(makeBingWallpaper).first
+    }
 
-        let id = first["startdate"] as? String ?? UUID().uuidString
-        if blockedIDs.contains(id) { return nil }
-        return RemoteWallpaper(id: id, url: "https://www.bing.com" + urlBase, previewURL: "https://www.bing.com" + urlBase, source: "bing", topic: "Bing Daily", isFavorite: favorites.contains(where: { $0.id == id }))
+    private func makeBingWallpaper(from image: [String: Any]) -> RemoteWallpaper? {
+        guard let path = image["url"] as? String,
+              let id = image["startdate"] as? String, !blockedIDs.contains(id) else { return nil }
+        let url = "https://www.bing.com" + path
+        return RemoteWallpaper(id: id, url: url, previewURL: url, source: "bing", topic: "Bing Daily",
+                               isFavorite: favorites.contains(where: { $0.id == id }))
     }
 
     func setAutoRemoteSource(_ source: WallpaperSource, enabled: Bool) {
@@ -778,7 +735,7 @@ class WallpaperManager: ObservableObject {
     func removeVibeTag(_ tag: String) { vibeTags.removeAll { $0 == tag } }
 
     // MARK: - Search Logic
-    func searchPexels(query: String) async {
+    func searchPexels(query: String, replacingCurrent: Bool = false) async {
         guard source == .pexels else { return }
         addVibeTag(query)
         let requestID = beginRemoteRequest()
@@ -801,7 +758,7 @@ class WallpaperManager: ObservableObject {
             }
             clearRemoteErrorIfNeeded()
             if !onlyUseFavoriteWallpapers,
-               let first = candidateWallpapers.first {
+               let first = candidateWallpapers.first(where: { !replacingCurrent || $0.id != currentImageID }) {
                 await applyWallpaper(first)
             }
         } catch {
@@ -810,7 +767,7 @@ class WallpaperManager: ObservableObject {
         }
     }
 
-    func searchPixabay(query: String) async {
+    func searchPixabay(query: String, replacingCurrent: Bool = false) async {
         guard source == .pixabay else { return }
         addVibeTag(query)
         let requestID = beginRemoteRequest()
@@ -832,7 +789,7 @@ class WallpaperManager: ObservableObject {
             }
             clearRemoteErrorIfNeeded()
             if !onlyUseFavoriteWallpapers,
-               let first = candidateWallpapers.first {
+               let first = candidateWallpapers.first(where: { !replacingCurrent || $0.id != currentImageID }) {
                 await applyWallpaper(first)
             }
         } catch {
@@ -846,8 +803,7 @@ class WallpaperManager: ObservableObject {
         searchTopic = "Bing Daily"
         let requestID = beginRemoteRequest()
         defer { finishRemoteRequest(requestID) }
-        let idx = random ? Int.random(in: 0...7) : 0
-        guard let url = URL(string: "https://www.bing.com/HPImageArchive.aspx?format=js&idx=\(idx)&n=1&mkt=en-US") else { return }
+        guard let url = URL(string: "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=en-US") else { return }
         do {
             var request = URLRequest(url: url)
             request.timeoutInterval = 15
@@ -856,15 +812,12 @@ class WallpaperManager: ObservableObject {
             try validateRemoteResponse(response)
             let res = try JSONSerialization.jsonObject(with: data) as? [String: Any]
             let images = res?["images"] as? [[String: Any]] ?? []
-            if let first = images.first, let urlBase = first["url"] as? String {
-                let id = first["startdate"] as? String ?? UUID().uuidString
-                if blockedIDs.contains(id) { return }
-                let wall = RemoteWallpaper(id: id, url: "https://www.bing.com" + urlBase, previewURL: "https://www.bing.com" + urlBase, source: "bing", topic: "Bing Daily", isFavorite: favorites.contains(where: { $0.id == id }))
-                self.candidateWallpapers = [wall]
-                clearRemoteErrorIfNeeded()
-                if !onlyUseFavoriteWallpapers {
-                    await applyWallpaper(wall)
-                }
+            candidateWallpapers = images.compactMap(makeBingWallpaper)
+            clearRemoteErrorIfNeeded()
+            let wallpaper = random ? candidateWallpapers.filter { $0.id != currentImageID }.randomElement()
+                : candidateWallpapers.first
+            if !onlyUseFavoriteWallpapers, let wallpaper {
+                await applyWallpaper(wallpaper)
             }
         } catch {
             guard isCurrentRemoteRequest(requestID, source: .bing) else { return }
@@ -875,17 +828,25 @@ class WallpaperManager: ObservableObject {
     func applyWallpaper(_ wallpaper: RemoteWallpaper) async {
         let revision = UUID(); imageLoadRevision = revision
         let expectedSource = source
+        cachedImageLoadTask?.cancel()
         guard let imageData = await imageData(for: wallpaper),
               let image = await decodedBackground(imageData),
-              imageLoadRevision == revision, source == expectedSource else { return }
+              imageLoadRevision == revision, source == expectedSource, !Task.isCancelled,
+              !blockedIDs.contains(wallpaper.id) else { return }
 
+        updateCurrentWallpaper(wallpaper, image: image)
+        await rememberSourcePreview(imageData, wallpaper: wallpaper)
+        await persistRemoteWallpaper(imageData, wallpaper: wallpaper)
+    }
+
+    private func updateCurrentWallpaper(_ wallpaper: RemoteWallpaper, image: UIImage) {
+        imageLoadRevision = UUID()
+        cachedImageLoadTask?.cancel()
         currentImageURLString = wallpaper.url
         withAnimation(.easeInOut(duration: 0.45)) {
             currentImage = image
             currentImageID = wallpaper.id
         }
-        await rememberSourcePreview(imageData, wallpaper: wallpaper)
-        await persistRemoteWallpaper(imageData, wallpaper: wallpaper)
     }
 
     private func beginRemoteRequest() -> UUID {
@@ -958,6 +919,12 @@ class WallpaperManager: ObservableObject {
 
     var isCurrentWallpaperLight: Bool { prefersDarkForeground(for: displayAppearance) }
 
+    func contrast(in frame: CGRect) -> WallpaperRegionContrast? {
+        guard source == .photo || source.isRemote, !frame.isEmpty, let imageContrastSample else { return nil }
+        return WallpaperRegionContrast(sample: imageContrastSample, wallpaperFrame: frame,
+            overlayAmount: imageOverlayOpacity, blurRadius: imageBlurRadius)
+    }
+
     func prefersDarkForeground(for appearance: WallpaperAppearance) -> Bool {
         switch source {
         case .solid: return WallpaperContrast.prefersDarkText(hex: solidColor(for: appearance))
@@ -972,14 +939,17 @@ class WallpaperManager: ObservableObject {
         guard let cgImage = currentImage?.cgImage else { imagePrefersDarkText = [:]; unmaskedImagePrefersDarkText = false; return }
         let overlayAmount = Self.boundedOverlayAmount(imageOverlayAmount)
         contrastTask = Task { [weak self] in
-            let work = Task.detached(priority: .userInitiated) { () -> (overlays: [WallpaperAppearance: Bool], original: Bool) in
-                let lightness = WallpaperContrast.imageLightness(cgImage, overlayAmount: overlayAmount)
-                return ([.light: lightness.masked, .dark: lightness.masked], lightness.original)
+            let previousSample = self?.imageContrastSample
+            let work = Task.detached(priority: .userInitiated) {
+                let sample = previousSample ?? WallpaperContrast.ImageSample(cgImage)
+                return (sample, sample?.prefersDarkText(overlayAmount: overlayAmount) ?? false,
+                    sample?.prefersDarkText() ?? false)
             }
             let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
             guard let self, !Task.isCancelled, self.contrastRevision == revision else { return }
-            self.unmaskedImagePrefersDarkText = result.original
-            self.imagePrefersDarkText = result.overlays
+            self.imageContrastSample = result.0
+            self.unmaskedImagePrefersDarkText = result.2
+            self.imagePrefersDarkText = [.light: result.1, .dark: result.1]
         }
     }
 

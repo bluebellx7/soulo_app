@@ -241,8 +241,6 @@
 "login_required_toast" = "Inicieu sessió primer i, a continuació, torneu a cercar";
 "status_enabled" = "Habilitat";
 "status_disabled" = "Inhabilitat";
-"show_top_search_bar" = "Mostra la barra de cerca superior";
-"show_top_search_bar_desc" = "Quan estigui amagat, utilitzeu el control d'adreces inferior per cercar o iniciar l'entrada de veu";
 "ad_block_master_disabled_desc" = "Activeu el bloc d'anuncis per utilitzar i gestionar les subscripcions de filtres a continuació.";
 "custom_groups" = "Grups personalitzats";
 "no_groups" = "No hi ha grups personalitzats";
@@ -364,8 +362,6 @@
 "batch_import_result" = "S'han importat correctament les plataformes %d";
 "paste_from_clipboard" = "Enganxa des del porta-retalls";
 "none" = "Cap";
-"show_group_picker_home" = "Mostra el selector de grups a casa";
-"show_group_picker_home_desc" = "Mostra les pestanyes del grup de la plataforma a la pantalla d'inici per canviar ràpidament";
 "error_no_internet" = "Sense connexió a Internet. Comproveu la vostra xarxa.";
 "error_timeout" = "La connexió s'ha esgotat. Si us plau, torna-ho a provar.";
 "error_ssl" = "La connexió segura ha fallat. És possible que aquest lloc no sigui segur.";

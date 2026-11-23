@@ -14,23 +14,30 @@ struct SouloWidgetBundle: WidgetBundle {
     }
 }
 
-private struct FilesEntry: TimelineEntry { let date: Date }
+private struct FilesEntry: TimelineEntry {
+    let date: Date
+    let wallpaper: UIImage?
+}
 
 private struct FilesProvider: TimelineProvider {
-    func placeholder(in context: Context) -> FilesEntry { FilesEntry(date: .now) }
-    func getSnapshot(in context: Context, completion: @escaping (FilesEntry) -> Void) { completion(placeholder(in: context)) }
+    func placeholder(in context: Context) -> FilesEntry { FilesEntry(date: .now, wallpaper: nil) }
+    func getSnapshot(in context: Context, completion: @escaping (FilesEntry) -> Void) { completion(currentEntry()) }
     func getTimeline(in context: Context, completion: @escaping (Timeline<FilesEntry>) -> Void) {
-        completion(Timeline(entries: [placeholder(in: context)], policy: .never))
+        completion(Timeline(entries: [currentEntry()], policy: .never))
+    }
+
+    private func currentEntry() -> FilesEntry {
+        FilesEntry(date: .now, wallpaper: SouloWidgetWallpaper.load().flatMap { UIImage(data: $0) })
     }
 }
 
 struct SouloFilesWidget: Widget {
     // Retain the identifier so existing Home Screen widgets upgrade in place.
-    let kind = "com.dkluge.Soulo.bookshelf"
+    let kind = SouloWidgetWallpaper.kind
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: FilesProvider()) { _ in
+        StaticConfiguration(kind: kind, provider: FilesProvider()) { entry in
             FilesWidgetView()
-                .modifier(FilesWidgetBackground())
+                .modifier(FilesWidgetBackground(wallpaper: entry.wallpaper))
                 .widgetURL(URL(string: "soulo://files"))
         }
         .configurationDisplayName("library_files_tab")
@@ -42,74 +49,60 @@ struct SouloFilesWidget: Widget {
 private struct FilesWidgetView: View {
     @Environment(\.widgetFamily) private var family
     var body: some View {
-        HStack(spacing: 24) {
-            VStack(alignment: .leading, spacing: 10) {
-                Image(systemName: "folder.fill")
-                    .font(.system(size: 28, weight: .medium))
-                    .foregroundStyle(.blue)
-                    .frame(width: 44, height: 44)
-                    .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 13))
-                    .overlay { RoundedRectangle(cornerRadius: 13).strokeBorder(.white.opacity(0.2), lineWidth: 0.5) }
-                    .widgetAccentable()
-                Spacer(minLength: 6)
-                Text("library_files_tab").font(.title3.weight(.semibold)).foregroundStyle(.primary)
-                HStack {
-                    Text("Soulo").font(.caption).foregroundStyle(.secondary)
-                    Spacer()
-                    Image(systemName: "arrow.up.right").font(.caption.weight(.semibold)).foregroundStyle(.blue)
-                }
-            }
-            if family == .systemMedium {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12).fill(.blue.opacity(0.12))
-                        .frame(width: 108, height: 106).rotationEffect(.degrees(-8))
-                    VStack(alignment: .leading, spacing: 12) {
-                        Image(systemName: "photo.fill").font(.title2).foregroundStyle(.blue)
-                        RoundedRectangle(cornerRadius: 2).fill(.primary.opacity(0.18)).frame(height: 4)
-                        RoundedRectangle(cornerRadius: 2).fill(.primary.opacity(0.10)).frame(width: 42, height: 4)
-                    }
-                    .padding(16).frame(width: 100, height: 116)
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
-                    .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(.white.opacity(0.3), lineWidth: 0.5) }
-                    .rotationEffect(.degrees(5))
-                }
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: "folder.fill")
+                .font(.system(size: family == .systemMedium ? 26 : 23, weight: .medium))
+                .frame(width: 45, height: 43)
+                .background(.white.opacity(0.17), in: RoundedRectangle(cornerRadius: 13))
+                .widgetAccentable()
                 .accessibilityHidden(true)
+            Spacer(minLength: 8)
+            HStack(alignment: .lastTextBaseline) {
+                Text("library_files_tab")
+                    .font(.system(.title3, design: .rounded).weight(.semibold))
+                    .lineLimit(2)
+                Spacer(minLength: 4)
+                Image(systemName: "arrow.up.right")
+                    .font(.caption.weight(.semibold))
+                    .accessibilityHidden(true)
             }
         }
+        .foregroundStyle(.white)
         .padding(4)
         .accessibilityElement(children: .combine)
     }
 
 }
 
-/// System material adapts to light, dark, and the Home Screen's tinted/clear modes.
-/// No wallpaper copies or continuously refreshed bitmap effects are needed.
-private struct FilesGlassBackground: View {
-    @Environment(\.colorScheme) private var colorScheme
+private struct FilesWallpaperBackground: View {
+    let wallpaper: UIImage?
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        ZStack {
-            if reduceTransparency {
-                Color(uiColor: .secondarySystemBackground)
-            } else {
-                Rectangle().fill(.ultraThinMaterial)
-                LinearGradient(
-                    colors: [.white.opacity(colorScheme == .dark ? 0.10 : 0.25), .white.opacity(0.02), .blue.opacity(0.04)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing)
-                ContainerRelativeShape()
-                    .strokeBorder(.white.opacity(colorScheme == .dark ? 0.18 : 0.5), lineWidth: 0.75)
+        GeometryReader { geometry in
+            ZStack {
+                LinearGradient(colors: [Color(red: 0.26, green: 0.36, blue: 0.53), Color(red: 0.11, green: 0.16, blue: 0.25)],
+                               startPoint: .topTrailing, endPoint: .bottomLeading)
+                if let wallpaper {
+                    Image(uiImage: wallpaper).resizable().scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                    LinearGradient(colors: [.black.opacity(reduceTransparency ? 0.45 : 0.31), .black.opacity(0.58)],
+                                   startPoint: .topTrailing, endPoint: .bottomLeading)
+                }
             }
+            .clipped()
         }
     }
 }
 
 private struct FilesWidgetBackground: ViewModifier {
+    let wallpaper: UIImage?
+
     @ViewBuilder func body(content: Content) -> some View {
         if #available(iOSApplicationExtension 17.0, *) {
-            content.containerBackground(for: .widget) { FilesGlassBackground() }
+            content.containerBackground(for: .widget) { FilesWallpaperBackground(wallpaper: wallpaper) }
         } else {
-            content.background(FilesGlassBackground())
+            content.padding(12).background(FilesWallpaperBackground(wallpaper: wallpaper))
         }
     }
 }

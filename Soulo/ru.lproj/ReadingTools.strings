@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Капсула";
 "home_toolbar_icons" = "Только значки";
 "home_toolbar_bottom" = "Внизу";
-"home_toolbar_belowSearch" = "Под поиском";
 "home_toolbar_free" = "Свободное положение";
+"home_toolbar_search_bottom" = "Внизу";
+"home_toolbar_alignment" = "Выравнивание панели инструментов";
 "home_toolbar_leading" = "Выровнять по началу";
 "home_toolbar_center" = "По центру";
 "home_toolbar_trailing" = "Выровнять по концу";
 "home_toolbar_drag_position" = "Перетащите панель в нужное место.";
 "home_toolbar_drag_buttons" = "Нажмите, чтобы заменить кнопку. Перетащите, чтобы изменить порядок.";
+"home_toolbar_style" = "Стиль";
+"home_toolbar_visibility" = "Показать/скрыть";
+"home_toolbar_visibility_page" = "Элементы главной страницы";
+"home_toolbar_visibility_search_area" = "Область поиска";
+"home_toolbar_visibility_title" = "Заголовок";
+"home_toolbar_visibility_subtitle" = "Подзаголовок";
+"home_toolbar_visibility_search" = "Строка поиска";
+"home_toolbar_visibility_search_hint" = "Смахните вверх или вниз на главной странице, чтобы открыть строку поиска.";
+"home_toolbar_visibility_recovery" = "Нажмите и удерживайте пустое место на главной странице, чтобы открыть меню.";
 "home_toolbar_search" = "Найти страницу";
 "group_default_search" = "Поиск по умолчанию";
 "group_search_settings" = "Настройки группы";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Матовое стекло";
 "wallpaper_blur_amount" = "Сила размытия";
 
+"home_quick_search_guide" = "Введите запрос на главной странице, и под строкой поиска появятся платформы. Нажмите на платформу, чтобы начать поиск на ней.";
 "auto_hide_platform_bar_hint" = "Если включено, панель скрывается только после нажатия на содержимое страницы, если её домен не совпадает ни с одной платформой на текущей панели. При совпадении с любой платформой панель остаётся видимой или появляется снова. Прокрутка и автоматические перенаправления её не скрывают.";
 
 "ad_subscription_add" = "Добавить список фильтров";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Веб-страницы";
 "manual_backups_empty" = "Ручных копий пока нет";
 "browsing_display_settings_legacy" = "Вид браузера";
+"media_lock_orientation" = "Заблокировать ориентацию";
+"media_unlock_orientation" = "Разблокировать ориентацию";
+
+"music_queue" = "Плейлист";
+"music_previous_track" = "Предыдущий трек";
+"music_next_track" = "Следующий трек";

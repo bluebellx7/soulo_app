@@ -291,8 +291,6 @@
 "login_required_toast" = "Please log in first, then search again";
 "status_enabled" = "Enabled";
 "status_disabled" = "Disabled";
-"show_top_search_bar" = "Show Top Search Bar";
-"show_top_search_bar_desc" = "When hidden, use the bottom address control to search or start voice input";
 "ad_block_master_disabled_desc" = "Turn on Ad Block to use and manage the filter subscriptions below.";
 /* Custom Groups */
 "custom_groups" = "Custom Groups";
@@ -439,8 +437,6 @@
 "batch_import_result" = "Successfully imported %d platforms";
 "paste_from_clipboard" = "Paste from Clipboard";
 "none" = "None";
-"show_group_picker_home" = "Show Group Picker on Home";
-"show_group_picker_home_desc" = "Display platform group tabs on the home screen for quick switching";
 "error_no_internet" = "No internet connection. Please check your network.";
 "error_timeout" = "Connection timed out. Please try again.";
 "error_ssl" = "Secure connection failed. This site may not be safe.";

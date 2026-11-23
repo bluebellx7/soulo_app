@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "கேப்சூல்";
 "home_toolbar_icons" = "ஐகான்கள் மட்டும்";
 "home_toolbar_bottom" = "கீழே";
-"home_toolbar_belowSearch" = "தேடலுக்குக் கீழே";
 "home_toolbar_free" = "விரும்பிய இடம்";
+"home_toolbar_search_bottom" = "கீழே";
+"home_toolbar_alignment" = "கருவிப்பட்டி சீரமைப்பு";
 "home_toolbar_leading" = "தொடக்கத்தில்";
 "home_toolbar_center" = "மையத்தில்";
 "home_toolbar_trailing" = "முடிவில்";
 "home_toolbar_drag_position" = "கருவிப்பட்டியை விரும்பிய இடத்துக்கு இழுக்கவும்.";
 "home_toolbar_drag_buttons" = "பொத்தானை மாற்றத் தட்டவும். வரிசைப்படுத்த இழுக்கவும்.";
+"home_toolbar_style" = "பாணி";
+"home_toolbar_visibility" = "காட்டு/மறை";
+"home_toolbar_visibility_page" = "முகப்புப் பக்கக் கூறுகள்";
+"home_toolbar_visibility_search_area" = "தேடல் பகுதி";
+"home_toolbar_visibility_title" = "தலைப்பு";
+"home_toolbar_visibility_subtitle" = "துணைத்தலைப்பு";
+"home_toolbar_visibility_search" = "தேடல் பட்டி";
+"home_toolbar_visibility_search_hint" = "தேடல் பட்டியைக் காட்ட முகப்புப் பக்கத்தில் மேலே அல்லது கீழே ஸ்வைப் செய்யவும்.";
+"home_toolbar_visibility_recovery" = "மெனுவைத் திறக்க முகப்பில் காலியான இடத்தைத் தொட்டுப் பிடிக்கவும்.";
 "home_toolbar_search" = "ஒரு பக்கத்தைக் கண்டுபிடி";
 "group_default_search" = "இயல்புநிலை தேடல்";
 "group_search_settings" = "குழு அமைப்புகள்";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "உறைந்த கண்ணாடி";
 "wallpaper_blur_amount" = "மங்கலின் அளவு";
 
+"home_quick_search_guide" = "முகப்பில் தேடல் சொல்லை உள்ளிட்டால் தேடல் பட்டிக்குக் கீழே தளங்கள் தெரியும். தேட ஒரு தளத்தைத் தட்டவும்.";
 "auto_hide_platform_bar_hint" = "இயக்கப்பட்டால், பக்க உள்ளடக்கத்தை நீங்களே தட்டிய பிறகும் பக்கத்தின் டொமைன் தற்போதைய பட்டையில் உள்ள எந்தத் தளத்துடனும் பொருந்தாதபோதும் மட்டுமே பட்டை மறையும். ஏதேனும் தளத்துடன் பொருந்தினால் பட்டை தொடர்ந்து தெரியும் அல்லது மீண்டும் காட்டப்படும். உருட்டுதலும் தானியங்கி வழிமாற்றங்களும் பட்டையை மறைக்காது.";
 
 "ad_subscription_add" = "வடிகட்டிப் பட்டியலைச் சேர்";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "வலைப்பக்கங்கள்";
 "manual_backups_empty" = "கைமுறை காப்புப்பிரதிகள் இல்லை";
 "browsing_display_settings_legacy" = "உலாவல் காட்சி";
+"media_lock_orientation" = "திரைத் திசையைப் பூட்டு";
+"media_unlock_orientation" = "திரைத் திசைப் பூட்டை நீக்கு";
+
+"music_queue" = "பிளேலிஸ்ட்";
+"music_previous_track" = "முந்தைய பாடல்";
+"music_next_track" = "அடுத்த பாடல்";

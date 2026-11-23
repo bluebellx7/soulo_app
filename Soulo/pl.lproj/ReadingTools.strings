@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapsuła";
 "home_toolbar_icons" = "Same ikony";
 "home_toolbar_bottom" = "Na dole";
-"home_toolbar_belowSearch" = "Pod wyszukiwarką";
 "home_toolbar_free" = "Dowolne położenie";
+"home_toolbar_search_bottom" = "Na dole";
+"home_toolbar_alignment" = "Wyrównanie paska narzędzi";
 "home_toolbar_leading" = "Wyrównaj do początku";
 "home_toolbar_center" = "Wyśrodkuj";
 "home_toolbar_trailing" = "Wyrównaj do końca";
 "home_toolbar_drag_position" = "Przeciągnij pasek narzędzi w wybrane miejsce.";
 "home_toolbar_drag_buttons" = "Stuknij, aby zmienić przycisk. Przeciągnij, aby zmienić kolejność.";
+"home_toolbar_style" = "Styl";
+"home_toolbar_visibility" = "Pokaż/ukryj";
+"home_toolbar_visibility_page" = "Elementy strony głównej";
+"home_toolbar_visibility_search_area" = "Obszar wyszukiwania";
+"home_toolbar_visibility_title" = "Tytuł";
+"home_toolbar_visibility_subtitle" = "Podtytuł";
+"home_toolbar_visibility_search" = "Pasek wyszukiwania";
+"home_toolbar_visibility_search_hint" = "Przesuń palcem w górę lub w dół na stronie głównej, aby wyświetlić pasek wyszukiwania.";
+"home_toolbar_visibility_recovery" = "Przytrzymaj puste miejsce na stronie głównej, aby otworzyć menu.";
 "home_toolbar_search" = "Znajdź stronę";
 "group_default_search" = "Domyślne wyszukiwanie";
 "group_search_settings" = "Ustawienia grupy";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Matowe szkło";
 "wallpaper_blur_amount" = "Siła rozmycia";
 
+"home_quick_search_guide" = "Wpisz słowo kluczowe na stronie głównej, aby zobaczyć platformy pod paskiem wyszukiwania. Stuknij platformę, by w niej wyszukać.";
 "auto_hide_platform_bar_hint" = "Po włączeniu pasek ukrywa się tylko po stuknięciu treści strony, jeśli jej domena nie pasuje do żadnej platformy na bieżącym pasku. Dopasowanie do dowolnej platformy zachowuje lub przywraca pasek. Przewijanie i automatyczne przekierowania go nie ukrywają.";
 
 "ad_subscription_add" = "Dodaj listę filtrów";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Strony internetowe";
 "manual_backups_empty" = "Brak ręcznych kopii";
 "browsing_display_settings_legacy" = "Wygląd przeglądania";
+"media_lock_orientation" = "Zablokuj orientację";
+"media_unlock_orientation" = "Odblokuj orientację";
+
+"music_queue" = "Lista odtwarzania";
+"music_previous_track" = "Poprzedni utwór";
+"music_next_track" = "Następny utwór";

@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "କ୍ୟାପସୁଲ୍";
 "home_toolbar_icons" = "କେବଳ ଆଇକନ୍";
 "home_toolbar_bottom" = "ତଳେ";
-"home_toolbar_belowSearch" = "ସନ୍ଧାନ ତଳେ";
 "home_toolbar_free" = "ଇଚ୍ଛାମତ ସ୍ଥାନ";
+"home_toolbar_search_bottom" = "ତଳେ";
+"home_toolbar_alignment" = "ଟୁଲ୍‌ବାର୍ ସଜାଣି";
 "home_toolbar_leading" = "ଆରମ୍ଭରେ";
 "home_toolbar_center" = "ମଝିରେ";
 "home_toolbar_trailing" = "ଶେଷରେ";
 "home_toolbar_drag_position" = "ଟୁଲବାରକୁ ଇଚ୍ଛିତ ସ୍ଥାନକୁ ଟାଣନ୍ତୁ।";
 "home_toolbar_drag_buttons" = "ବଟନ୍ ବଦଳାଇବାକୁ ଟ୍ୟାପ୍ କରନ୍ତୁ। କ୍ରମ ବଦଳାଇବାକୁ ଟାଣନ୍ତୁ।";
+"home_toolbar_style" = "ଶୈଳୀ";
+"home_toolbar_visibility" = "ଦେଖାନ୍ତୁ/ଲୁଚାନ୍ତୁ";
+"home_toolbar_visibility_page" = "ହୋମ ପୃଷ୍ଠାର ଉପାଦାନ";
+"home_toolbar_visibility_search_area" = "ଖୋଜ କ୍ଷେତ୍ର";
+"home_toolbar_visibility_title" = "ଶୀର୍ଷକ";
+"home_toolbar_visibility_subtitle" = "ଉପଶୀର୍ଷକ";
+"home_toolbar_visibility_search" = "ସନ୍ଧାନ ବାର୍";
+"home_toolbar_visibility_search_hint" = "ଖୋଜ ବାର୍ ଦେଖାଇବାକୁ ହୋମ୍ ପୃଷ୍ଠାରେ ଉପରକୁ କିମ୍ବା ତଳକୁ ସ୍ୱାଇପ୍ କରନ୍ତୁ।";
+"home_toolbar_visibility_recovery" = "ମେନୁ ଖୋଲିବାକୁ ହୋମ୍‌ର ଖାଲି ସ୍ଥାନ ଦବାଇ ଧରନ୍ତୁ।";
 "home_toolbar_search" = "|\nଏକ ପୃଷ୍ଠା ଖୋଜ |";
 "group_default_search" = "|\nଡିଫଲ୍ଟ ସନ୍ଧାନ |";
 "group_search_settings" = "|\nଗୋଷ୍ଠୀ ସେଟିଂସମୂହ |";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "ଝାପ୍ସା କାଚ";
 "wallpaper_blur_amount" = "ଝାପ୍ସାର ତୀବ୍ରତା";
 
+"home_quick_search_guide" = "ହୋମ ପୃଷ୍ଠାରେ ଏକ ଖୋଜ ଶବ୍ଦ ଲେଖିଲେ ଖୋଜ ବାର୍ ତଳେ ପ୍ଲାଟଫର୍ମ ଦେଖାଯିବ। ଖୋଜିବାକୁ ଏକ ପ୍ଲାଟଫର୍ମ ଟ୍ୟାପ୍ କରନ୍ତୁ।";
 "auto_hide_platform_bar_hint" = "ଚାଲୁ ଥିଲେ, ଆପଣ ପୃଷ୍ଠାର ବିଷୟବସ୍ତୁରେ ନିଜେ ଟ୍ୟାପ୍ କରିବା ପରେ ଏବଂ ପୃଷ୍ଠାର ଡୋମେନ୍ ବର୍ତ୍ତମାନ ବାର୍‌ର କୌଣସି ପ୍ଲାଟଫର୍ମ ସହ ନ ମିଳିଲେ ହିଁ ବାର୍ ଲୁଚେ। କୌଣସି ପ୍ଲାଟଫର୍ମ ସହ ମିଳିଲେ ବାର୍ ଦୃଶ୍ୟମାନ ରହେ କିମ୍ବା ପୁଣି ଦେଖାଯାଏ। ସ୍କ୍ରୋଲ୍ ଓ ସ୍ୱୟଂଚାଳିତ ପୁନଃନିର୍ଦ୍ଦେଶନ ଏହାକୁ ଲୁଚାଏ ନାହିଁ।";
 
 "ad_subscription_add" = "ଫିଲ୍ଟର ତାଲିକା ଯୋଡ଼ନ୍ତୁ";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "ୱେବ୍‌ପୃଷ୍ଠା";
 "manual_backups_empty" = "ଏପର୍ଯ୍ୟନ୍ତ ମାନୁଆଲ୍ ବ୍ୟାକଅପ୍ ନାହିଁ";
 "browsing_display_settings_legacy" = "ବ୍ରାଉଜିଂ ପ୍ରଦର୍ଶନ";
+"media_lock_orientation" = "ସ୍କ୍ରିନ୍‌ର ଦିଗ ଲକ୍ କରନ୍ତୁ";
+"media_unlock_orientation" = "ସ୍କ୍ରିନ୍‌ର ଦିଗ ଅନଲକ୍ କରନ୍ତୁ";
+
+"music_queue" = "ପ୍ଲେଲିଷ୍ଟ";
+"music_previous_track" = "ପୂର୍ବ ଗୀତ";
+"music_next_track" = "ପରବର୍ତ୍ତୀ ଗୀତ";

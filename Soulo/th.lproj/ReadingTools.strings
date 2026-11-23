@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "แคปซูล";
 "home_toolbar_icons" = "ไอคอนเท่านั้น";
 "home_toolbar_bottom" = "ด้านล่าง";
-"home_toolbar_belowSearch" = "ใต้ช่องค้นหา";
 "home_toolbar_free" = "วางได้อิสระ";
+"home_toolbar_search_bottom" = "ด้านล่าง";
+"home_toolbar_alignment" = "การจัดแนวแถบเครื่องมือ";
 "home_toolbar_leading" = "ชิดด้านเริ่มต้น";
 "home_toolbar_center" = "กึ่งกลาง";
 "home_toolbar_trailing" = "ชิดด้านท้าย";
 "home_toolbar_drag_position" = "ลากแถบเครื่องมือไปยังตำแหน่งที่ต้องการ";
 "home_toolbar_drag_buttons" = "แตะเพื่อเปลี่ยนปุ่ม ลากเพื่อจัดลำดับ";
+"home_toolbar_style" = "รูปแบบ";
+"home_toolbar_visibility" = "แสดง/ซ่อน";
+"home_toolbar_visibility_page" = "องค์ประกอบหน้าแรก";
+"home_toolbar_visibility_search_area" = "พื้นที่ค้นหา";
+"home_toolbar_visibility_title" = "ชื่อเรื่อง";
+"home_toolbar_visibility_subtitle" = "ชื่อรอง";
+"home_toolbar_visibility_search" = "แถบค้นหา";
+"home_toolbar_visibility_search_hint" = "ปัดขึ้นหรือลงบนหน้าแรกเพื่อแสดงแถบค้นหา";
+"home_toolbar_visibility_recovery" = "แตะพื้นที่ว่างบนหน้าแรกค้างไว้เพื่อเปิดเมนู";
 "home_toolbar_search" = "ค้นหาหน้า";
 "group_default_search" = "การค้นหาเริ่มต้น";
 "group_search_settings" = "การตั้งค่ากลุ่ม";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "กระจกฝ้า";
 "wallpaper_blur_amount" = "ระดับความเบลอ";
 
+"home_quick_search_guide" = "พิมพ์คำค้นบนหน้าแรกเพื่อแสดงแพลตฟอร์มใต้แถบค้นหา แตะแพลตฟอร์มเพื่อค้นหาในแพลตฟอร์มนั้น";
 "auto_hide_platform_bar_hint" = "เมื่อเปิด แถบจะซ่อนหลังจากคุณแตะเนื้อหาหน้าเว็บเองและโดเมนของหน้าไม่ตรงกับแพลตฟอร์มใดในแถบปัจจุบันเท่านั้น หากตรงกับแพลตฟอร์มใด แถบจะคงอยู่หรือกลับมาแสดง การเลื่อนและการเปลี่ยนเส้นทางอัตโนมัติจะไม่ซ่อนแถบ";
 
 "ad_subscription_add" = "เพิ่มรายการตัวกรอง";
@@ -621,3 +632,9 @@
 "browsing_web_display" = "หน้าเว็บ";
 "manual_backups_empty" = "ยังไม่มีข้อมูลสำรองที่สร้างเอง";
 "browsing_display_settings_legacy" = "การแสดงผลการท่องเว็บ";
+"media_lock_orientation" = "ล็อกแนวหน้าจอ";
+"media_unlock_orientation" = "ปลดล็อกแนวหน้าจอ";
+
+"music_queue" = "เพลย์ลิสต์";
+"music_previous_track" = "เพลงก่อนหน้า";
+"music_next_track" = "เพลงถัดไป";

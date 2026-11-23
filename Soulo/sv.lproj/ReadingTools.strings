@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapsel";
 "home_toolbar_icons" = "Bara ikoner";
 "home_toolbar_bottom" = "Längst ned";
-"home_toolbar_belowSearch" = "Under sökning";
 "home_toolbar_free" = "Fri placering";
+"home_toolbar_search_bottom" = "Längst ned";
+"home_toolbar_alignment" = "Justera verktygsfältet";
 "home_toolbar_leading" = "Justera till början";
 "home_toolbar_center" = "Centrera";
 "home_toolbar_trailing" = "Justera till slutet";
 "home_toolbar_drag_position" = "Dra verktygsfältet dit du vill ha det.";
 "home_toolbar_drag_buttons" = "Tryck för att byta en knapp. Dra för att ändra ordningen.";
+"home_toolbar_style" = "Stil";
+"home_toolbar_visibility" = "Visa/dölj";
+"home_toolbar_visibility_page" = "Delar av startsidan";
+"home_toolbar_visibility_search_area" = "Sökområde";
+"home_toolbar_visibility_title" = "Titel";
+"home_toolbar_visibility_subtitle" = "Underrubrik";
+"home_toolbar_visibility_search" = "Sökfält";
+"home_toolbar_visibility_search_hint" = "Svep uppåt eller nedåt på startsidan för att visa sökfältet.";
+"home_toolbar_visibility_recovery" = "Tryck och håll på en tom plats på startsidan för att öppna menyn.";
 "home_toolbar_search" = "Hitta en sida";
 "group_default_search" = "Standardsökning";
 "group_search_settings" = "Gruppinställningar";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Frostat glas";
 "wallpaper_blur_amount" = "Oskärpans styrka";
 
+"home_quick_search_guide" = "Skriv ett sökord på startsidan för att visa plattformar under sökfältet. Tryck på en plattform för att söka där.";
 "auto_hide_platform_bar_hint" = "När detta är på döljs fältet bara efter att du trycker på sidans innehåll och sidans domän inte matchar någon plattform i det aktuella fältet. Om någon plattform matchar förblir fältet synligt eller visas igen. Rullning och automatiska omdirigeringar döljer det inte.";
 
 "ad_subscription_add" = "Lägg till filterlista";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Webbsidor";
 "manual_backups_empty" = "Inga manuella backups ännu";
 "browsing_display_settings_legacy" = "Webbläsarvisning";
+"media_lock_orientation" = "Lås orienteringen";
+"media_unlock_orientation" = "Lås upp orienteringen";
+
+"music_queue" = "Spellista";
+"music_previous_track" = "Föregående låt";
+"music_next_track" = "Nästa låt";

@@ -9,7 +9,7 @@ struct SearchHistoryView: View {
     var body: some View {
         NavigationStack {
             SearchHistoryContentView(searchVM: searchVM, onOpen: onOpen)
-                .navigationTitle(LanguageManager.shared.localizedString("search_history"))
+                .navigationTitle(LanguageManager.shared.localizedString("library_history_tab"))
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
@@ -21,6 +21,19 @@ struct SearchHistoryView: View {
 }
 
 struct SearchHistoryContentView: View {
+    private enum Filter {
+        case all, searches, pages, videoTools
+
+        func includes(_ entry: SearchHistoryRecord) -> Bool {
+            switch self {
+            case .all: true
+            case .searches: !entry.isWebVisit
+            case .pages: entry.isWebVisit
+            case .videoTools: entry.isWebVisit && entry.usedVideoTools
+            }
+        }
+    }
+
     @Environment(\.libraryPageIsActive) private var libraryPageIsActive
     @Environment(\.managedObjectContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -32,37 +45,22 @@ struct SearchHistoryContentView: View {
     @ObservedObject private var platformStore = PlatformDataStore.shared
     @State private var filterText = ""
     @State private var showClearAlert = false
-    @State private var kind = "all"
+    @State private var kind: Filter = .all
     @State private var groupByPlatform = false
 
-    private var visibleHistory: [SearchHistoryRecord] {
-        allHistory.filter { SearchHistoryService.isVisibleInHistory($0) && (kind == "all" || (kind == "pages" ? $0.isWebVisit : !$0.isWebVisit)) }
-    }
-
-    private var deduped: [SearchHistoryRecord] {
-        var seen = Set<String>()
-        var result: [SearchHistoryRecord] = []
-        let source = filterText.trimmingCharacters(in: .whitespaces).isEmpty
-            ? visibleHistory
-            : visibleHistory.filter {
-                $0.keyword.localizedCaseInsensitiveContains(filterText)
-                    || ($0.visitedURLString?.localizedCaseInsensitiveContains(filterText) == true)
-            }
-        for item in source {
-            let key = item.visitedURLString.map { "url:\($0)" }
-                ?? "search:\(item.platformID?.uuidString ?? "all"):\(item.keyword.lowercased())"
-            if !seen.contains(key) {
-                seen.insert(key)
-                result.append(item)
-            }
+    private var latestHistory: [SearchHistoryRecord] {
+        let now = Date()
+        var seen = Set<SearchHistoryService.EntryIdentity>()
+        return allHistory.filter {
+            SearchHistoryService.isVisibleInHistory($0, referenceDate: now)
+                && seen.insert(SearchHistoryService.identity(of: $0)).inserted
         }
-        return result
     }
 
-    private var grouped: [(title: String, items: [SearchHistoryRecord])] {
+    private func grouped(_ history: [SearchHistoryRecord]) -> [(title: String, items: [SearchHistoryRecord])] {
         if groupByPlatform {
             let platforms = Dictionary(uniqueKeysWithValues: platformStore.platforms.map { ($0.id, $0) })
-            return Dictionary(grouping: deduped, by: { $0.platformID }).map { id, items in
+            return Dictionary(grouping: history, by: { $0.platformID }).map { id, items in
                 let title = id.flatMap { platforms[$0] }.map { $0.isBuiltIn ? LanguageManager.shared.localizedString($0.name) : $0.name }
                     ?? FeatureText.text("Other")
                 return (title: title, items: items)
@@ -76,7 +74,7 @@ struct SearchHistoryContentView: View {
         var yesterday: [SearchHistoryRecord] = []
         var earlier: [SearchHistoryRecord] = []
 
-        for item in deduped {
+        for item in history {
             let date = calendar.startOfDay(for: item.timestamp)
             if date >= todayStart { today.append(item) }
             else if date >= yesterdayStart { yesterday.append(item) }
@@ -91,13 +89,19 @@ struct SearchHistoryContentView: View {
     }
 
     var body: some View {
+        let history = latestHistory
+        let query = filterText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let results = history.filter {
+            kind.includes($0) && (query.isEmpty || $0.keyword.localizedCaseInsensitiveContains(query)
+                || $0.visitedURLString?.localizedCaseInsensitiveContains(query) == true)
+        }
         List {
-            if !visibleHistory.isEmpty {
+            Section {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
-                    TextField(LanguageManager.shared.localizedString("search_placeholder"), text: $filterText)
+                    TextField(LanguageManager.shared.localizedString("search"), text: $filterText)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .accessibilityIdentifier("history.search")
@@ -105,30 +109,43 @@ struct SearchHistoryContentView: View {
                         Button { filterText = "" } label: {
                             Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
                         }
+                        .buttonStyle(.borderless)
                         .accessibilityLabel(
                             LanguageManager.shared.localizedString("accessibility_clear_search")
                         )
                     }
+                    Button {
+                        kind = kind == .videoTools ? .all : .videoTools
+                        HapticsManager.selection()
+                    } label: {
+                        Image(systemName: kind == .videoTools ? "play.rectangle.fill" : "play.rectangle")
+                            .foregroundStyle(kind == .videoTools ? Color.themePrimary : .secondary)
+                            .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(ToolText.text("video_tools"))
+                    .accessibilityIdentifier("history.video-filter")
+                    .accessibilityAddTraits(kind == .videoTools ? .isSelected : [])
                 }
                 .frame(minHeight: AppControlMetrics.minimumHitSize)
                 .preservesKeyboardFocusOnTap()
-                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                .listRowInsets(LibraryPageLayout.searchRowInsets)
             }
 
-            if visibleHistory.isEmpty {
+            if history.isEmpty {
                 IllustratedToolEmptyState(
                     scene: .history,
                     title: LanguageManager.shared.localizedString("no_history"),
                     message: LanguageManager.shared.localizedString("no_history_desc")
                 )
-            } else if deduped.isEmpty {
+            } else if results.isEmpty {
                 CompatibleUnavailableView(
                     LanguageManager.shared.localizedString("no_results"),
                     systemImage: "magnifyingglass",
                     description: Text("")
                 )
             } else {
-                ForEach(grouped, id: \.title) { section in
+                ForEach(grouped(results), id: \.title) { section in
                     Section(section.title) {
                         ForEach(section.items) { item in
                             historyRow(item)
@@ -137,18 +154,17 @@ struct SearchHistoryContentView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .libraryListLayout(embedded: embeddedInLibrary)
         .mediaPlayerNavigation(enabled: !embeddedInLibrary)
-        .compatibleListSectionSpacing(20)
-        .compatibleScrollTopMargin(24)
         .toolbar {
             if libraryPageIsActive {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Picker(FeatureText.text("History type"), selection: $kind) {
-                            Text(FeatureText.text("All history")).tag("all")
-                            Text(FeatureText.text("Searches")).tag("searches")
-                            Text(FeatureText.text("Visited pages")).tag("pages")
+                            Text(FeatureText.text("All history")).tag(Filter.all)
+                            Text(FeatureText.text("Searches")).tag(Filter.searches)
+                            Text(FeatureText.text("Visited pages")).tag(Filter.pages)
+                            Text(ToolText.text("video_tools")).tag(Filter.videoTools)
                         }
                         Toggle(FeatureText.text("Group by platform"), isOn: $groupByPlatform)
                     } label: { Image(systemName: "line.3.horizontal.decrease.circle") }
@@ -158,7 +174,7 @@ struct SearchHistoryContentView: View {
                     Button(role: .destructive) { showClearAlert = true } label: {
                         Image(systemName: "trash").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                     }
-                    .disabled(visibleHistory.isEmpty)
+                    .disabled(history.isEmpty)
                     .accessibilityLabel(LanguageManager.shared.localizedString("clear_all"))
                 }
             }
@@ -261,12 +277,8 @@ struct SearchHistoryContentView: View {
     }
 
     private func matchingHistoryEntries(for item: SearchHistoryRecord) -> [SearchHistoryRecord] {
-        if let url = item.visitedURLString {
-            return allHistory.filter { $0.visitedURLString == url }
-        }
-        return allHistory.filter {
-            !$0.isWebVisit && $0.keyword.caseInsensitiveCompare(item.keyword) == .orderedSame
-        }
+        let identity = SearchHistoryService.identity(of: item)
+        return allHistory.filter { SearchHistoryService.identity(of: $0) == identity }
     }
 
     private func formatTime(_ date: Date) -> String {

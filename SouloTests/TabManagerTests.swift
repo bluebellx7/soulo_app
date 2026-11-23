@@ -5,6 +5,51 @@ import WebKit
 
 final class TabManagerTests: XCTestCase {
     @MainActor
+    func testExtensionChangesRefreshVisiblePageAndDeferOtherWebViews() async throws {
+        let storageKey = "extension-refresh-" + UUID().uuidString
+        defer { UserDefaults.standard.removeObject(forKey: storageKey) }
+        let manager = TabManager(storageKey: storageKey)
+        let url = try XCTUnwrap(URL(string: "https://example.test/"))
+        let warmTab = try XCTUnwrap(manager.activeTab)
+        warmTab.webViewModel.loadCachedURL(url)
+        let visibleTab = manager.createTab()
+        visibleTab.webViewModel.loadCachedURL(url)
+        let coldTab = manager.createTab(switchTo: false)
+        coldTab.webViewModel.loadCachedURL(url)
+        let warmView = WKWebView()
+        warmTab.webViewModel.webView = warmView
+        let visibleView = WKWebView()
+        visibleTab.webViewModel.webView = visibleView
+
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        let controller = UIViewController()
+        window.rootViewController = controller
+        controller.view.addSubview(visibleView)
+        window.isHidden = false
+        defer { window.isHidden = true }
+        XCTAssertNotNil(visibleView.window)
+
+        let warmRevision = warmTab.webViewModel.runtimeRevision
+        let coldRevision = coldTab.webViewModel.runtimeRevision
+        NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
+        NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
+        for _ in 0..<30 where visibleTab.webViewModel.webView != nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertNil(visibleTab.webViewModel.webView)
+        XCTAssertTrue(warmTab.webViewModel.webView === warmView)
+        XCTAssertEqual(warmTab.webViewModel.runtimeRevision, warmRevision)
+        XCTAssertEqual(coldTab.webViewModel.runtimeRevision, coldRevision)
+
+        manager.switchToTab(id: warmTab.id)
+        XCTAssertNil(warmTab.webViewModel.webView)
+        XCTAssertNotEqual(warmTab.webViewModel.runtimeRevision, warmRevision)
+        XCTAssertEqual(warmTab.webViewModel.currentURL, url)
+        XCTAssertEqual(coldTab.webViewModel.runtimeRevision, coldRevision)
+    }
+
+    @MainActor
     func testRestartRestoreIsOptInPreservesDestinationAndSkipsPrivateBrowsing() throws {
         let suite = "RestartRestore." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -262,6 +307,24 @@ final class TabManagerTests: XCTestCase {
         defaults.set(true, forKey: "is_incognito")
         XCTAssertNil(TabManager.mostRecentSavedWindowID(userDefaults: defaults))
         XCTAssertNotNil(defaults.data(forKey: "soulo_saved_tabs.\(older.uuidString)"), "Migrating the default window must preserve other windows")
+    }
+
+    @MainActor
+    func testRestoreRepairsDuplicateTabIdentityAndKeepsSelectedPage() throws {
+        let key = "duplicate-tab-fixture-\(UUID())"
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let sharedID = UUID()
+        let firstURL = try XCTUnwrap(URL(string: "https://example.com/first"))
+        let secondURL = try XCTUnwrap(URL(string: "https://example.com/second"))
+        let tabs = [firstURL, secondURL].map { ["id": sharedID.uuidString, "urlString": $0.absoluteString] }
+        let data = try JSONSerialization.data(withJSONObject: ["tabs": tabs, "activeIndex": 1])
+        UserDefaults.standard.set(data, forKey: key)
+
+        let restored = TabManager(storageKey: key)
+        XCTAssertEqual(restored.tabs.map(\.webViewModel.currentURL), [firstURL, secondURL])
+        XCTAssertEqual(restored.tabs.first?.id, sharedID)
+        XCTAssertEqual(Set(restored.tabs.map(\.id)).count, 2)
+        XCTAssertEqual(restored.activeWebViewModel?.currentURL, secondURL)
     }
 
     @MainActor
@@ -604,10 +667,26 @@ final class TabManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testInactiveEmptyTabReleasesWebKitAndCanBeReopened() async throws {
+        let manager = TabManager()
+        let original = try XCTUnwrap(manager.activeTab)
+        original.webViewModel.webView = WKWebView()
+        manager.createTab()
+        for _ in 0..<20 where original.webViewModel.webView != nil { await Task.yield() }
+        XCTAssertNil(original.webViewModel.webView)
+        XCTAssertEqual(manager.tabCount, 2)
+        manager.switchToTab(id: original.id)
+        XCTAssertEqual(manager.activeTab?.id, original.id)
+        XCTAssertTrue(manager.activeTab?.isAlive == true)
+        XCTAssertNil(original.webViewModel.currentURL)
+    }
+
+    @MainActor
     func testRecentDistantTabKeepsRuntimeAndMemoryWarningReleasesOnlyBackground() async throws {
         let manager = TabManager()
         let first = manager.activeTab!
         let web = WKWebView()
+        first.webViewModel.loadCachedURL(try XCTUnwrap(URL(string: "https://example.com/first")))
         first.webViewModel.webView = web
         manager.createTab()
         manager.switchToTab(at: 0)
@@ -627,9 +706,10 @@ final class TabManagerTests: XCTestCase {
     @MainActor
     func testRecentTabStaysWarmRegardlessOfPositionAndRapidSwitchDoesNotReload() async throws {
         let manager = TabManager()
-        for _ in 0..<8 { manager.createTab() }
+        for index in 1...8 { manager.createTab(url: URL(string: "https://example.com/\(index)")) }
         manager.switchToTab(at: 0)
         let web = WKWebView()
+        manager.activeWebViewModel?.loadCachedURL(try XCTUnwrap(URL(string: "https://example.com/first")))
         manager.activeWebViewModel?.webView = web
         manager.switchToTab(at: 8)
         manager.switchToTab(at: 0)

@@ -16,7 +16,7 @@ struct HomeToolbarDestinationView: View {
     }
     @ViewBuilder private var destination: some View {
         switch action {
-        case .wallpaper: AppearanceHomeSettingsView(initialPage: .wallpaper)
+        case .wallpaper: WallpaperSettingsView()
         case .language: LanguageSettingsView()
         case .webAppearance: WebAppearanceSettingsView()
         case .browserToolbar: BrowserToolbarSettingsView()
@@ -24,6 +24,12 @@ struct HomeToolbarDestinationView: View {
         case .privacy: ProtectionSettingsView(initialPage: .privacy)
         case .adBlock: ProtectionSettingsView()
         case .backups: SettingsBackupsView()
+        case .storage:
+            StorageUsageView(onOpenInBrowser: { url in
+                tabManager.openURLFromBrowserControls(url, searchID: searchVM.searchID, inNewTab: true)
+                searchVM.isSearching = true
+                dismiss()
+            })
         case .quickActions: AppQuickActionSettingsView()
         case .urlSchemes: URLSchemeGuideView()
         case .shake: ShakeActionSettingsView()

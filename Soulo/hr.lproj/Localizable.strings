@@ -241,8 +241,6 @@
 "login_required_toast" = "Prvo se prijavite, a zatim ponovno pretražite";
 "status_enabled" = "Omogućeno";
 "status_disabled" = "Onesposobljeno";
-"show_top_search_bar" = "Prikaži gornju traku za pretraživanje";
-"show_top_search_bar_desc" = "Kada je skriven, koristite donju kontrolu adrese za pretraživanje ili pokretanje glasovnog unosa";
 "ad_block_master_disabled_desc" = "Uključite Blokiranje oglasa da biste koristili pretplate na filtre u nastavku i upravljali njima.";
 "custom_groups" = "Prilagođene grupe";
 "no_groups" = "Nema prilagođenih grupa";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Uspješno uvezene %d platforme";
 "paste_from_clipboard" = "Zalijepi iz međuspremnika";
 "none" = "Nijedan";
-"show_group_picker_home" = "Prikaži birač grupe na početnoj stranici";
-"show_group_picker_home_desc" = "Prikaži kartice grupe platformi na početnom zaslonu za brzo prebacivanje";
 "error_no_internet" = "Nema internetske veze. Provjerite svoju mrežu.";
 "error_timeout" = "Veza je istekla. Molimo pokušajte ponovo.";
 "error_ssl" = "Sigurna veza nije uspjela. Ova stranica možda nije sigurna.";

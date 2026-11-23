@@ -17,19 +17,14 @@ const overlay=fs.readFileSync(path.join(root,'Soulo/Resources/UserScripts/overla
   v.requestFullscreen=()=>{documentCalls++;return Promise.resolve()};
  });
  await page.evaluate(overlay+'\n'+source);await page.waitForSelector('[data-video-toggle]',{state:'visible'});
- await page.evaluate(()=>window.__souloVideoOrientation.setPrefersSoulo(true));
  await page.evaluate(()=>document.querySelector('[data-video-toggle]').click());
- assert.equal(await page.evaluate(()=>nativeCalls),0);
+ assert.equal(await page.evaluate(()=>messages.some(m=>m.action==='fullscreenPlayer')),false);
  await page.locator('[data-video-toggle]').click();
  await page.getByRole('button',{name:'Fullscreen',exact:true}).click();
  assert.equal(await page.evaluate(()=>nativeCalls),0,'The toolbar must hand off to the shared player');
  const token=await page.locator('#v').getAttribute('data-soulo-media-id');
  const handoff=await page.evaluate(()=>messages.find(m=>m.action==='fullscreenPlayer'));
- assert.equal(handoff.token,token);assert.equal(handoff.landscape,true);assert.equal(handoff.system,false);
- await page.evaluate(()=>window.__souloVideoOrientation.setPrefersSoulo(false));
- await page.locator('[data-video-toggle]').click();
- await page.getByRole('button',{name:'Fullscreen',exact:true}).click();
- assert.equal(await page.evaluate(()=>messages.filter(m=>m.action==='fullscreenPlayer').at(-1).system),true);
+ assert.equal(handoff.token,token);assert.equal(handoff.landscape,true);assert.equal(handoff.play,true);
  // The coordinator's native orientation API retains the legacy AVKit fallback.
  await page.evaluate(token=>window.__souloVideoOrientation.landscape(token),token);
  assert.equal(await page.evaluate(()=>nativeCalls),1);

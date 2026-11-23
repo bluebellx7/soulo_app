@@ -112,12 +112,23 @@ final class MediaSession: ObservableObject {
     @Published private(set) var videoIsLandscape = false
     @Published var playerSurfaces = 0
     @Published var playerPages = 0
+    @Published var musicPlayerPages = 0
     @Published private(set) var webMediaContext: WebMediaPlaybackContext?
     @Published private(set) var soulo: MatroskaPlayback?
     @Published private(set) var souloSystemAvailable = true
     @Published private(set) var souloSystemAvailabilityPending = false
     private var souloCompatibilityTask: Task<Void, Never>?
-    private var localAudioPlaylist: [URL] = []
+    @Published private(set) var localAudioPlaylist: [URL] = []
+    var localAudioIndex: Int? {
+        guard let url, !localAudioPlaylist.isEmpty else { return nil }
+        if let index = localAudioPlaylist.firstIndex(of: url) { return index }
+        let resolved = url.resolvingSymlinksInPath()
+        return localAudioPlaylist.firstIndex { $0.resolvingSymlinksInPath() == resolved }
+    }
+    var isAudioPlayback: Bool {
+        if retainedDownloadSource?.webMediaContext?.resource.kind == .audio { return true }
+        return url.map { FileVideoEpisodes.isAudio($0.path) } ?? false
+    }
     private var remoteControlsInstalled = false
     @Published var loop = false
     @Published var mirrored = false
@@ -144,6 +155,7 @@ final class MediaSession: ObservableObject {
     private var wantsPlayback = false
     private(set) var playbackIntentRevision = 0
     private var isInBackground = UIApplication.shared.applicationState == .background
+    private var foregroundVideoResume: (context: WebMediaPlaybackContext, generation: UUID, intent: Int)?
     var isPlaybackRequested: Bool { soulo?.isPlaybackRequested ?? wantsPlayback }
     private var persistsPosition = true
     private weak var sourceWebView: WKWebView?
@@ -197,7 +209,7 @@ final class MediaSession: ObservableObject {
             guard let self, event.object as? AVPlayerItem === self.player.currentItem else { return }
             self.endTemporaryRate()
             if self.sleepTimer.playbackEnded() { self.seek(0); return }
-            if !self.loop, self.advanceLocalAudio(by: 1) { return }
+            if !self.loop, self.advanceLocalAudio(by: 1, wrapping: true) { return }
             self.seek(0)
             if self.loop { self.play() } else { self.pause() }
         }.store(in: &observations)
@@ -232,6 +244,7 @@ final class MediaSession: ObservableObject {
 
     func open(url: URL, title: String? = nil, pageURL: URL? = nil, asset: AVURLAsset? = nil, webView: WKWebView? = nil, reservation: UUID? = nil, persistPosition: Bool? = nil, downloadSource: DownloadPlaybackSource? = nil, startAt: Double? = nil, autoplay: Bool = true, initialRate: Float? = nil) {
         if let reservation, !ownsPreparation(reservation) { return }
+        let audioOnly = downloadSource?.webMediaContext?.resource.kind == .audio || FileVideoEpisodes.isAudio(url.path)
         webMediaContext = downloadSource?.webMediaContext.flatMap { $0.resource.kind == .video ? $0 : nil }
         cancelSouloCompatibilityCheck()
         if let extended = soulo { soulo = nil; extended.stop(deactivateAudioSession: false) }
@@ -352,6 +365,7 @@ final class MediaSession: ObservableObject {
             }
         }
         Task {
+            guard !audioOnly else { return }
             let tracks = try? await item.asset.loadTracks(withMediaType: .video)
             guard self.generation == token else { return }
             if let track = tracks?.first,
@@ -375,7 +389,7 @@ final class MediaSession: ObservableObject {
         }
         presentationSizeObservation = item.observe(\.presentationSize, options: [.initial, .new]) { [weak self] item, _ in
             Task { @MainActor in
-                guard let self, self.generation == token,
+                guard !audioOnly, let self, self.generation == token,
                       item.presentationSize.width > 0, item.presentationSize.height > 0 else { return }
                 self.videoIsLandscape = Self.prefersLandscape(
                     width: item.presentationSize.width, height: item.presentationSize.height
@@ -446,14 +460,29 @@ final class MediaSession: ObservableObject {
         updateScreenAwake()
     }
     func setBackgrounded(_ backgrounded: Bool) {
+        let enteringBackground = backgrounded && !isInBackground
         isInBackground = backgrounded
-        if backgrounded { pauseVideoIfBackgrounded() } else { updateScreenAwake() }
+        if backgrounded {
+            let context = enteringBackground && isPlaybackRequested && SharedVideoFullscreenHost.isPresenting ? webMediaContext : nil
+            pauseVideoIfBackgrounded()
+            if let context, !isPlaybackRequested {
+                foregroundVideoResume = (context, generation, playbackIntentRevision)
+            }
+        } else {
+            let resume = foregroundVideoResume
+            foregroundVideoResume = nil
+            if let resume, resume.context === webMediaContext, resume.generation == generation,
+               resume.intent == playbackIntentRevision, SharedVideoFullscreenHost.isPresenting {
+                play()
+            }
+            updateScreenAwake()
+        }
     }
     /// Background audio and an explicitly opened PiP/AirPlay session continue.
     /// A normal video pause also clears playback intent so delayed readiness,
     /// seek completion or an interruption cannot restart it offscreen.
     func pauseVideoIfBackgrounded() {
-        guard isInBackground, hasVideo, isPlaybackRequested,
+        guard isInBackground, hasVideo || webMediaContext?.resource.kind == .video, isPlaybackRequested,
               !pictureInPicture.keepsPlaybackInBackground,
               !player.isExternalPlaybackActive else { return }
         pause()
@@ -518,7 +547,10 @@ final class MediaSession: ObservableObject {
     }
     func outputVolumeChanged(_ value: Double) {
         guard value.isFinite, !isInBackground, UIApplication.shared.applicationState == .active else { return }
-        if let soulo {
+        if musicPlayerPages > 0, !hasVideo, url != nil {
+            showAdjustment(.volume, value: value)
+            finishAdjustment(after: .milliseconds(2200))
+        } else if let soulo {
             guard soulo.hasVisibleSurface else { return }
             soulo.showAdjustment(.volume, value: value); soulo.finishAdjustment(after: .milliseconds(2200))
         } else if player.currentItem != nil, playerSurfaces > 0 || playerPages > 0 {
@@ -781,15 +813,22 @@ final class MediaSession: ObservableObject {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
     func setLocalAudioPlaylist(_ files: [URL]) {
-        localAudioPlaylist = files
+        if localAudioPlaylist != files { localAudioPlaylist = files }
         let enabled = files.count > 1
         MPRemoteCommandCenter.shared().nextTrackCommand.isEnabled = enabled
         MPRemoteCommandCenter.shared().previousTrackCommand.isEnabled = enabled
     }
-    @discardableResult func advanceLocalAudio(by offset: Int) -> Bool {
-        guard let url, let index = localAudioPlaylist.firstIndex(where: { $0.resolvingSymlinksInPath() == url.resolvingSymlinksInPath() }),
-              localAudioPlaylist.indices.contains(index + offset) else { return false }
-        let next = localAudioPlaylist[index + offset]
+    @discardableResult func advanceLocalAudio(by offset: Int, wrapping: Bool = false) -> Bool {
+        guard let index = localAudioIndex, localAudioPlaylist.count > 1 else { return false }
+        let (destination, overflow) = index.addingReportingOverflow(offset)
+        guard !overflow else { return false }
+        if wrapping, destination == localAudioPlaylist.count { return playLocalAudio(at: 0) }
+        if wrapping, destination == -1 { return playLocalAudio(at: localAudioPlaylist.count - 1) }
+        return playLocalAudio(at: destination)
+    }
+    @discardableResult func playLocalAudio(at index: Int) -> Bool {
+        guard localAudioPlaylist.indices.contains(index), index != localAudioIndex else { return false }
+        let next = localAudioPlaylist[index]
         if let soulo {
             let files = localAudioPlaylist
             soulo.open(next, persistPosition: true, startAt: 0, title: next.lastPathComponent)
@@ -801,7 +840,7 @@ final class MediaSession: ObservableObject {
         guard soulo === playback else { return }
         if sleepTimer.playbackEnded() { return }
         if loop { playback.seek(0); playback.play() }
-        else { _ = advanceLocalAudio(by: 1) }
+        else { _ = advanceLocalAudio(by: 1, wrapping: true) }
     }
     func restoreSystemFromSoulo(pictureInPicture: Bool = false) {
         guard let playback = soulo, let url else { return }

@@ -1174,7 +1174,7 @@ final class WebViewScriptsTests: XCTestCase {
             options: .atomic
         )
 
-        let preparedURL = try WebExtensionPackagePreparer.prepare(
+        let preparedURL = try await WebExtensionPackagePreparer.prepare(
             sourceURL: fixtureDirectory,
             in: installDirectory
         )

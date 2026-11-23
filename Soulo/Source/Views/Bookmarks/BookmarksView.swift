@@ -36,6 +36,7 @@ struct BookmarksContentView: View {
     @State private var busy = false
     @State private var document: BookmarkHTMLDocument?
     @State private var notice: String?
+    @State private var successNotice: String?
     @State private var editingFolder: BookmarkFolderRecord?
     @State private var folderName = ""
     @State private var folderPrompt = false
@@ -75,7 +76,7 @@ struct BookmarksContentView: View {
         .fileExporter(isPresented: $exporting, document: document, contentType: .html,
                       defaultFilename: "Soulo-Bookmarks") { result in
             switch result {
-            case .success: notice = ToolText.text("favorites_exported")
+            case .success: successNotice = ToolText.text("favorites_exported")
             case .failure(let error): notice = error.localizedDescription
             }
         }
@@ -108,6 +109,7 @@ struct BookmarksContentView: View {
             Button(ToolText.text("cancel"), role: .cancel) { renamingBookmark = nil }
             Button(ToolText.text("done")) { saveBookmarkName() }
         }
+        .statusNotice($successNotice)
         .alert(ToolText.text("favorites_manage"), isPresented: Binding(
             get: { notice != nil }, set: { if !$0 { notice = nil } })) {
             Button(ToolText.text("done"), role: .cancel) { notice = nil }
@@ -136,7 +138,7 @@ struct BookmarksContentView: View {
         let childCounts = shownFolders.isEmpty ? [:] : Dictionary(grouping: folders, by: \.parentID).mapValues(\.count)
         return List {
             Section {
-                HStack {
+                HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField(LanguageManager.shared.localizedString("search"), text: $search)
                         .autocorrectionDisabled().textInputAutocapitalization(.never)
@@ -157,7 +159,7 @@ struct BookmarksContentView: View {
                 }
                 .frame(minHeight: AppControlMetrics.minimumHitSize)
                 .preservesKeyboardFocusOnTap()
-                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                .listRowInsets(LibraryPageLayout.searchRowInsets)
             }
             if !showOnlyFavorites, let id = parentID, let folder = folders.first(where: { $0.id == id }) {
                 Section {
@@ -208,9 +210,7 @@ struct BookmarksContentView: View {
                 Text(ToolText.text("favorites_format")).font(.footnote).foregroundStyle(.secondary)
             }.listRowBackground(Color.clear)
         }
-        .listStyle(.insetGrouped)
-        .compatibleListSectionSpacing(20)
-        .compatibleScrollTopMargin(24)
+        .libraryListLayout(embedded: embeddedInLibrary)
 
     }
 
@@ -414,7 +414,7 @@ struct BookmarksContentView: View {
             do {
                 let archive = try await Task.detached(priority: .userInitiated) { try BookmarkHTML.read(url) }.value
                 let result = try BookmarkLibraryService.importArchive(archive, into: destination, context: modelContext)
-                notice = String(format: ToolText.text("favorites_import_result"), result.added, result.folders, result.duplicates, result.skipped)
+                successNotice = String(format: ToolText.text("favorites_import_result"), result.added, result.folders, result.duplicates, result.skipped)
             } catch { notice = error.localizedDescription }
         }
     }

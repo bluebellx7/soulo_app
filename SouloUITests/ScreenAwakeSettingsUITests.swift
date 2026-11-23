@@ -3,14 +3,24 @@ import XCTest
 @MainActor
 final class ScreenAwakeSettingsUITests: XCTestCase {
     private func openSetting(_ app: XCUIApplication) -> XCUIElement {
-        app.buttons["home.menu"].tap(); app.buttons["Settings"].firstMatch.tap()
-        let toggle = app.switches["settings.keepScreenAwake"].firstMatch
+        let menu = app.buttons["home.menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 10))
+        menu.tap()
+        app.buttons["Settings"].firstMatch.tap()
+        let browsing = app.buttons["settings.browsingDisplay"]
+        reveal(browsing, in: app)
+        browsing.tap()
+        let toggle = app.switches["settings.keepScreenAwake"]
+        reveal(toggle, in: app)
+        return toggle
+    }
+
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
         for _ in 0..<7 {
-            if toggle.exists && toggle.isHittable { break }
+            if element.exists && element.isHittable { return }
             app.swipeUp()
         }
-        XCTAssertTrue(toggle.waitForExistence(timeout: 5), app.debugDescription)
-        return toggle
+        XCTAssertTrue(element.isHittable, app.debugDescription)
     }
     func testSettingIsOffInitiallyPersistsAndCanBeDisabledAgain() throws {
         continueAfterFailure = false
@@ -28,6 +38,7 @@ final class ScreenAwakeSettingsUITests: XCTestCase {
         XCTAssertEqual(restored.value as? String, "0")
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "keep-screen-on-default-off"; screenshot.lifetime = .keepAlways; add(screenshot)
-        app.buttons["Done"].firstMatch.tap()
+        app.navigationBars["Browsing Settings"].buttons.firstMatch.tap()
+        app.navigationBars["Settings"].buttons["Done"].tap()
     }
 }

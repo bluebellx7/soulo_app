@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapsel";
 "home_toolbar_icons" = "Bare ikoner";
 "home_toolbar_bottom" = "Nederst";
-"home_toolbar_belowSearch" = "Under søk";
 "home_toolbar_free" = "Fri plassering";
+"home_toolbar_search_bottom" = "Nederst";
+"home_toolbar_alignment" = "Justering av verktøylinjen";
 "home_toolbar_leading" = "Juster til start";
 "home_toolbar_center" = "Sentrer";
 "home_toolbar_trailing" = "Juster til slutt";
 "home_toolbar_drag_position" = "Dra verktøylinjen dit du vil ha den.";
 "home_toolbar_drag_buttons" = "Trykk for å bytte knapp. Dra for å endre rekkefølgen.";
+"home_toolbar_style" = "Stil";
+"home_toolbar_visibility" = "Vis/skjul";
+"home_toolbar_visibility_page" = "Elementer på startsiden";
+"home_toolbar_visibility_search_area" = "Søkeområde";
+"home_toolbar_visibility_title" = "Tittel";
+"home_toolbar_visibility_subtitle" = "Undertittel";
+"home_toolbar_visibility_search" = "Søkefelt";
+"home_toolbar_visibility_search_hint" = "Sveip opp eller ned på startsiden for å vise søkefeltet.";
+"home_toolbar_visibility_recovery" = "Trykk og hold på et tomt sted på startsiden for å åpne menyen.";
 "home_toolbar_search" = "Finn en side";
 "group_default_search" = "Standardsøk";
 "group_search_settings" = "Gruppeinnstillinger";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Frostet glass";
 "wallpaper_blur_amount" = "Uskarphetsstyrke";
 
+"home_quick_search_guide" = "Skriv inn et søkeord på startsiden for å se plattformer under søkefeltet. Trykk på en plattform for å søke der.";
 "auto_hide_platform_bar_hint" = "Når dette er på, skjules linjen bare etter at du trykker på sideinnholdet og sidens domene ikke samsvarer med noen plattform i den gjeldende linjen. Ved treff på en plattform beholdes eller gjenopprettes linjen. Rulling og automatiske omdirigeringer skjuler den ikke.";
 
 "ad_subscription_add" = "Legg til filterliste";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Nettsider";
 "manual_backups_empty" = "Ingen manuelle backups ennå";
 "browsing_display_settings_legacy" = "Nettleservisning";
+"media_lock_orientation" = "Lås retningen";
+"media_unlock_orientation" = "Lås opp retningen";
+
+"music_queue" = "Spilleliste";
+"music_previous_track" = "Forrige spor";
+"music_next_track" = "Neste spor";

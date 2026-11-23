@@ -1,4 +1,1 @@
-• Au fost îmbunătățite trecerea la ecran complet, încărcarea în buffer și meniul vitezei pentru videoclipurile online.
-• Au fost îmbunătățite recunoașterea linkurilor magnet și găsirea partenerilor pentru descărcările BitTorrent.
-• Scripturile utilizator pot folosi GM_webRequest pentru a anula solicitările Fetch și XHR ale cadrului principal sau a le redirecționa către aceeași origine.
-• Am îmbunătățit compatibilitatea extensiilor browserului, inclusiv numele fișierelor descărcate și încărcarea paginilor în afara ecranului.
+Am îmbunătățit încărcarea scripturilor la deschiderea paginilor web și compatibilitatea cu extensiile de browser.

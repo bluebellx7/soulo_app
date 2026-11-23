@@ -94,6 +94,19 @@ import Vision
         XCTAssertEqual(removed.map(\.id), ["host:second.example"])
     }
 
+    func testOpenAndSuspendedExtensionPagesShareOneGroup() throws {
+        let options = BrowserTab()
+        options.webViewModel.loadCachedURL(try XCTUnwrap(URL(string: "webkit-extension://first/options.html")))
+        let web = BrowserTab()
+        web.webViewModel.loadCachedURL(try XCTUnwrap(URL(string: "https://first.example/extensions")))
+        var suspended = BrowserTab()
+        suspended.suspendedURL = try XCTUnwrap(URL(string: "webkit-extension://second/downloads.html"))
+        let groups = TabOverviewDomainGroup.make(from: [options, web, suspended])
+        XCTAssertEqual(groups.map(\.id), ["web-extensions", "host:first.example"])
+        XCTAssertEqual(groups[0].tabs.map(\.id), [options.id, suspended.id])
+        XCTAssertEqual(groups[0].tabIDsStillInGroup([web, suspended]), [suspended.id])
+    }
+
     func testGroupedOverviewRendersBoundedPreviewsAcrossScreenSizesAndLanguages() async throws {
         let defaults = UserDefaults.standard
         let savedMode = defaults.object(forKey: "tab_overview_grouped")

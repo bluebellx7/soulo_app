@@ -241,8 +241,6 @@
 "login_required_toast" = "Silakan login terlebih dahulu, lalu cari lagi";
 "status_enabled" = "Diaktifkan";
 "status_disabled" = "Dengan disabilitas";
-"show_top_search_bar" = "Tampilkan Bilah Pencarian Teratas";
-"show_top_search_bar_desc" = "Saat disembunyikan, gunakan kontrol alamat bawah untuk mencari atau memulai input suara";
 "ad_block_master_disabled_desc" = "Aktifkan Blok Iklan untuk menggunakan dan mengelola langganan filter di bawah.";
 "custom_groups" = "Grup Kustom";
 "no_groups" = "Tidak Ada Grup Khusus";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Berhasil mengimpor platform %d";
 "paste_from_clipboard" = "Tempel dari Papan Klip";
 "none" = "Tidak ada";
-"show_group_picker_home" = "Tampilkan Pemilih Grup di Beranda";
-"show_group_picker_home_desc" = "Tampilkan tab grup platform di layar beranda untuk peralihan cepat";
 "error_no_internet" = "Tidak ada koneksi internet. Silakan periksa jaringan Anda.";
 "error_timeout" = "Waktu koneksi habis. Silakan coba lagi.";
 "error_ssl" = "Koneksi aman gagal. Situs ini mungkin tidak aman.";

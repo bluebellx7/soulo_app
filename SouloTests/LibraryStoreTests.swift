@@ -224,6 +224,18 @@ private final class BookmarkTestTransport: @unchecked Sendable {
 
 @MainActor
 final class LibraryStoreTests: XCTestCase {
+    func testCorruptLibraryExitsStartupLoadWithoutOverwritingStore() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("library.sqlite")
+        let corruptStore = Data("Unreadable SQLite test fixture".utf8)
+        try corruptStore.write(to: url)
+
+        XCTAssertNil(SouloApp.openLibrary { try LibraryStore(url: url) })
+        XCTAssertEqual(try Data(contentsOf: url), corruptStore)
+    }
+
     func testFavoriteOnlyLibraryMigratesManualOrderAndPersistsAFilteredReorder() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -231,7 +243,7 @@ final class LibraryStoreTests: XCTestCase {
         let url = directory.appendingPathComponent("favorite.sqlite")
         let ids = (0..<4).map { _ in UUID() }
         try autoreleasepool {
-            let previous = NSPersistentContainer(name: "FavoriteOnly", managedObjectModel: LibraryStore.makeModel(includeOrder: false))
+            let previous = NSPersistentContainer(name: "FavoriteOnly", managedObjectModel: LibraryStore.makeModel(includeOrder: false, includeVideoToolHistory: false))
             previous.persistentStoreDescriptions = [NSPersistentStoreDescription(url: url)]
             var failure: Error?
             previous.loadPersistentStores { _, error in failure = error }; if let failure { throw failure }
@@ -271,7 +283,7 @@ final class LibraryStoreTests: XCTestCase {
         let url = directory.appendingPathComponent("previous.sqlite"), id = UUID(), folderID = UUID()
         let icon = Data(repeating: 37, count: 2 * 1024 * 1024)
         try autoreleasepool {
-            let previous = NSPersistentContainer(name: "Previous", managedObjectModel: LibraryStore.makeModel(includeFavorite: false, includeOrder: false))
+            let previous = NSPersistentContainer(name: "Previous", managedObjectModel: LibraryStore.makeModel(includeFavorite: false, includeOrder: false, includeVideoToolHistory: false))
             previous.persistentStoreDescriptions = [NSPersistentStoreDescription(url: url)]
             var failure: Error?
             previous.loadPersistentStores { _, error in failure = error }; if let failure { throw failure }
@@ -299,6 +311,81 @@ final class LibraryStoreTests: XCTestCase {
         let archive = try BookmarkLibraryService.archive(context: reopened.mainContext)
         XCTAssertTrue(try BookmarkHTML.parse(BookmarkHTML.encode(archive)).links[0].isFavorite)
         try close(reopened)
+    }
+
+    func testVideoToolsHistoryMigratesAndKeepsTheNewestPageAndItsMark() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let location = directory.appendingPathComponent("library.sqlite")
+        let address = try XCTUnwrap(URL(string: "https://example.com/watch?id=1"))
+        let alternate = try XCTUnwrap(URL(string: "https://example.com/watch?id=1&utm_source=fixture#player"))
+        let now = Date()
+        let id = UUID()
+        try autoreleasepool {
+            let previous = NSPersistentContainer(name: "PreviousHistory",
+                managedObjectModel: LibraryStore.makeModel(includeVideoToolHistory: false))
+            let description = NSPersistentStoreDescription(url: location)
+            description.shouldAddStoreAsynchronously = false
+            previous.persistentStoreDescriptions = [description]
+            var failure: Error?
+            previous.loadPersistentStores { _, error in failure = error }
+            if let failure { throw failure }
+            let context = previous.viewContext
+            let row = NSEntityDescription.insertNewObject(forEntityName: SearchHistoryRecord.entityName, into: context)
+            row.setValue(id, forKey: "id")
+            row.setValue("Existing visit", forKey: "keyword")
+            row.setValue(now, forKey: "timestamp")
+            row.setValue(address.absoluteString, forKey: "visitedURLString")
+            try context.save()
+            context.reset()
+            try previous.persistentStoreCoordinator.remove(XCTUnwrap(previous.persistentStoreCoordinator.persistentStores.first))
+        }
+        try autoreleasepool {
+            let library = try LibraryStore(url: location)
+            let context = library.mainContext
+            let row = try XCTUnwrap(context.fetch(SearchHistoryRecord.request()).first)
+            XCTAssertEqual(row.id, id)
+            XCTAssertFalse(row.usedVideoTools)
+            // An older copy can still carry an interaction that the latest visit did not.
+            let older = SearchHistoryRecord(keyword: "Old video title", timestamp: now.addingTimeInterval(-10),
+                visitedURLString: alternate.absoluteString)
+            older.usedVideoTools = true
+            context.insert(older)
+            try context.save()
+            SearchHistoryService.purgeExpiredBrowsingHistory(referenceDate: now, context: context)
+            SearchHistoryService.recordWebVisit(url: alternate, title: "New video title",
+                visitedAt: now.addingTimeInterval(2), context: context)
+            XCTAssertEqual(row.keyword, "New video title")
+            XCTAssertEqual(row.timestamp, now.addingTimeInterval(2))
+            XCTAssertTrue(row.usedVideoTools)
+            try close(library)
+        }
+        let reopened = try LibraryStore(url: location)
+        let history = try reopened.mainContext.fetch(SearchHistoryRecord.request())
+        XCTAssertEqual(history.map(\.id), [id])
+        XCTAssertEqual(history.first?.visitedURLString, address.absoluteString)
+        XCTAssertEqual(history.first?.usedVideoTools, true)
+        SearchHistoryService.clearBrowsingHistory(context: reopened.mainContext)
+        XCTAssertTrue(try reopened.mainContext.fetch(SearchHistoryRecord.request()).isEmpty)
+        try close(reopened)
+    }
+
+    func testSearchHistoryUpdatesTheNewestTermAndPreservesPlatformScope() throws {
+        let library = try LibraryStore(inMemory: true)
+        let context = library.mainContext
+        let now = Date()
+        let latest = try XCTUnwrap(SearchHistoryService.addEntry(keyword: "Video", platformID: nil,
+            context: context, searchedAt: now))
+        let platformID = UUID()
+        SearchHistoryService.addEntry(keyword: "Video", platformID: platformID, context: context, searchedAt: now)
+        let repeated = SearchHistoryService.addEntry(keyword: "  video  ", platformID: nil,
+            context: context, searchedAt: now.addingTimeInterval(60))
+        let history = SearchHistoryService.fetchRecent(limit: 10, context: context)
+        XCTAssertEqual(repeated?.id, latest.id)
+        XCTAssertEqual(history.map(\.keyword), ["video", "Video"])
+        XCTAssertEqual(history.first?.timestamp, now.addingTimeInterval(60))
+        XCTAssertEqual(history.last?.platformID, platformID)
     }
 
     func testQuickLinksPreferHeartsAcrossFoldersAndFallBackWithoutDuplicates() throws {

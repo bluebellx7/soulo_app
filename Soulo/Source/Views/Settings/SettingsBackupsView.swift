@@ -13,14 +13,14 @@ struct SettingsBackupsView: View {
     @State private var importing = false
     @State private var exporting = false
     @State private var exportDocument = SettingsBackupDocument(data: Data())
-    @State private var importNotice = false
+    @State private var importNotice: String?
     @State private var clearNotice = false
     @State private var restoring = false
 
     private var manualBackups: [CloudSettingsBackup] { backups.filter { $0.isManual == true } }
-    private var recoveryBackups: [CloudSettingsBackup] { backups.filter { $0.isManual != true } }
 
     var body: some View {
+        let recoveryDays = CloudSettingsBackupStore.recoveryDays(from: backups)
         List {
             Section {
                 HStack(alignment: .top, spacing: 12) {
@@ -75,7 +75,7 @@ struct SettingsBackupsView: View {
                 if bookmarkSync.isSynchronizing { ProgressView().accessibilityLabel("iCloud") }
             }
             Section {
-                HStack(spacing: 4) {
+                HStack(spacing: 3) {
                     Button {
                         do { try sync.saveBackup(); load() }
                         catch { showError = true }
@@ -91,9 +91,9 @@ struct SettingsBackupsView: View {
                                 ForEach(manualBackups) { backup in exportChoice(backup) }
                             }
                         }
-                        if !recoveryBackups.isEmpty {
+                        if !recoveryDays.isEmpty {
                             Section(ToolText.text("recovery_settings_backups")) {
-                                ForEach(recoveryBackups) { backup in exportChoice(backup) }
+                                ForEach(backups.filter { $0.isManual != true }) { backup in exportChoice(backup) }
                             }
                         }
                     } label: {
@@ -103,9 +103,9 @@ struct SettingsBackupsView: View {
                     .accessibilityIdentifier("settings.backups.export")
                 }
                 .buttonStyle(.plain)
-                .padding(4)
-                .background(Color.themePrimary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18))
-                .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
+                .padding(3)
+                .background(Color.themePrimary.opacity(0.055), in: RoundedRectangle(cornerRadius: 14))
+                .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 8, trailing: 12))
                 .listRowSeparator(.hidden)
                 if manualBackups.isEmpty {
                     Text(ToolText.text("manual_backups_empty"))
@@ -141,9 +141,9 @@ struct SettingsBackupsView: View {
             } footer: {
                 Text(ToolText.text("clear_manual_backups_message"))
             }
-            if !recoveryBackups.isEmpty {
+            if !recoveryDays.isEmpty {
                 Section {
-                    ForEach(recoveryBackups) { backup in backupRow(backup) }
+                    ForEach(recoveryDays) { day in backupRow(day.latest, earlier: day.earlier) }
                 } header: {
                     Text(ToolText.text("recovery_settings_backups"))
                 } footer: {
@@ -176,7 +176,8 @@ struct SettingsBackupsView: View {
                             return data
                         }.value
                         _ = try sync.importBackup(data)
-                        load(); importNotice = true
+                        load()
+                        importNotice = FeatureText.text("The imported backup has been added to the list. Choose Restore to apply it. Current settings have not changed.")
                     } catch { showError = true }
                 }
             } catch { showError = true }
@@ -184,9 +185,7 @@ struct SettingsBackupsView: View {
         .fileExporter(isPresented: $exporting, document: exportDocument, contentType: .json, defaultFilename: "Soulo-Settings") { result in
             if case .failure = result { showError = true }
         }
-        .alert(FeatureText.text("Import backup"), isPresented: $importNotice) {
-            Button(ToolText.text("done")) {}
-        } message: { Text(FeatureText.text("The imported backup has been added to the list. Choose Restore to apply it. Current settings have not changed.")) }
+        .statusNotice($importNotice)
         .onAppear(perform: load)
         .onCompatibleChange(of: sync.backupRevision) { _, _ in load() }
         .alert(LanguageManager.shared.localizedString("delete"), isPresented: Binding(
@@ -237,17 +236,28 @@ struct SettingsBackupsView: View {
     }
 
     private func backupActionFace(_ title: String, symbol: String, primary: Bool = false) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: symbol).font(.system(size: 20, weight: .medium)).frame(height: 24)
-            Text(title).font(.subheadline.weight(.medium))
+        let icon = Image(systemName: symbol).font(.subheadline.weight(.semibold))
+        let text = Text(title).font(.subheadline.weight(.medium))
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 6) {
+                icon
+                text
+            }
+            .fixedSize(horizontal: true, vertical: false)
+            VStack(spacing: 3) {
+                icon
+                text.multilineTextAlignment(.center)
+            }
         }
         .foregroundStyle(primary ? Color.white : Color.themePrimary)
-        .frame(maxWidth: .infinity, minHeight: 76)
-        .background(primary ? Color.themePrimary : .clear, in: RoundedRectangle(cornerRadius: 14))
-        .contentShape(RoundedRectangle(cornerRadius: 14))
+        .padding(.horizontal, 6)
+        .padding(.vertical, 5)
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .background(primary ? Color.themePrimary : .clear, in: RoundedRectangle(cornerRadius: 11))
+        .contentShape(RoundedRectangle(cornerRadius: 11))
     }
 
-    private func backupRow(_ backup: CloudSettingsBackup) -> some View {
+    private func backupRow(_ backup: CloudSettingsBackup, earlier: [CloudSettingsBackup] = []) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "doc.text")
                 .font(.system(size: 19, weight: .regular)).foregroundStyle(.secondary)
@@ -269,7 +279,7 @@ struct SettingsBackupsView: View {
                     .frame(minHeight: 44)
             }
             .accessibilityIdentifier("settings.backups.restore.\(backup.id.uuidString)")
-            Menu { backupActions(backup) } label: {
+            Menu { backupActions(backup, earlier: earlier) } label: {
                 Image(systemName: "ellipsis").foregroundStyle(.secondary)
                     .frame(minWidth: 32, minHeight: 44)
             }
@@ -285,11 +295,27 @@ struct SettingsBackupsView: View {
                 }
             }
         }
-        .contextMenu { backupActions(backup) }
+        .contextMenu { backupActions(backup, earlier: earlier) }
     }
 
-    @ViewBuilder private func backupActions(_ backup: CloudSettingsBackup) -> some View {
+    @ViewBuilder private func backupActions(_ backup: CloudSettingsBackup, earlier: [CloudSettingsBackup]) -> some View {
         Button { export(backup) } label: { Label(FeatureText.text("Export backup"), systemImage: "square.and.arrow.up") }
+        if !earlier.isEmpty {
+            Menu {
+                ForEach(earlier) { previous in
+                    Menu {
+                        Button { selectedBackup = previous } label: {
+                            Label(LanguageManager.shared.localizedString("restore"), systemImage: "arrow.counterclockwise")
+                        }
+                        exportChoice(previous)
+                    } label: {
+                        Text(previous.createdAt, format: .dateTime.hour().minute().second())
+                    }
+                }
+            } label: {
+                Label(ToolText.text("recovery_settings_backups"), systemImage: "clock.arrow.circlepath")
+            }
+        }
         if backup.isManual == true {
             Button(role: .destructive) { deletingBackup = backup } label: {
                 Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")

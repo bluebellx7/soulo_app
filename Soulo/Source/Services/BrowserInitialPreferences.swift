@@ -92,7 +92,6 @@ enum PlatformBarDomainPolicy {
 /// Fallbacks only. Reading defaults never writes over a saved local or synced choice.
 enum BrowserInitialPreferences {
     static let restoreLastPageKey = "restore_last_page_on_launch"
-    static let showTopSearchBar = false
     static let extendPageBackground = true
     static let defaultWallpaperTopic = "Nature"
     static func extendsPageBackground(in defaults: UserDefaults = .standard) -> Bool {

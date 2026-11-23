@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 
 struct LocalWebExtensionInstallView: View {
     let url: URL
+    let onInstalled: (WebExtensionRecord) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var preview: WebExtensionInstallPreview?
     @State private var errorMessage: String?
@@ -10,7 +11,10 @@ struct LocalWebExtensionInstallView: View {
     var body: some View {
         Group {
             if let preview {
-                WebExtensionReviewView(preview: preview) { _ in HapticsManager.success() }
+                WebExtensionReviewView(preview: preview) { record in
+                    HapticsManager.success()
+                    onInstalled(record)
+                }
             } else {
                 NavigationStack {
                     Group {
@@ -174,6 +178,14 @@ struct WebExtensionManagementView: View {
                     }
                 }
                 Section {
+                    if service.webExtensionNewTabURL(for: id) != nil || service.newTabExtensionID == id {
+                        Toggle(isOn: Binding(get: { service.newTabExtensionID == id }, set: { enabled in
+                            service.setNewTabExtension(id, enabled: enabled)
+                        })) {
+                            Label(AppLocalization.string("tab_new_tab"), systemImage: "plus.square")
+                        }
+                        .accessibilityIdentifier("extensions.management-new-tab")
+                    }
                     if let source = record.sourceURL {
                         Button(AppLocalization.string("extension_update")) {
                             prepare { try await WebExtensionStoreInstallService.shared.preview(from: source, replacing: id) }

@@ -7,6 +7,661 @@ import SwiftUI
 @testable import Soulo
 
 @MainActor final class ExtensionLifecycleTests: XCTestCase {
+    func testNewTabOverrideUsesExplicitSelectionAndFallsBackWhenUnavailable() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let key = "extension-new-tab-" + UUID().uuidString
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(key)
+        let package = root.appendingPathComponent("package")
+        try FileManager.default.createDirectory(at: package, withIntermediateDirectories: true)
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: key))
+        let applicationDefaults = UserDefaults.standard
+        let oldPrivacy = applicationDefaults.object(forKey: "is_incognito")
+        applicationDefaults.set(false, forKey: "is_incognito")
+        defer {
+            defaults.removePersistentDomain(forName: key)
+            applicationDefaults.removeObject(forKey: key)
+            applicationDefaults.set(oldPrivacy, forKey: "is_incognito")
+            try? FileManager.default.removeItem(at: root)
+        }
+        try Data(#"{"manifest_version":3,"name":"New tab fixture","version":"1.0","chrome_url_overrides":{"newtab":"newtab.html"}}"#.utf8)
+            .write(to: package.appendingPathComponent("manifest.json"))
+        try Data("<!doctype html><title>New tab fixture</title>".utf8)
+            .write(to: package.appendingPathComponent("newtab.html"))
+        let store = root.appendingPathComponent("store")
+        let service = BrowserExtensionService(extensionRoot: store, updateDefaults: defaults)
+        let record = try await service.installWebExtension(from: package)
+        defer { service.deleteWebExtension(record.id) }
+        let manager = TabManager(storageKey: key)
+        defer { for tab in manager.tabs { tab.webViewModel.releaseWebViewRuntime() } }
+        let url = try XCTUnwrap(service.webExtensionNewTabURL(for: record.id))
+        XCTAssertNil(manager.openNewTab(extensionService: service).webViewModel.currentURL)
+        service.setNewTabExtension(record.id, enabled: true)
+        service.setNewTabExtension(UUID(), enabled: true)
+        XCTAssertEqual(manager.openNewTab(extensionService: service).webViewModel.currentURL, url)
+        XCTAssertNil(manager.createTab().webViewModel.currentURL)
+
+        applicationDefaults.set(true, forKey: "is_incognito")
+        XCTAssertNil(manager.openNewTab(extensionService: service).webViewModel.currentURL)
+        applicationDefaults.set(false, forKey: "is_incognito")
+        service.setWebExtensionEnabled(record.id, enabled: false)
+        XCTAssertNil(manager.openNewTab(extensionService: service).webViewModel.currentURL)
+        let reopenedService = BrowserExtensionService(extensionRoot: store, updateDefaults: defaults)
+        XCTAssertEqual(reopenedService.newTabExtensionID, record.id)
+        XCTAssertNil(reopenedService.preferredNewTabURL())
+
+        reopenedService.deleteWebExtension(record.id)
+        XCTAssertNil(reopenedService.newTabExtensionID)
+    }
+
+    func testPopupCanSaveARecordAndOpenItsResultInAnExtensionTab() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let package = root.appendingPathComponent("package")
+        try FileManager.default.createDirectory(at: package, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data(#"{"manifest_version":3,"name":"Popup storage fixture","version":"1.0","action":{"default_popup":"popup.html"}}"#.utf8)
+            .write(to: package.appendingPathComponent("manifest.json"))
+        let document = Data("<!doctype html><p id='ready'>Extension document</p>".utf8)
+        try document.write(to: package.appendingPathComponent("popup.html"))
+        try document.write(to: package.appendingPathComponent("result.html"))
+        let service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let record = try await service.installWebExtension(from: package)
+        defer { service.deleteWebExtension(record.id) }
+        let runtime = NativeWebExtensionRuntime.shared
+        let storageKey = "popup-storage-" + record.id.uuidString
+        let manager = TabManager(storageKey: storageKey)
+        runtime.attach(tabManager: manager)
+        _ = manager.createTab()
+        defer {
+            for tab in manager.tabs { tab.webViewModel.releaseWebViewRuntime() }
+            UserDefaults.standard.removeObject(forKey: storageKey)
+        }
+        let context = try XCTUnwrap(runtime.controller.extensionContexts.first { $0.uniqueIdentifier == record.id.uuidString })
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene), presenter = UIViewController()
+        window.rootViewController = presenter
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let action = try XCTUnwrap(context.action(for: nil))
+        let content = try XCTUnwrap(WebExtensionPopupPresenter.contentViewController(for: action))
+        let presented = expectation(description: "Storage fixture's popup is presented")
+        WebExtensionPopupPresenter.present(content, ownerID: record.id, title: record.name) { error in
+            XCTAssertNil(error)
+            presented.fulfill()
+        }
+        await fulfillment(of: [presented], timeout: 5)
+        let popup = try XCTUnwrap(action.popupWebView)
+        func waitForDocument(_ webView: WKWebView) async throws {
+            for _ in 0..<100 {
+                if (try? await webView.evaluateJavaScript("document.getElementById('ready') !== null && typeof chrome.tabs.create === 'function'")) as? Bool == true { return }
+                try await Task.sleep(for: .milliseconds(30))
+            }
+            throw URLError(.timedOut)
+        }
+        try await waitForDocument(popup)
+        let database = """
+            const db=await new Promise((resolve,reject)=>{
+              const request=indexedDB.open('popup-shared-storage',1);
+              request.onupgradeneeded=()=>request.result.createObjectStore('captures');
+              request.onsuccess=()=>resolve(request.result);
+              request.onerror=()=>reject(request.error);
+            });
+            """
+        let tabID = try await popup.callAsyncJavaScript(database + """
+            await new Promise((resolve,reject)=>{
+              const txn=db.transaction('captures','readwrite');
+              txn.objectStore('captures').put(new Blob(['capture bytes']),'first');
+              txn.oncomplete=resolve;txn.onerror=()=>reject(txn.error);
+            });
+            db.close();
+            const tab=await chrome.tabs.create({url:chrome.runtime.getURL('result.html'),active:true});
+            setTimeout(()=>window.close(),0);
+            return tab.id;
+            """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertNotNil(tabID as? Int, "Closing the popup must preserve the tabs.create reply")
+        for _ in 0..<100 where presenter.presentedViewController != nil {
+            try await Task.sleep(for: .milliseconds(30))
+        }
+        XCTAssertNil(presenter.presentedViewController)
+        let url = context.baseURL.appendingPathComponent("result.html")
+        let result = try XCTUnwrap(manager.activeTab?.webViewModel)
+        XCTAssertEqual(result.currentURL, url)
+        window.rootViewController = UIHostingController(rootView: WebViewRepresentable(viewModel: result))
+        for _ in 0..<100 where result.webView == nil { try await Task.sleep(for: .milliseconds(30)) }
+        let page = try XCTUnwrap(result.webView)
+        try await waitForDocument(page)
+        let value = try await page.callAsyncJavaScript(database + """
+            const record=await new Promise((resolve,reject)=>{
+              const request=db.transaction('captures').objectStore('captures').get('first');
+              request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+            });
+            db.close();return record ? await record.text() : null;
+            """, arguments: [:], in: nil, contentWorld: .page) as? String
+        XCTAssertEqual(value, "capture bytes")
+    }
+
+    func testOwnedExtensionPageAndPopupRecoverOnceAfterContentProcessExit() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let package = root.appendingPathComponent("package")
+        try FileManager.default.createDirectory(at: package, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data(#"{"manifest_version":3,"name":"Recovery fixture","version":"1.0","action":{"default_popup":"popup.html"}}"#.utf8)
+            .write(to: package.appendingPathComponent("manifest.json"))
+        try Data("<!doctype html><p id='ready'>Extension document</p>".utf8).write(to: package.appendingPathComponent("popup.html"))
+        let service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let record = try await service.installWebExtension(from: package)
+        defer { service.deleteWebExtension(record.id) }
+        let context = try XCTUnwrap(NativeWebExtensionRuntime.shared.controller.extensionContexts.first { $0.uniqueIdentifier == record.id.uuidString })
+        let url = context.baseURL.appendingPathComponent("popup.html")
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene), presenter = UIViewController()
+        window.rootViewController = presenter
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+
+        func waitForFreshDocument(_ web: WKWebView) async throws {
+            for _ in 0..<100 {
+                if !web.isLoading,
+                   (try? await web.evaluateJavaScript("!!document.getElementById('ready') && window.previousDocument===undefined")) as? Bool == true { return }
+                try await Task.sleep(for: .milliseconds(30))
+            }
+            XCTFail("The recovered extension document did not load")
+        }
+
+        let model = WebViewModel()
+        let coordinator = WebViewRepresentable.Coordinator(viewModel: model)
+        let page = WKWebView(frame: presenter.view.bounds, configuration: try XCTUnwrap(context.webViewConfiguration))
+        presenter.view.addSubview(page)
+        model.webView = page
+        page.navigationDelegate = coordinator
+        defer { page.navigationDelegate = nil; model.releaseWebViewRuntime() }
+        model.loadURL(url)
+        try await waitForFreshDocument(page)
+        _ = try await page.evaluateJavaScript("window.previousDocument=true")
+        coordinator.webViewWebContentProcessDidTerminate(page)
+        try await waitForFreshDocument(page)
+        XCTAssertNil(model.errorMessage)
+        XCTAssertEqual(page.url, url)
+        coordinator.webViewWebContentProcessDidTerminate(page)
+        XCTAssertNotNil(model.errorMessage)
+        XCTAssertEqual(model.errorPageURL, url)
+        XCTAssertFalse(model.isLoading)
+
+        let action = try XCTUnwrap(context.action(for: nil))
+        let popup = try XCTUnwrap(WebExtensionPopupPresenter.contentViewController(for: action))
+        let shown = expectation(description: "Recovery popup presented")
+        WebExtensionPopupPresenter.present(popup, ownerID: record.id, title: record.name) { error in
+            XCTAssertNil(error)
+            shown.fulfill()
+        }
+        await fulfillment(of: [shown], timeout: 5)
+        let popupWeb = try XCTUnwrap(action.popupWebView)
+        try await waitForFreshDocument(popupWeb)
+        let compatibility = WebExtensionCompatibilityHost()
+        func popupContexts(in owner: WKWebExtensionContext, filter: [String: Any]) -> [[String: Any]] {
+            var contexts: [[String: Any]] = []
+            XCTAssertTrue(compatibility.handle(message: [
+                "souloCompatibility": 1, "api": "offscreen", "operation": "contexts", "filter": filter
+            ], applicationIdentifier: WebExtensionCompatibilityHost.applicationIdentifier, context: owner,
+            resourceURL: package) { value, error in
+                XCTAssertNil(error)
+                contexts = (value as? [String: Any])?["contexts"] as? [[String: Any]] ?? []
+            })
+            return contexts
+        }
+        let filter = ["contextTypes": ["POPUP"]]
+        let matching = popupContexts(in: context, filter: filter)
+        XCTAssertEqual(matching.count, 1)
+        let visible = try XCTUnwrap(matching.first)
+        XCTAssertEqual(visible["documentUrl"] as? String, url.absoluteString)
+        XCTAssertTrue(popupContexts(in: WKWebExtensionContext(for: context.webExtension), filter: filter).isEmpty)
+        XCTAssertTrue(popupContexts(in: context, filter: ["contextIds": ["other"]]).isEmpty)
+        _ = try await popupWeb.evaluateJavaScript("window.previousDocument=true")
+        let popupDelegate = try XCTUnwrap(popupWeb.navigationDelegate)
+        popupDelegate.webViewWebContentProcessDidTerminate?(popupWeb)
+        try await waitForFreshDocument(popupWeb)
+        XCTAssertNotNil(presenter.presentedViewController)
+        popupDelegate.webViewWebContentProcessDidTerminate?(popupWeb)
+        for _ in 0..<100 where presenter.presentedViewController != nil { try await Task.sleep(for: .milliseconds(20)) }
+        XCTAssertNil(presenter.presentedViewController)
+        XCTAssertTrue(popupContexts(in: context, filter: filter).isEmpty)
+    }
+
+    func testHeaderEditorLiteStorePackageStartsAndAppliesHeaderRules() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let package = documents.appendingPathComponent("header-editor-lite-qa.crx")
+        guard FileManager.default.fileExists(atPath: package.path) else { throw XCTSkip("Chrome Web Store package not staged") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = BrowserExtensionService(extensionRoot: root)
+        let record = try await service.installWebExtension(from: package)
+        defer { service.deleteWebExtension(record.id) }
+        XCTAssertEqual(record.name, "Header Editor Lite")
+        let runtime = NativeWebExtensionRuntime.shared
+        let context = try XCTUnwrap(runtime.controller.extensionContexts.first { $0.uniqueIdentifier == record.id.uuidString })
+        let peer = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600),
+            configuration: try XCTUnwrap(context.webViewConfiguration))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(peer)
+        window.makeKeyAndVisible()
+        defer { peer.stopLoading(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        peer.load(URLRequest(url: context.baseURL.appendingPathComponent("popup.html")))
+        for _ in 0..<120 {
+            if (try? await peer.evaluateJavaScript("typeof chrome.runtime.sendMessage==='function' && document.readyState==='complete'")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(40))
+        }
+        let healthy = try await peer.callAsyncJavaScript("""
+        return await Promise.race([
+          chrome.runtime.sendMessage({method:'check'}),
+          new Promise(resolve=>setTimeout(()=>resolve(false),3000))
+        ]);
+        """, arguments: [:], in: nil, contentWorld: .page) as? Bool
+        XCTAssertEqual(healthy, true, "The publisher's background must answer its own health check")
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/header-probe": Data("<body>Header probe</body>".utf8),
+            "/response-probe": Data("Response".utf8),
+            "/redirect-probe": Data("Original".utf8),
+            "/redirected": Data("Redirected".utf8),
+            "/blocked": Data("This request should be blocked".utf8),
+            "/method-probe": Data("Method probe".utf8),
+            "/method-fetch-probe": Data("POST fetch".utf8)
+        ])
+        let target = try await server.start().appendingPathComponent("header-probe")
+        server.releaseDownloads()
+        defer { server.stop() }
+        XCTAssertTrue(context.hasAccess(to: target))
+        let ruleState = try await peer.callAsyncJavaScript("""
+        const dnr=chrome.declarativeNetRequest;
+        const saved=await Promise.race([
+          chrome.runtime.sendMessage({method:'save_rule',rule:{name:'Soulo QA',group:'QA group',ruleType:'modifySendHeader',
+            enable:true,headers:{'Accept-Language':'en-GB'},
+            condition:{urlFilter:'|'+target+'|',resourceTypes:[dnr.ResourceType.MAIN_FRAME]}}}),
+          new Promise(resolve=>setTimeout(()=>resolve(null),3000))
+        ]);
+        let rules=[];
+        for(let attempt=0;attempt<50;attempt++){
+          rules=await dnr.getSessionRules();
+          if(rules.some(rule=>rule.action.requestHeaders?.some(header=>header.value==='en-GB')))break;
+          await new Promise(resolve=>setTimeout(resolve,40));
+        }
+        return {saved:saved??null,rules};
+        """, arguments: ["target": target.absoluteString], in: nil, contentWorld: .page) as? [String: Any]
+        let savedRules = ruleState?["rules"] as? [[String: Any]] ?? []
+        XCTAssertFalse(savedRules.isEmpty, "Publisher result: \(String(describing: ruleState)), errors: \(context.errors.map { ($0 as NSError).userInfo })")
+        let saved = try XCTUnwrap(ruleState?["saved"] as? [String: Any])
+        let ruleID = try XCTUnwrap(saved["id"] as? Int)
+        let group = try await peer.callAsyncJavaScript("""
+        const rules=await chrome.runtime.sendMessage({method:'get_rules',type:'sendHeader'});
+        await chrome.runtime.sendMessage({method:'set_pref',key:'manage-collapse-group',value:false});
+        return rules.find(rule=>rule.id===id)?.group;
+        """, arguments: ["id": ruleID], in: nil, contentWorld: .page) as? String
+        XCTAssertEqual(group, "QA group")
+        let configuration = WKWebViewConfiguration()
+        configuration.webExtensionController = runtime.controller
+        let page = WKWebView(frame: peer.frame, configuration: configuration)
+        window.rootViewController?.view.addSubview(page)
+        func requests() -> [DownloadPlaybackHTTPFixture.ReceivedRequest] {
+            server.receivedRequests.filter { $0.path == "/header-probe" }
+        }
+        func loadProbe() async throws {
+            let count = requests().count
+            page.load(URLRequest(url: target, cachePolicy: .reloadIgnoringLocalCacheData))
+            for _ in 0..<50 where requests().count == count { try await Task.sleep(for: .milliseconds(40)) }
+        }
+        for _ in 0..<4 {
+            try await loadProbe()
+            if requests().last?.headers["accept-language"] == "en-GB" { break }
+            try await Task.sleep(for: .milliseconds(200))
+        }
+        XCTAssertEqual(requests().last?.headers["accept-language"], "en-GB")
+
+        func setRulesEnabled(_ enabled: Bool) async throws {
+            let updated = try await peer.callAsyncJavaScript("""
+            await chrome.runtime.sendMessage({method:'set_pref',key:'disable-all',value:!enabled});
+            for(let attempt=0;attempt<50;attempt++){
+              const active=(await chrome.declarativeNetRequest.getSessionRules()).length>0;
+              if(active===enabled)return true;
+              await new Promise(resolve=>setTimeout(resolve,40));
+            }
+            return false;
+            """, arguments: ["enabled": enabled], in: nil, contentWorld: .page) as? Bool
+            XCTAssertEqual(updated, true)
+        }
+        try await setRulesEnabled(false)
+        try await loadProbe()
+        XCTAssertNotEqual(requests().last?.headers["accept-language"], "en-GB")
+        try await setRulesEnabled(true)
+
+        let additionalRules = try await peer.callAsyncJavaScript("""
+        const origin=new URL(target).origin;
+        const make=(name,ruleType,path,settings={})=>({name,group:'QA group',ruleType,enable:true,...settings,
+          condition:{urlFilter:'|'+origin+path+'|',resourceTypes:['xmlhttprequest']}});
+        for(const rule of [
+          make('QA response header','modifyReceiveHeader','/response-probe',{headers:{'Cache-Control':'no-store'}}),
+          make('QA redirect','redirect','/redirect-probe',{to:origin+'/redirected'}),
+          make('QA block','cancel','/blocked')
+        ])await chrome.runtime.sendMessage({method:'save_rule',rule});
+        for(let attempt=0;attempt<50;attempt++){
+          if((await chrome.declarativeNetRequest.getSessionRules()).length>=4)return true;
+          await new Promise(resolve=>setTimeout(resolve,40));
+        }
+        return false;
+        """, arguments: ["target": target.absoluteString], in: nil, contentWorld: .page) as? Bool
+        XCTAssertEqual(additionalRules, true)
+        let responses = try await page.callAsyncJavaScript("""
+        const cache=(await fetch('/response-probe')).headers.get('cache-control');
+        const redirect=await (await fetch('/redirect-probe')).text();
+        const blocked=await fetch('/blocked').then(()=>false,()=>true);
+        return {cache,redirect,blocked};
+        """, in: nil, contentWorld: .page) as? [String: Any]
+        XCTAssertEqual(responses?["cache"] as? String, "no-store")
+        XCTAssertEqual(responses?["redirect"] as? String, "Redirected")
+        XCTAssertEqual(responses?["blocked"] as? Bool, true)
+        XCTAssertFalse(server.receivedRequests.contains { $0.path == "/blocked" })
+        print("Header Editor Lite: rules applied to real requests")
+
+        let originalAccess = service.webExtensionAccess(record.id)
+        var access = originalAccess
+        for pattern in Array(access.sites.keys) { access.setSite(pattern, allowed: false) }
+        try service.setWebExtensionAccess(access, id: record.id)
+        XCTAssertFalse(context.hasAccess(to: target))
+        let previousCount = requests().count
+        try await loadProbe()
+        XCTAssertGreaterThan(requests().count, previousCount)
+        XCTAssertNotEqual(requests().last?.headers["accept-language"], "en-GB")
+
+        peer.load(URLRequest(url: context.baseURL.appendingPathComponent("options.html")))
+        var options = ""
+        for _ in 0..<100 {
+            options = (try? await peer.evaluateJavaScript("document.body?.innerText ?? ''")) as? String ?? ""
+            if options.contains("Soulo QA") || options.contains("Something went wrong") { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertTrue(options.contains("Soulo QA"), options)
+        XCTAssertFalse(options.contains("Something went wrong"), options)
+        var sidebarWidth = 0.0
+        for _ in 0..<25 {
+            sidebarWidth = (try? await peer.evaluateJavaScript("document.querySelector('.navbar')?.getBoundingClientRect().width ?? 0")) as? Double ?? 0
+            if (44...76).contains(sidebarWidth) { break }
+            try await Task.sleep(for: .milliseconds(40))
+        }
+        XCTAssertTrue((44...76).contains(sidebarWidth), "Mobile navigation measured \(sidebarWidth) points")
+        let reachesActions = try await peer.evaluateJavaScript("""
+        (()=>{const heading=document.querySelector('main section h2');
+           const links=[...heading.parentElement.querySelectorAll('button')];
+           return heading.getBoundingClientRect().height<80 && links.length>=4
+             && links.every(button=>button.getBoundingClientRect().right<=innerWidth+1);
+        })();
+        """) as? Bool
+        XCTAssertEqual(reachesActions, true)
+        print("Header Editor Lite: rule options rendered")
+        let snapshot = UIGraphicsImageRenderer(bounds: peer.bounds).image { _ in
+            peer.drawHierarchy(in: peer.bounds, afterScreenUpdates: true)
+        }
+        let attachment = XCTAttachment(image: snapshot)
+        attachment.name = "header-editor-lite-options"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        _ = try await peer.evaluateJavaScript("document.querySelectorAll('.navbar .semi-navigation-item')[2].click();true")
+        for _ in 0..<50 {
+            if (try? await peer.evaluateJavaScript("!!document.querySelector('.section-import-export.visible button')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(40))
+        }
+        let importExport = try await peer.evaluateJavaScript("""
+        (()=>{const labels=[...document.querySelectorAll('.section-import-export.visible button')].map(button=>button.textContent.trim());
+        return labels.some(label=>['导入','Import'].includes(label)) && labels.some(label=>['导出','Export'].includes(label));})();
+        """) as? Bool
+        XCTAssertEqual(importExport, true)
+        let download = ExtensionMediaDownloadProbe(directory: root.appendingPathComponent("exports"))
+        peer.navigationDelegate = download
+        _ = try await peer.evaluateJavaScript("""
+        [...document.querySelectorAll('.section-import-export.visible button')]
+          .find(button=>['导出','Export'].includes(button.textContent.trim())).click();
+        """)
+        for _ in 0..<75 where download.files.isEmpty && download.errors.isEmpty {
+            try await Task.sleep(for: .milliseconds(40))
+        }
+        let exported = try XCTUnwrap(download.files.first, download.errors.joined(separator: ", "))
+        let payload = try String(contentsOf: exported, encoding: .utf8)
+        XCTAssertTrue(payload.contains("Soulo QA"))
+        XCTAssertTrue(payload.contains("en-GB"))
+        print("Header Editor Lite: export written by WebKit")
+        let importPayload = payload.replacingOccurrences(of: "Soulo QA", with: "Soulo import QA")
+        let importResult = try await peer.callAsyncJavaScript("""
+        const pause=()=>new Promise(resolve=>setTimeout(resolve,40));
+        const button=[...document.querySelectorAll('.section-import-export.visible button')]
+          .find(b=>['粘贴JSON','粘贴 JSON','Paste JSON'].includes(b.textContent.trim()));
+        const modal=()=>[...document.querySelectorAll('.semi-modal-content')].filter(m=>m.getBoundingClientRect().height>0).at(-1);
+        const footerButton=labels=>[...document.querySelectorAll('button')]
+          .filter(btn=>!btn.disabled&&btn.getBoundingClientRect().height>0&&labels.includes(btn.textContent.trim())).at(-1);
+        button.click();
+        for(let i=0;i<50&&!modal()?.querySelector('textarea');i++)await pause();
+        const input=modal().querySelector('textarea');
+        Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,payload);
+        input.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertFromPaste',data:payload}));
+        await pause();
+        footerButton(['确定','OK','Confirm']).click();
+        for(let i=0;i<75&&!footerButton(['保存','Save']);i++)await pause();
+        const save=footerButton(['保存','Save']);
+        if(!save||!document.body.innerText.includes('Soulo import QA'))return {stage:'preview',text:modal()?.innerText??document.body.innerText.slice(-400)};
+        save.click();
+        for(let i=0;i<50;i++){
+          const rows=await chrome.runtime.sendMessage({method:'get_rules',type:'sendHeader'});
+          if(rows.some(row=>row.name==='Soulo import QA'))return {stage:'saved'};
+          await pause();
+        }
+        return {stage:'save',text:modal()?.innerText??document.body.innerText.slice(-400)};
+        """, arguments: ["payload": importPayload], in: nil, contentWorld: .page) as? [String: String]
+        XCTAssertEqual(importResult?["stage"], "saved", String(describing: importResult))
+        _ = try await peer.callAsyncJavaScript("""
+        await chrome.storage.local.set({common_rule:['sendHeader-'+id]});
+        return true;
+        """, arguments: ["id": ruleID], in: nil, contentWorld: .page)
+        peer.load(URLRequest(url: context.baseURL.appendingPathComponent("popup.html")))
+        var popup = ""
+        for _ in 0..<100 {
+            popup = (try? await peer.evaluateJavaScript("document.body?.innerText ?? ''")) as? String ?? ""
+            if popup.contains("Soulo QA") { break }
+            try await Task.sleep(for: .milliseconds(40))
+        }
+        XCTAssertTrue(popup.contains("Soulo QA"), popup)
+        let deleted = try await peer.callAsyncJavaScript("""
+        await chrome.runtime.sendMessage({method:'del_rule',type:'sendHeader',id});
+        const rules=await chrome.runtime.sendMessage({method:'get_rules',type:'sendHeader'});
+        return rules.every(rule=>rule.id!==id);
+        """, arguments: ["id": ruleID], in: nil, contentWorld: .page) as? Bool
+        XCTAssertEqual(deleted, true)
+
+        try service.setWebExtensionAccess(originalAccess, id: record.id)
+        let postView = WKWebView(frame: peer.frame, configuration: configuration)
+        window.rootViewController?.view.addSubview(postView)
+        defer { postView.stopLoading() }
+        postView.load(URLRequest(url: target.deletingLastPathComponent().appendingPathComponent("method-probe")))
+        for _ in 0..<100 {
+            if (try? await postView.evaluateJavaScript("document.body?.textContent.trim()==='Method probe'")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(40))
+        }
+        let postDocumentReady = try await postView.evaluateJavaScript("document.body?.textContent.trim()==='Method probe'") as? Bool
+        XCTAssertEqual(postDocumentReady, true)
+        let supportsMethodBlocking: Bool
+        if #available(iOS 26, *) { supportsMethodBlocking = true }
+        else { supportsMethodBlocking = false }
+        func checkPostRequestsRemainAvailable() async throws {
+            let fetchAllowed = try await page.callAsyncJavaScript("""
+            return await fetch('/method-fetch-probe', {method:'POST', body:'post'}).then(response=>response.ok, ()=>false);
+            """, in: nil, contentWorld: .page) as? Bool
+            XCTAssertEqual(fetchAllowed, true)
+            _ = try await postView.evaluateJavaScript("""
+            (()=>{
+              const form=document.createElement('form');form.method='POST';form.action='/method-probe';
+              const input=document.createElement('input');input.name='probe';input.value='post';
+              form.append(input);document.body.append(form);
+              setTimeout(()=>form.requestSubmit(),0);return true;
+            })()
+            """)
+            for _ in 0..<100 where !server.receivedRequests.contains(where: { $0.path == "/method-probe" && $0.method == "POST" }) {
+                try await Task.sleep(for: .milliseconds(40))
+            }
+            XCTAssertTrue(server.receivedRequests.contains { $0.path == "/method-probe" && $0.method == "POST" })
+        }
+        if !supportsMethodBlocking {
+            let unsafeRulesRejected = try await peer.callAsyncJavaScript("""
+            const dnr=chrome.declarativeNetRequest;
+            const rejected=[];
+            for(const method of ['updateSessionRules','updateDynamicRules']){
+              for(const condition of [{requestMethods:['get']},{excludedRequestMethods:['post']}]){
+                const rule={id:90001,priority:1,action:{type:'block'},condition:{...condition,resourceTypes:['main_frame','xmlhttprequest']}};
+                try{
+                  await dnr[method]({addRules:[rule]});
+                  await dnr[method]({removeRuleIds:[rule.id]});
+                  rejected.push(false);
+                }catch(error){rejected.push(error.message.includes('limited to HTTP methods'));}
+              }
+            }
+            return rejected.every(value=>value);
+            """, in: nil, contentWorld: .page) as? Bool
+            XCTAssertEqual(unsafeRulesRejected, true)
+            try await checkPostRequestsRemainAvailable()
+        }
+        let installedBlock = try await peer.callAsyncJavaScript("""
+        const condition={all:true,resourceTypes:['main_frame','sub_frame','stylesheet','script','image','font',
+          'xmlhttprequest','media','other']};
+        if(supportsMethodBlocking)condition.method=['get'];
+        const saved=await chrome.runtime.sendMessage({method:'save_rule',rule:{name:'QA global block',
+          ruleType:'cancel',enable:true,condition}});
+        for(let attempt=0;attempt<100;attempt++){
+          if((await chrome.declarativeNetRequest.getSessionRules()).some(rule=>rule.action.type==='block'
+              && rule.condition.resourceTypes?.includes('main_frame')))return saved;
+          await new Promise(resolve=>setTimeout(resolve,40));
+        }
+        return null;
+        """, arguments: ["supportsMethodBlocking": supportsMethodBlocking], in: nil, contentWorld: .page) as? [String: Any]
+        let blockID = try XCTUnwrap(installedBlock?["id"] as? Int)
+        let getBlocked = try await page.callAsyncJavaScript("""
+        for(let attempt=0;attempt<75;attempt++){
+          if(!await fetch('/method-probe',{cache:'no-store'}).then(()=>true,()=>false))return true;
+          await new Promise(resolve=>setTimeout(resolve,40));
+        }
+        return false;
+        """, in: nil, contentWorld: .page) as? Bool
+        XCTAssertEqual(getBlocked, true)
+        if supportsMethodBlocking { try await checkPostRequestsRemainAvailable() }
+        peer.load(URLRequest(url: context.baseURL.appendingPathComponent("options.html"), cachePolicy: .reloadIgnoringLocalCacheData))
+        var managementReady = false
+        for _ in 0..<100 {
+            managementReady = (try? await peer.evaluateJavaScript("""
+            location.pathname==='/options.html' && !!document.querySelector('.navbar')
+              && !document.body.innerText.includes('Something went wrong')
+            """)) as? Bool == true
+            if managementReady { break }
+            try await Task.sleep(for: .milliseconds(40))
+        }
+        XCTAssertTrue(managementReady, "A global block must keep the publisher's management page and its bundled assets available")
+        guard managementReady else { return }
+        let recovered = try await peer.callAsyncJavaScript("""
+        const rules=()=>chrome.runtime.sendMessage({method:'get_rules',type:'request'});
+        if(!(await rules())?.some(rule=>rule.id===id))return false;
+        await chrome.runtime.sendMessage({method:'del_rule',type:'request',id});
+        return (await rules())?.every(rule=>rule.id!==id)===true;
+        """, arguments: ["id": blockID], in: nil, contentWorld: .page) as? Bool
+        XCTAssertEqual(recovered, true)
+        let getsRestored = try await page.callAsyncJavaScript("""
+        for(let attempt=0;attempt<75;attempt++){
+          if(await fetch('/method-probe',{cache:'no-store'}).then(response=>response.ok,()=>false))return true;
+          await new Promise(resolve=>setTimeout(resolve,40));
+        }
+        return false;
+        """, in: nil, contentWorld: .page) as? Bool
+        XCTAssertEqual(getsRestored, true)
+    }
+
+    func testHeaderEditorLitePopupOpensItsRulesFromAnUnattachedBrowser() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let package = documents.appendingPathComponent("header-editor-lite-qa.crx")
+        guard FileManager.default.fileExists(atPath: package.path) else { throw XCTSkip("Chrome Web Store package not staged") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let service = BrowserExtensionService(extensionRoot: root)
+        let record = try await service.installWebExtension(from: package)
+        let storageKey = "extension-home-" + record.id.uuidString
+        let manager = TabManager(storageKey: storageKey)
+        defer {
+            service.deleteWebExtension(record.id)
+            UserDefaults.standard.removeObject(forKey: storageKey)
+            try? FileManager.default.removeItem(at: root)
+        }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        let presenter = UIViewController()
+        window.rootViewController = presenter
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let destination = expectation(description: "The extension's options tab is presented")
+        let observer = manager.extensionForegroundNavigation.sink { destination.fulfill() }
+        defer { observer.cancel() }
+        XCTAssertTrue(service.performWebExtensionAction(record.id, in: manager))
+        func findWebView(in view: UIView) -> WKWebView? {
+            (view as? WKWebView) ?? view.subviews.lazy.compactMap(findWebView).first
+        }
+        var popup: WKWebView?
+        for _ in 0..<100 {
+            if let host = presenter.presentedViewController?.view, let webView = findWebView(in: host),
+               (try? await webView.evaluateJavaScript("!!document.querySelector('[aria-label=setting]')")) as? Bool == true {
+                popup = webView
+                break
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let webView = try XCTUnwrap(popup)
+        let hasTouchStyles = try await webView.evaluateJavaScript(
+            "document.adoptedStyleSheets.some(style=>[...style.cssRules].some(rule=>rule.cssText.includes('[role=\\\"tooltip\\\"]')))"
+        ) as? Bool
+        XCTAssertEqual(hasTouchStyles, true)
+        _ = try await webView.evaluateJavaScript("""
+            setTimeout(() => {
+              const icon = document.querySelector('[aria-label=setting]');
+              icon.closest('button,[role=button],.semi-navigation-item').click();
+            }, 50);
+            true;
+            """)
+        await fulfillment(of: [destination], timeout: 10)
+        XCTAssertEqual(manager.activeTab?.webViewModel.currentURL?.lastPathComponent, "options.html")
+        for _ in 0..<20 where presenter.presentedViewController != nil {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertNil(presenter.presentedViewController)
+    }
+
+    func testSearchPlatformPackageDisplaysItsOwnActionIcon() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let package = documents.appendingPathComponent("soulo-search-platform-qa.zip")
+        guard FileManager.default.fileExists(atPath: package.path) else { throw XCTSkip("Search platform package not staged") }
+        let defaults = UserDefaults.standard
+        let privacy = defaults.object(forKey: "is_incognito")
+        defaults.set(false, forKey: "is_incognito")
+        defer { defaults.set(privacy, forKey: "is_incognito") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = BrowserExtensionService(extensionRoot: root)
+        let record = try await service.installWebExtension(from: package)
+        defer { service.deleteWebExtension(record.id) }
+        XCTAssertEqual(record.name, "Soulo Search Platform")
+        let icon = try XCTUnwrap(NativeWebExtensionRuntime.shared.actionPresentation(id: record.id)?.icon)
+        let attachment = XCTAttachment(image: icon)
+        attachment.name = "installed-search-platform-icon"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     func testTabsUpdateToOwnedApplicationKeepsNativeIdentityAndCanReturnToLiveSource() async throws {
         guard #available(iOS 18.4, *) else { throw XCTSkip("Native extensions") }
         let defaults = UserDefaults.standard, privacy = defaults.object(forKey: "is_incognito")
@@ -1061,6 +1716,7 @@ import SwiftUI
     }
 
     func testFastStreamBilibiliKeepsIPadPlayerBounds() async throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "Requires an iPad viewport")
         try await exerciseFastStreamRealPackage(forceManaged:false,includeLive:true,layoutAudit:true)
     }
 
@@ -1763,7 +2419,7 @@ import SwiftUI
         XCTAssertTrue(WebExtensionTYTYAdapter.isPrepared(in: preview.resourceURL))
         let worker = preview.resourceURL.appendingPathComponent("background.min.js")
         let first = try Data(contentsOf: worker)
-        try WebExtensionPackagePreparer.installCompatibilityLayer(in: preview.resourceURL)
+        try await WebExtensionPackagePreparer.installCompatibilityLayer(in: preview.resourceURL)
         XCTAssertEqual(try Data(contentsOf: worker), first)
         let record = try await service.installWebExtension(preview, access: preview.access)
         defer { service.deleteWebExtension(record.id) }
@@ -1913,7 +2569,7 @@ import SwiftUI
         let footer = try await firstWeb.evaluateJavaScript("({bottom:document.querySelector('footer').getBoundingClientRect().bottom,height:innerHeight,hit:document.elementFromPoint(20,innerHeight-20)?.closest('footer')!==null})") as? [String: Any]
         XCTAssertLessThanOrEqual(try XCTUnwrap(footer?["bottom"] as? Double), try XCTUnwrap(footer?["height"] as? Double) + 1)
         XCTAssertEqual(footer?["hit"] as? Bool, true)
-        let rendered = try await firstWeb.takeSnapshot(configuration: nil)
+        let rendered = try await WebPageCaptureService.capture(.viewport, from: firstWeb).image
         let raster = try XCTUnwrap(rendered.cgImage)
         let width = raster.width, height = raster.height
         var bytes = [UInt8](repeating: 0, count: width * height * 4)
@@ -1962,6 +2618,8 @@ import SwiftUI
             window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
         }
         let attachment = XCTAttachment(image: image); attachment.name = "third-party-extension-popup-close"; attachment.lifetime = .keepAlways; add(attachment)
+        let dismissing = try XCTUnwrap(presenter.presentedViewController)
+        dismissing.dismiss(animated: true)
         service.setWebExtensionEnabled(record.id, enabled: false)
         for _ in 0..<100 where presenter.presentedViewController != nil { try await Task.sleep(for: .milliseconds(20)) }
         XCTAssertNil(presenter.presentedViewController)

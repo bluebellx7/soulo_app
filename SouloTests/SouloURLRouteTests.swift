@@ -62,6 +62,24 @@ final class SouloURLRouteTests: XCTestCase {
         }
     }
 
+    func testBrowserSearchPlatformDraftAcceptsOnlyAWebQueryValueOrPathSegment() throws {
+        func link(_ template: String) throws -> URL {
+            var components = URLComponents(string: "soulo://add-search-platform")!
+            components.queryItems = [URLQueryItem(name: "template", value: template)]
+            return try XCTUnwrap(components.url)
+        }
+        for template in ["https://example.com/search?q=%@&x=a%2Bb", "https://example.com/search/%@"] {
+            let url = try link(template)
+            XCTAssertEqual(SearchPlatformDraft(link: url)?.template, template)
+            XCTAssertNil(SouloURLRoute.parse(url), "The command requires a browser link tap")
+        }
+        for template in ["file:///path/%@", "https://user:pass@example.com/?q=%@", "https://%@.example.com/",
+                         "https://example.com/?q=%@&also=%@", "https://example.com/?q=a%@",
+                         "https://example.com/#%@", "https://example.com/?q=plain"] {
+            XCTAssertNil(SearchPlatformDraft(link: try link(template)), template)
+        }
+    }
+
     func testNativeVideoDocumentRequiresASuccessfulActualMediaResponse() throws {
         let url = try XCTUnwrap(URL(string: "https://example.org/stream?id=1"))
         for code in [200, 206] {

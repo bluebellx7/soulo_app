@@ -28,6 +28,43 @@ final class BrowserWebViewPoolTests: XCTestCase {
         throw CancellationError()
     }
 
+    func testBrowserRestoresInputOnlyAfterWebContentRecoveryCommits() async throws {
+        let page = "/recovery.html"
+        let fixture = try DownloadPlaybackHTTPFixture(
+            files: [page: Data("<title>Recovery page</title><p>Ready</p>".utf8)],
+            holdAfterRequestCount: [page: 2]
+        )
+        let url = try await fixture.start().appendingPathComponent("recovery.html")
+        defer { fixture.stop() }
+        let model = WebViewModel()
+        let (webView, coordinator) = WebViewRepresentable(viewModel: model).makeCompatibilityAuditWebView()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController()
+        window.rootViewController = host
+        window.isHidden = false
+        webView.frame = host.view.bounds
+        host.view.addSubview(webView)
+        defer {
+            model.webView = nil
+            window.isHidden = true
+        }
+        XCTAssertFalse(webView.isUserInteractionEnabled, "An empty browser must not receive taps")
+        model.loadURL(url)
+        try await waitUntil { webView.isUserInteractionEnabled && model.hasVisibleContent }
+
+        coordinator.webViewWebContentProcessDidTerminate(webView)
+        try await waitUntil { fixture.receivedRequests.filter { $0.path == page }.count >= 2 }
+        XCTAssertFalse(webView.isUserInteractionEnabled, "The old surface must not receive taps during recovery")
+        XCTAssertFalse(model.hasPresentedContent)
+
+        fixture.releaseDownloads()
+        try await waitUntil { webView.isUserInteractionEnabled && model.hasVisibleContent }
+        XCTAssertNil(model.errorMessage)
+        model.webView = nil
+        XCTAssertFalse(webView.isUserInteractionEnabled, "A retired runtime must not receive late taps")
+    }
+
     func testWarmupHasNoNavigationScriptsOrHistoryAndIsClaimedOnlyOnce() async throws {
         let pool = BrowserWebViewPool(warmupDelay: .zero, refillDelay: .seconds(60))
         defer { pool.suspend() }
@@ -40,14 +77,22 @@ final class BrowserWebViewPoolTests: XCTestCase {
         XCTAssertTrue(spare.configuration.websiteDataStore.isPersistent)
         pool.activate(isIncognito: false)
         XCTAssertTrue(pool.preparedWebView === spare)
-        let first = pool.makeWebView(isIncognito: false, for: URL(string: "https://example.com"))
-        let second = pool.makeWebView(isIncognito: false, for: nil)
+        let script = WKUserScript(source: "window.pageConfiguredAtStart = true", injectionTime: .atDocumentStart, forMainFrameOnly: true)
+        let first = pool.makeWebView(isIncognito: false, for: URL(string: "https://example.com")) { $0.addUserScript(script) }
+        let second = pool.makeWebView(isIncognito: false, for: nil) { $0.addUserScript(script) }
         XCTAssertTrue(first === spare)
         XCTAssertFalse(second === spare)
         XCTAssertNil(first.navigationDelegate)
         XCTAssertNil(pool.preparedWebView)
         XCTAssertTrue(first.configuration.allowsInlineMediaPlayback)
         XCTAssertTrue(first.configuration.preferences.isElementFullscreenEnabled)
+        for webView in [first, second] {
+            XCTAssertEqual(webView.configuration.userContentController.userScripts.map(\.source), [script.source])
+            webView.loadHTMLString("<title>Prepared page</title>", baseURL: nil)
+            try await waitUntil { webView.title == "Prepared page" && !webView.isLoading }
+            let prepared = try await webView.evaluateJavaScript("window.pageConfiguredAtStart") as? Bool
+            XCTAssertEqual(prepared, true)
+        }
         if #available(iOS 18.4, *) {
             XCTAssertTrue(first.configuration.webExtensionController === NativeWebExtensionRuntime.shared.controller)
         }
@@ -157,6 +202,21 @@ final class BrowserWebViewPoolTests: XCTestCase {
         try await waitUntil { spare == nil }
     }
 
+    func testModesWithoutSpeculativeWarmupStillCreateBrowserViews() async throws {
+        let pool = BrowserWebViewPool(warmupDelay: .zero, refillDelay: .zero, allowsWarmupInMode: { $0 })
+        defer { pool.suspend() }
+        pool.activate(isIncognito: true)
+        try await waitUntil { pool.isPreparedWebViewReady }
+
+        pool.activate(isIncognito: false)
+        XCTAssertNil(pool.preparedWebView)
+        let claimed = pool.makeWebView(isIncognito: false, for: nil)
+        _ = try await claimed.evaluateJavaScript("void 0")
+        XCTAssertNil(pool.preparedWebView)
+        pool.activate(isIncognito: true)
+        try await waitUntil { pool.isPreparedWebViewReady }
+    }
+
     func testTerminatedSpareIsDiscardedWithoutTouchingClaimedView() async throws {
         let pool = BrowserWebViewPool(warmupDelay: .zero, refillDelay: .zero)
         defer { pool.suspend() }
@@ -188,7 +248,24 @@ final class BrowserWebViewPoolTests: XCTestCase {
     }
 
     func testFirstSearchUsesWarmViewAndInstallsCurrentRuntimeBeforeNavigation() async throws {
+        try XCTSkipUnless(BrowserWebViewPool.supportsSpeculativeWarmup(isIncognito: false),
+                          "This system uses a fresh WebView for normal tabs")
         try await verifyProductionHandoff(isIncognito: false, restoring: false)
+    }
+
+    func testIOS18ProductionPoolCreatesNormalWebViewsWithoutPrewarming() async throws {
+        guard #available(iOS 18.4, *), ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 18 else {
+            throw XCTSkip("Applies to native Web Extensions on iOS 18")
+        }
+        let pool = BrowserWebViewPool.shared
+        pool.suspend()
+        defer { pool.suspend() }
+        pool.activate(isIncognito: false)
+        XCTAssertFalse(BrowserWebViewPool.supportsSpeculativeWarmup(isIncognito: false))
+        XCTAssertTrue(BrowserWebViewPool.supportsSpeculativeWarmup(isIncognito: true))
+        let browser = pool.makeWebView(isIncognito: false, for: nil)
+        XCTAssertNotNil(browser.configuration.webExtensionController)
+        XCTAssertNil(pool.preparedWebView)
     }
 
     func testRestoredPrivateTabUsesWarmViewWithoutBlankBackItem() async throws {

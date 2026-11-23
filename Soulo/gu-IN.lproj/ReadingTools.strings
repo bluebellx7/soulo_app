@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "કેપ્સ્યુલ";
 "home_toolbar_icons" = "માત્ર ચિહ્નો";
 "home_toolbar_bottom" = "નીચે";
-"home_toolbar_belowSearch" = "શોધની નીચે";
 "home_toolbar_free" = "મુક્ત સ્થાન";
+"home_toolbar_search_bottom" = "નીચે";
+"home_toolbar_alignment" = "ટૂલબાર ગોઠવણી";
 "home_toolbar_leading" = "શરૂઆતમાં ગોઠવો";
 "home_toolbar_center" = "મધ્યમાં ગોઠવો";
 "home_toolbar_trailing" = "અંતમાં ગોઠવો";
 "home_toolbar_drag_position" = "ટૂલબારને યોગ્ય સ્થાને ખેંચો.";
 "home_toolbar_drag_buttons" = "બટન બદલવા ટેપ કરો. ક્રમ બદલવા ખેંચો.";
+"home_toolbar_style" = "શૈલી";
+"home_toolbar_visibility" = "બતાવો/છુપાવો";
+"home_toolbar_visibility_page" = "હોમ પેજના ઘટકો";
+"home_toolbar_visibility_search_area" = "શોધ વિસ્તાર";
+"home_toolbar_visibility_title" = "શીર્ષક";
+"home_toolbar_visibility_subtitle" = "ઉપશીર્ષક";
+"home_toolbar_visibility_search" = "શોધ બાર";
+"home_toolbar_visibility_search_hint" = "શોધ બાર બતાવવા માટે હોમ પેજ પર ઉપર કે નીચે સ્વાઇપ કરો.";
+"home_toolbar_visibility_recovery" = "મેનુ ખોલવા હોમમાં ખાલી જગ્યાને દબાવી રાખો.";
 "home_toolbar_search" = "એક પૃષ્ઠ શોધો";
 "group_default_search" = "ડિફૉલ્ટ શોધ";
 "group_search_settings" = "જૂથ સેટિંગ્સ";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "ધૂંધળો કાચ";
 "wallpaper_blur_amount" = "ધૂંધળાપાની તીવ્રતા";
 
+"home_quick_search_guide" = "હોમ પેજ પર કીવર્ડ લખો તો શોધ બારની નીચે પ્લેટફોર્મ દેખાશે. શોધવા માટે કોઈ પ્લેટફોર્મ પર ટૅપ કરો.";
 "auto_hide_platform_bar_hint" = "ચાલુ હોય ત્યારે, વેબપેજની સામગ્રી પર જાતે ટૅપ કર્યા પછી જ અને પેજનું ડોમેન વર્તમાન બારમાંના કોઈ પ્લેટફોર્મ સાથે ન મળતું હોય ત્યારે જ બાર છુપાશે. કોઈ પ્લેટફોર્મ સાથે મેળ પડે તો બાર દેખાતો રહેશે અથવા ફરી દેખાશે. સ્ક્રોલ કરવાથી કે આપમેળે રીડાયરેક્ટ થવાથી તે છુપાશે નહીં.";
 
 "ad_subscription_add" = "ફિલ્ટર સૂચિ ઉમેરો";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "વેબપૃષ્ઠો";
 "manual_backups_empty" = "હજુ કોઈ મેન્યુઅલ બૅકઅપ નથી";
 "browsing_display_settings_legacy" = "બ્રાઉઝિંગનું પ્રદર્શન";
+"media_lock_orientation" = "દિશા લૉક કરો";
+"media_unlock_orientation" = "દિશા અનલૉક કરો";
+
+"music_queue" = "પ્લેલિસ્ટ";
+"music_previous_track" = "પાછલું ગીત";
+"music_next_track" = "આગલું ગીત";

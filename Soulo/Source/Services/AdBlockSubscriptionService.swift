@@ -179,17 +179,23 @@ enum AdBlockRuleParser {
         var cosmetic = OrderedCosmeticRuleSet(limit: maxCosmeticRules)
         var exceptions = OrderedCosmeticRuleSet(limit: .max)
         var conditionalDepth = 0
-        let lines = text.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        let lines = text.components(separatedBy: .newlines).compactMap { raw -> String? in
+            let line = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if line.hasPrefix("!#if ") { conditionalDepth += 1; return nil }
+            if line.hasPrefix("!#endif") { conditionalDepth = max(0, conditionalDepth - 1); return nil }
+            // Unknown platform conditions must not activate either branch.
+            guard conditionalDepth == 0, !line.isEmpty, !line.hasPrefix("!"), !line.hasPrefix("[") else { return nil }
+            return line
+        }
         // badfilter cancels the exact rule, irrespective of ordering in a list.
         let disabled = Set(lines.compactMap { line -> String? in
-            guard line.hasSuffix(",badfilter") else { return nil }
-            return String(line.dropLast(",badfilter".count))
+            guard !line.contains("#"), let split = line.firstIndex(of: "$") else { return nil }
+            let modifiers = line[line.index(after: split)...].components(separatedBy: ",")
+            let retained = modifiers.filter { $0.lowercased() != "badfilter" }
+            guard retained.count < modifiers.count else { return nil }
+            return String(line[..<split]) + (retained.isEmpty ? "" : "$" + retained.joined(separator: ","))
         })
-        for line in lines {
-            if line.hasPrefix("!#if ") { conditionalDepth += 1; continue }
-            if line.hasPrefix("!#endif") { conditionalDepth = max(0, conditionalDepth - 1); continue }
-            // Unknown platform conditions must not activate mutually exclusive branches.
-            guard conditionalDepth == 0, !line.isEmpty, !line.hasPrefix("!"), !line.hasPrefix("["), !disabled.contains(line) else { continue }
+        for line in lines where !disabled.contains(line) {
             if let range = line.range(of: "#@#") {
                 if let rule = parseCosmeticRule(line, range: range) { exceptions.insert(rule) }
             } else if let range = line.range(of: "##") {

@@ -1,4 +1,5 @@
 import UIKit
+import UserNotifications
 
 enum AppQuickAction: String {
     case clearCache = "com.dkluge.Soulo.quick-action.clear-cache"
@@ -103,11 +104,14 @@ final class AppQuickActionService {
     }
 }
 
-final class SouloAppDelegate: NSObject, UIApplicationDelegate {
+final class SouloAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    nonisolated static let webExtensionNotificationKey = "soulo.webExtensionNotification"
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
         TorrentBackgroundCoordinator.shared.register()
         MediaExportBackgroundService.shared.register()
         Task { @MainActor in
@@ -124,8 +128,30 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        let content = notification.request.content
+        guard content.userInfo[Self.webExtensionNotificationKey] as? Bool == true else {
+            completionHandler([])
+            return
+        }
+        var options: UNNotificationPresentationOptions = [.banner, .list]
+        if content.sound != nil {
+            options.insert(.sound)
+        }
+        completionHandler(options)
+    }
+
     func applicationDidBecomeActive(_ application: UIApplication) {
         Task { @MainActor in RetiredStorageCleanup.schedule() }
+    }
+
+    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        if let window, let supported = SharedVideoFullscreenHost.supportedOrientationMask(in: window) { return supported }
+        return UIDevice.current.userInterfaceIdiom == .pad ? .all : .allButUpsideDown
     }
 
     func application(

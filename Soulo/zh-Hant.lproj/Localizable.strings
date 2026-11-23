@@ -50,12 +50,12 @@
 "no_bookmarks" = "暫無收藏";
 "no_bookmarks_desc" = "瀏覽網頁時點擊收藏按鈕儲存";
 "search_history" = "搜尋歷史";
-"no_history" = "暫無搜尋歷史";
+"no_history" = "暫無歷史";
 "no_history_desc" = "最近的搜尋與瀏覽過的網頁會顯示在這裡";
 "today" = "今天";
 "yesterday" = "昨天";
 "earlier" = "更早";
-"confirm_clear_history" = "確認清除所有搜尋歷史？";
+"confirm_clear_history" = "確認清除所有歷史？";
 "confirm_clear_bookmarks" = "確認清除所有收藏？";
 "settings" = "設定";
 "platform_management" = "平台管理";
@@ -247,8 +247,6 @@
 "login_required_toast" = "請先登入後再搜尋";
 "status_enabled" = "已啟用";
 "status_disabled" = "已停用";
-"show_top_search_bar" = "顯示頂部搜尋框";
-"show_top_search_bar_desc" = "隱藏後，可點擊底部網址列搜尋或使用語音輸入";
 "ad_block_master_disabled_desc" = "開啟廣告過濾後，才能使用和管理下方過濾規則訂閱。";
 "custom_groups" = "自訂群組";
 "no_groups" = "暫無自訂群組";
@@ -370,8 +368,6 @@
 "batch_import_result" = "成功匯入 %d 個平台";
 "paste_from_clipboard" = "從剪貼簿貼上";
 "none" = "無";
-"show_group_picker_home" = "首頁顯示群組";
-"show_group_picker_home_desc" = "在首頁顯示平台群組標籤，快速切換搜尋範圍";
 "error_no_internet" = "無網路連線，請檢查網路設定";
 "error_timeout" = "連線逾時，請重試";
 "error_ssl" = "安全連線失敗，該網站可能不安全";
@@ -850,7 +846,7 @@
 "current_keyword" = "目前關鍵字";
 "platform_invalid_web_url" = "請輸入以 http:// 或 https:// 開頭的有效網址。";
 
-"library_history_tab" = "搜尋歷史";
+"library_history_tab" = "歷史";
 
 "library_files_tab" = "檔案";
 

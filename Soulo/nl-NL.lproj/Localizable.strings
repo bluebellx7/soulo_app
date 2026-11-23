@@ -241,8 +241,6 @@
 "login_required_toast" = "Log eerst in en zoek dan opnieuw";
 "status_enabled" = "Ingeschakeld";
 "status_disabled" = "Uitgeschakeld";
-"show_top_search_bar" = "Toon bovenste zoekbalk";
-"show_top_search_bar_desc" = "Wanneer verborgen, gebruikt u de onderste adresbediening om te zoeken of spraakinvoer te starten";
 "ad_block_master_disabled_desc" = "Schakel Ad Block in om de onderstaande filterabonnementen te gebruiken en te beheren.";
 "custom_groups" = "Aangepaste groepen";
 "no_groups" = "Geen aangepaste groepen";
@@ -364,8 +362,6 @@
 "batch_import_result" = "%d platforms geïmporteerd";
 "paste_from_clipboard" = "Plakken vanaf klembord";
 "none" = "Geen";
-"show_group_picker_home" = "Groepskiezer op Home tonen";
-"show_group_picker_home_desc" = "Geef platformgroeptabbladen op het startscherm weer voor snel schakelen";
 "error_no_internet" = "Geen internetverbinding. Controleer uw netwerk.";
 "error_timeout" = "Er is een time-out voor de verbinding opgetreden. Probeer het opnieuw.";
 "error_ssl" = "Beveiligde verbinding mislukt. Deze site is mogelijk niet veilig.";

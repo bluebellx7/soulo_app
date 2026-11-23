@@ -121,7 +121,7 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
 
     private func sendError(_ connection: NWConnection, code: Int) {
         connection.send(content: Data("HTTP/1.1 \(code) Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8),
-            completion: .contentProcessed { _ in connection.cancel() })
+            contentContext: .finalMessage, completion: .contentProcessed { error in if error != nil { connection.cancel() } })
     }
 
     private func respond(_ connection: NWConnection, path: String, range: String?, isHead: Bool, held: Bool) {
@@ -129,7 +129,8 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
             var url = URLComponents()
             url.scheme = "http"; url.host = target.host; url.port = Int(port.rawValue); url.path = target.path
             let response = "HTTP/1.1 302 Found\r\nLocation: \(url.url!.absoluteString)\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-            connection.send(content: Data(response.utf8), completion: .contentProcessed { _ in connection.cancel() })
+            connection.send(content: Data(response.utf8), contentContext: .finalMessage,
+                completion: .contentProcessed { error in if error != nil { connection.cancel() } })
             return
         }
         guard let file = files[path], !file.isEmpty else { sendError(connection, code: 404); return }
@@ -162,8 +163,10 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
             header += "\(name): \(value)\r\n"
         }
         header += "\r\n"
-        connection.send(content: Data(header.utf8), completion: .contentProcessed { [weak self] error in
-            guard let self, error == nil, !isHead else { connection.cancel(); return }
+        connection.send(content: Data(header.utf8), contentContext: isHead ? .finalMessage : .defaultMessage,
+            completion: .contentProcessed { [weak self] error in
+            guard let self, error == nil else { connection.cancel(); return }
+            guard !isHead else { return }
             self.sendBody(connection, body: body, offset: 0, slow: ext == "mp4" && range == nil)
         })
     }
@@ -173,8 +176,11 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
         let count = slow && !released ? (offset == 0 ? 8192 : slowChunkSize) : body.count - offset
         let end = min(offset + count, body.count)
         if slow { fullFileBytes += end - offset }
-        connection.send(content: body.subdata(in: offset..<end), completion: .contentProcessed { [weak self] error in
-            guard let self, error == nil, end < body.count else { connection.cancel(); return }
+        let final = end == body.count
+        connection.send(content: body.subdata(in: offset..<end), contentContext: final ? .finalMessage : .defaultMessage,
+            completion: .contentProcessed { [weak self] error in
+            guard let self, error == nil else { connection.cancel(); return }
+            guard !final else { return }
             self.queue.asyncAfter(deadline: .now() + (slow && !self.released ? 1 : 0)) { [weak self] in
                 self?.sendBody(connection, body: body, offset: end, slow: slow)
             }

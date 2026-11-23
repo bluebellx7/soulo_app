@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "క్యాప్సూల్";
 "home_toolbar_icons" = "చిహ్నాలు మాత్రమే";
 "home_toolbar_bottom" = "కింద";
-"home_toolbar_belowSearch" = "శోధన కింద";
 "home_toolbar_free" = "నచ్చిన స్థానం";
+"home_toolbar_search_bottom" = "కింద";
+"home_toolbar_alignment" = "టూల్‌బార్ అమరిక";
 "home_toolbar_leading" = "మొదటికి";
 "home_toolbar_center" = "మధ్యలో";
 "home_toolbar_trailing" = "చివరికి";
 "home_toolbar_drag_position" = "టూల్‌బార్‌ను కావాల్సిన స్థానానికి లాగండి.";
 "home_toolbar_drag_buttons" = "బటన్ మార్చడానికి నొక్కండి. క్రమం మార్చడానికి లాగండి.";
+"home_toolbar_style" = "శైలి";
+"home_toolbar_visibility" = "చూపు/దాచు";
+"home_toolbar_visibility_page" = "హోమ్ పేజీ అంశాలు";
+"home_toolbar_visibility_search_area" = "శోధన ప్రాంతం";
+"home_toolbar_visibility_title" = "శీర్షిక";
+"home_toolbar_visibility_subtitle" = "ఉపశీర్షిక";
+"home_toolbar_visibility_search" = "శోధన బార్";
+"home_toolbar_visibility_search_hint" = "శోధన పట్టీని చూపడానికి హోమ్ పేజీలో పైకి లేదా కిందికి స్వైప్ చేయండి.";
+"home_toolbar_visibility_recovery" = "మెనూను తెరవడానికి హోమ్‌లో ఖాళీ స్థలాన్ని నొక్కి పట్టుకోండి.";
 "home_toolbar_search" = "ఒక పేజీని కనుగొనండి";
 "group_default_search" = "డిఫాల్ట్ శోధన";
 "group_search_settings" = "సమూహ సెట్టింగ్‌లు";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "మసక గాజు";
 "wallpaper_blur_amount" = "మసక తీవ్రత";
 
+"home_quick_search_guide" = "హోమ్‌లో కీవర్డ్ ఇస్తే శోధన పట్టీ కింద ప్లాట్‌ఫారమ్‌లు కనిపిస్తాయి. శోధించడానికి ఒక ప్లాట్‌ఫారమ్‌ను నొక్కండి.";
 "auto_hide_platform_bar_hint" = "ఆన్ చేస్తే, పేజీ కంటెంట్‌ను మీరే ట్యాప్ చేసిన తర్వాత, పేజీ డొమైన్ ప్రస్తుత బార్‌లోని ఏ ప్లాట్‌ఫారమ్‌తోనూ సరిపోలనప్పుడు మాత్రమే బార్ దాగుతుంది. ఏదైనా ప్లాట్‌ఫారమ్‌తో సరిపోలితే బార్ కనిపిస్తూనే ఉంటుంది లేదా మళ్లీ కనిపిస్తుంది. స్క్రోలింగ్, ఆటోమేటిక్ రీడైరెక్ట్‌లు బార్‌ను దాచవు.";
 
 "ad_subscription_add" = "ఫిల్టర్ జాబితాను జోడించండి";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "వెబ్‌పేజీలు";
 "manual_backups_empty" = "ఇంకా మాన్యువల్ బ్యాకప్‌లు లేవు";
 "browsing_display_settings_legacy" = "బ్రౌజింగ్ ప్రదర్శన";
+"media_lock_orientation" = "స్క్రీన్ దిశను లాక్ చేయండి";
+"media_unlock_orientation" = "స్క్రీన్ దిశను అన్‌లాక్ చేయండి";
+
+"music_queue" = "ప్లేలిస్ట్";
+"music_previous_track" = "మునుపటి పాట";
+"music_next_track" = "తదుపరి పాట";

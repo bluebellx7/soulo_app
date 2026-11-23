@@ -3,6 +3,7 @@ import SwiftUI
 struct AddCustomPlatformView: View {
     var targetGroupID: UUID? = nil
     var defaultRegion: PlatformRegion? = nil
+    var draft: SearchPlatformDraft? = nil
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String = ""
@@ -279,6 +280,10 @@ struct AddCustomPlatformView: View {
                 }
             }
             .onAppear {
+                if let draft, searchURLTemplate.isEmpty {
+                    searchURLTemplate = draft.template
+                    name = parseDomainName(from: draft.template)
+                }
                 if let gid = targetGroupID {
                     selectedGroupID = gid
                 } else if let region = defaultRegion {
@@ -329,6 +334,10 @@ struct AddCustomPlatformView: View {
         guard !hasError, !isSaving,
               let template = SearchPlatformURLInput.searchTemplate(searchURLTemplate) else { return }
 
+        if draft != nil, PlatformDataStore.shared.platforms.contains(where: { $0.searchURLTemplate == template }) {
+            dismiss()
+            return
+        }
         isSaving = true
 
         PlatformDataStore.shared.addCustomPlatform(

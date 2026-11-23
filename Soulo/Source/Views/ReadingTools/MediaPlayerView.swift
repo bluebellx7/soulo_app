@@ -84,15 +84,16 @@ struct VideoOrientationErrorAlert: ViewModifier {
 
     static func capture(in scene: UIWindowScene, sourceView: UIView? = nil) -> (UIInterfaceOrientation, UIWindow?, UIViewController?, Bool) {
         // A quick re-entry inherits the page's orientation, not the landscape
-        // geometry left over from the fullscreen session still being dismissed.
-        if let pending = restorations.removeValue(forKey: ObjectIdentifier(scene)) {
+        // geometry left over from a fullscreen session on the same window.
+        let key = ObjectIdentifier(scene)
+        // AVKit can make its own window key before a WebKit message reaches us.
+        let window = sourceView?.window ?? scene.keyWindow
+        if let pending = restorations[key], let window, pending.window === window {
+            restorations.removeValue(forKey: key)
             pending.task.cancel()
             return (pending.orientation, pending.window, pending.controller, true)
         }
         let orientation = scene.interfaceOrientation == .unknown ? UIInterfaceOrientation.portrait : scene.interfaceOrientation
-        // A WebKit message may arrive after AVKit has made its own window
-        // key. The source view still belongs to the browser's window/controller.
-        let window = sourceView?.window ?? scene.keyWindow
         var responder: UIResponder? = sourceView
         var owner: UIViewController?
         while let current = responder {
@@ -116,6 +117,11 @@ struct VideoOrientationErrorAlert: ViewModifier {
         return controller
     }
 
+    static func isInForeground(_ scene: UIWindowScene) -> Bool {
+        let state = scene.activationState
+        return state == .foregroundActive || state == .foregroundInactive
+    }
+
     static func restore(_ orientation: UIInterfaceOrientation, in scene: UIWindowScene,
                         sourceWindow: UIWindow?, sourceController: UIViewController?, handoff: Bool = false) {
         let key = ObjectIdentifier(scene), id = UUID()
@@ -131,7 +137,7 @@ struct VideoOrientationErrorAlert: ViewModifier {
                 let controller = topController(in: sourceWindow)
                 // Never ask the dismissing AVKit/SwiftUI fullscreen controller
                 // to restore the underlying page's orientation.
-                let ready = scene.activationState == .foregroundActive
+                let ready = isInForeground(scene)
                     && scene.keyWindow === sourceWindow && controller != nil
                     && controller === sourceController
                     && controller?.isBeingPresented == false
@@ -205,6 +211,26 @@ struct VideoOrientationErrorAlert: ViewModifier {
     }
 }
 
+struct LandscapeMotionDetector {
+    private var candidate: UIDeviceOrientation?
+    private var since: TimeInterval = 0
+
+    mutating func direction(gravityX: Double, gravityY: Double, at time: TimeInterval) -> UIDeviceOrientation? {
+        // Only follow a deliberate sideways hold. A flat or portrait device
+        // leaves the last landscape side in place.
+        guard abs(gravityX) >= 0.62, abs(gravityX) > abs(gravityY) * 1.25 else {
+            candidate = nil
+            return nil
+        }
+        let next: UIDeviceOrientation = gravityX < 0 ? .landscapeLeft : .landscapeRight
+        if candidate != next {
+            candidate = next
+            since = time
+        }
+        return time - since >= 0.12 ? next : nil
+    }
+}
+
 /// A fullscreen session may originate from any frame, but only that session
 /// can rotate and restore its owning window. A failed entry never rotates.
 @MainActor final class WebVideoFullscreenOrientation {
@@ -213,9 +239,8 @@ struct VideoOrientationErrorAlert: ViewModifier {
     private weak var sourceWindow: UIWindow?
     private weak var sourceController: UIViewController?
     private var original: UIInterfaceOrientation = .portrait
-    private var prefersLandscape = true
+    private(set) var prefersLandscape = true
     private var nativeWebKit = false
-    private var rotatedForEntry = false
     private(set) var handingOff = false
     private var began = false
     private var inheritedRestoration = false
@@ -223,14 +248,27 @@ struct VideoOrientationErrorAlert: ViewModifier {
     private var tracksDeviceOrientation = false
     private var orientationObserver: NSObjectProtocol?
     private var activationObserver: NSObjectProtocol?
+    private var deactivationObserver: NSObjectProtocol?
+    private var motionObservation: UUID?
+    private var motionDetector = LandscapeMotionDetector()
+    private var lastLandscapeDirection: UIDeviceOrientation?
     private var orientationError: ((Error) -> Void)?
+    var setReversedLandscape: ((Bool) -> Void)?
     private weak var explicitFullscreenController: UIViewController?
     private weak var fullscreenController: UIViewController?
     private weak var fullscreenWindow: UIWindow?
     private let deviceOrientation: @MainActor () -> UIDeviceOrientation
+    private let followsDeviceMotion: Bool
+    private let requestOrientation: @MainActor (UIInterfaceOrientationMask, UIWindowScene) -> Void
 
-    init(deviceOrientation: @escaping @MainActor () -> UIDeviceOrientation = { UIDevice.current.orientation }) {
+    init(deviceOrientation: @escaping @MainActor () -> UIDeviceOrientation = { UIDevice.current.orientation },
+         followsDeviceMotion: Bool = false,
+         requestOrientation: @escaping @MainActor (UIInterfaceOrientationMask, UIWindowScene) -> Void = {
+             VideoOrientation.request($0, in: $1) { _ in }
+         }) {
         self.deviceOrientation = deviceOrientation
+        self.followsDeviceMotion = followsDeviceMotion
+        self.requestOrientation = requestOrientation
     }
 
     func prepare(token: String, scene: UIWindowScene, prefersLandscape: Bool,
@@ -242,31 +280,28 @@ struct VideoOrientationErrorAlert: ViewModifier {
         (original, sourceWindow, sourceController, inheritedRestoration) = VideoOrientation.capture(in: scene, sourceView: sourceView)
         self.prefersLandscape = prefersLandscape
         self.nativeWebKit = nativeWebKit
-        rotatedForEntry = false; handingOff = false
+        handingOff = false
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         tracksDeviceOrientation = true
         began = false
     }
 
-    func prepareNativeLandscape(token: String) async {
-        guard self.token == token, let scene, prefersLandscape else { return }
-        rotatedForEntry = true
-        let target = VideoOrientation.landscapeMask(device: deviceOrientation(), interface: scene.interfaceOrientation)
-        VideoOrientation.request(target, in: scene) { _ in }
-        for _ in 0..<30 {
-            guard !Task.isCancelled, self.token == token else { return }
-            if scene.interfaceOrientation.isLandscape, sourceController?.transitionCoordinator == nil { return }
-            try? await Task.sleep(for: .milliseconds(25))
-        }
-    }
-
     func handOff() {
         handingOff = true
+        stopTracking()
+    }
+
+    func stopTracking() {
         transition?.cancel()
+        transition = nil
         if let orientationObserver { NotificationCenter.default.removeObserver(orientationObserver) }
         orientationObserver = nil
         if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
         activationObserver = nil
+        if let deactivationObserver { NotificationCenter.default.removeObserver(deactivationObserver) }
+        deactivationObserver = nil
+        stopMotionTracking()
+        lastLandscapeDirection = nil
     }
     func rebaseSource(on view: UIView) {
         guard let scene, view.window?.windowScene === scene else { return }
@@ -276,46 +311,90 @@ struct VideoOrientationErrorAlert: ViewModifier {
         sourceWindow = owner.1; sourceController = owner.2
     }
     func setFullscreenOrientation(_ landscape: Bool, in scene: UIWindowScene, sourceView: UIView?, fullscreenController: UIViewController? = nil, onError: @escaping (Error) -> Void) {
-        explicitFullscreenController = fullscreenController
         if token == nil { prepare(token: "native-tools", scene: scene, prefersLandscape: landscape, nativeWebKit: true, sourceView: sourceView) }
-        transition?.cancel()
-        if let orientationObserver { NotificationCenter.default.removeObserver(orientationObserver) }
-        if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
-        activationObserver = nil
-        orientationObserver = nil; self.fullscreenController = nil; fullscreenWindow = nil
+        stopTracking()
+        self.fullscreenController = nil; fullscreenWindow = nil
         prefersLandscape = landscape; began = false
-        if let token { begin(token: token, onError: onError) }
-        if !landscape { VideoOrientation.request(.portrait, in: scene, onError: onError) }
+        if let token { begin(token: token, controller: fullscreenController, requestPortrait: !landscape, onError: onError) }
     }
 
-    func begin(token: String, onError: @escaping (Error) -> Void) {
+    func begin(token: String, controller: UIViewController? = nil, requestPortrait: Bool = false,
+               onError: @escaping (Error) -> Void) {
         guard self.token == token, !began else { return }
         began = true
-        guard prefersLandscape else { return }
+        explicitFullscreenController = controller
         orientationError = onError
-        orientationObserver = NotificationCenter.default.addObserver(
-            forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self, self.token == token, self.began else { return }
-                let direction = self.deviceOrientation()
-                guard direction == .landscapeLeft || direction == .landscapeRight else { return }
-                self.alignFullscreen(token: token)
+        guard prefersLandscape || requestPortrait else { return }
+        if prefersLandscape {
+            let initial = deviceOrientation()
+            lastLandscapeDirection = initial.isLandscape ? initial : nil
+            orientationObserver = NotificationCenter.default.addObserver(
+                forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self, self.token == token else { return }
+                    self.followLandscapeDirection(self.deviceOrientation())
+                }
+            }
+            if followsDeviceMotion {
+                deactivationObserver = NotificationCenter.default.addObserver(
+                    forName: UIScene.willDeactivateNotification, object: scene, queue: .main
+                ) { [weak self] _ in
+                    Task { @MainActor [weak self] in
+                        guard let self, self.token == token, self.scene?.activationState != .foregroundActive else { return }
+                        self.transition?.cancel()
+                        self.transition = nil
+                        self.stopMotionTracking()
+                    }
+                }
+                startMotionTracking()
             }
         }
         activationObserver = NotificationCenter.default.addObserver(
             forName: UIScene.didActivateNotification, object: scene, queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                guard let self, self.token == token, self.began, !self.handingOff,
-                      self.scene?.activationState == .foregroundActive else { return }
-                self.alignFullscreen(token: token)
+                guard let self, self.token == token, self.began, self.activationObserver != nil, !self.handingOff,
+                      let scene = self.scene, VideoOrientation.isInForeground(scene) else { return }
+                if self.prefersLandscape {
+                    let direction = self.deviceOrientation()
+                    if direction.isLandscape { self.lastLandscapeDirection = direction }
+                    self.startMotionTracking()
+                }
+                self.alignFullscreen(token: token, deviceDirection: self.lastLandscapeDirection)
             }
         }
-        alignFullscreen(token: token)
+        alignFullscreen(token: token, deviceDirection: lastLandscapeDirection)
     }
 
-    private func alignFullscreen(token: String) {
+    private func startMotionTracking() {
+        guard followsDeviceMotion, UIDevice.current.userInterfaceIdiom == .phone, motionObservation == nil,
+              scene?.activationState == .foregroundActive else { return }
+        motionObservation = DeviceMotionSource.shared.observe(interval: 0.05) { [weak self] motion in
+            guard let self, self.motionObservation != nil, self.scene?.activationState == .foregroundActive else { return }
+            self.receiveLandscapeGravity(x: motion.gravity.x, y: motion.gravity.y, at: motion.timestamp)
+        }
+    }
+
+    private func stopMotionTracking() {
+        if let motionObservation { DeviceMotionSource.shared.remove(motionObservation) }
+        motionObservation = nil
+        motionDetector = LandscapeMotionDetector()
+    }
+
+    func receiveLandscapeGravity(x: Double, y: Double, at time: TimeInterval) {
+        guard let direction = motionDetector.direction(gravityX: x, gravityY: y, at: time) else { return }
+        followLandscapeDirection(direction)
+    }
+
+    private func followLandscapeDirection(_ direction: UIDeviceOrientation) {
+        guard let token, began, orientationObserver != nil, !handingOff, direction.isLandscape,
+              lastLandscapeDirection != direction else { return }
+        lastLandscapeDirection = direction
+        alignFullscreen(token: token, deviceDirection: direction)
+    }
+
+    private func alignFullscreen(token: String, deviceDirection: UIDeviceOrientation? = nil) {
         transition?.cancel()
         transition = Task { @MainActor [weak self] in
             // AVKit's video transform outlives the controller presentation
@@ -327,8 +406,12 @@ struct VideoOrientationErrorAlert: ViewModifier {
             // WebKit reports begin before AVKit finishes presenting. During
             // that transition AVKit temporarily supports portrait only. Wait
             // for the fullscreen controller's actual supported orientations.
-            for _ in 0..<60 {
-                guard !Task.isCancelled, let self, self.token == token, let scene = self.scene else { return }
+            let direction = deviceDirection ?? self?.deviceOrientation() ?? .unknown
+            var lastRequest = -5
+            var lastTarget: UIInterfaceOrientationMask?
+            for attempt in 0..<60 {
+                guard !Task.isCancelled, let self, self.token == token, !self.handingOff,
+                      let scene = self.scene else { return }
                 let window = self.explicitFullscreenController?.viewIfLoaded?.window ?? scene.keyWindow
                 var controller = self.explicitFullscreenController ?? window?.rootViewController
                 if self.explicitFullscreenController == nil {
@@ -336,28 +419,59 @@ struct VideoOrientationErrorAlert: ViewModifier {
                 }
                 let fullscreenPresented = window !== self.sourceWindow
                     || controller !== self.sourceController
-                if fullscreenPresented, let controller,
+                let allowed: UIInterfaceOrientationMask = self.prefersLandscape ? .landscape : .portrait
+                if VideoOrientation.isInForeground(scene), fullscreenPresented, let window, let controller,
                    (self.fullscreenController == nil || (controller === self.fullscreenController && window === self.fullscreenWindow)),
                    !controller.isBeingPresented, !controller.isBeingDismissed, controller.transitionCoordinator == nil,
-                   !controller.supportedInterfaceOrientations.intersection(.landscape).isEmpty {
+                   !controller.supportedInterfaceOrientations.intersection(allowed).isEmpty {
                     self.fullscreenController = controller; self.fullscreenWindow = window
-                    let preferred = VideoOrientation.landscapeMask(device: self.deviceOrientation(), interface: scene.interfaceOrientation)
+                    let preferred = self.prefersLandscape
+                        ? VideoOrientation.landscapeMask(device: direction, interface: scene.interfaceOrientation) : .portrait
                     // If this fullscreen controller supports only one side,
                     // retain its supported landscape rather than failing entry.
                     let supported = preferred.intersection(controller.supportedInterfaceOrientations)
-                    let target = supported.isEmpty ? UIInterfaceOrientationMask.landscape.intersection(controller.supportedInterfaceOrientations) : supported
-                    guard !target.contains(VideoOrientation.mask(for: scene.interfaceOrientation)) else { return }
-                    if self.nativeWebKit {
-                        scene.requestGeometryUpdate(.iOS(interfaceOrientations: target)) { [weak self] in self?.orientationError?($0) }
-                    } else {
-                        VideoOrientation.request(target, in: scene) { [weak self] in self?.orientationError?($0) }
+                    let target = supported.isEmpty ? allowed.intersection(controller.supportedInterfaceOrientations) : supported
+                    lastTarget = target
+                    if scene.interfaceOrientation != .unknown,
+                       target.contains(VideoOrientation.mask(for: scene.interfaceOrientation)) {
+                        self.setReversedLandscape?(false)
+                        return
                     }
-                    return
+                    if attempt - lastRequest >= 5 {
+                        lastRequest = attempt
+                        // UIKit can reject or defer a request while scene geometry settles.
+                        if self.nativeWebKit {
+                            scene.requestGeometryUpdate(.iOS(interfaceOrientations: target)) { _ in }
+                        } else {
+                            self.requestOrientation(target, scene)
+                        }
+                    }
+                    if attempt >= 14, self.setReversedLandscape != nil, scene.interfaceOrientation.isLandscape,
+                       target == .landscapeLeft || target == .landscapeRight { break }
                 }
-                try? await Task.sleep(for: .milliseconds(50))
+                do { try await Task.sleep(for: .milliseconds(50)) } catch { return }
             }
             // Do not rotate the underlying page if presentation never finishes.
-
+            guard let scene = self?.scene, VideoOrientation.isInForeground(scene),
+                  !Task.isCancelled, self?.token == token, self?.handingOff == false,
+                  lastRequest >= 0 || self?.explicitFullscreenController != nil else { return }
+            if let target = lastTarget, target == .landscapeLeft || target == .landscapeRight,
+               scene.interfaceOrientation.isLandscape, !target.contains(VideoOrientation.mask(for: scene.interfaceOrientation)),
+               let setReversedLandscape = self?.setReversedLandscape {
+                setReversedLandscape(true)
+                // A late UIKit geometry update already rotated the canvas.
+                // Keep watching until it settles, the user turns again, or the session ends.
+                while !Task.isCancelled {
+                    do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+                    guard self?.token == token else { return }
+                    if target.contains(VideoOrientation.mask(for: scene.interfaceOrientation)) {
+                        setReversedLandscape(false)
+                        return
+                    }
+                }
+            } else {
+                self?.orientationError?(CocoaError(.featureUnsupported))
+            }
         }
     }
 
@@ -367,23 +481,20 @@ struct VideoOrientationErrorAlert: ViewModifier {
 
     func end(token: String? = nil, handoff: Bool = false) {
         guard self.token != nil, token == nil || self.token == token else { return }
-        transition?.cancel()
-        if let orientationObserver { NotificationCenter.default.removeObserver(orientationObserver) }
-        if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
-        activationObserver = nil
-        orientationObserver = nil; orientationError = nil
+        stopTracking()
+        orientationError = nil
         fullscreenController = nil; fullscreenWindow = nil; explicitFullscreenController = nil
         if tracksDeviceOrientation { UIDevice.current.endGeneratingDeviceOrientationNotifications() }
         tracksDeviceOrientation = false
         let scene = scene, source = sourceWindow, controller = sourceController, orientation = original,
-            restore = began || inheritedRestoration || rotatedForEntry
+            restore = began || inheritedRestoration || handingOff
         self.token = nil
         self.scene = nil
         self.sourceWindow = nil
         self.sourceController = nil
         began = false
         inheritedRestoration = false
-        handingOff = false; rotatedForEntry = false
+        handingOff = false
         guard restore, let scene else { return }
         VideoOrientation.restore(orientation, in: scene, sourceWindow: source, sourceController: controller, handoff: handoff)
     }
@@ -392,6 +503,8 @@ struct VideoOrientationErrorAlert: ViewModifier {
         transition?.cancel()
         if let orientationObserver { NotificationCenter.default.removeObserver(orientationObserver) }
         if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
+        if let deactivationObserver { NotificationCenter.default.removeObserver(deactivationObserver) }
+        if let motionObservation { Task { @MainActor in DeviceMotionSource.shared.remove(motionObservation) } }
         if tracksDeviceOrientation {
             Task { @MainActor in UIDevice.current.endGeneratingDeviceOrientationNotifications() }
         }
@@ -524,7 +637,8 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
             guard let window = SharedVideoFullscreenHost.window(for: host) else { return }
             sharedHost = SharedVideoFullscreenHost.present(owner: ownerID, in: window, content: AnyView(content()),
                 identifier: "media.fullscreen.player",
-                landscape: VideoOrientation.fullscreenLandscape(video: MediaSession.shared.videoIsLandscape, scene: window.windowScene),
+                landscape: options?.initialFullscreenLandscape
+                    ?? VideoOrientation.fullscreenLandscape(video: MediaSession.shared.videoIsLandscape, scene: window.windowScene),
                 onClose: { [weak self] reason in self?.finish(reason: reason) })
             if sharedHost == nil {
                 if presentationRetry == nil {
@@ -647,6 +761,9 @@ private struct NativeFullscreenContent: View {
                   let url = session.url, automaticRetryURL != url else { return }
             automaticRetryURL = url
             retryPlayback(automatic: true)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+            if session.webMediaContext != nil { automaticRetryURL = nil }
         }
         .onReceive(session.player.publisher(for: \.timeControlStatus)) { status in
             let waiting = status == .waitingToPlayAtSpecifiedRate
@@ -815,6 +932,8 @@ struct MediaPlayerPage: View {
                     restoredContext: context, embedded: true)
             } else if let url = session.url, url.isFileURL {
                 FileMediaPlaybackView(url: url, initialSystemPlayer: session.soulo == nil)
+            } else if let url = session.url, session.isAudioPlayback {
+                MusicPlaybackView(url: url, title: session.title)
             } else if let playback = session.soulo, let source = playback.sourceURL {
                 MatroskaPlayerView(url: source, title: session.title, options: restoredOptions, startsFullscreen: true)
             } else { FullscreenMediaPlaybackContent(resumesExistingSession: true) }
@@ -857,7 +976,9 @@ struct MediaMiniPlayer: View {
     @GestureState private var drag = CGSize.zero
     var body: some View {
         GeometryReader { geometry in
-            if session.url != nil && session.playerSurfaces == 0 && session.playerPages == 0 && session.soulo?.hasVisibleSurface != true && !session.expanded && !pip.active && session.retainedPiPController == nil {
+            if session.url != nil && session.playerSurfaces == 0 && session.playerPages == 0
+                && session.musicPlayerPages == 0 && session.soulo?.hasVisibleSurface != true
+                && !session.expanded && !pip.active && session.retainedPiPController == nil {
                 let width = min(320.0, max(44, geometry.size.width - 24))
                 let center = docked ? (trailing ? geometry.size.width - 18 : 18)
                     : (trailing ? geometry.size.width - width / 2 - 12 : width / 2 + 12)
@@ -1306,10 +1427,12 @@ struct MediaPlaybackContent: View {
     var initialRate: Float?
     var restoredSoulo: MatroskaPlayback?
     var initialFullscreen = false
+    var initialFullscreenLandscape: Bool?
     var fullscreenOnly = false
     var initialSystemPlayer = false
     var initialEpisodes = false
     var initialTitle: String?
+    var audioOnly = false
     var ownsExplicitSource = false
     var externalPlaylist: FileVideoPlaylist?
     var onFullscreenClose: (() -> Void)?
@@ -1359,6 +1482,7 @@ struct MediaPlaybackContent: View {
             videoOptions.download = downloadAction
             videoOptions.downloadIsVideo = downloadIsVideo
             videoOptions.fullscreenOnly = fullscreenOnly || videoOptions.fullscreenOnly
+            videoOptions.initialFullscreenLandscape = initialFullscreenLandscape ?? videoOptions.initialFullscreenLandscape
             return videoOptions
         }
         var result = FileVideoOptions(usesSystem: true, systemAvailable: true, playlist: externalPlaylist)
@@ -1366,6 +1490,7 @@ struct MediaPlaybackContent: View {
         result.shareURL = session.url
         result.showsEpisodesOnAppear = initialEpisodes
         result.fullscreenOnly = fullscreenOnly
+        result.initialFullscreenLandscape = initialFullscreenLandscape
         if let onFullscreenClose { result.closePlayback = { _ in onFullscreenClose() } }
         result.airPlayPresentation = airPlayRequested ?? $ownAirPlayRequest
         result.download = downloadAction
@@ -1454,6 +1579,7 @@ struct MediaPlaybackContent: View {
         result.fullscreenChanged = { preserveFullscreen = $0 }
         if let onFullscreenClose { result.closePlayback = { _ in onFullscreenClose() } }
         result.fullscreenOnly = fullscreenOnly
+        result.initialFullscreenLandscape = initialFullscreenLandscape
         result.shareURL = transfer.originalURL
         result.download = downloadAction
         result.downloadIsVideo = downloadIsVideo
@@ -1491,8 +1617,12 @@ struct MediaPlaybackContent: View {
                 MatroskaPlayerView(url: transfer.prepared.url, resourceLease: transfer.prepared,
                                    requestContext: transfer.context, title: transfer.title,
                                    persistPosition: transfer.source.persistsPosition, startAt: transfer.time,
-                                   autoplay: transfer.playing, initialRate: transfer.rate, options: souloOptions(transfer), startsFullscreen: preserveFullscreen)
+                                   autoplay: transfer.playing, initialRate: transfer.rate, options: souloOptions(transfer),
+                                   startsFullscreen: preserveFullscreen, audioOnly: audioOnly)
                     .navigationTitle(transfer.title)
+            } else if audioOnly, let url = options?.shareURL ?? session.url ?? initialSouloSource?.asset.url {
+                MusicPlaybackView(url: url, title: initialTitle ?? session.title, options: options,
+                    download: downloadAction, close: onFullscreenClose)
             } else {
                 VStack(spacing: 0) {
                     if !showingFullScreen && !fullscreenOnly {
@@ -1506,7 +1636,7 @@ struct MediaPlaybackContent: View {
                     }
                     else {
                         Color.black.overlay {
-                            if fullscreenOnly && !showingFullScreen { ProgressView().tint(.white) }
+                            if fullscreenOnly && !showingFullScreen && !ownsExplicitSource { ProgressView().tint(.white) }
                         }
                     }
                 }
@@ -1525,7 +1655,7 @@ struct MediaPlaybackContent: View {
         )) { Button(ToolText.text("done")) { pip.dismissError() } } message: { Text(pip.errorMessage ?? "") }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                if transfer == nil {
+                if transfer == nil && !audioOnly {
                     Menu {
                         PlaybackSleepTimerMenu()
                         if let request = options?.requestPictureInPicture {
@@ -1567,11 +1697,13 @@ struct MediaPlaybackContent: View {
         }
         .background(VideoPlaybackWindowReader(context: playbackWindow))
         .background {
-            SessionPlayerController(isPresented: Binding(
-                get: { showingFullScreen },
-                set: { showingFullScreen = $0 }
-            ), onDismiss: {}, options: options)
-                .frame(width: 0, height: 0)
+            if !audioOnly {
+                SessionPlayerController(isPresented: Binding(
+                    get: { showingFullScreen },
+                    set: { showingFullScreen = $0 }
+                ), onDismiss: {}, options: options)
+                    .frame(width: 0, height: 0)
+            }
         }
         .onDisappear {
             if isVisible { session.playerPages = max(0, session.playerPages - 1) }
@@ -1593,7 +1725,7 @@ struct MediaPlaybackContent: View {
         .task(id: initialSouloSource.map(ObjectIdentifier.init)) { applyExplicitSouloSource() }
         .onCompatibleChange(of: session.url) { _, _ in if isVisible { applyAutomaticPlayback() } }
         .onCompatibleChange(of: session.hasVideo, initial: true) { _, hasVideo in
-            guard hasVideo, (isVisible || showingFullScreen || preserveFullscreen), !appliedInitialPlayer else { return }
+            guard !audioOnly, hasVideo, (isVisible || showingFullScreen || preserveFullscreen), !appliedInitialPlayer else { return }
             guard !ownsExplicitSource || initialSouloSource != nil else { return }
             if initialSystemPlayer {
                 appliedInitialPlayer = true

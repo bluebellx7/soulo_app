@@ -67,8 +67,9 @@ struct WebHistoryPreview {
         guard let current = webView.backForwardList.currentItem, let source else { return nil }
         let entries = webView.backForwardList.backList + [current] + webView.backForwardList.forwardList
         let sources = entries.indices.filter { entries[$0].url == source }
-        let targets = entries.indices.filter { entries[$0].url == url && automaticRedirectEntries.contains(entries[$0]) }
-        guard sources.count == 1, targets.count == 1, let origin = sources.first, let target = targets.first else { return nil }
+        let targets = entries.indices.filter { entries[$0].url == url }
+        guard sources.count == 1, targets.count == 1, let origin = sources.first, let target = targets.first,
+              automaticRedirectEntries.contains(entries[target]) else { return nil }
         if target < origin { return pageTarget(in: Array(entries[...target].reversed())) }
         if target > origin { return pageTarget(in: Array(entries[target...])) }
         return nil

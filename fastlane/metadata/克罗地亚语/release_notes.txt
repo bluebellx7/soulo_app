@@ -1,4 +1,1 @@
-• Poboljšani su prebacivanje na cijeli zaslon, međuspremanje i izbornik brzine za mrežne videozapise.
-• Poboljšano je prepoznavanje magnet poveznica i pronalaženje drugih korisnika za BitTorrent preuzimanja.
-• Korisničke skripte mogu koristiti GM_webRequest za otkazivanje zahtjeva Fetch i XHR glavnog okvira ili njihovo preusmjeravanje na isti izvor.
-• Poboljšana je kompatibilnost proširenja preglednika, uključujući nazive preuzetih datoteka i učitavanje stranica izvan zaslona.
+Poboljšano je učitavanje skripti pri otvaranju web-stranica i kompatibilnost s proširenjima preglednika.

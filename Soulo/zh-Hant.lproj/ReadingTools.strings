@@ -443,13 +443,23 @@
 "home_toolbar_capsule" = "連體膠囊";
 "home_toolbar_icons" = "無底色";
 "home_toolbar_bottom" = "螢幕底部";
-"home_toolbar_belowSearch" = "搜尋框下方";
 "home_toolbar_free" = "自由放置";
+"home_toolbar_search_bottom" = "頁面底部";
+"home_toolbar_alignment" = "工具列對齊";
 "home_toolbar_leading" = "靠左";
 "home_toolbar_center" = "置中";
 "home_toolbar_trailing" = "靠右";
 "home_toolbar_drag_position" = "拖曳工具列以調整位置。";
 "home_toolbar_drag_buttons" = "點按更換按鈕，拖曳調整順序。";
+"home_toolbar_style" = "外觀";
+"home_toolbar_visibility" = "顯示/隱藏";
+"home_toolbar_visibility_page" = "首頁元素";
+"home_toolbar_visibility_search_area" = "搜尋區";
+"home_toolbar_visibility_title" = "標題";
+"home_toolbar_visibility_subtitle" = "副標題";
+"home_toolbar_visibility_search" = "搜尋框";
+"home_toolbar_visibility_search_hint" = "在首頁上下滑動可開啟搜尋框。";
+"home_toolbar_visibility_recovery" = "長按首頁空白處可開啟更多選單。";
 "home_toolbar_search" = "尋找頁面";
 
 "group_default_search" = "預設搜尋";
@@ -579,6 +589,7 @@
 "wallpaper_image_blur" = "毛玻璃";
 "wallpaper_blur_amount" = "模糊強度";
 
+"home_quick_search_guide" = "在首頁輸入關鍵字，搜尋框下方會顯示平台。點一下平台即可在該平台搜尋。";
 "auto_hide_platform_bar_hint" = "開啟後，只有手動點選網頁內容，且網頁網域不符合目前平台列中的任何平台時才隱藏；符合任一平台則保持或恢復顯示。捲動和自動重新導向不會主動隱藏平台列。";
 
 "ad_subscription_add" = "新增規則";
@@ -623,7 +634,7 @@
 "platform_bar_disabled_hint" = "平台列已隱藏。點此開啟「%@」，再設定自動隱藏。";
 
 "storage_files_group" = "下載與檔案";
-"storage_cache_group" = "快取與暫存檔";
+"storage_cache_group" = "快取與暫存";
 "storage_video_cache" = "影片快取";
 "storage_saved_group" = "已儲存內容";
 
@@ -687,3 +698,9 @@
 "browsing_web_display" = "網頁顯示";
 "manual_backups_empty" = "尚無手動備份";
 "browsing_display_settings_legacy" = "瀏覽介面顯示";
+"media_lock_orientation" = "鎖定方向";
+"media_unlock_orientation" = "解除方向鎖定";
+
+"music_queue" = "播放列表";
+"music_previous_track" = "上一首";
+"music_next_track" = "下一首";

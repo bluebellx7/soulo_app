@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "کیپسول";
 "home_toolbar_icons" = "صرف آئیکن";
 "home_toolbar_bottom" = "نیچے";
-"home_toolbar_belowSearch" = "تلاش کے نیچے";
 "home_toolbar_free" = "من پسند جگہ";
+"home_toolbar_search_bottom" = "نیچے";
+"home_toolbar_alignment" = "ٹول بار کی سیدھ";
 "home_toolbar_leading" = "شروع کی طرف";
 "home_toolbar_center" = "درمیان میں";
 "home_toolbar_trailing" = "آخر کی طرف";
 "home_toolbar_drag_position" = "ٹول بار کو مطلوبہ جگہ پر گھسیٹیں۔";
 "home_toolbar_drag_buttons" = "بٹن بدلنے کے لیے ٹیپ کریں۔ ترتیب بدلنے کے لیے گھسیٹیں۔";
+"home_toolbar_style" = "انداز";
+"home_toolbar_visibility" = "دکھائیں/چھپائیں";
+"home_toolbar_visibility_page" = "ہوم پیج کے اجزا";
+"home_toolbar_visibility_search_area" = "تلاش کا حصہ";
+"home_toolbar_visibility_title" = "عنوان";
+"home_toolbar_visibility_subtitle" = "ذیلی عنوان";
+"home_toolbar_visibility_search" = "تلاش بار";
+"home_toolbar_visibility_search_hint" = "سرچ بار دکھانے کے لیے ہوم پیج پر اوپر یا نیچے سوائپ کریں۔";
+"home_toolbar_visibility_recovery" = "مینو کھولنے کے لیے ہوم کی خالی جگہ دبا کر رکھیں۔";
 "home_toolbar_search" = "ایک صفحہ تلاش کریں۔";
 "group_default_search" = "پہلے سے طے شدہ تلاش";
 "group_search_settings" = "گروپ کی ترتیبات";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "دھندلا شیشہ";
 "wallpaper_blur_amount" = "دھندلاپن کی شدت";
 
+"home_quick_search_guide" = "ہوم پیج پر تلاش کا لفظ لکھیں تو سرچ بار کے نیچے پلیٹ فارم نظر آئیں گے۔ کسی پلیٹ فارم پر ٹیپ کرکے وہاں تلاش کریں۔";
 "auto_hide_platform_bar_hint" = "فعال ہونے پر، صفحے کے مواد پر خود ٹیپ کرنے کے بعد اور صفحے کا ڈومین موجودہ بار کے کسی بھی پلیٹ فارم سے نہ ملنے پر ہی بار چھپتی ہے۔ کسی پلیٹ فارم سے ملنے پر بار دکھائی دیتی رہتی ہے یا دوبارہ ظاہر ہوتی ہے۔ اسکرول اور خودکار ری ڈائریکٹ بار کو نہیں چھپاتے۔";
 
 "ad_subscription_add" = "فلٹر فہرست شامل کریں";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "ویب صفحات";
 "manual_backups_empty" = "ابھی کوئی دستی بیک اپ نہیں";
 "browsing_display_settings_legacy" = "براؤزنگ کی نمائش";
+"media_lock_orientation" = "اسکرین کی سمت مقفل کریں";
+"media_unlock_orientation" = "اسکرین کی سمت کا قفل کھولیں";
+
+"music_queue" = "پلے لسٹ";
+"music_previous_track" = "پچھلا گانا";
+"music_next_track" = "اگلا گانا";

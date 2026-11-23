@@ -147,10 +147,11 @@ import UniformTypeIdentifiers
         reportedEnd = false
         systemDecoderFailed = false
         error = nil; elapsed = 0; duration = 0; buffering = true
-        hasVideo = !FileVideoEpisodes.isAudio(originalURL?.path ?? url.path)
         let prepared = resourceLease as? SouloMediaPlaybackSource
         let nativeSource = prepared?.native
         let resource = nativeSource?.webMediaContext?.resource
+        let audioOnly = resource?.kind == .audio || FileVideoEpisodes.isAudio(originalURL?.path ?? url.path)
+        hasVideo = !audioOnly
         let onlineVideo = VideoLoadingStatus.isOnline(url) && originalURL?.isFileURL != true
             && !(resourceLease is TorrentPlaybackLease) && !(nativeSource?.resourceLease is TorrentPlaybackLease)
         let progressiveCache = nativeSource.flatMap { ProgressiveVideoPlaybackBridge.transfer(for: $0.asset) }
@@ -193,11 +194,11 @@ import UniformTypeIdentifiers
                 self.installDecoder(ExtendedPlaybackDecoder(url: url, context: requestContext, hls: hls))
             }
         }
-        observe(url: url, context: requestContext, hls: hls, online: onlineVideo, cacheTransfer: cacheTransfer)
+        observe(url: url, context: requestContext, hls: hls, online: onlineVideo, audioOnly: audioOnly, cacheTransfer: cacheTransfer)
     }
 
     private func observe(url: URL, context: VideoPlaybackRequestContext?, hls: Bool,
-                         online: Bool, cacheTransfer: VideoPlaybackTransfer?) {
+                         online: Bool, audioOnly: Bool, cacheTransfer: VideoPlaybackTransfer?) {
         updates = Task { [weak self] in
             var startup = VideoStartupWatch()
             var progress = VideoProgressWatch()
@@ -207,7 +208,7 @@ import UniformTypeIdentifiers
                 guard let self else { return }
                 let player = self.player
                 player?.update()
-                if let hasVideo = player?.hasVideo, self.hasVideo != hasVideo { self.hasVideo = hasVideo }
+                if !audioOnly, let hasVideo = player?.hasVideo, self.hasVideo != hasVideo { self.hasVideo = hasVideo }
                 let frameReady = (player?.decodedFrameCount ?? 0) > 0
                 let clock = player?.currentTime ?? 0
                 let warning = startup.update(now: Date.timeIntervalSinceReferenceDate,
@@ -559,6 +560,7 @@ struct FileVideoOptions: Equatable {
     var closePlayback: ((VideoFullscreenDismissal) -> Void)?
     var showsEpisodesOnAppear = false
     var fullscreenOnly = false
+    var initialFullscreenLandscape: Bool?
     var shareURL: URL?
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.usesSystem == rhs.usesSystem && lhs.systemAvailable == rhs.systemAvailable
@@ -578,6 +580,7 @@ struct FileVideoOptions: Equatable {
             && (lhs.closePlayback != nil) == (rhs.closePlayback != nil)
             && lhs.showsEpisodesOnAppear == rhs.showsEpisodesOnAppear
             && lhs.fullscreenOnly == rhs.fullscreenOnly
+            && lhs.initialFullscreenLandscape == rhs.initialFullscreenLandscape
             && lhs.shareURL == rhs.shareURL
     }
 }
@@ -681,6 +684,7 @@ struct MatroskaPlayerView: View {
     var initialRate: Float?
     var options: FileVideoOptions?
     var startsFullscreen = false
+    var audioOnly = false
     @StateObject private var playback = MatroskaPlayback()
     @StateObject private var controls = VideoControlsVisibility()
     @State private var expanded = false
@@ -688,6 +692,7 @@ struct MatroskaPlayerView: View {
     @State private var leavingPlayback = false
     @State private var episodesVisible = false
     @State private var settingsVisible = false
+    private var showsMusic: Bool { audioOnly || FileVideoEpisodes.isAudio(options?.shareURL?.path ?? url.path) }
     private var playbackOptions: FileVideoOptions? {
         guard var options else { return nil }
         if playback.systemDecoderFailed {
@@ -722,16 +727,39 @@ struct MatroskaPlayerView: View {
     }
     init(url: URL, resourceLease: AnyObject? = nil, requestContext: VideoPlaybackRequestContext? = nil,
          title: String? = nil, persistPosition: Bool = true, startAt: Double? = nil, autoplay: Bool = true,
-         initialRate: Float? = nil, options: FileVideoOptions? = nil, startsFullscreen: Bool = false) {
+         initialRate: Float? = nil, options: FileVideoOptions? = nil, startsFullscreen: Bool = false,
+         audioOnly: Bool = false) {
         self.url = url; self.resourceLease = resourceLease; self.requestContext = requestContext
         self.title = title; self.persistPosition = persistPosition; self.startAt = startAt; self.autoplay = autoplay
         self.initialRate = initialRate
-        self.options = options; self.startsFullscreen = startsFullscreen
+        self.options = options; self.startsFullscreen = startsFullscreen; self.audioOnly = audioOnly
         _expanded = State(initialValue: startsFullscreen)
         let current = MediaSession.shared.soulo
         _playback = StateObject(wrappedValue: current?.sourceURL == url ? current! : MatroskaPlayback())
     }
     var body: some View {
+        Group {
+            if showsMusic {
+                MusicPlaybackView(url: options?.shareURL ?? url, title: title, options: playbackOptions,
+                    download: options?.download, close: options?.closePlayback.map { action in { action(.exitFullscreen) } })
+            } else {
+                videoContent
+            }
+        }
+        .task(id: url) {
+            guard !Task.isCancelled, !leavingPlayback else { return }
+            playback.open(url, resourceLease: resourceLease, persistPosition: persistPosition,
+                          startAt: startAt, autoplay: autoplay, requestContext: requestContext, title: title,
+                          originalURL: options?.shareURL, systemAvailable: options?.systemAvailable ?? true,
+                          systemAvailabilityPending: options?.systemAvailabilityPending ?? false, initialRate: initialRate)
+        }
+        .onCompatibleChange(of: options, initial: true) { _, options in
+            guard options?.systemAvailabilityPending != true, !playback.systemDecoderFailed else { return }
+            MediaSession.shared.updateSouloSystemAvailability(options?.systemAvailable ?? true, for: playback)
+        }
+        .onDisappear { playback.endTemporaryRate() }
+    }
+    private var videoContent: some View {
         VStack(spacing: 0) {
             if expanded || options?.fullscreenOnly == true { Color.black }
             else {
@@ -762,22 +790,11 @@ struct MatroskaPlayerView: View {
                                        resourceLease: resourceLease, title: title, options: playbackOptions)
                 .frame(width: 0, height: 0)
         }
-        .task(id: url) {
-            guard !Task.isCancelled, !leavingPlayback else { return }
-            playback.open(url, resourceLease: resourceLease, persistPosition: persistPosition,
-                                     startAt: startAt, autoplay: autoplay, requestContext: requestContext, title: title,
-                                     originalURL: options?.shareURL, systemAvailable: options?.systemAvailable ?? true,
-                                     systemAvailabilityPending: options?.systemAvailabilityPending ?? false, initialRate: initialRate) }
-        .onCompatibleChange(of: options, initial: true) { _, options in
-            guard options?.systemAvailabilityPending != true, !playback.systemDecoderFailed else { return }
-            MediaSession.shared.updateSouloSystemAvailability(options?.systemAvailable ?? true, for: playback)
-        }
         .onAppear {
             if startsFullscreen, !startedFullscreen { startedFullscreen = true; expanded = true }
             controls.show()
         }
         .onCompatibleChange(of: expanded) { _, full in if full { startedFullscreen = true } }
-        .onDisappear { playback.endTemporaryRate() }
         .sheet(isPresented: $settingsVisible) {
             NavigationStack { VideoSettingsView().toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button(ToolText.text("done")) { settingsVisible = false } }
@@ -938,6 +955,9 @@ private struct MatroskaFullscreenContent: View {
                 automaticRetryURL = source
                 playback.retry()
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+                if MediaSession.shared.webMediaContext != nil { automaticRetryURL = nil }
+            }
     }
 }
 
@@ -1006,7 +1026,8 @@ private struct MatroskaFullscreenPresenter: UIViewControllerRepresentable {
             let size = playback.player?.videoSize ?? .zero
             handingOff = false
             sharedHost = SharedVideoFullscreenHost.present(owner: ownerID, in: window, content: AnyView(content(url: url)),
-                identifier: "media.mkv.fullscreen.player", landscape: VideoOrientation.fullscreenLandscape(video: size.width > size.height, scene: scene),
+                identifier: "media.mkv.fullscreen.player", landscape: options?.initialFullscreenLandscape
+                    ?? VideoOrientation.fullscreenLandscape(video: size.width > size.height, scene: scene),
                 onClose: { [weak self] reason in self?.finish(reason: reason) })
             if sharedHost == nil {
                 if presentationRetry == nil {
@@ -1109,6 +1130,7 @@ struct FileMediaPlaybackView: View {
     private var needsSystemPresentation: Bool { initialSystemPlayer || usingSystemForPictureInPicture || airPlayActive }
     private var currentPath: String { selectedURL?.path ?? path ?? url.path }
     private var isVideo: Bool { FileVideoEpisodes.isVideo(currentPath) }
+    private var isAudio: Bool { FileVideoEpisodes.isAudio(currentPath) }
     private var usesSystem: Bool { needsSystemPresentation && nativeAvailable == true && !nativeFailed }
     private var videoPlaylist: FileVideoPlaylist? {
         guard isVideo || FileVideoEpisodes.isAudio(currentPath) else { return nil }
@@ -1169,7 +1191,8 @@ struct FileMediaPlaybackView: View {
                 ProgressView(ToolText.text("loading"))
             } else if usesSystem {
                 MediaPlaybackContent(videoOptions: options, showEpisodes: { episodesVisible = true }, airPlayRequested: $airPlayRequested,
-                                     initialFullscreen: true, fullscreenOnly: true, initialSystemPlayer: true,
+                                     initialFullscreen: !isAudio, fullscreenOnly: !isAudio, initialSystemPlayer: true,
+                                     initialTitle: (currentPath as NSString).lastPathComponent, audioOnly: isAudio,
                                      onFullscreenClose: { dismiss() })
                     .task(id: resolvedURL) {
                         guard resolvedURL == currentURL else { return }

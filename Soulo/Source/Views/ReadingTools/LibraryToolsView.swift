@@ -37,6 +37,7 @@ struct LibraryFilesView: View {
     @State private var book: LibraryBook?
     @State private var preview: LocalFile?
     @State private var extensionPackage: LocalFile?
+    @State private var extensionInstallNotice: String?
     @State private var openedDirectory: LocalFile?
     @State private var showTransfer = false
     @State private var showMedia = false
@@ -269,8 +270,11 @@ struct LibraryFilesView: View {
             LocalDocumentContent(url: file.url)
         }
         .sheet(item: $extensionPackage) { file in
-            LocalWebExtensionInstallView(url: file.url)
+            LocalWebExtensionInstallView(url: file.url) { record in
+                extensionInstallNotice = AppAccessibility.formatted("extension_installed_success_desc", record.name)
+            }
         }
+        .statusNotice($extensionInstallNotice, identifier: "files.extension-installed")
         .compatibleNavigationDestination(item: $openedDirectory) { folder in
             LibraryFilesView(directory: folder.url)
         }
@@ -432,21 +436,20 @@ struct LibraryFilesView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
-        .compatibleListSectionSpacing(20)
-        .compatibleScrollTopMargin(24)
+        .libraryListLayout(embedded: embeddedInLibrary)
         .accessibilityIdentifier("files.list")
     }
 
     private var gridContent: some View {
-        GeometryReader { geometry in
+        let margin = embeddedInLibrary ? LibraryPageLayout.horizontalMargin : 20
+        return GeometryReader { geometry in
             ScrollView {
                 queryControls
                     .padding(.horizontal, 16)
                     .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, margin)
                     .padding(.bottom, 8)
-                VStack(alignment: .leading, spacing: 12) { continueActions }.padding(.horizontal, 20)
+                VStack(alignment: .leading, spacing: 12) { continueActions }.padding(.horizontal, margin)
                 if hasLoaded && !files.isEmpty && visibleFiles.isEmpty {
                     CompatibleUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
                 }
@@ -517,7 +520,7 @@ struct LibraryFilesView: View {
                             .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, includesFolders: deletionIncludesFolders, confirm: deleteSelectedFiles)
                         }
                     }
-                    .padding(.horizontal, 20).padding(.vertical, 18)
+                    .padding(.horizontal, margin).padding(.vertical, 18)
                 }
             }
             .compatibleScrollTopMargin(24)

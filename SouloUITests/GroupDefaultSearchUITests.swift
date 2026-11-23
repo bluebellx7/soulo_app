@@ -17,6 +17,37 @@ final class GroupDefaultSearchUITests: XCTestCase {
         try await checkHomeQuickSearch(landscape: true)
     }
 
+    func testBottomHomeSearchShowsLiveSuggestionsAboveTheField() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_SEARCH_SUGGESTIONS"] == "1",
+            "Requires a reachable live suggestion service")
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "solid", "-icloud_sync_enabled", "NO",
+            "-restore_last_page_on_launch", "NO", "-home_quick_search", "NO", "-last_selected_region", "china",
+            "-home_toolbar_layout", "{placement=bottom;searchPlacement=bottom;}", "-review.requestedOnce", "YES"]
+        app.launch()
+        defer { app.terminate() }
+        let query = app.textFields["search.query"]
+        let field = app.otherElements["home.search.field"]
+        let panel = app.otherElements["home.search.suggestions"]
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(query.waitForExistence(timeout: 10))
+        query.tap()
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        query.typeText("swift")
+        XCTAssertTrue(panel.waitForExistence(timeout: 12), app.debugDescription)
+        XCTAssertTrue(panel.buttons.firstMatch.isHittable, app.debugDescription)
+        XCTAssertEqual(panel.frame.minX, field.frame.minX, accuracy: 2)
+        XCTAssertEqual(panel.frame.width, field.frame.width, accuracy: 2)
+        XCTAssertLessThan(panel.frame.maxY, field.frame.minY)
+        XCTAssertLessThanOrEqual(field.frame.maxY, keyboard.frame.minY)
+        XCTAssertFalse(app.otherElements["home.quick-search.platforms"].exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "bottom-search-suggestions"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     private func checkHomeQuickSearch(landscape: Bool) async throws {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = landscape ? .landscapeLeft : .portrait
@@ -44,6 +75,7 @@ final class GroupDefaultSearchUITests: XCTestCase {
         app.launchArguments = ["-app_language", "en-US", "-platform_management_layout", "list",
             "-wallpaper_source", "solid", "-icloud_sync_enabled", "NO", "-restore_last_page_on_launch", "NO",
             "-review.requestedOnce", "YES", "-home_toolbar_actions", "(platforms)",
+            "-home_toolbar_layout", "{placement=bottom;searchPlacement=center;}",
             "-privacy_https_upgrade_enabled", "NO", "-platform_config", try argumentData(platforms),
             "-platform_config_version", "47", "-last_selected_region", "international", "-last_selected_group_id", ""]
         app.launch()
@@ -53,9 +85,18 @@ final class GroupDefaultSearchUITests: XCTestCase {
         platformSettings.tap()
         let preference = app.switches["platform.home-quick-search"]
         XCTAssertTrue(preference.waitForExistence(timeout: 5), app.debugDescription)
-        if preference.value as? String == "0" {
+        if preference.value as? String == "1" {
             preference.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
         }
+        XCTAssertFalse(app.buttons["platform.guide.done"].exists)
+        preference.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        let guide = app.staticTexts["platform.guide.quickSearch"]
+        XCTAssertTrue(guide.waitForExistence(timeout: 5), app.debugDescription)
+        let guideScreenshot = XCTAttachment(screenshot: app.screenshot())
+        guideScreenshot.name = "platform-quick-search-guide"
+        guideScreenshot.lifetime = .keepAlways
+        add(guideScreenshot)
+        app.buttons["platform.guide.done"].tap()
         XCTAssertEqual(preference.value as? String, "1")
         app.terminate()
         app.launch()

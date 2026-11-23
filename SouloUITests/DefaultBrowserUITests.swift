@@ -113,7 +113,8 @@ final class DefaultBrowserUITests: XCTestCase {
         let closeOthers = app.buttons["Close Other Tabs"].firstMatch
         if closeOthers.exists { closeOthers.tap() }
         else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).tap() }
-        app.buttons["tabs.tab_new_tab"].tap()
+        app.buttons["tabs.options"].tap()
+        app.buttons["tabs.new-tab"].tap()
         app.open(try XCTUnwrap(URL(string: "https://www.swift.org/documentation/")))
         XCTAssertTrue(app.webViews.staticTexts["Swift Documentation"].firstMatch.waitForExistence(timeout: 45), app.debugDescription)
         app.buttons["browser.tabs"].tap()
@@ -122,7 +123,8 @@ final class DefaultBrowserUITests: XCTestCase {
         XCTAssertTrue(docs.waitForExistence(timeout: 10) && site.exists, app.debugDescription)
         XCTAssertLessThan(docs.frame.minY, site.frame.minY)
         XCTAssertLessThan(docs.frame.minY, app.frame.height * 0.25)
-        let oldSite = app.scrollViews["tabs.group-row.host:swift.org"].buttons.firstMatch
+        let siteRow = app.descendants(matching: .any).matching(identifier: "tabs.group-row.host:swift.org").firstMatch
+        let oldSite = siteRow.buttons.firstMatch
         XCTAssertTrue(oldSite.isHittable, app.debugDescription)
         oldSite.tap()
         XCTAssertTrue(app.webViews.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Swift")).firstMatch.waitForExistence(timeout: 30))
@@ -143,6 +145,9 @@ final class DefaultBrowserUITests: XCTestCase {
         settingsButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), app.debugDescription)
 
+        let browsing = app.buttons["settings.browsingDisplay"]
+        XCTAssertTrue(browsing.waitForExistence(timeout: 10), app.debugDescription)
+        browsing.tap()
         let entry = app.buttons["settings.defaultBrowser"]
         for _ in 0..<6 {
             if entry.exists && entry.isHittable { break }
@@ -220,7 +225,8 @@ final class DefaultBrowserUITests: XCTestCase {
             ["Share", "共享", "分享"], ["Share", "ToolbarShareButton"])).firstMatch
         if !share.exists {
             // iOS 26's compact toolbar keeps Share in the More menu.
-            let more = safari.buttons.matching(NSPredicate(format: "label IN %@", ["More", "更多"])).firstMatch
+            let more = safari.buttons.matching(NSPredicate(format: "identifier == %@ OR label IN %@",
+                "MoreMenuButton", ["More", "更多", "页面菜单"])).firstMatch
             guard more.waitForExistence(timeout: 10) else { XCTFail(safari.debugDescription); return }
             more.tap()
         }

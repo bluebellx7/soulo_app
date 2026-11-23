@@ -12,17 +12,19 @@ import CryptoKit
 /// native iOS equivalent.
 enum WebExtensionPackagePreparer {
     static let preparedResourceName = "Extension"
-    static var compatibilitySourceForTesting: String { compatibilityJavaScript }
-    static var nativeBindingsSourceForTesting: String { nativeBindingsJavaScript }
+    private static let requiredWebRequestKey = "__soulo_required_web_request"
+    private static let managedPermissionNames = ["downloads", "offscreen", "userScripts", "proxy"]
+    static var compatibilitySourceForTesting: String { nativeBindingsJavaScript() + compatibilityBridgeJavaScript }
+    static var nativeBindingsSourceForTesting: String { nativeBindingsJavaScript() }
     static var mediaLayoutSourceForTesting: String { ExtensionMediaLayoutScript.javaScript }
 
-    static func prepare(sourceURL: URL, in installDirectory: URL) throws -> URL {
+    static func prepare(sourceURL: URL, in installDirectory: URL, reusingInstalledResources: Bool = false) async throws -> URL {
         let destination = installDirectory.appendingPathComponent(
             preparedResourceName,
             isDirectory: true
         )
         if sourceURL.standardizedFileURL == destination.standardizedFileURL {
-            try installCompatibilityLayer(in: destination)
+            try await installCompatibilityLayer(in: destination, reusingInstalledResources: reusingInstalledResources)
             return destination
         }
 
@@ -48,7 +50,7 @@ enum WebExtensionPackagePreparer {
                 try SafeZIPExtractor.extract(zipData, to: destination)
             }
             preparationStage = "compatibility"
-            try installCompatibilityLayer(in: destination)
+            try await installCompatibilityLayer(in: destination, reusingInstalledResources: reusingInstalledResources)
             return destination
         } catch {
             BrowserStartupTrace.mark("extension_prepare_failure", detail: preparationStage + ":" + String(describing: error))
@@ -58,7 +60,7 @@ enum WebExtensionPackagePreparer {
         }
     }
 
-    static func installCompatibilityLayer(in resourceDirectory: URL) throws {
+    static func installCompatibilityLayer(in resourceDirectory: URL, reusingInstalledResources: Bool = true) async throws {
         try validateResourceTree(in: resourceDirectory)
         let manifestURL = resourceDirectory.appendingPathComponent("manifest.json")
         guard let manifestData = try? Data(contentsOf: manifestURL),
@@ -68,9 +70,11 @@ enum WebExtensionPackagePreparer {
         }
         try requireBackgroundFiles(in: manifest, root: resourceDirectory)
         let originalManifest = manifest
+        if !reusingInstalledResources { manifest.removeValue(forKey: requiredWebRequestKey) }
 
         // A declarative Chrome panel can use the same native presentation as
         // extension popups on iPhone. Preserve any publisher-supplied popup.
+        let panelFallbackMarker = resourceDirectory.appendingPathComponent("__soulo_synthesized_panel_popup")
         if let panel = manifest["side_panel"] as? [String: Any],
            let path = panel["default_path"] as? String,
            var action = manifest["action"] as? [String: Any],
@@ -80,7 +84,11 @@ enum WebExtensionPackagePreparer {
            (try? page.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true {
             action["default_popup"] = String(path.drop(while: { $0 == "/" }))
             manifest["action"] = action
+            try Data().write(to: panelFallbackMarker, options: .atomic)
         }
+        let nativeBindings = nativeBindingsJavaScript(
+            synthesizedPanelPopup: FileManager.default.fileExists(atPath: panelFallbackMarker.path)
+        )
 
         // Chrome's explicit wildcard ports are not portable to WebKit.
         // Omitting the port already matches every port; fixed ports stay intact.
@@ -93,18 +101,34 @@ enum WebExtensionPackagePreparer {
             }
         }
 
+        // Chrome uses its host grants for redirects and header rewrites.
+        // WebKit additionally requires this permission, which is reviewed
+        // with the same manifest and still subject to the user's site grants.
+        if var permissions = manifest["permissions"] as? [String],
+           permissions.contains("declarativeNetRequest"),
+           (manifest["host_permissions"] as? [String])?.isEmpty == false,
+           !permissions.contains("declarativeNetRequestWithHostAccess"),
+           (manifest["optional_permissions"] as? [String])?.contains("declarativeNetRequestWithHostAccess") != true {
+            permissions.append("declarativeNetRequestWithHostAccess")
+            manifest["permissions"] = permissions
+        }
+        try protectLocalExtensionResources(in: resourceDirectory, manifest: &manifest)
+
         _ = try WebExtensionTYTYAdapter.prepare(in: resourceDirectory, manifest: &manifest)
         if let background = manifest["background"] as? [String: Any],
            let worker = background["service_worker"] as? String,
            (background["type"] as? String)?.lowercased() != "module" {
             let original = try originalWorkerURL(worker, isModule: false, in: resourceDirectory)
             try repairImageyePopupSelection(worker: original, manifest: manifest)
-            // Keep the already verified publisher-specific migration intact.
-            if try !WebExtensionTampermonkeyAdapter.prepare(worker: original, root: resourceDirectory, manifest: &manifest) {
-                try installClassicBackground(in: resourceDirectory, worker: original, manifest: &manifest)
+            if let scripts = verifiedEventPageScripts(in: resourceDirectory, worker: original, manifest: manifest)
+                ?? WebExtensionQuickSnipAdapter.eventPageScripts(worker: original, manifest: manifest) {
+                manifest["background"] = ["scripts": scripts, "persistent": false]
+            } else if try !WebExtensionTampermonkeyAdapter.prepare(worker: original, root: resourceDirectory, manifest: &manifest) {
+                try await installClassicBackground(in: resourceDirectory, worker: original, manifest: &manifest)
             }
         }
-        try installNativeBindings(in: resourceDirectory, manifest: &manifest)
+        try WebExtensionGoFullPageAdapter.prepare(in: resourceDirectory, manifest: &manifest)
+        try installNativeBindings(nativeBindings, in: resourceDirectory, manifest: &manifest)
         let permissions = (manifest["permissions"] as? [String]) ?? []
         let declaredPermissions = permissions + (manifest["optional_permissions"] as? [String] ?? [])
         let needsNotifications = declaredPermissions.contains("notifications")
@@ -115,12 +139,16 @@ enum WebExtensionPackagePreparer {
         let hasRequiredHosts = (manifest["host_permissions"] as? [String])?.isEmpty == false
             || permissions.contains { $0 == "<all_urls>" || $0.contains("://") }
         let needsTabMetadata = declaredPermissions.contains("tabs") && !hasRequiredHosts
+        let needsNativeBridge = needsNotifications || needsOffscreen || needsDownloads || needsUserScripts
+            || needsProxy || needsTabMetadata || manifest["commands"] != nil
+        let needsBadgeColors = !needsNativeBridge && (manifest["action"] != nil || manifest["browser_action"] != nil)
+            && publisherUsesBadgeTextColor(in: resourceDirectory)
         if needsDownloads || needsUserScripts || manifest["commands"] != nil || needsNotifications || needsOffscreen {
             try Data("<!doctype html><meta charset='utf-8'><title>Download</title>".utf8)
                 .write(to: resourceDirectory.appendingPathComponent(WebExtensionDownloadsScript.helperFilename), options: .atomic)
         }
-        guard needsNotifications || needsOffscreen || needsDownloads || needsUserScripts || needsProxy
-                || needsTabMetadata || manifest["commands"] != nil else {
+        guard needsNativeBridge || needsBadgeColors else {
+            try prepareUTF8BackgroundPage(in: resourceDirectory, manifest: &manifest)
             // Plain packages need no manifest rewrite. Preserve their original
             // bytes while still persisting actual worker/port migrations.
             if !(manifest as NSDictionary).isEqual(originalManifest as NSDictionary) {
@@ -138,7 +166,7 @@ enum WebExtensionPackagePreparer {
 
         let compatibilityFilename = "__soulo_webextension_compatibility.js"
         let compatibilityURL = resourceDirectory.appendingPathComponent(compatibilityFilename)
-        try Data((compatibilityJavaScript + WebExtensionFastStreamSourceAdapter.source(in: resourceDirectory)).utf8).write(to: compatibilityURL, options: .atomic)
+        try Data((nativeBindings + compatibilityBridgeJavaScript + WebExtensionFastStreamSourceAdapter.source(in: resourceDirectory)).utf8).write(to: compatibilityURL, options: .atomic)
 
         if var background = manifest["background"] as? [String: Any] {
             if let serviceWorker = background["service_worker"] as? String {
@@ -154,15 +182,16 @@ enum WebExtensionPackagePreparer {
                 let wrapperName = (relativeDirectory + ["__soulo_webextension_background_v4.js"]).joined(separator: "/")
                 let compatibilityImport = relativeDirectory.isEmpty ? "./\(compatibilityFilename)"
                     : String(repeating: "../", count: relativeDirectory.count) + compatibilityFilename
-                let escapedWorker = javaScriptString("./" + workerURL.lastPathComponent)
                 let frameImport = relativeDirectory.isEmpty ? "./" + ExtensionFrameMessagingScript.backgroundFilename
                     : String(repeating: "../", count: relativeDirectory.count) + ExtensionFrameMessagingScript.backgroundFilename
-                let wrapper: String
-                if isModule {
-                    wrapper = "import \"\(compatibilityImport)\";\nimport \"\(frameImport)\";\nimport \"\(escapedWorker)\";\n"
-                } else {
-                    wrapper = "importScripts(\"\(compatibilityImport)\", \"\(frameImport)\", \"\(escapedWorker)\");\n"
+                var imports = [compatibilityImport, frameImport]
+                if needsDownloads && !isModule {
+                    imports.append(String(repeating: "../", count: relativeDirectory.count) + WebExtensionBlobScript.backgroundFilename)
                 }
+                imports.append("./" + workerURL.lastPathComponent)
+                let quoted = imports.map { "\"" + javaScriptString($0) + "\"" }
+                let wrapper = isModule ? quoted.map { "import \($0);\n" }.joined()
+                    : "importScripts(\(quoted.joined(separator: ", ")));\n"
                 try Data(wrapper.utf8).write(
                     to: try resourceURL(wrapperName, in: resourceDirectory),
                     options: .atomic
@@ -201,7 +230,8 @@ enum WebExtensionPackagePreparer {
             }
         }
 
-        if needsDownloads { try installBlobBackground(in: resourceDirectory, manifest: &manifest) }
+        if needsDownloads { try installBlobBackground(nativeBindings, in: resourceDirectory, manifest: &manifest) }
+        try prepareUTF8BackgroundPage(in: resourceDirectory, manifest: &manifest)
         let updatedManifest = try JSONSerialization.data(
             withJSONObject: manifest,
             options: [.prettyPrinted, .sortedKeys]
@@ -209,7 +239,150 @@ enum WebExtensionPackagePreparer {
         try updatedManifest.write(to: manifestURL, options: .atomic)
     }
 
+    private static func publisherUsesBadgeTextColor(in root: URL) -> Bool {
+        guard let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey]) else { return false }
+        let scriptExtensions: Set<String> = ["js", "mjs", "cjs", "html", "htm"]
+        let names = [Data("setBadgeTextColor".utf8), Data("getBadgeTextColor".utf8)]
+        for case let file as URL in files where scriptExtensions.contains(file.pathExtension.lowercased()) {
+            guard !file.lastPathComponent.hasPrefix("__soulo_"),
+                  (try? file.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true,
+                  let source = try? Data(contentsOf: file, options: .mappedIfSafe) else { continue }
+            if names.contains(where: { source.range(of: $0) != nil }) { return true }
+        }
+        return false
+    }
+
+    static func prepareClassicBackgroundRetry(in root: URL) async throws -> Data? {
+        let manifestURL = root.appendingPathComponent("manifest.json")
+        let backup = try Data(contentsOf: manifestURL)
+        guard var manifest = try JSONSerialization.jsonObject(with: backup) as? [String: Any],
+              let background = manifest["background"] as? [String: Any],
+              let worker = background["service_worker"] as? String,
+              (background["type"] as? String)?.lowercased() != "module" else { return nil }
+        let original = try originalWorkerURL(worker, isModule: false, in: root)
+        let source = try String(contentsOf: original, encoding: .utf8)
+        guard source.utf8.count <= 8_000_000 else { return nil }
+        let parser = try await WebExtensionSourceAnalyzer(function: WebExtensionClassicImports.javaScript)
+        if let imports = try await parser.analyze(source, as: [String].self), imports.isEmpty {
+            let base = root.resolvingSymlinksInPath().standardizedFileURL.path + "/"
+            guard original.path.hasPrefix(base) else { return nil }
+            let entry = String(original.path.dropFirst(base.count))
+            manifest["background"] = ["scripts": [entry], "persistent": false]
+        } else {
+            try await installClassicBackground(in: root, worker: original, manifest: &manifest, allowsGuardedRetry: true)
+            guard (manifest["background"] as? [String: Any])?["scripts"] != nil else { return nil }
+        }
+        try Task.checkCancellation()
+        try JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys])
+            .write(to: manifestURL, options: .atomic)
+        return backup
+    }
+
     private static let nativeBindingsFilename = "__soulo_webextension_native_bindings.js"
+    private static let localExtensionRulesetID = "__soulo_local_extension_resources"
+
+    static func requestedPermissions(in manifest: [String: Any]) -> [String] {
+        var entries = manifest["permissions"] as? [String] ?? []
+        if manifest[requiredWebRequestKey] as? Bool == true,
+           (manifest["optional_permissions"] as? [String])?.contains("webRequest") == true,
+           !entries.contains("webRequest") {
+            entries.append("webRequest")
+        }
+        return entries
+    }
+
+    static func managedOptionalPermissions(in manifest: [String: Any]) -> [String] {
+        (manifest["optional_permissions"] as? [String] ?? []).filter { managedPermissionNames.contains($0) }
+    }
+
+    /// iOS 18 rejects required webRequest during manifest validation, but
+    /// exposes its native events when the same permission is explicitly granted.
+    /// Keep the publisher's request in Soulo's review and permission settings.
+    static func prepareNonpersistentWebRequest(at manifestURL: URL) throws -> Data? {
+        let original = try Data(contentsOf: manifestURL)
+        guard var manifest = try JSONSerialization.jsonObject(with: original) as? [String: Any],
+              manifest["manifest_version"] as? Int == 3,
+              let background = manifest["background"] as? [String: Any],
+              background["persistent"] as? Bool != true,
+              var permissions = manifest["permissions"] as? [String], permissions.contains("webRequest") else { return nil }
+        permissions.removeAll { $0 == "webRequest" }
+        var optional = manifest["optional_permissions"] as? [String] ?? []
+        if !optional.contains("webRequest") { optional.append("webRequest") }
+        manifest["permissions"] = permissions
+        manifest["optional_permissions"] = optional
+        manifest[requiredWebRequestKey] = true
+        try JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys])
+            .write(to: manifestURL, options: .atomic)
+        return original
+    }
+
+    private static func protectLocalExtensionResources(in root: URL, manifest: inout [String: Any]) throws {
+        let declared = (manifest["permissions"] as? [String] ?? []) + (manifest["optional_permissions"] as? [String] ?? [])
+        guard declared.contains("declarativeNetRequest") || declared.contains("declarativeNetRequestWithHostAccess") else { return }
+        var networkRules = manifest["declarative_net_request"] as? [String: Any] ?? [:]
+        var resources = networkRules["rule_resources"] as? [[String: Any]] ?? []
+        // WebKit applies an extension's rule list to its own UI and background.
+        // A static allow also covers already-persisted dynamic rules on launch.
+        // Match the requested URL so HTTP(S) fetches from those pages still use DNR.
+        let identifier = localExtensionRulesetID
+        let filename = identifier + ".json"
+        if !resources.contains(where: { $0["id"] as? String == identifier && $0["path"] as? String == filename }) {
+            resources.insert(["id": identifier, "enabled": true, "path": filename], at: 0)
+            networkRules["rule_resources"] = resources
+            manifest["declarative_net_request"] = networkRules
+        }
+        let allow: [[String: Any]] = [[
+            "id": 1, "priority": Int32.max, "action": ["type": "allow"],
+            "condition": [
+                "urlFilter": "|webkit-extension://",
+                "resourceTypes": ["main_frame", "sub_frame", "script", "stylesheet", "image", "font",
+                                  "xmlhttprequest", "media", "ping", "websocket", "other"]
+            ]
+        ]]
+        try JSONSerialization.data(withJSONObject: allow, options: .sortedKeys)
+            .write(to: root.appendingPathComponent(filename), options: .atomic)
+    }
+
+    private static func prepareUTF8BackgroundPage(in root: URL, manifest: inout [String: Any]) throws {
+        guard var background = manifest["background"] as? [String: Any],
+              background["page"] == nil, background["service_worker"] != nil,
+              background["type"] as? String != "module", background["preferred_environment"] == nil,
+              let scripts = background["scripts"] as? [String], !scripts.isEmpty else { return }
+        // Dual-environment Chromium/Firefox manifests give WebKit a classic
+        // script list. Declare UTF-8 explicitly for that existing environment.
+        let html = try scripts.map { reference -> String in
+            _ = try resourceURL(reference, in: root)
+            guard let encoded = URLComponents(string: reference)?.percentEncodedPath else { throw BrowserExtensionError.invalidExtension }
+            let path = ("/" + String(encoded.drop(while: { $0 == "/" })))
+                .replacingOccurrences(of: "&", with: "&amp;")
+            return "<script src=\"\(path)\"></script>"
+        }.joined(separator: "\n")
+        let page = "__soulo_utf8_background.html"
+        try Data(("<!doctype html><meta charset=\"utf-8\">\n" + html).utf8)
+            .write(to: root.appendingPathComponent(page), options: .atomic)
+        background.removeValue(forKey: "scripts")
+        background.removeValue(forKey: "service_worker")
+        background["page"] = page
+        manifest["background"] = background
+    }
+    private static let idleCallbacksFilename = "__soulo_content_idle_callbacks.js"
+    private static let idleCallbacks = #"""
+    (()=>{
+      if(typeof globalThis.requestIdleCallback==='function')return;
+      const request=(callback,options)=>{
+        const scheduled=performance.now();
+        const timeout=options?.timeout;
+        return setTimeout(()=>{
+          const start=performance.now(),didTimeout=typeof timeout==='number'&&start-scheduled>=timeout;
+          callback({didTimeout,timeRemaining:()=>didTimeout?0:Math.max(0,8-(performance.now()-start))});
+        },0);
+      };
+      Object.defineProperties(globalThis,{
+        requestIdleCallback:{configurable:true,writable:true,value:request},
+        cancelIdleCallback:{configurable:true,writable:true,value:id=>clearTimeout(id)}
+      });
+    })();
+    """#
 
     private static func repairImageyePopupSelection(worker: URL, manifest: [String: Any]) throws {
         guard manifest["version"] as? String == "7.5.7", worker.lastPathComponent == "background.js",
@@ -228,19 +401,58 @@ enum WebExtensionPackagePreparer {
         try updated.write(to: worker, options: .atomic)
     }
 
-    /// Classic workers with a literal, initial import list can run as an event
-    /// page without evaluating or rewriting their program. Dynamic imports,
-    /// modules and service-worker-only APIs keep their native execution path.
-    private static func installClassicBackground(in root: URL, worker: URL, manifest: inout [String: Any]) throws {
+    private static func verifiedEventPageScripts(in root: URL, worker: URL, manifest: [String: Any]) -> [String]? {
+        let entry = root.resolvingSymlinksInPath().standardizedFileURL.appendingPathComponent("background.js")
+        guard worker.path == entry.path, let permissions = manifest["permissions"] as? [String] else { return nil }
+        let expectedHash: String
+        switch manifest["version"] as? String {
+        case "4.52.0" where permissions.contains("declarativeNetRequestWithHostAccess"):
+            // Adblock Plus loses popup messages after its worker idles on iOS 18.
+            expectedHash = "313fab898ae9977d770b2fbad9b682d3ae80067ca72c047089433cc044308dc7"
+        case "4.0.4" where permissions.contains("offscreen") && permissions.contains("downloads"):
+            // FetchV's worker misses native video requests in a browser tab.
+            // Its original listeners handle the same requests in an event page.
+            expectedHash = "09b0602ddbc3881a5abcb749f3357c44a36713b7bf87f5c4f5fe90a3e74b24ff"
+        default:
+            return nil
+        }
+        guard let bytes = try? Data(contentsOf: worker, options: .mappedIfSafe),
+              SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined() == expectedHash else { return nil }
+        return ["background.js"]
+    }
+
+    /// Move classic backgrounds with a static import list to an event page.
+    /// Also use an event page for debugger-dependent Chrome backgrounds when
+    /// the same parser confirms they have no worker-only APIs.
+    private static func installClassicBackground(in root: URL, worker: URL, manifest: inout [String: Any],
+                                                 allowsGuardedRetry: Bool = false) async throws {
+        let usesDebugger = (manifest["permissions"] as? [String])?.contains("debugger") == true
         guard let initial = try? String(contentsOf: worker, encoding: .utf8),
-              initial.utf8.count <= 8_000_000, initial.contains("importScripts"), let parser = WebExtensionClassicImports.makeParser(),
-              let firstImports = parser.call(withArguments: [initial])?.toArray() as? [String],
-              !firstImports.isEmpty else { return }
+              initial.utf8.count <= 8_000_000, usesDebugger || initial.contains("importScripts") else { return }
+        guard let parser = try? await WebExtensionSourceAnalyzer(function: WebExtensionClassicImports.javaScript) else { return }
+        let directImports = try? await parser.analyze(initial, as: [String].self)
+        let entryImports: [String]?
+        if let directImports {
+            entryImports = directImports
+        } else if allowsGuardedRetry {
+            entryImports = try? await parser.analyze(initial, as: [String].self, mode: "guarded-entry")
+        } else {
+            entryImports = nil
+        }
+        guard let firstImports = entryImports else {
+            try Task.checkCancellation()
+            return
+        }
         let base = root.resolvingSymlinksInPath().standardizedFileURL
         func relative(_ file: URL) -> String { String(file.standardizedFileURL.path.dropFirst(base.path.count + 1)) }
+        if firstImports.isEmpty {
+            if usesDebugger { manifest["background"] = ["scripts": [relative(worker)], "persistent": false] }
+            return
+        }
         var ordered: [URL] = [], discovered = Set<URL>()
         var remainingBytes = 8_000_000 - initial.utf8.count
-        func visit(_ file: URL, knownImports: [String]? = nil) throws -> Bool {
+        func visit(_ file: URL, knownImports: [String]? = nil) async throws -> Bool {
+            try Task.checkCancellation()
             let file = file.resolvingSymlinksInPath().standardizedFileURL
             // Re-importing a script can intentionally repeat side effects.
             // Leave those programs on their original native worker path.
@@ -250,19 +462,20 @@ enum WebExtensionPackagePreparer {
                 dependencies = knownImports
             } else {
                 guard let source = try? String(contentsOf: file, encoding: .utf8), source.utf8.count <= remainingBytes,
-                      let imports = parser.call(withArguments: [source])?.toArray() as? [String] else { return false }
+                      let imports = try? await parser.analyze(source, as: [String].self,
+                          mode: directImports == nil ? "guarded-dependency" : "") else { return false }
                 remainingBytes -= source.utf8.count
                 dependencies = imports
             }
             for reference in dependencies {
                 let next = reference.hasPrefix("/") ? base.appendingPathComponent(String(reference.dropFirst()))
                     : worker.deletingLastPathComponent().appendingPathComponent(reference)
-                guard try visit(next) else { return false }
+                guard try await visit(next) else { return false }
             }
             ordered.append(file)
             return true
         }
-        guard try visit(worker, knownImports: firstImports) else { return }
+        guard try await visit(worker, knownImports: firstImports) else { return }
         let paths = ordered.map(relative)
         let encoded = String(decoding: try JSONEncoder().encode(paths), as: UTF8.self)
         let entry = String(decoding: try JSONEncoder().encode(relative(worker)), as: UTF8.self)
@@ -283,16 +496,140 @@ enum WebExtensionPackagePreparer {
     /// WebKit native API functions require their owning object as receiver.
     /// Chrome extensions also call i18n through detached references and Proxy.
     /// Plain JavaScript wrappers preserve that receiver in every calling form.
-    private static let nativeBindingsJavaScript = #"""
+    private static func nativeBindingsJavaScript(synthesizedPanelPopup: Bool = false) -> String {
+        let supportsRequestMethods: Bool
+        if #available(iOS 26, *) { supportsRequestMethods = true }
+        else { supportsRequestMethods = false }
+        return #"""
     (()=>{
+      // Some Chromium extensions read the brand list without checking for
+      // Client Hints. WebKit has no Chromium brand to report.
+      const navigator=globalThis.navigator;
+      if(globalThis.location?.protocol==='webkit-extension:'&&navigator&&!navigator.userAgentData){
+        const ua=navigator.userAgent||'';
+        const mobile=/\b(iPhone|iPad|iPod)\b/i.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+        const brands=Object.freeze([]),platform=mobile?'iOS':(/Macintosh/.test(ua)?'macOS':'');
+        const lowEntropy=()=>({brands,mobile,platform});
+        const version=ua.match(mobile?/\bOS ([\d_]+)/:/\bMac OS X ([\d_]+)/)?.[1]?.replaceAll('_','.')||'';
+        try{Object.defineProperty(navigator,'userAgentData',{configurable:true,value:Object.freeze({
+          ...lowEntropy(),toJSON:lowEntropy,
+          async getHighEntropyValues(hints){
+            const result=lowEntropy();
+            if(hints.includes('fullVersionList'))result.fullVersionList=brands;
+            if(hints.includes('platformVersion'))result.platformVersion=version;
+            return result;
+          }
+        })});}catch(_){}
+      }
       // Native namespace accessors can recreate weakly held JS wrappers after
       // GC. Keep their owners reachable so installed methods survive between
       // the bootstrap, publisher scripts and later user interactions.
       const retained=globalThis.__souloNativeBindingsObjects||(globalThis.__souloNativeBindingsObjects=[]);
+      // Match the types accepted by native WebKit when it omits the enum.
+      const resourceTypes={
+        MAIN_FRAME:'main_frame',SUB_FRAME:'sub_frame',STYLESHEET:'stylesheet',SCRIPT:'script',IMAGE:'image',
+        FONT:'font',OBJECT:'object',XMLHTTPREQUEST:'xmlhttprequest',PING:'ping',CSP_REPORT:'csp_report',
+        MEDIA:'media',WEBSOCKET:'websocket',OTHER:'other'
+      };
+      const localResourceRuleset='\#(localExtensionRulesetID)';
+      const publisherRulesets=ids=>Array.isArray(ids)?ids.filter(id=>id!==localResourceRuleset):ids;
+      const wrapMethod=(owner,key,wrap)=>{
+        const native=owner?.[key];
+        if(typeof native!=='function'||native.__souloRulesetBinding)return;
+        const bound=wrap(native,owner);
+        Object.defineProperty(bound,'__souloRulesetBinding',{value:true});
+        try{Object.defineProperty(owner,key,{configurable:true,writable:true,value:bound});}catch(_){}
+      };
+      const ungroupedTab=tab=>Number.isInteger(tab?.id)&&tab.groupId==null?{...tab,groupId:-1}:tab;
+      const mapResult=(value,transform)=>Array.isArray(value)?value.map(transform):transform(value);
+      const tabResultOwners=globalThis.__souloUngroupedTabResultOwners||(globalThis.__souloUngroupedTabResultOwners=new WeakSet());
+      const wrapResult=(original,owner,transform)=>function(...args){
+        const callback=args.at(-1);
+        if(typeof callback==='function'){
+          args[args.length-1]=function(value){return callback.call(this,mapResult(value,transform));};
+          return Reflect.apply(original,owner,args);
+        }
+        const promise=Reflect.apply(original,owner,args);
+        return typeof promise?.then==='function'?promise.then(value=>mapResult(value,transform)):promise;
+      };
+      const wrapTabResults=(owner,methods,transform)=>{
+        if(!owner||tabResultOwners.has(owner))return;
+        tabResultOwners.add(owner);
+        for(const method of methods)wrapMethod(owner,method,(original,receiver)=>wrapResult(original,receiver,transform));
+      };
+      const wrapTabEvent=(owner,key,position)=>{
+        const event=owner?.[key];
+        const add=event?.addListener,remove=event?.removeListener,has=event?.hasListener;
+        if(typeof add!=='function'||add.__souloUngroupedTabEvent||typeof remove!=='function'||typeof has!=='function')return;
+        const listeners=new WeakMap();
+        const addListener=function(listener,...filters){
+          if(typeof listener!=='function')return add.call(event,listener,...filters);
+          let callback=listeners.get(listener);
+          if(!callback){
+            callback=function(...args){
+              if(args.length>position)args[position]=ungroupedTab(args[position]);
+              return Reflect.apply(listener,this,args);
+            };
+            listeners.set(listener,callback);
+          }
+          return add.call(event,callback,...filters);
+        };
+        Object.defineProperty(addListener,'__souloUngroupedTabEvent',{value:true});
+        try{
+          Object.defineProperties(event,{
+            removeListener:{configurable:true,writable:true,value:listener=>remove.call(event,listeners.get(listener)||listener)},
+            hasListener:{configurable:true,writable:true,value:listener=>has.call(event,listeners.get(listener)||listener)},
+            addListener:{configurable:true,writable:true,value:addListener}
+          });
+          if(!retained.includes(event))retained.push(event);
+        }catch(_){}
+      };
+      let sessionRuleWrite=Promise.resolve();
       for(const namespace of [globalThis.chrome,globalThis.browser]){
         if(!namespace)continue;
-        for(const object of [namespace,...['i18n','tabs','runtime','permissions','webRequest','webNavigation','scripting'].map(key=>namespace[key])]){
+        for(const object of [namespace,...['i18n','tabs','windows','action','browserAction','pageAction','runtime','extension','permissions','webRequest','declarativeNetRequest','webNavigation','scripting','storage'].map(key=>namespace[key])]){
           if(object&&!retained.includes(object))retained.push(object);
+        }
+        if(!globalThis.chrome?.tabGroups&&!globalThis.browser?.tabGroups){
+          // Chrome includes the ungrouped sentinel on every local tab. Older
+          // WebKit omits it from both tab queries and toolbar click events.
+          wrapTabResults(namespace.tabs,['query','get','getCurrent','create','update','duplicate','move','discard'],ungroupedTab);
+          const populate=window=>Array.isArray(window?.tabs)?{...window,tabs:window.tabs.map(ungroupedTab)}:window;
+          wrapTabResults(namespace.windows,['get','getCurrent','getLastFocused','getAll','create','update'],populate);
+          wrapTabEvent(namespace.tabs,'onCreated',0);
+          wrapTabEvent(namespace.tabs,'onUpdated',2);
+          for(const action of [namespace.action,namespace.browserAction,namespace.pageAction]){
+            wrapTabEvent(action,'onClicked',0);
+          }
+        }
+        const windows=namespace.windows,tabs=namespace.tabs;
+        if(windows&&typeof windows.create!=='function'&&typeof windows.getCurrent==='function'&&typeof tabs?.create==='function'){
+          // Older iOS WebKit exposes one browser window and omits windows.create.
+          // Match the native Soulo delegate by opening its URLs in that window.
+          const open=async(options={})=>{
+            const {url,focused=true,incognito=false,type='normal',state='normal',tabId}=options;
+            if(incognito||type!=='normal'||state!=='normal'||tabId!==undefined)
+              throw new Error('Only standard browser tabs can be opened on this system.');
+            const urls=Array.isArray(url)?url:url===undefined?[]:[url];
+            if(urls.some(address=>typeof address!=='string')||typeof focused!=='boolean')
+              throw new TypeError('Invalid windows.create options.');
+            const window=await windows.getCurrent();
+            if(!Number.isInteger(window?.id)||window.incognito)throw new Error('The browser window is unavailable.');
+            const created=[];
+            for(const address of urls.length?urls:[undefined]){
+              const request={windowId:window.id,active:focused&&created.length===0};
+              if(address!==undefined)request.url=address;
+              created.push(await tabs.create(request));
+            }
+            return {...window,tabs:created};
+          };
+          const create=function(options,callback){
+            if(typeof options==='function'){callback=options;options=undefined;}
+            const operation=open(options);
+            if(typeof callback!=='function')return operation;
+            operation.then(callback,()=>callback(undefined));
+          };
+          try{Object.defineProperty(windows,'create',{configurable:true,writable:true,value:create});}catch(_){}
         }
         const installEnum=(object,name,values)=>{
           if(!object||object[name])return;
@@ -302,6 +639,21 @@ enum WebExtensionPackagePreparer {
           INSTALL:'install',UPDATE:'update',CHROME_UPDATE:'chrome_update',SHARED_MODULE_UPDATE:'shared_module_update'
         });
         const runtime = namespace.runtime;
+        // Existing Chrome packages still call the deprecated getURL alias.
+        // Native runtime.getURL keeps URL resolution within the current context.
+        if (typeof runtime?.getURL === 'function') {
+          const extension = namespace.extension || {};
+          try {
+            if (typeof extension.getURL !== 'function') {
+              Object.defineProperty(extension, 'getURL', {
+                configurable: true, writable: true, value: runtime.getURL.bind(runtime)
+              });
+            }
+            if (!namespace.extension) {
+              Object.defineProperty(namespace, 'extension', {configurable: true, value: extension});
+            }
+          } catch (_) {}
+        }
         if (runtime && !runtime.onUpdateAvailable) {
           // Soulo installs extension updates after review. It has no staged,
           // background update to announce through Chrome's event.
@@ -315,31 +667,125 @@ enum WebExtensionPackagePreparer {
         }
         const permissions = namespace.permissions;
         const contains = permissions?.contains;
-        if (typeof contains === 'function' && !contains.__souloPrivacyQuery) {
-          // Older WebKit rejects Chrome's unsupported optional privacy
-          // permission synchronously. A read-only query can report it absent.
+        if (typeof contains === 'function' && !contains.__souloPermissionQuery) {
+          // Older WebKit throws on queries for unknown Chrome permissions.
+          // An unsupported read-only query can report the permission absent.
           // Preserve native validation and all grants, requests and events.
           const wrapped = function(request, callback) {
             try { return Reflect.apply(contains, permissions, arguments); }
             catch (error) {
-              const privacyOnly = request && Object.keys(request).length === 1
-                && Array.isArray(request.permissions) && request.permissions.length === 1
-                && request.permissions[0] === 'privacy';
-              if (!privacyOnly || namespace.privacy || arguments.length > 2
+              const name = request && Object.keys(request).length === 1 && Array.isArray(request.permissions)
+                && request.permissions.length === 1 ? request.permissions[0] : null;
+              if (!['privacy','clipboardRead','debugger','webRequestBlocking','tabGroups'].includes(name) || (name==='privacy' && namespace.privacy) || arguments.length > 2
                   || (callback !== undefined && typeof callback !== 'function')
-                  || !String(error).includes("'privacy' is not a valid permission")) throw error;
+                  || !String(error).includes("'" + name + "' is not a valid permission")) throw error;
               if (callback) { queueMicrotask(() => callback(false)); return; }
               return Promise.resolve(false);
             }
           };
-          Object.defineProperty(wrapped, '__souloPrivacyQuery', {value:true});
+          Object.defineProperty(wrapped, '__souloPermissionQuery', {value:true});
           try { Object.defineProperty(permissions, 'contains', {configurable:true, writable:true, value:wrapped}); } catch (_) {}
         }
-        installEnum(namespace.webRequest,'ResourceType',{
-          MAIN_FRAME:'main_frame',SUB_FRAME:'sub_frame',STYLESHEET:'stylesheet',SCRIPT:'script',IMAGE:'image',
-          FONT:'font',OBJECT:'object',XMLHTTPREQUEST:'xmlhttprequest',PING:'ping',CSP_REPORT:'csp_report',
-          MEDIA:'media',WEBSOCKET:'websocket',WEBTRANSPORT:'webtransport',WEBBUNDLE:'webbundle',OTHER:'other'
+        installEnum(namespace.webRequest,'ResourceType',resourceTypes);
+        installEnum(namespace.scripting,'ExecutionWorld',{ISOLATED:'ISOLATED',MAIN:'MAIN'});
+        installEnum(namespace.tabs,'TabStatus',{UNLOADED:'unloaded',LOADING:'loading',COMPLETE:'complete'});
+        installEnum(namespace.storage,'AccessLevel',{
+          TRUSTED_CONTEXTS:'TRUSTED_CONTEXTS',TRUSTED_AND_UNTRUSTED_CONTEXTS:'TRUSTED_AND_UNTRUSTED_CONTEXTS'
         });
+        const rules=namespace.declarativeNetRequest;
+        if(rules){
+          // Ruleset managers compare these lists to the publisher's own IDs.
+          // Hide the local-resource guard from those lists and keep it enabled.
+          wrapMethod(runtime,'getManifest',(original,owner)=>function(){
+            const manifest=Reflect.apply(original,owner,arguments);
+            const network=manifest?.declarative_net_request;
+            if(!network?.rule_resources?.some(entry=>entry.id===localResourceRuleset))return manifest;
+            const entries=network.rule_resources.filter(entry=>entry.id!==localResourceRuleset);
+            const effective={...manifest};
+            if(entries.length)effective.declarative_net_request={...network,rule_resources:entries};
+            else delete effective.declarative_net_request;
+            return effective;
+          });
+          wrapMethod(rules,'getEnabledRulesets',(original,owner)=>function(callback){
+            if(arguments.length===0)return Reflect.apply(original,owner,[]).then(publisherRulesets);
+            if(arguments.length!==1||typeof callback!=='function')return Reflect.apply(original,owner,arguments);
+            return Reflect.apply(original,owner,[ids=>callback(publisherRulesets(ids))]);
+          });
+          wrapMethod(rules,'updateEnabledRulesets',(original,owner)=>function(...args){
+            const options=args[0];
+            if(Array.isArray(options?.disableRulesetIds)&&options.disableRulesetIds.includes(localResourceRuleset)){
+              args[0]={...options,disableRulesetIds:publisherRulesets(options.disableRulesetIds)};
+            }
+            return Reflect.apply(original,owner,args);
+          });
+          installEnum(rules,'ResourceType',resourceTypes);
+          installEnum(rules,'RuleActionType',{
+            BLOCK:'block',REDIRECT:'redirect',ALLOW:'allow',UPGRADE_SCHEME:'upgradeScheme',
+            MODIFY_HEADERS:'modifyHeaders',ALLOW_ALL_REQUESTS:'allowAllRequests'
+          });
+          installEnum(rules,'HeaderOperation',{APPEND:'append',SET:'set',REMOVE:'remove'});
+          installEnum(rules,'DomainType',{FIRST_PARTY:'firstParty',THIRD_PARTY:'thirdParty'});
+          // Older WebKit can accept a block rule and ignore its method
+          // constraint. Reject the update before it blocks other methods.
+          const methodBlockUnsupported=options=>!\#(supportsRequestMethods)&&Array.isArray(options?.addRules)&&
+            options.addRules.some(rule=>rule?.action?.type==='block'&&
+              (rule.condition?.requestMethods?.length||rule.condition?.excludedRequestMethods?.length));
+          const rejectMethodBlock=callback=>{
+            const error=new Error('This WebKit version does not support blocking rules limited to HTTP methods.');
+            if(typeof callback==='function')throw error;
+            return Promise.reject(error);
+          };
+          if(!\#(supportsRequestMethods)){
+            wrapMethod(rules,'updateDynamicRules',(original,owner)=>function(options,callback){
+              if(methodBlockUnsupported(options))return rejectMethodBlock(callback);
+              return Reflect.apply(original,owner,arguments);
+            });
+          }
+          const update=rules.updateSessionRules;
+          if(typeof update==='function'&&!update.__souloSerializedSessionRules){
+            function normalizeSessionRuleHeaders(options){
+              if(!Array.isArray(options.addRules))return options;
+              let changed=false;
+              const addRules=options.addRules.map(rule=>{
+                const action=rule?.action;
+                if(action?.type!=='modifyHeaders')return rule;
+                const hasName=(header,name)=>typeof header?.header==='string'&&header.header.toLowerCase()===name;
+                const removesAlias=header=>header?.operation==='remove'&&hasName(header,'referrer');
+                const removesPolicyValue=header=>header?.operation==='remove'&&hasName(header,'same-origin');
+                let {requestHeaders,responseHeaders}=action;
+                if(Array.isArray(requestHeaders)&&requestHeaders.some(header=>hasName(header,'referer'))&&requestHeaders.some(removesAlias)){
+                  requestHeaders=requestHeaders.filter(header=>!removesAlias(header));
+                }
+                // Some CORS rules list the policy value `same-origin` as a
+                // response header. WebKit rejects the whole rule on that entry.
+                if(Array.isArray(responseHeaders)&&responseHeaders.some(header=>header?.operation==='set'&&hasName(header,'access-control-allow-origin'))
+                    &&responseHeaders.some(removesPolicyValue)){
+                  responseHeaders=responseHeaders.filter(header=>!removesPolicyValue(header));
+                }
+                if(requestHeaders===action.requestHeaders&&responseHeaders===action.responseHeaders)return rule;
+                changed=true;
+                const normalized={...action};
+                if(requestHeaders!==action.requestHeaders)normalized.requestHeaders=requestHeaders;
+                if(responseHeaders!==action.responseHeaders)normalized.responseHeaders=responseHeaders;
+                return {...rule,action:normalized};
+              });
+              return changed?{...options,addRules}:options;
+            }
+            // Overlapping promise writes from an extension background can
+            // collide in WebKit's session-rules database savepoints.
+            const wrapped=function(options,callback){
+              if(methodBlockUnsupported(options))return rejectMethodBlock(callback);
+              if(arguments.length!==1||!options||typeof options!=='object'||Array.isArray(options)){
+                return Reflect.apply(update,rules,arguments);
+              }
+              const result=sessionRuleWrite.then(()=>Reflect.apply(update,rules,[normalizeSessionRuleHeaders(options)]));
+              sessionRuleWrite=result.then(()=>{},()=>{});
+              return result;
+            };
+            Object.defineProperty(wrapped,'__souloSerializedSessionRules',{value:true});
+            try{Object.defineProperty(rules,'updateSessionRules',{configurable:true,writable:true,value:wrapped});}catch(_){}
+          }
+        }
       }
       for(const api of [globalThis.chrome?.i18n,globalThis.browser?.i18n]){
         if(!api)continue;
@@ -354,6 +800,84 @@ enum WebExtensionPackagePreparer {
       }
       const api=globalThis.chrome||globalThis.browser;
       if(!api)return;
+      const manifest=api.runtime?.getManifest?.();
+      const panel=manifest?.side_panel?.default_path, action=api.action;
+      if(typeof panel==='string'&&panel&&manifest.permissions?.includes('sidePanel')&&
+         typeof action?.setPopup==='function'&&typeof action?.getPopup==='function'){
+        const synthesized=\#(synthesizedPanelPopup), popup=synthesized?'':manifest.action?.default_popup||'';
+        const session=api.storage?.session, key='__souloSidePanelOptions';
+        let memory={}, pending=Promise.resolve();
+        const read=async()=>session?(await session.get(key))[key]||{}:memory;
+        const write=async state=>{memory=state;if(session)await session.set({[key]:state});};
+        const queue=operation=>{
+          const result=pending.then(operation);
+          pending=result.then(()=>{},()=>{});
+          return result;
+        };
+        const choices=(state,tabId)=>({path:panel,enabled:true,...state.default,...state.tabs?.[tabId],...(tabId===undefined?{}:{tabId})});
+        const validatePath=path=>{
+          const base=new URL(api.runtime.getURL('/')), target=new URL(path,base);
+          if(typeof path!=='string'||!path||target.protocol!==base.protocol||target.host!==base.host)
+            throw new TypeError('The side panel path must be an extension resource.');
+          return target.pathname.slice(1)+target.search+target.hash;
+        };
+        const restorePopup=async(target,panelPath,replacement)=>{
+          const current=await action.getPopup(target);
+          const base=api.runtime.getURL('/');
+          // Disabling a panel can race with the extension configuring its own popup.
+          if(current&&new URL(current,base).href===new URL(panelPath,base).href)
+            await action.setPopup({...target,popup:replacement});
+        };
+        const updatePopup=async(previous,state,tabId)=>{
+          const target=tabId===undefined?{}:{tabId}, options=choices(state,tabId);
+          if(state.behavior&&options.enabled)await action.setPopup({...target,popup:options.path});
+          else if(previous.behavior||synthesized)await restorePopup(target,choices(previous,tabId).path,popup);
+        };
+        for(const namespace of [globalThis.chrome,globalThis.browser]){
+          if(!namespace||namespace.sidePanel)continue;
+          const sidePanel={
+            setPanelBehavior({openPanelOnActionClick}){return queue(async()=>{
+              if(typeof openPanelOnActionClick!=='boolean')throw new TypeError('openPanelOnActionClick must be a boolean.');
+              const previous=await read(), state={...previous,behavior:openPanelOnActionClick};
+              await updatePopup(previous,state);
+              const tabs=await api.tabs?.query?.({});
+              for(const tab of tabs||[])if(state.tabs?.[tab.id])await updatePopup(previous,state,tab.id);
+              await write(state);
+            });},
+            async getPanelBehavior(){return {openPanelOnActionClick:(await read()).behavior===true};},
+            async getOptions({tabId}={}){return choices(await read(),tabId);},
+            setOptions({tabId,path,enabled}){return queue(async()=>{
+              const previous=await read(), state={...previous}, values={};
+              if(path!==undefined)values.path=validatePath(path);
+              if(enabled!==undefined){
+                if(typeof enabled!=='boolean')throw new TypeError('The side panel enabled flag must be a boolean.');
+                values.enabled=enabled;
+              }
+              if(tabId===undefined)state.default={...state.default,...values};
+              else{
+                if(!Number.isInteger(tabId)||tabId<0)throw new TypeError('Invalid side panel tab.');
+                await api.tabs.get(tabId);
+                const tabs=state.tabs||{};
+                state.tabs={...tabs,[tabId]:{...tabs[tabId],...values}};
+              }
+              if(state.behavior)await updatePopup(previous,state,tabId);
+              await write(state);
+            });},
+            async open({windowId,tabId}={}){
+              if(typeof action.openPopup!=='function')throw new Error('Opening a side panel requires the extension toolbar action.');
+              const tab=tabId===undefined?(await api.tabs.query(windowId===undefined?{active:true,currentWindow:true}:{active:true,windowId}))[0]:await api.tabs.get(tabId);
+              if(!tab?.active)throw new Error('The side panel requires the active tab.');
+              const state=await read(), options=choices(state,tab.id);
+              if(!options.enabled)throw new Error('The side panel is disabled for this tab.');
+              const target={tabId:tab.id}, previousPopup=await action.getPopup(target);
+              await action.setPopup({...target,popup:options.path});
+              try{await action.openPopup({windowId:tab.windowId});}
+              finally{await restorePopup(target,options.path,previousPopup||'');}
+            }
+          };
+          try{Object.defineProperty(namespace,'sidePanel',{configurable:true,value:Object.freeze(sidePanel)});}catch(_){}
+        }
+      }
       // iPhone exposes ManagedMediaSource instead of MediaSource. Let injected
       // hook scripts reach that real native prototype during synchronous setup,
       // then restore the website's feature detection before returning. No UA,
@@ -401,16 +925,29 @@ enum WebExtensionPackagePreparer {
         OnResponseStartedOptions:{RESPONSE_HEADERS:'responseHeaders'}
       }))if(!api.webRequest[key])try{Object.defineProperty(api.webRequest,key,{value:values,configurable:true});}catch(_){}
       const navigation=api.webNavigation,tabs=api.tabs;
-      if(navigation&&!navigation.onHistoryStateUpdated&&tabs?.onUpdated&&navigation.getFrame){
-        const listeners=new Map(),documents=new Map();let observing=false;
-        const identity=async tabId=>{
-          const frame=await navigation.getFrame({tabId,frameId:0});
-          if(frame?.documentId)return {url:frame.url,id:frame.documentId};
-          if(!api.scripting?.executeScript)return null;
-          const result=await api.scripting.executeScript({target:{tabId,frameIds:[0]},func:()=>({url:location.href,id:String(performance.timeOrigin)})});
-          return result?.[0]?.result||null;
-        };
-        const matches=(url,filter)=>{
+      \#(WebExtensionRequestEventCompatibility.javaScript)(api,navigation,retained,wrapMethod);
+      if(navigation?.getAllFrames){
+        const missingFrameTree=message=>/(?:^|\s)(?:tab|main frame) not found\.?$/i.test(message||'');
+        wrapMethod(navigation,'getAllFrames',(original,owner)=>function(details,callback){
+          if(!Number.isInteger(details?.tabId)||details.tabId<=0||arguments.length>2||
+            (callback!==undefined&&typeof callback!=='function'))return Reflect.apply(original,owner,arguments);
+          if(typeof callback==='function'){
+            return Reflect.apply(original,owner,[details,frames=>{
+              // Chromium returns no frame result for either a closed tab or
+              // one without renderer contents. Leave the native error scope first.
+              if(missingFrameTree(api.runtime?.lastError?.message))queueMicrotask(()=>callback(null));
+              else callback(frames);
+            }]);
+          }
+          const result=Reflect.apply(original,owner,arguments);
+          if(typeof result?.catch!=='function')return result;
+          return result.catch(error=>{
+            if(missingFrameTree(error?.message))return null;
+            throw error;
+          });
+        });
+      }
+      const matchesNavigationURL=(url,filter)=>{
           if(!filter?.url)return true;
           const parsed=new URL(url);
           return filter.url.some(rule=>Object.entries(rule).every(([key,value])=>{
@@ -425,35 +962,119 @@ enum WebExtensionPackagePreparer {
             if(key.endsWith('Suffix'))return part.endsWith(value);
             return false;
           }));
+      };
+      if(navigation&&!navigation.onCreatedNavigationTarget&&tabs?.onCreated){
+        const listeners=new Map();
+        const receive=async tab=>{
+          const url=tab.pendingUrl||tab.url;
+          if(!listeners.size||tab.incognito||!url||!Number.isInteger(tab.id)||!Number.isInteger(tab.openerTabId))return;
+          try{
+            if(!await api.permissions?.contains({permissions:['webNavigation']}))return;
+          }catch(_){return;}
+          // Soulo supplies a native opener for browser-created tabs when
+          // WebKit identifies the source as the main frame.
+          const details={tabId:tab.id,sourceTabId:tab.openerTabId,sourceFrameId:0,sourceProcessId:-1,url,timeStamp:Date.now()};
+          for(const [listener,filter] of listeners){
+            try{if(matchesNavigationURL(url,filter))listener(details);}catch(error){console.error(error);}
+          }
         };
-        const event={addListener(listener,filter){listeners.set(listener,filter);start();},removeListener(listener){listeners.delete(listener);},hasListener(listener){return listeners.has(listener);},hasListeners(){return listeners.size>0;}};
-        try{Object.defineProperty(navigation,'onHistoryStateUpdated',{value:event,configurable:true});}catch(_){}
+        const event={
+          addListener(listener,filter){
+            if(typeof listener!=='function')throw new TypeError('Navigation listener must be a function.');
+            if(listeners.has(listener))return;
+            if(!listeners.size)tabs.onCreated.addListener(receive);
+            listeners.set(listener,filter);
+          },
+          removeListener(listener){if(listeners.delete(listener)&&!listeners.size)tabs.onCreated.removeListener(receive);},
+          hasListener(listener){return listeners.has(listener);},
+          hasListeners(){return listeners.size>0;}
+        };
+        try{Object.defineProperty(navigation,'onCreatedNavigationTarget',{value:event,configurable:true});}catch(_){}
+      }
+      if(navigation&&(!navigation.onHistoryStateUpdated||!navigation.onReferenceFragmentUpdated)&&tabs?.onUpdated&&navigation.getFrame){
+        const documents=new Map(),subscriptions=new Map();let observing=false;
+        const hasListeners=()=>[...subscriptions.values()].some(listeners=>listeners.size);
+        const identity=async tabId=>{
+          const frame=await navigation.getFrame({tabId,frameId:0});
+          if(frame?.documentId)return {url:frame.url,id:frame.documentId};
+          if(!api.scripting?.executeScript)return null;
+          const result=await api.scripting.executeScript({target:{tabId,frameIds:[0]},func:()=>({url:location.href,id:String(performance.timeOrigin)})});
+          return result?.[0]?.result||null;
+        };
+        for(const name of ['onHistoryStateUpdated','onReferenceFragmentUpdated']){
+          if(navigation[name])continue;
+          const listeners=new Map();
+          const event={addListener(listener,filter){listeners.set(listener,filter);start();},removeListener(listener){listeners.delete(listener);},hasListener(listener){return listeners.has(listener);},hasListeners(){return listeners.size>0;}};
+          try{Object.defineProperty(navigation,name,{value:event,configurable:true});subscriptions.set(name,listeners);}catch(_){}
+        }
         function start(){
         if(observing)return;observing=true;
         tabs.onUpdated.addListener(async(tabId,change)=>{
-          if(!listeners.size||!change.url)return;
+          if(!hasListeners()||!change.url)return;
           const before=documents.get(tabId);
           try{
             const current=await identity(tabId);if(!current)return;documents.set(tabId,current);
             if(!before||before.id!==current.id||before.url===current.url)return;
             const details={tabId,frameId:0,parentFrameId:-1,url:current.url,timeStamp:Date.now(),documentId:current.id,documentLifecycle:'active',frameType:'outermost_frame'};
-            for(const [listener,filter] of listeners)if(matches(current.url,filter))try{listener(details);}catch(error){console.error(error);}
+            const fragmentOnly=before.url.split('#')[0]===current.url.split('#')[0];
+            for(const [name,listeners] of subscriptions){
+              if(name==='onReferenceFragmentUpdated'&&!fragmentOnly)continue;
+              for(const [listener,filter] of listeners)if(matchesNavigationURL(current.url,filter))try{listener(details);}catch(error){console.error(error);}
+            }
           }catch(_){}
         });
-        navigation.onCommitted?.addListener(async details=>{if(!listeners.size||details.frameId!==0)return;try{const current=await identity(details.tabId);if(current)documents.set(details.tabId,current);}catch(_){}});
-        tabs.onActivated?.addListener(async details=>{if(!listeners.size)return;try{const current=await identity(details.tabId);if(current)documents.set(details.tabId,current);}catch(_){}});
+        navigation.onCommitted?.addListener(async details=>{if(!hasListeners()||details.frameId!==0)return;try{const current=await identity(details.tabId);if(current)documents.set(details.tabId,current);}catch(_){}});
+        tabs.onActivated?.addListener(async details=>{if(!hasListeners())return;try{const current=await identity(details.tabId);if(current)documents.set(details.tabId,current);}catch(_){}});
         tabs.onRemoved?.addListener(tabId=>documents.delete(tabId));
         tabs.query({active:true,currentWindow:true}).then(values=>{for(const tab of values)identity(tab.id).then(value=>{if(value)documents.set(tab.id,value);},()=>{});},()=>{});
         }
       }
     })();
     """# + WebExtensionBlobScript.javaScript + ExtensionFrameMessagingScript.javaScript + ExtensionMediaLayoutScript.javaScript + WebExtensionClipboardPolicy.javaScript + WebExtensionTouchInput.javaScript + WebExtensionMediaStartup.javaScript + WebExtensionDialogLayout.javaScript
+    }
 
-    private static func installNativeBindings(in root: URL, manifest: inout [String: Any]) throws {
-        try Data((nativeBindingsJavaScript + WebExtensionFastStreamSourceAdapter.source(in: root)).utf8).write(to: root.appendingPathComponent(nativeBindingsFilename), options: .atomic)
+    /// Keep extensions that initialize optional desktop debugging features
+    /// from crashing before they can register unrelated background features.
+    private static let unavailableDebuggerBackground = #"""
+    ;(()=>{
+      const event=()=>{
+        const listeners=new Set();
+        return Object.freeze({
+          addListener(listener){if(typeof listener==='function')listeners.add(listener);},
+          removeListener(listener){listeners.delete(listener);},
+          hasListener(listener){return listeners.has(listener);},
+          hasListeners(){return listeners.size>0;}
+        });
+      };
+      const unavailable=(...args)=>{
+        const error=new Error('Extension debugging is unavailable on iOS.');
+        if(typeof args[args.length-1]==='function')throw error;
+        return Promise.reject(error);
+      };
+      for(const api of [globalThis.chrome,globalThis.browser]){
+        if(!api||api.debugger)continue;
+        const debuggerAPI=Object.freeze({
+          onEvent:event(),onDetach:event(),
+          getTargets(callback){
+            if(typeof callback==='function'){Promise.resolve().then(()=>callback([]));return;}
+            return Promise.resolve([]);
+          },
+          attach:unavailable,detach:unavailable,sendCommand:unavailable
+        });
+        try{Object.defineProperty(api,'debugger',{value:debuggerAPI,configurable:true});}catch(_){}
+      }
+    })();
+    """#
+
+    private static func installNativeBindings(_ nativeBindings: String, in root: URL, manifest: inout [String: Any]) throws {
+        try Data((nativeBindings + WebExtensionFastStreamSourceAdapter.source(in: root)).utf8).write(to: root.appendingPathComponent(nativeBindingsFilename), options: .atomic)
         try Data("globalThis.__souloFrameDocumentRequested=true;globalThis.__souloInstallExtensionFrameDocument?.();".utf8)
             .write(to: root.appendingPathComponent(ExtensionFrameMessagingScript.documentFilename), options: .atomic)
-        try Data("globalThis.__souloInstallExtensionFrameBackground?.();".utf8)
+        let declaresDebugger = (manifest["permissions"] as? [String])?.contains("debugger") == true
+        let backgroundBootstrap = "globalThis.__souloInstallExtensionFrameBackground?.();"
+            + (declaresDebugger ? unavailableDebuggerBackground : "")
+            + (try WebExtensionQuickSnipAdapter.prepare(in: root, manifest: manifest))
+        try Data(backgroundBootstrap.utf8)
             .write(to: root.appendingPathComponent(ExtensionFrameMessagingScript.backgroundFilename), options: .atomic)
         try Data(#"""
         (()=>{const state=globalThis.__souloMediaSourceScope;
@@ -477,8 +1098,19 @@ enum WebExtensionPackagePreparer {
         }
         if var scripts = manifest["content_scripts"] as? [[String: Any]] {
             for index in scripts.indices {
-                guard var files = scripts[index]["js"] as? [String], !files.contains(nativeBindingsFilename) else { continue }
-                files.insert(nativeBindingsFilename, at: 0); scripts[index]["js"] = files
+                guard var files = scripts[index]["js"] as? [String] else { continue }
+                if !files.contains(nativeBindingsFilename) { files.insert(nativeBindingsFilename, at: 0) }
+                if !files.contains(idleCallbacksFilename), files.contains(where: { reference in
+                    guard reference != nativeBindingsFilename, let script = try? resourceURL(reference, in: root),
+                          let bytes = try? Data(contentsOf: script, options: .mappedIfSafe) else { return false }
+                    return bytes.range(of: Data("requestIdleCallback(".utf8)) != nil
+                }) {
+                    files.insert(idleCallbacksFilename, at: 0)
+                }
+                if files.contains(idleCallbacksFilename) {
+                    try Data(idleCallbacks.utf8).write(to: root.appendingPathComponent(idleCallbacksFilename), options: .atomic)
+                }
+                scripts[index]["js"] = files
             }
             manifest["content_scripts"] = scripts
         }
@@ -506,29 +1138,14 @@ enum WebExtensionPackagePreparer {
         manifest["background"] = background
     }
 
-    private static func installBlobBackground(in root: URL, manifest: inout [String: Any]) throws {
+    private static func installBlobBackground(_ nativeBindings: String, in root: URL, manifest: inout [String: Any]) throws {
         let name = WebExtensionBlobScript.backgroundFilename
-        let source = nativeBindingsJavaScript + "\nglobalThis.__souloInstallBlobRelay?.();\n"
+        let source = nativeBindings + "\nglobalThis.__souloInstallBlobRelay?.();\n"
         try Data(source.utf8).write(to: root.appendingPathComponent(name), options: .atomic)
         var background = manifest["background"] as? [String: Any] ?? ["scripts": [String](), "persistent": false]
         if var scripts = background["scripts"] as? [String] {
             if !scripts.contains(name) { scripts.insert(name, at: 0) }
             background["scripts"] = scripts
-        } else if let worker = background["service_worker"] as? String {
-            let isModule = background["type"] as? String == "module"
-            let original = try originalWorkerURL(worker, isModule: isModule, in: root)
-            let directory = original.deletingLastPathComponent()
-            let base = root.resolvingSymlinksInPath().standardizedFileURL
-            let relative = String(directory.path.dropFirst(base.path.count)).split(separator: "/").map(String.init)
-            let binding = String(repeating: "../", count: relative.count) + name
-            let loaderName = "__soulo_blob_worker.js"
-            let entry = javaScriptString("./" + original.lastPathComponent)
-            let loader = isModule ? "import \"\(binding)\";\nimport \"\(entry)\";\n"
-                : "importScripts(\"\(binding)\",\"\(entry)\");\n"
-            if original.lastPathComponent != loaderName {
-                try Data(loader.utf8).write(to: directory.appendingPathComponent(loaderName), options: .atomic)
-                background["service_worker"] = (relative + [loaderName]).joined(separator: "/")
-            }
         }
         manifest["background"] = background
     }
@@ -635,25 +1252,31 @@ enum WebExtensionPackagePreparer {
     }
 
     private static func originalWorkerURL(_ reference: String, isModule: Bool, in root: URL) throws -> URL {
-        let wrapperURL = try resourceURL(reference, in: root)
-        guard wrapperURL.lastPathComponent.hasPrefix("__soulo_webextension_background_"),
-              let source = try? String(contentsOf: wrapperURL, encoding: .utf8),
-              source.contains("__soulo_webextension_compatibility.js") || source.contains(nativeBindingsFilename) else { return wrapperURL }
         // Recover the original entry point from wrappers installed by earlier
         // Soulo versions, so updating compatibility never nests wrappers.
+        let base = root.resolvingSymlinksInPath().standardizedFileURL.path + "/"
         let pattern = isModule ? #"import\s+("(?:[^"\\]|\\.)*")\s*;"#
             : #"importScripts\((?:\s*"(?:[^"\\]|\\.)*"\s*,\s*)+("(?:[^"\\]|\\.)*")\s*\);"#
         let regex = try NSRegularExpression(pattern: pattern)
-        guard let match = regex.matches(in: source, range: NSRange(source.startIndex..., in: source)).last,
-              let range = Range(match.range(at: 1), in: source),
-              let data = String(source[range]).data(using: .utf8),
-              let original = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? String,
-              let url = URL(string: original, relativeTo: wrapperURL)?.absoluteURL else {
-            throw BrowserExtensionError.invalidExtension
+        var current = try resourceURL(reference, in: root)
+        var visited = Set<URL>()
+        while true {
+            let name = current.lastPathComponent
+            let isBlobLoader = name == "__soulo_blob_worker.js"
+            guard isBlobLoader || name.hasPrefix("__soulo_webextension_background_"),
+                  let source = try? String(contentsOf: current, encoding: .utf8),
+                  isBlobLoader ? source.contains(WebExtensionBlobScript.backgroundFilename)
+                    : source.contains("__soulo_webextension_compatibility.js") || source.contains(nativeBindingsFilename)
+            else { return current }
+            guard visited.insert(current).inserted,
+                  let match = regex.matches(in: source, range: NSRange(source.startIndex..., in: source)).last,
+                  let range = Range(match.range(at: 1), in: source),
+                  let original = try JSONSerialization.jsonObject(with: Data(source[range].utf8), options: [.fragmentsAllowed]) as? String,
+                  let url = URL(string: original, relativeTo: current)?.absoluteURL,
+                  url.path.hasPrefix(base)
+            else { throw BrowserExtensionError.invalidExtension }
+            current = try resourceURL(String(url.path.dropFirst(base.count)), in: root)
         }
-        let base = root.resolvingSymlinksInPath().standardizedFileURL
-        guard url.path.hasPrefix(base.path + "/") else { throw BrowserExtensionError.invalidExtension }
-        return try resourceURL(String(url.path.dropFirst(base.path.count + 1)), in: root)
     }
 
     private static func javaScriptString(_ value: String) -> String {
@@ -696,7 +1319,7 @@ enum WebExtensionPackagePreparer {
         return data.subdata(in: offset..<data.count)
     }
 
-    private static let compatibilityJavaScript = nativeBindingsJavaScript + #"""
+    private static let compatibilityBridgeJavaScript = #"""
     (() => {
       'use strict';
       const root = globalThis;
@@ -766,7 +1389,27 @@ enum WebExtensionPackagePreparer {
         return typeof callback === 'function' ? undefined : promise;
       };
       const manifest = chrome.runtime.getManifest?.() || {};
+      \#(WebExtensionActionColorCompatibility.javaScript)(root,chrome,manifest,native,setIfMissing);
       const declaredPermissions = [...(manifest.permissions || []), ...(manifest.optional_permissions || [])];
+      const managedPermissions = [\#(managedPermissionNames.map { "'\($0)'" }.joined(separator: ","))];
+      for(const permissions of new Set([chrome.permissions,root.browser?.permissions])){
+        for(const method of ['contains','request']){
+          const original=permissions?.[method];
+          if(typeof original!=='function')continue;
+          const wrapped=function(request,callback){
+            const name=request&&Object.keys(request).every(key=>key==='permissions'||key==='origins')
+              &&(request.origins===undefined||Array.isArray(request.origins)&&request.origins.length===0)
+              &&Array.isArray(request.permissions)&&request.permissions.length===1?request.permissions[0]:null;
+            if(arguments.length>2||(callback!==undefined&&typeof callback!=='function')||!managedPermissions.includes(name)||!declaredPermissions.includes(name)){
+              return Reflect.apply(original,permissions,arguments);
+            }
+            // These grants are managed by Soulo's extension permission UI.
+            // A publisher request can confirm an approved grant.
+            return native({souloCompatibility:1,api:'permissionStatus',name},callback);
+          };
+          try{Object.defineProperty(permissions,method,{configurable:true,writable:true,value:wrapped});}catch(_){}
+        }
+      }
       const hasRequiredHosts = !!manifest.host_permissions?.length
         || (manifest.permissions || []).some(value => value === '<all_urls>' || value.includes('://'));
       if (declaredPermissions.includes('tabs') && !hasRequiredHosts) {
@@ -1763,6 +2406,11 @@ final class WebExtensionCompatibilityHost {
     private let downloads = WebExtensionDownloads()
     private let blobs = WebExtensionBlobBridge()
     let userScripts = WebExtensionUserScripts()
+    private final class BadgeTextColors {
+        var defaultColor: [Int]?
+        let tabs = NSMapTable<AnyObject, NSArray>.weakToStrongObjects()
+    }
+    private var badgeTextColors: [ObjectIdentifier: BadgeTextColors] = [:]
     private struct InstallationEvent {
         let previousVersion: String?
         let version: String
@@ -1820,6 +2468,7 @@ final class WebExtensionCompatibilityHost {
         webView: WKWebView? = nil,
         blobSources: [WKWebView] = [],
         tabMetadata: ([Int]) -> [[String: Any]] = { _ in [] },
+        badgeTab: (Int) -> AnyObject? = { _ in nil },
         replyHandler: @escaping (Any?, Error?) -> Void
     ) -> Bool {
         guard applicationIdentifier == Self.applicationIdentifier,
@@ -1827,6 +2476,38 @@ final class WebExtensionCompatibilityHost {
               (values["souloCompatibility"] as? Int) == 1,
               let api = values["api"] as? String else { return false }
         switch api {
+        case "actionBadgeTextColor":
+            let manifest = context.webExtension.manifest
+            guard manifest["action"] != nil || manifest["browser_action"] != nil,
+                  let operation = values["operation"] as? String else {
+                replyHandler(nil, NativeWebExtensionCompatibilityError.unsupportedAPI); return true
+            }
+            let tab = (values["index"] as? Int).flatMap(badgeTab)
+            guard values["index"] == nil || tab != nil else {
+                replyHandler(nil, URLError(.resourceUnavailable)); return true
+            }
+            let key = ObjectIdentifier(context)
+            switch operation {
+            case "set":
+                guard let color = values["color"] as? [Int], color.count == 4,
+                      color.allSatisfy({ (0...255).contains($0) }), color[3] > 0 else {
+                    replyHandler(nil, URLError(.cannotDecodeContentData)); return true
+                }
+                let state = badgeTextColors[key] ?? BadgeTextColors()
+                if let tab { state.tabs.setObject(color as NSArray, forKey: tab) }
+                else { state.defaultColor = color }
+                badgeTextColors[key] = state
+                NotificationCenter.default.post(name: .browserExtensionActionsChanged, object: nil)
+                replyHandler(true, nil)
+            case "get": replyHandler(badgeTextRGBA(for: context, tab: tab) ?? [255, 255, 255, 255], nil)
+            default: replyHandler(nil, NativeWebExtensionCompatibilityError.unsupportedOperation)
+            }
+        case "permissionStatus":
+            guard let permission = values["name"] as? String,
+                  ["downloads", "offscreen", "userScripts", "proxy"].contains(permission) else {
+                replyHandler(nil, NativeWebExtensionCompatibilityError.unsupportedAPI); return true
+            }
+            replyHandler(hasPermission(permission, context: context, access: access), nil)
         case "tabMetadata":
             guard hasPermission("tabs", context: context, access: access),
                   let indexes = values["indexes"] as? [Int] else {
@@ -1873,6 +2554,11 @@ final class WebExtensionCompatibilityHost {
                 replyHandler(nil, NativeWebExtensionCompatibilityError.missingPermission("downloads")); return true
             }
             blobs.handle(values, context: context, sources: blobSources, access: access, reply: replyHandler)
+        case "ownedCapture":
+            guard context.webExtension.manifest[WebExtensionGoFullPageAdapter.manifestKey] as? Bool == true else {
+                replyHandler(nil, NativeWebExtensionCompatibilityError.unsupportedAPI); return true
+            }
+            blobs.handle(values, context: context, sources: [], access: access, ownedCaptureOnly: true, reply: replyHandler)
         case "downloads":
             guard hasPermission("downloads", context: context, access: access) else {
                 replyHandler(nil, NativeWebExtensionCompatibilityError.missingPermission("downloads")); return true
@@ -1880,6 +2566,11 @@ final class WebExtensionCompatibilityHost {
             let source = owningDownloadDocument(options: values["options"] as? [String: Any] ?? [:], context: context, preferred: webView, sources: blobSources)
             downloads.handle(values, context: context, webView: source, reply: replyHandler)
         case "offscreen":
+            if values["operation"] as? String == "contexts" {
+                replyHandler(["contexts": extensionContexts(values["filter"] as? [String: Any] ?? [:],
+                                                              context: context, access: access)], nil)
+                return true
+            }
             guard hasPermission("offscreen", context: context, access: access) else {
                 replyHandler(nil, NativeWebExtensionCompatibilityError.missingPermission("offscreen"))
                 return true
@@ -1962,9 +2653,21 @@ final class WebExtensionCompatibilityHost {
         return access?.allowsPermission(permission) ?? context.hasPermission(.init(rawValue: permission))
     }
 
+    private func badgeTextRGBA(for context: WKWebExtensionContext, tab: AnyObject?) -> [Int]? {
+        guard let state = badgeTextColors[ObjectIdentifier(context)] else { return nil }
+        return tab.flatMap { state.tabs.object(forKey: $0) as? [Int] } ?? state.defaultColor
+    }
+
+    func badgeTextColor(for context: WKWebExtensionContext, tab: AnyObject?) -> UIColor? {
+        guard let rgba = badgeTextRGBA(for: context, tab: tab) else { return nil }
+        return UIColor(red: CGFloat(rgba[0]) / 255, green: CGFloat(rgba[1]) / 255,
+                       blue: CGFloat(rgba[2]) / 255, alpha: CGFloat(rgba[3]) / 255)
+    }
+
     func remove(context: WKWebExtensionContext) {
         userScripts.remove(context: context)
         let key = ObjectIdentifier(context)
+        badgeTextColors.removeValue(forKey: key)
         audioPlayers[key]?.stop()
         audioPlayers.removeValue(forKey: key)
         offscreenDocuments.removeValue(forKey: key)?.close()
@@ -2015,25 +2718,31 @@ final class WebExtensionCompatibilityHost {
                 replyHandler(nil, WebExtensionOffscreenDocument.failure("The offscreen document or message is unavailable.")); return
             }
             document.sendStructuredMessage(packet, completion: replyHandler)
-        case "contexts":
-            let filter = values["filter"] as? [String: Any] ?? [:]
-            // WebKit does not expose a complete list of its worker/popup contexts.
-            // This adapter intentionally supports the offscreen query only.
-            guard let types = filter["contextTypes"] as? [String], types == ["OFFSCREEN_DOCUMENT"] else {
-                replyHandler(nil, WebExtensionOffscreenDocument.failure("Context enumeration currently supports OFFSCREEN_DOCUMENT queries.")); return
-            }
-            var descriptors = offscreenDocuments[key]?.descriptor.map { [$0] } ?? []
-            for (filterKey, field) in [("contextIds", "contextId"), ("documentIds", "documentId"), ("documentUrls", "documentUrl"), ("documentOrigins", "documentOrigin"), ("frameIds", "frameId"), ("tabIds", "tabId"), ("windowIds", "windowId")] {
-                if let accepted = filter[filterKey] as? [AnyHashable] {
-                    descriptors = descriptors.filter { descriptor in
-                        (descriptor[field] as? AnyHashable).map(accepted.contains) == true
-                    }
-                }
-            }
-            if filter["incognito"] as? Bool == true { descriptors = [] }
-            replyHandler(["contexts": descriptors], nil)
         default: replyHandler(nil, NativeWebExtensionCompatibilityError.unsupportedOperation)
         }
+    }
+
+    private func extensionContexts(_ filter: [String: Any], context: WKWebExtensionContext,
+                                   access: WebExtensionAccess?) -> [[String: Any]] {
+        // Use active app-managed documents owned by the requesting extension.
+        var descriptors = [WebExtensionPopupPresenter.contextDescriptor(for: context)].compactMap { $0 }
+        if hasPermission("offscreen", context: context, access: access),
+           let descriptor = offscreenDocuments[ObjectIdentifier(context)]?.descriptor {
+            descriptors.append(descriptor)
+        }
+        for (key, field) in [("contextTypes", "contextType"), ("contextIds", "contextId"), ("documentIds", "documentId"),
+                             ("documentUrls", "documentUrl"), ("documentOrigins", "documentOrigin"),
+                             ("frameIds", "frameId"), ("tabIds", "tabId"), ("windowIds", "windowId")] {
+            guard let value = filter[key] else { continue }
+            guard let accepted = value as? [AnyHashable] else { return [] }
+            descriptors = descriptors.filter { descriptor in
+                (descriptor[field] as? AnyHashable).map(accepted.contains) == true
+            }
+        }
+        if let incognito = filter["incognito"] as? Bool {
+            descriptors = descriptors.filter { $0["incognito"] as? Bool == incognito }
+        }
+        return descriptors
     }
 
     private func handleNotification(
@@ -2058,6 +2767,7 @@ final class WebExtensionCompatibilityHost {
                 ?? (options["contextMessage"] as? String)?.nonEmpty
                 ?? ""
             content.sound = AppFeedbackPreferences.soundEnabled() ? .default : nil
+            content.userInfo[SouloAppDelegate.webExtensionNotificationKey] = true
             Task { @MainActor in
                 do {
                     let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
@@ -2428,9 +3138,14 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
                     forMainFrameOnly: raw["allFrames"] as? Bool != true, in: world))
             }
         }
+        if previous.isEmpty && next.isEmpty { return }
         for controller in controllers.allObjects {
-            let others = controller.userScripts.filter { !previous.contains(ObjectIdentifier($0)) }
-            controller.removeAllUserScripts(); others.forEach(controller.addUserScript); next.forEach(controller.addUserScript)
+            if !previous.isEmpty {
+                let others = controller.userScripts.filter { !previous.contains(ObjectIdentifier($0)) }
+                controller.removeAllUserScripts()
+                others.forEach(controller.addUserScript)
+            }
+            next.forEach(controller.addUserScript)
         }
         injected = next
     }
@@ -3018,13 +3733,218 @@ private final class WebExtensionUserScriptExecutionHost {
     }
 }
 
+// Parse publisher source as data in a private WebContent process. A parser
+// process failure leaves the original worker available to WebKit.
+@MainActor
+private final class WebExtensionSourceAnalyzer {
+    private static let engine: String? = Bundle.main.url(forResource: "acorn-8.15.0", withExtension: "js")
+        .flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+    private let web: WKWebView
+    private let world = WKContentWorld.world(name: "Soulo Extension Source Analysis")
+    private let function: String
+    private var initialized = false
+
+    init(function: String) throws {
+        guard Self.engine != nil else { throw URLError(.fileDoesNotExist) }
+        self.function = function
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        self.web = WKWebView(frame: .zero, configuration: configuration)
+    }
+
+    func analyze<Value: Sendable>(_ source: String, as type: Value.Type, mode: String = "") async throws -> Value? {
+        try Task.checkCancellation()
+        let body: String
+        if initialized {
+            body = "return globalThis.__souloAnalyzeSource(source, mode);"
+        } else {
+            guard let engine = Self.engine else { throw URLError(.fileDoesNotExist) }
+            body = engine + "\n;globalThis.__souloAnalyzeSource = " + function
+                + ";return globalThis.__souloAnalyzeSource(source, mode);"
+        }
+        let value: Value? = try await withCheckedThrowingContinuation { continuation in
+            var pending: CheckedContinuation<Value?, Error>? = continuation
+            func finish(_ result: Result<Value?, Error>) {
+                guard let current = pending else { return }
+                pending = nil
+                current.resume(with: result)
+            }
+            let deadline = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(8))
+                if !Task.isCancelled { finish(.failure(URLError(.timedOut))) }
+            }
+            web.callAsyncJavaScript(body, arguments: ["source": source, "mode": mode], in: nil, in: world) { result in
+                deadline.cancel()
+                finish(result.map { $0 as? Value })
+            }
+        }
+        initialized = true
+        try Task.checkCancellation()
+        return value
+    }
+}
+
+// Keep native listeners, filters and site grants authoritative. This adapter
+// supplies the source document for nonblocking events on WebKit versions
+// that omit Chrome's initiator field.
+private enum WebExtensionRequestEventCompatibility {
+    static let javaScript = #"""
+    ((api,navigation,retained,wrapMethod)=>{
+      if(!api.webRequest)return;
+      function addRequestListener(add,owner,args){
+        let current=args;
+        for(;;){
+          try{return Reflect.apply(add,owner,current);}
+          catch(error){
+            const filter=current[1],patterns=filter?.urls;
+            if(!Array.isArray(patterns))throw error;
+            // Preserve the native subscription for schemes accepted by this WebKit.
+            const unsupported=patterns.find(pattern=>typeof pattern==='string'&&/^wss?:\/\//i.test(pattern)&&String(error).includes(pattern));
+            if(!unsupported)throw error;
+            const urls=patterns.filter(pattern=>pattern!==unsupported);
+            if(!urls.length)throw error;
+            current=Array.from(current);current[1]={...filter,urls};
+          }
+        }
+      }
+      const pendingOrigins=new Map();
+      const transportHeaders=new Set([
+        'authorization','cache-control','connection','content-length','host','if-modified-since',
+        'if-none-match','if-range','partial-data','pragma','proxy-authorization','proxy-connection',
+        'transfer-encoding','x-playback-session-id'
+      ]);
+      function publisherRequestHeaders(headers){
+        return headers?.filter(({name})=>{
+          const key=name.toLowerCase();
+          return !transportHeaders.has(key)&&!key.startsWith('sec-fetch-');
+        });
+      }
+      function requestOrigin(details){
+        const {tabId,frameId,documentId,type}=details;
+        if(!Number.isInteger(tabId)||tabId<0||!Number.isInteger(frameId)||frameId<0||!documentId
+          ||type==='main_frame'||type==='sub_frame')return null;
+        const key=JSON.stringify([tabId,frameId,documentId]);
+        if(pendingOrigins.has(key))return pendingOrigins.get(key);
+        const lookup=Promise.resolve().then(async()=>{
+          try{
+            const frame=await navigation.getFrame({tabId,frameId});
+            if(frame?.documentId?.toLowerCase()!==documentId.toLowerCase())return null;
+            const source=new URL(frame.url);
+            if(source.protocol!=='https:'&&source.protocol!=='http:')return null;
+            const allowed=await api.permissions.contains({origins:[source.protocol+'//'+source.hostname+'/*']});
+            return allowed?source.origin:null;
+          }catch(_){return null;}
+          finally{pendingOrigins.delete(key);}
+        });
+        pendingOrigins.set(key,lookup);
+        return lookup;
+      }
+      for(const name of ['onBeforeRequest','onBeforeSendHeaders','onSendHeaders','onHeadersReceived','onAuthRequired',
+        'onBeforeRedirect','onResponseStarted','onCompleted','onErrorOccurred']){
+        const event=api.webRequest[name];
+        const optionsName=name[0].toUpperCase()+name.slice(1)+'Options';
+        const supportsExtraHeaders=api.webRequest[optionsName]?.EXTRA_HEADERS==='extraHeaders';
+        if(!event||event.addListener?.__souloRulesetBinding)continue;
+        if(!retained.includes(event))retained.push(event);
+        if(!navigation?.getFrame||!api.permissions?.contains||!['onBeforeSendHeaders','onSendHeaders','onResponseStarted'].includes(name)){
+          wrapMethod(event,'addListener',(add,owner)=>function(...args){return addRequestListener(add,owner,args);});
+          continue;
+        }
+        const listeners=new WeakMap();
+        wrapMethod(event,'addListener',(add,owner)=>function(listener,filter,extra){
+          if(typeof listener!=='function'||(extra!==undefined&&!Array.isArray(extra))
+            ||extra?.some(value=>value==='blocking'||value==='asyncBlocking'))
+            return addRequestListener(add,owner,arguments);
+          if(listeners.has(listener))return;
+          let active=true;
+          const usesExtraHeadersFallback=!supportsExtraHeaders&&extra?.includes('extraHeaders');
+          const wrapped=details=>{
+            // The native transport exposes headers generated by the browser
+            // itself. They cannot be replayed by the extension.
+            const value=usesExtraHeadersFallback&&Array.isArray(details.requestHeaders)
+              ? {...details,requestHeaders:publisherRequestHeaders(details.requestHeaders)} : details;
+            if('initiator' in value||value.originUrl||value.documentUrl)return listener(value);
+            const origin=requestOrigin(value);
+            if(!origin)return listener(value);
+            // A nonblocking event cannot change the request. Preserve the
+            // listener's lifetime while resolving the exact source document.
+            origin.then(source=>{
+              if(active)listener(source?{...value,initiator:source}:value);
+            }).catch(error=>console.error(error));
+          };
+          const args=[wrapped,filter];
+          if(extra!==undefined)args.push(usesExtraHeadersFallback?extra.filter(value=>value!=='extraHeaders'):extra);
+          const result=addRequestListener(add,owner,args);
+          listeners.set(listener,{wrapped,cancel:()=>{active=false;}});
+          return result;
+        });
+        wrapMethod(event,'removeListener',(remove,owner)=>function(listener){
+          const registration=listeners.get(listener);
+          const result=Reflect.apply(remove,owner,[registration?.wrapped||listener]);
+          registration?.cancel();
+          listeners.delete(listener);
+          return result;
+        });
+        wrapMethod(event,'hasListener',(has,owner)=>function(listener){
+          return Reflect.apply(has,owner,[listeners.get(listener)?.wrapped||listener]);
+        });
+      }
+    })
+    """#
+}
+
+// Badge color remains owned by the native context and the matching browser tab.
+private enum WebExtensionActionColorCompatibility {
+    static let javaScript = #"""
+    ((root,chrome,manifest,native,setIfMissing)=>{
+      if(!manifest.action&&!manifest.browser_action)return;
+      const colorBytes = color => {
+        if (Array.isArray(color)) {
+          if (color.length === 4 && color.every(value => Number.isInteger(value) && value >= 0 && value <= 255) && color[3] > 0)
+            return Array.from(color);
+          throw new TypeError('Expected a non-transparent RGBA color.');
+        }
+        if (typeof color !== 'string' || !color.trim()) throw new TypeError('Expected a CSS color.');
+        const canvas = typeof OffscreenCanvas === 'function' ? new OffscreenCanvas(1, 1) : root.document?.createElement('canvas');
+        const drawing = canvas?.getContext('2d');
+        if (!drawing) throw new Error('Color parsing is unavailable.');
+        // Assign twice to distinguish invalid values from the canvas's current color.
+        drawing.fillStyle = '#000000'; drawing.fillStyle = color;
+        const first = drawing.fillStyle;
+        drawing.fillStyle = '#ffffff'; drawing.fillStyle = color;
+        if (first !== drawing.fillStyle) throw new TypeError('Invalid CSS color.');
+        drawing.fillRect(0, 0, 1, 1);
+        const bytes = Array.from(drawing.getImageData(0, 0, 1, 1).data);
+        if (!bytes[3]) throw new TypeError('Expected a non-transparent RGBA color.');
+        return bytes;
+      };
+      const badgeColor = (operation, details, callback) => {
+        const message = {souloCompatibility:1,api:'actionBadgeTextColor',operation};
+        if (operation === 'set') message.color = colorBytes(details?.color);
+        const transform = operation === 'set' ? () => undefined : value => value;
+        if (details?.tabId === undefined) return native(message,callback,transform);
+        if (!Number.isSafeInteger(details.tabId) || details.tabId < 1) throw new TypeError('Invalid tab ID.');
+        if (typeof callback === 'function') {
+          chrome.tabs.get(details.tabId, tab => {
+            if (chrome.runtime.lastError || !tab) { callback(undefined); return; }
+            native({...message,index:tab.index},callback,transform);
+          });
+          return;
+        }
+        return chrome.tabs.get(details.tabId).then(tab=>native({...message,index:tab.index},undefined,transform));
+      };
+      for (const action of new Set([chrome.action,root.browser?.action])) {
+        setIfMissing(action,'setBadgeTextColor',(details,callback)=>badgeColor('set',details,callback));
+        setIfMissing(action,'getBadgeTextColor',(details,callback)=>typeof details==='function'
+          ? badgeColor('get',undefined,details) : badgeColor('get',details,callback));
+      }
+    })
+    """#
+}
+
 private enum WebExtensionClassicImports {
-    static func makeParser() -> JSValue? {
-        guard let url = Bundle.main.url(forResource: "acorn-8.15.0", withExtension: "js"),
-              let engine = try? String(contentsOf: url, encoding: .utf8), let context = JSContext() else { return nil }
-        context.evaluateScript(engine)
-        return context.evaluateScript(#"""
-        (function(source){
+    static let javaScript = #"""
+        (function(source, mode){
           try {
             if(source.length>8000000)return null;
             const program=acorn.parse(source,{ecmaVersion:'latest',sourceType:'script'});
@@ -3047,9 +3967,41 @@ private enum WebExtensionClassicImports {
                  test.left.operator!=='typeof'||test.left.argument.type!=='Identifier'||test.left.argument.name==='importScripts'||test.right.value!=='undefined')return null;
               return call(statement.consequent.body[0]);
             }
-            for(const statement of program.body){
+            // Preload only an initial static list. Diagnostics around imports
+            // must be observational, including the catch path if a load fails.
+            function diagnostic(statement, method, errorName){
+              const node=statement?.type==='ExpressionStatement'&&statement.expression;
+              if(node?.type!=='CallExpression'||node.optional||node.callee.type!=='MemberExpression'||node.callee.computed||
+                 node.callee.object.name!=='console'||node.callee.property.name!==method)return false;
+              function plainArgument(arg){
+                if(arg.type==='Literal')return typeof arg.value==='string';
+                if(arg.type==='BinaryExpression'&&arg.operator==='+')return plainArgument(arg.left)&&plainArgument(arg.right);
+                if(errorName)return arg.type==='Identifier'&&arg.name===errorName;
+                return arg.type==='NewExpression'&&arg.callee.name==='Date'&&!arg.arguments.length;
+              }
+              return node.arguments.every(plainArgument);
+            }
+            function guardedTryCall(statement){
+              if(statement?.type!=='TryStatement'||statement.finalizer||statement.block.body.length!==1||
+                 statement.handler?.param?.type!=='Identifier'||statement.handler.body.body.length!==1||
+                 !diagnostic(statement.handler.body.body[0],'error',statement.handler.param.name))return null;
+              const guard=statement.block.body[0];
+              if(guard.type!=='IfStatement'||guard.alternate||guard.consequent.type!=='BlockStatement'||guard.consequent.body.length!==1)return null;
+              const test=guard.test;
+              if(test.type!=='UnaryExpression'||test.operator!=='!'||test.argument.type!=='MemberExpression'||
+                 test.argument.optional||test.argument.computed||test.argument.object.name!=='globalThis')return null;
+              return call(guard.consequent.body[0]);
+            }
+            const guardedEntry=mode==='guarded-entry', guardedDependency=mode==='guarded-dependency';
+            let statements=program.body;
+            if(guardedEntry){
+              const prefix=statements.find(statement=>!statement.directive&&statement.type!=='EmptyStatement'&&!diagnostic(statement,'log'));
+              if(!guardedTryCall(prefix))return null;
+              statements=[prefix];
+            }
+            for(const statement of statements){
               if(statement.directive||statement.type==='EmptyStatement')continue;
-              const direct=call(statement), entry=direct||(!accepted.size&&guardedCall(statement));
+              const direct=call(statement), entry=direct||(!accepted.size&&(guardedEntry?guardedTryCall(statement):guardedCall(statement)));
               if(!entry)break;
               if(!entry.arguments.length)return null;
               for(const argument of entry.arguments) {
@@ -3060,42 +4012,91 @@ private enum WebExtensionClassicImports {
               accepted.add(entry.callee);
               if(!direct)break;
             }
-            const queue=[program];
-            while(queue.length){
-              const node=queue.pop();
-              if(node.type==='Identifier'&&(workerOnly.has(node.name)||node.name==='importScripts'&&!accepted.has(node)))return null;
-              const value=literal(node);
-              if(workerOnly.has(value)||value==='importScripts')return null;
-              if(node.type==='CallExpression'&&node.arguments.length&&
-                 (node.callee.name==='addEventListener'||node.callee.property?.name==='addEventListener'||node.callee.property&&literal(node.callee.property)==='addEventListener')&&
-                 ['install','activate','fetch'].includes(literal(node.arguments[0])))return null;
-              for(const child of Object.values(node)){
-                if(Array.isArray(child)){for(const item of child)if(item?.type)queue.push(item);}
-                else if(child?.type)queue.push(child);
+            const standalone=imports.length===0;
+            // A generated background document has a different URL and
+            // cannot deliver service worker events.
+            const extraWorkerEvents=new Set(['message','messageerror','push','pushsubscriptionchange','sync','periodicsync',
+              'notificationclick','notificationclose','backgroundfetchabort','backgroundfetchclick','backgroundfetchfail',
+              'backgroundfetchsuccess','contentdelete','cookiechange']);
+            function registrationGuard(test){
+              return test?.type==='MemberExpression'&&!test.optional&&!test.computed&&
+                test.object.name==='globalThis'&&test.property.name==='registration';
+            }
+            function* descendants(tree){
+              const remaining=[tree];
+              while(remaining.length){
+                const item=remaining.pop();
+                yield item;
+                for(const value of Object.values(item)){
+                  if(Array.isArray(value)){for(const child of value)if(child?.type)remaining.push(child);}
+                  else if(value?.type)remaining.push(value);
+                }
               }
             }
+            function hasDocumentNotification(guard){
+              const createsWorkerNotification=Array.from(descendants(guard.consequent)).some(node=>
+                node.type==='CallExpression'&&node.callee.object?.name==='registration'&&node.callee.property?.name==='showNotification');
+              if(!createsWorkerNotification)return false;
+              const assignments=Array.from(descendants(guard.alternate)).filter(node=>node.type==='AssignmentExpression'&&node.operator==='=');
+              return assignments.some(({left,right})=>left.type==='Identifier'&&right.type==='NewExpression'&&right.callee.name==='Notification'&&
+                assignments.some(({left:target,right:handler})=>target.type==='MemberExpression'&&!target.computed&&target.object.name===left.name&&
+                  target.property.name==='onclick'&&['FunctionExpression','ArrowFunctionExpression'].includes(handler.type)));
+            }
+            let requiresNotificationFallback=false, hasNotificationFallback=false;
+            const queue=[{node:program, inFunction:false, hasRegistration:false}];
+            while(queue.length){
+              const {node,inFunction,hasRegistration}=queue.pop();
+              if(node.type==='Identifier'&&(workerOnly.has(node.name)&&!(hasRegistration&&node.name==='registration')||
+                 node.name==='importScripts'&&!accepted.has(node)))return null;
+              const value=literal(node);
+              if(workerOnly.has(value)||value==='importScripts')return null;
+              const stricter=standalone||guardedEntry||guardedDependency;
+              if(stricter&&(node.type==='ImportExpression'||
+                (node.name==='location'||value==='location')&&!(guardedDependency&&inFunction)||
+                (node.type==='Identifier'&&node.name.startsWith('on')&&extraWorkerEvents.has(node.name.slice(2)))))return null;
+              if(node.type==='CallExpression'&&node.arguments.length&&
+                 (node.callee.name==='addEventListener'||node.callee.property?.name==='addEventListener'||node.callee.property&&literal(node.callee.property)==='addEventListener')){
+                const event=literal(node.arguments[0]);
+                if(guardedEntry&&event==='notificationclick'&&node.callee.object?.name==='globalThis')requiresNotificationFallback=true;
+                else if(['install','activate','fetch'].includes(event)||stricter&&extraWorkerEvents.has(event))return null;
+              }
+              const insideFunction=inFunction||['FunctionDeclaration','FunctionExpression','ArrowFunctionExpression'].includes(node.type);
+              const hasGuard=guardedEntry&&node.type==='IfStatement'&&registrationGuard(node.test)&&node.alternate;
+              if(hasGuard&&!hasNotificationFallback)hasNotificationFallback=hasDocumentNotification(node);
+              for(const child of Object.values(node)){
+                if(Array.isArray(child)){for(const item of child)if(item?.type)queue.push({node:item,inFunction:insideFunction,hasRegistration});}
+                else if(child?.type)queue.push({node:child,inFunction:insideFunction,
+                  hasRegistration:hasRegistration||!!(hasGuard&&(child===node.test||child===node.consequent))});
+              }
+            }
+            if(requiresNotificationFallback&&!hasNotificationFallback)return null;
             return imports;
           } catch (_) { return null; }
         })
-        """#)
-    }
+        """#
 }
 
 private enum WebExtensionUserScriptParser {
     struct Completion: Sendable { let statementStart: Int; let statementEnd: Int; let expressionStart: Int; let expressionEnd: Int }
+    private struct Result: Decodable { let ranges: [Int]?; let error: String? }
+
     static func completion(in source: String) async throws -> Completion? {
-        guard let url = Bundle.main.url(forResource: "acorn-8.15.0", withExtension: "js") else { throw URLError(.fileDoesNotExist) }
-        return try await Task.detached(priority: .userInitiated) {
-            let context = JSContext()!
-            context.evaluateScript(try String(contentsOf: url, encoding: .utf8))
-            let parse = context.evaluateScript("(function(source){const body=acorn.parse(source,{ecmaVersion:'latest',sourceType:'script'}).body,last=body[body.length-1];return last?.type==='ExpressionStatement'?[last.start,last.end,last.expression.start,last.expression.end]:null;})")!
-            let value = parse.call(withArguments: [source])
-            if let error = context.exception {
-                throw NSError(domain: "com.dkluge.Soulo.UserScripts", code: 1, userInfo: [NSLocalizedDescriptionKey: error.toString() ?? "Invalid user script syntax."])
-            }
-            guard let ranges = value?.toArray() as? [Int], ranges.count == 4 else { return nil }
-            return Completion(statementStart: ranges[0], statementEnd: ranges[1], expressionStart: ranges[2], expressionEnd: ranges[3])
-        }.value
+        let parser = try await WebExtensionSourceAnalyzer(function: #"""
+        (function(source){
+          try {
+            const last=acorn.parse(source,{ecmaVersion:'latest',sourceType:'script'}).body.at(-1);
+            return JSON.stringify(last?.type==='ExpressionStatement'
+              ? {ranges:[last.start,last.end,last.expression.start,last.expression.end]} : {});
+          } catch(error) { return JSON.stringify({error:String(error)}); }
+        })
+        """#)
+        guard let value = try await parser.analyze(source, as: String.self) else { return nil }
+        let result = try JSONDecoder().decode(Result.self, from: Data(value.utf8))
+        if let error = result.error {
+            throw NSError(domain: "com.dkluge.Soulo.UserScripts", code: 1, userInfo: [NSLocalizedDescriptionKey: error])
+        }
+        guard let ranges = result.ranges, ranges.count == 4 else { return nil }
+        return Completion(statementStart: ranges[0], statementEnd: ranges[1], expressionStart: ranges[2], expressionEnd: ranges[3])
     }
 }
 

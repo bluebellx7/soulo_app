@@ -241,8 +241,6 @@
 "login_required_toast" = "Logg inn først, søk deretter på nytt";
 "status_enabled" = "Aktivert";
 "status_disabled" = "Deaktivert";
-"show_top_search_bar" = "Vis øverste søkefelt";
-"show_top_search_bar_desc" = "Når den er skjult, bruk den nederste adressekontrollen for å søke eller starte taleinndata";
 "ad_block_master_disabled_desc" = "Slå på annonseblokkering for å bruke og administrere filterabonnementene nedenfor.";
 "custom_groups" = "Egendefinerte grupper";
 "no_groups" = "Ingen egendefinerte grupper";
@@ -364,8 +362,6 @@
 "batch_import_result" = "%d-plattformer er importert";
 "paste_from_clipboard" = "Lim inn fra utklippstavlen";
 "none" = "Ingen";
-"show_group_picker_home" = "Vis gruppevelger på Hjem";
-"show_group_picker_home_desc" = "Vis plattformgruppefaner på startskjermen for raskt bytte";
 "error_no_internet" = "Ingen internettforbindelse. Vennligst sjekk nettverket ditt.";
 "error_timeout" = "Tilkoblingen ble tidsavbrutt. Vennligst prøv igjen.";
 "error_ssl" = "Sikker tilkobling mislyktes. Dette nettstedet er kanskje ikke trygt.";

@@ -678,9 +678,21 @@ import Combine
         XCTAssertNil(model.errorMessage,"Blocked retries must not turn the source page into a load failure")
         model.resolveDomainNavigationConfirmation(id:confirmation.id,allowed:allowed)
         try await wait(model,for: allowed ? "!!document.getElementById('chosen')" : "!!document.getElementById('origin')")
+        if !allowed {
+            let destination = root.appendingPathComponent("chosen.html")
+            _ = try await web.callAsyncJavaScript("setTimeout(() => { location.href = destination; }, 100); return true;",
+                arguments: ["destination": destination.absoluteString], in: nil, contentWorld: .page)
+            try await Task.sleep(for: .milliseconds(350))
+            XCTAssertFalse(server.receivedRequests.contains { $0.path == "/chosen.html" })
+            XCTAssertEqual(web.url, source)
+        }
         XCTAssertNil(model.errorMessage)
         XCTAssertNil(model.domainNavigationConfirmation)
         XCTAssertEqual(prompts,[confirmation.id],"The pending prompt must resolve once")
+        if !allowed {
+            model.loadURL(root.appendingPathComponent("chosen.html"))
+            try await wait(model, for: "!!document.getElementById('chosen')")
+        }
     }
 
     func testConfirmedPostKeepsConsentThroughServerRedirects() async throws {
@@ -1323,6 +1335,7 @@ import Combine
         let (window, previous) = try host(model)
         defer { close(model, window, previous) }
         model.loadURL(root.appendingPathComponent("visible-with-pending-resource"))
+        try await wait(model, for: "location.pathname === '/visible-with-pending-resource' && document.querySelector('main')?.textContent === 'Visible content'")
         for _ in 0..<100 {
             if model.hasVisibleContent { break }
             try await Task.sleep(for: .milliseconds(30))
@@ -1809,6 +1822,7 @@ import Combine
         model.loadURL(root.appendingPathComponent("destination"))
         try await wait(model, for: "!!document.getElementById('destination')")
         let web = try XCTUnwrap(model.webView)
+        let expectedBackItem = try XCTUnwrap(web.backForwardList.backItem)
         let coordinator = try XCTUnwrap(web.navigationDelegate as? WebViewRepresentable.Coordinator)
         let delayed = DelayedHistoryDecision(coordinator: coordinator)
         web.navigationDelegate = delayed
@@ -1823,37 +1837,36 @@ import Combine
         XCTAssertTrue(delayed.sawOutgoingRequest, "The competing navigation must actually execute")
         XCTAssertTrue(delayed.cancelledOutgoingRequest)
         XCTAssertFalse(server.requests.contains { $0.path == "/receipt" }, "The abandoned redirect must never reach the network")
+        XCTAssertIdentical(web.backForwardList.currentItem, expectedBackItem)
+        XCTAssertEqual(web.backForwardList.forwardItem?.url.path, "/destination")
         XCTAssertNil(model.errorMessage)
     }
 
-    func testHistoryButtonsPresentDestinationBeforeNavigationCompletes() async throws {
-        let server = try frameHistoryFixture()
+    func testHistoryButtonsKeepTheNativeViewDuringRestoration() async throws {
+        let server = try BrowsingHTTPFixture()
         let root = try await server.start()
         defer { server.stop() }
         let model = WebViewModel()
         let (window, previous) = try host(model)
         defer { close(model, window, previous) }
-        for page in ["list", "player"] {
+        for page in ["form", "destination"] {
             model.loadURL(root.appendingPathComponent(page))
             try await wait(model, for: "!!document.getElementById('\(page)')")
-            for _ in 0..<100 where !model.hasVisibleContent { try await Task.sleep(for: .milliseconds(20)) }
-            await withCheckedContinuation { continuation in
-                model.takeSnapshot { continuation.resume() }
-            }
         }
+        let web = try XCTUnwrap(model.webView)
         model.goBack()
-        XCTAssertEqual(model.historyPreview?.url.path,"/list", "Back must change the presented destination immediately")
-        XCTAssertNotNil(model.historyPreview?.image, "Reuse the saved destination rather than the outgoing player")
-        try await wait(model,for:"!!document.getElementById('list')")
-        for _ in 0..<100 where model.historyPreview != nil { try await Task.sleep(for:.milliseconds(20)) }
-        XCTAssertNil(model.historyPreview,"Reveal restored content as soon as it is ready")
+        XCTAssertTrue(model.webView === web)
+        try await wait(model, for: "!!document.getElementById('form')")
+        for _ in 0..<100 where !model.canGoForward { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertTrue(model.canGoForward)
+
         model.goForward()
-        try await wait(model,for:"!!document.getElementById('player')")
-        XCTAssertNil(model.historyPreview)
+        try await wait(model, for: "!!document.getElementById('destination')")
         model.goBack()
-        XCTAssertNotNil(model.historyPreview)
+        try await wait(model, for: "!!document.getElementById('form')")
         model.reload()
-        XCTAssertNil(model.historyPreview,"Stopping a history request must not leave a frozen preview")
+        try await wait(model, for: "!!document.getElementById('form')")
+        XCTAssertTrue(model.webView === web)
     }
 
     func testBackButtonSkipsChildFrameHistoryAndKeepsForwardHistory() async throws {
@@ -2138,7 +2151,9 @@ import Combine
         model.loadURL(root.appendingPathComponent("redirect-hop"))
         try await wait(model, for: "!!document.getElementById('destination')")
         let web = try XCTUnwrap(model.webView)
-        XCTAssertTrue(web.backForwardList.backList.contains { $0.url.path == "/redirect-hop" })
+        // WebKit may omit a script-redirected document from its native list.
+        // Whether it keeps the entry or elides it, Back must avoid reloading it.
+        XCTAssertEqual(server.requests.filter { $0.path == "/redirect-hop" }.count, 1)
         if usingNativeBack { web.goBack() } else { model.goBack() }
         try await wait(model, for: "!!document.getElementById('form')")
         XCTAssertNil(model.errorMessage)

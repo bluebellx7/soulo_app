@@ -365,14 +365,21 @@ final class TorrentStreamingTests: XCTestCase {
     @MainActor
     func testFileMusicKeepsPlayingAfterNavigationAndAutomaticallyAdvancesInBothModes() async throws {
         let defaults = UserDefaults.standard, oldRate = UserDefaults.standard.object(forKey: "media.rate")
+        let oldLoop = MediaSession.shared.loop
         defaults.set(1.0, forKey: "media.rate")
+        MediaSession.shared.loop = false
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("MusicQueue-\(UUID())")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        defer { MediaSession.shared.stop(); defaults.set(oldRate, forKey: "media.rate"); try? FileManager.default.removeItem(at: root) }
+        defer {
+            MediaSession.shared.stop()
+            MediaSession.shared.loop = oldLoop
+            defaults.set(oldRate, forKey: "media.rate")
+            try? FileManager.default.removeItem(at: root)
+        }
         let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 8000, channels: 1))
         let urls = [root.appendingPathComponent("2.wav"), root.appendingPathComponent("10.wav")]
         for (index, file) in urls.enumerated() {
-            let frames: AVAudioFrameCount = index == 0 ? 12000 : 64000
+            let frames: AVAudioFrameCount = index == 0 ? 12000 : 20000
             let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames)); buffer.frameLength = frames
             if let samples = buffer.floatChannelData?[0] { for i in 0..<Int(frames) { samples[i] = Float(sin(Double(i) * 0.1)) * 0.05 } }
             try AVAudioFile(forWriting: file, settings: format.settings).write(from: buffer)
@@ -404,6 +411,15 @@ final class TorrentStreamingTests: XCTestCase {
             XCTAssertTrue(MediaSession.shared.playing, engine)
             XCTAssertGreaterThan(MediaSession.shared.elapsed, 0.1, engine)
             XCTAssertEqual(MediaSession.shared.soulo != nil, engine == "soulo")
+            for _ in 0..<140 {
+                if MediaSession.shared.url?.lastPathComponent == "2.wav", MediaSession.shared.playing,
+                   MediaSession.shared.elapsed > 0.1 { break }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            XCTAssertEqual(MediaSession.shared.url?.lastPathComponent, "2.wav", "The last track must wrap to the first: \(engine)")
+            XCTAssertTrue(MediaSession.shared.playing, engine)
+            XCTAssertGreaterThan(MediaSession.shared.elapsed, 0.1, engine)
+            XCTAssertEqual(MediaSession.shared.soulo != nil, engine == "soulo")
             MediaSession.shared.stop()
         }
     }
@@ -420,10 +436,6 @@ final class TorrentStreamingTests: XCTestCase {
         let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
         let host = UIHostingController(rootView: NavigationStack { LocalDocumentContent(url: url) })
         window.rootViewController = host; window.makeKeyAndVisible()
-        func find(_ view: UIView) -> MatroskaPlayback? {
-            if let surface = view as? MatroskaVideoSurface { return surface.playback }
-            return view.subviews.lazy.compactMap { find($0) }.first
-        }
         var playback: MatroskaPlayback?
         defer {
             playback?.stop(); MediaSession.shared.stop()
@@ -431,7 +443,7 @@ final class TorrentStreamingTests: XCTestCase {
             try? FileManager.default.removeItem(at: url)
         }
         for _ in 0..<80 {
-            playback = find(SharedVideoFullscreenHost.current(in: window)?.screen?.view ?? window)
+            playback = MediaSession.shared.soulo
             if (playback?.elapsed ?? 0) > 0.4 { break }
             try await Task.sleep(for: .milliseconds(50))
         }
@@ -440,6 +452,9 @@ final class TorrentStreamingTests: XCTestCase {
         XCTAssertGreaterThan(decoder.elapsed, 0.4)
         XCTAssertTrue(decoder.playing)
         XCTAssertNil(MediaSession.shared.player.currentItem)
+        XCTAssertGreaterThan(MediaSession.shared.musicPlayerPages, 0)
+        MediaSession.shared.outputVolumeChanged(0.36)
+        XCTAssertEqual(MediaSession.shared.gestureFeedback?.text, "36%")
     }
 
     @MainActor
@@ -511,15 +526,20 @@ final class TorrentStreamingTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(50))
         }
         XCTAssertTrue(drawable.isDescendant(of: fullscreen.view), "Fullscreen must display the active video surface")
+        let canUseCanvasRotation = UIDevice.current.userInterfaceIdiom == .pad
         for _ in 0..<60 {
-            if scene.interfaceOrientation.isLandscape, fullscreen.view.bounds.width > fullscreen.view.bounds.height,
-               fullscreen.transitionCoordinator == nil { break }
+            let displayed = drawable.convert(drawable.bounds, to: fullscreen.view)
+            let viewport = fullscreen.view.bounds
+            if fullscreen.transitionCoordinator == nil,
+               viewport.width > viewport.height || (canUseCanvasRotation && displayed.height > displayed.width) { break }
             try await Task.sleep(for: .milliseconds(50))
         }
         let videoFrame = drawable.convert(drawable.bounds, to: fullscreen.view)
-        XCTAssertGreaterThan(fullscreen.view.bounds.width, fullscreen.view.bounds.height)
+        let viewport = fullscreen.view.bounds
+        if !canUseCanvasRotation { XCTAssertGreaterThan(viewport.width, viewport.height) }
         let videoSize = try XCTUnwrap(decoder.player).videoSize
-        XCTAssertEqual(videoFrame.width / videoFrame.height, videoSize.width / videoSize.height, accuracy: 0.01)
+        let expectedAspect = viewport.width > viewport.height ? videoSize.width / videoSize.height : videoSize.height / videoSize.width
+        XCTAssertEqual(videoFrame.width / videoFrame.height, expectedAspect, accuracy: 0.01)
         XCTAssertEqual(videoFrame.midX, fullscreen.view.bounds.midX, accuracy: 2)
         XCTAssertEqual(videoFrame.midY, fullscreen.view.bounds.midY, accuracy: 2)
         XCTAssertLessThanOrEqual(videoFrame.width, fullscreen.view.bounds.width + 2)
@@ -537,7 +557,16 @@ final class TorrentStreamingTests: XCTestCase {
             if !decoder.playing { decoder.togglePlayback() }
         }
         XCTAssertTrue(decoder.drawable === drawable, "Entering fullscreen must preserve the active video output")
+        // Rotation can take longer than the transport's auto-hide delay.
+        if button("media.mkv.fullscreen.close", in: fullscreen.view) == nil {
+            decoder.pause()
+            for _ in 0..<20 where button("media.mkv.fullscreen.close", in: fullscreen.view) == nil {
+                try await Task.sleep(for: .milliseconds(25))
+            }
+        }
         let close = try XCTUnwrap(button("media.mkv.fullscreen.close", in: fullscreen.view))
+        decoder.play()
+        XCTAssertTrue(decoder.isPlaybackRequested)
         close.sendActions(for: .touchUpInside)
         for _ in 0..<100 {
             if SharedVideoFullscreenHost.current(in: window) == nil, !decoder.playing { break }

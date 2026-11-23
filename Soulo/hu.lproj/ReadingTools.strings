@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapszula";
 "home_toolbar_icons" = "Csak ikonok";
 "home_toolbar_bottom" = "Alul";
-"home_toolbar_belowSearch" = "A kereső alatt";
 "home_toolbar_free" = "Szabad elhelyezés";
+"home_toolbar_search_bottom" = "Alul";
+"home_toolbar_alignment" = "Eszköztár igazítása";
 "home_toolbar_leading" = "Igazítás az elejére";
 "home_toolbar_center" = "Középre";
 "home_toolbar_trailing" = "Igazítás a végére";
 "home_toolbar_drag_position" = "Húzd az eszköztárat a kívánt helyre.";
 "home_toolbar_drag_buttons" = "Koppints a gomb cseréjéhez, húzd az átrendezéshez.";
+"home_toolbar_style" = "Stílus";
+"home_toolbar_visibility" = "Megjelenítés/elrejtés";
+"home_toolbar_visibility_page" = "Kezdőlap elemei";
+"home_toolbar_visibility_search_area" = "Keresési terület";
+"home_toolbar_visibility_title" = "Cím";
+"home_toolbar_visibility_subtitle" = "Alcím";
+"home_toolbar_visibility_search" = "Keresősáv";
+"home_toolbar_visibility_search_hint" = "A keresősáv megjelenítéséhez húzza felfelé vagy lefelé az ujját a kezdőlapon.";
+"home_toolbar_visibility_recovery" = "A menü megnyitásához tartsa lenyomva a kezdőlap egy üres részét.";
 "home_toolbar_search" = "Keressen egy oldalt";
 "group_default_search" = "Alapértelmezett keresés";
 "group_search_settings" = "Csoportbeállítások";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Matt üveg";
 "wallpaper_blur_amount" = "Elmosás erőssége";
 
+"home_quick_search_guide" = "Írjon be egy kulcsszót a kezdőlapon, és a keresősáv alatt megjelennek a platformok. Koppintson egy platformra a kereséshez.";
 "auto_hide_platform_bar_hint" = "Bekapcsolva a sáv csak a weboldal tartalmának megérintése után rejtőzik el, és csak akkor, ha az oldal domainje a jelenlegi sáv egyik platformjával sem egyezik. Egyezéskor a sáv látható marad vagy újra megjelenik. Görgetés és automatikus átirányítás nem rejti el.";
 
 "ad_subscription_add" = "Szűrőlista hozzáadása";
@@ -620,3 +631,9 @@
 "browsing_web_display" = "Weboldalak";
 "manual_backups_empty" = "Még nincs kézi mentés";
 "browsing_display_settings_legacy" = "Böngészési megjelenítés";
+"media_lock_orientation" = "Tájolás zárolása";
+"media_unlock_orientation" = "Tájolás feloldása";
+
+"music_queue" = "Lejátszási lista";
+"music_previous_track" = "Előző szám";
+"music_next_track" = "Következő szám";

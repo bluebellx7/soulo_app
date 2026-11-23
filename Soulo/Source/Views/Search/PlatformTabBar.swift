@@ -17,7 +17,6 @@ struct PlatformTabBar: View {
     let platforms: [SearchPlatform]
     @Binding var selectedPlatform: SearchPlatform?
     let highlightedPlatformID: UUID?
-    var usesContrastingControlSurface: Bool = false
     var onSelection: ((SearchPlatform) -> Void)? = nil
     @EnvironmentObject var languageManager: LanguageManager
     @Namespace private var platformNamespace
@@ -26,8 +25,7 @@ struct PlatformTabBar: View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(platforms) { platform in
-                        let index = platforms.firstIndex(where: { $0.id == platform.id }) ?? 0
+                    ForEach(Array(platforms.enumerated()), id: \.element.id) { index, platform in
                         PlatformTab(
                             platform: platform,
                             isSelected: highlightedPlatformID == platform.id,

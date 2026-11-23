@@ -18,6 +18,20 @@ private actor SuggestionRequests {
 }
 
 @MainActor final class SearchInputTests: XCTestCase {
+    func testReplacingAnEditingFieldIgnoresTheOldFieldsTeardown() {
+        let input = SearchInputState()
+        let formerField = UITextField()
+        let currentField = UITextField()
+
+        input.setEditing(true, owner: ObjectIdentifier(formerField))
+        input.setEditing(true, owner: ObjectIdentifier(currentField))
+        input.setEditing(false, owner: ObjectIdentifier(formerField))
+        XCTAssertTrue(input.isEditing)
+
+        input.setEditing(false, owner: ObjectIdentifier(currentField))
+        XCTAssertFalse(input.isEditing)
+    }
+
     func testAutocompleteHighlightPreservesUnicodeAndOriginalStringIndices() throws {
         let cases: [(String, String, String, String, String)] = [
             ("中文输入法", " 中文 ", "", "中文", "输入法"),

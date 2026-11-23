@@ -102,7 +102,7 @@ final class ReadingToolsTests: XCTestCase {
             XCTAssertThrowsError(try TransferHTTPHead.parse(Data("PUT /file HTTP/1.1\r\nHost: localhost\r\n\(headers)\r\n".utf8)))
         }
     }
-    func testWiFiPairUploadDownloadConflictAndTraversal() async throws {
+    @MainActor func testWiFiPairUploadDownloadConflictAndTraversal() async throws {
         let server = WiFiTransferServer(directory: root, code: "123456")
         let started = expectation(description: "server starts")
         let portBox = TransferPortBox()
@@ -130,6 +130,34 @@ final class ReadingToolsTests: XCTestCase {
         let conflict = try await request("/file?name=hello.txt", "PUT", data, cookie: cookie); XCTAssertEqual(conflict.1.statusCode, 409)
         let traversal = try await request("/file?name=..%2Foutside.txt", "PUT", Data(), cookie: cookie); XCTAssertEqual(traversal.1.statusCode, 400)
         XCTAssertEqual(try Data(contentsOf: root.appendingPathComponent("hello.txt")), data)
+
+        // Photos uses this same staging and commit path before the library serves the file.
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 12, height: 12)).image { context in
+            UIColor.systemBlue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 12, height: 12))
+        }
+        let jpeg = try XCTUnwrap(image.jpegData(compressionQuality: 0.9))
+        let photo = try file(".picker-source.jpg", jpeg)
+        let clip = try XCTUnwrap(Bundle(for: Self.self).url(
+            forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        for (source, name) in [(photo, "album-photo.jpg"), (clip, "album-video.mp4")] {
+            let staged = try LibraryFileImport.stage(source, name: name)
+            _ = try LibraryFileImport.commit(staged, to: root)
+            let downloaded = try await request("/file?name=" + name, cookie: cookie)
+            XCTAssertEqual(downloaded.1.statusCode, 200)
+            XCTAssertEqual(downloaded.0, try Data(contentsOf: source))
+            if source == photo {
+                XCTAssertNotNil(UIImage(data: downloaded.0))
+            } else {
+                let receivedVideo = try file("received-album-video.mp4", downloaded.0)
+                let playable = try await AVURLAsset(url: receivedVideo).load(.isPlayable)
+                XCTAssertTrue(playable)
+            }
+        }
+        let listing = try await request("/files", cookie: cookie)
+        let files = try XCTUnwrap(JSONSerialization.jsonObject(with: listing.0) as? [[String: Any]])
+        XCTAssertTrue(files.contains { $0["name"] as? String == "album-photo.jpg" && $0["kind"] as? String == "image" })
+        XCTAssertTrue(files.contains { $0["name"] as? String == "album-video.mp4" && $0["kind"] as? String == "video" })
     }
     @MainActor func testNovelNavigationRestrictsOriginAndLoops() {
         let source = URL(string: "https://example.com/chapter1")!
@@ -298,6 +326,20 @@ final class ReadingToolsTests: XCTestCase {
         let untouched = try await webView.evaluateJavaScript("document.querySelector('input').value") as? String
         XCTAssertEqual(untouched, "private")
     }
+    @MainActor func testRestoringOutOfRangeBookProgressKeepsBookmarksUsable() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        defer { try? FileManager.default.removeItem(at: file) }
+        var book = LibraryBook(id: "progress-fixture", name: "Progress fixture", fileName: "book.pdf")
+        book.location = "page-1"
+        book.fraction = 1e100
+        try JSONEncoder().encode([book]).write(to: file)
+
+        let library = BookLibrary(metadata: file)
+        XCTAssertEqual(library.books.first?.fraction, 1)
+        library.bookmark(book.id)
+        XCTAssertEqual(library.books.first?.bookmarks.first?.label, "100%")
+    }
+
     @MainActor func testBookshelfDeduplicatesRestoresProgressAndFollowsMovedFiles() async throws {
         let metadata = root.appendingPathComponent("shelf.json")
         let library = BookLibrary(metadata: metadata)
@@ -323,10 +365,17 @@ final class ReadingToolsTests: XCTestCase {
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(
             forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
         let url = try file("rates.mp4", Data(contentsOf: fixture))
-        session.open(url: url)
+        session.open(url: url, persistPosition: false, autoplay: false, initialRate: 1)
         try await wait { session.player.currentItem?.status == .readyToPlay }
+        session.play()
+        try await wait { session.player.currentTime().seconds > 0.25 }
+        XCTAssertTrue(session.setRate(0.5))
+        let switchedAt = session.player.currentTime().seconds
+        try await wait { session.player.rate == 0.5 && session.player.currentTime().seconds > switchedAt + 0.1 }
+        session.pause()
         for rate: Float in [0.5, 1, 2, 4, 8, 16] {
-            await session.player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
+            let positioned = await session.player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
+            XCTAssertTrue(positioned)
             let accepted = session.setRate(rate)
             if !accepted { XCTAssertGreaterThan(rate, 2); print("MEDIA_RATE \(rate): unavailable for this asset; UI rejects it"); continue }
             session.play()

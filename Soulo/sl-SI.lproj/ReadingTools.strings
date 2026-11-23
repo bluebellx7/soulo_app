@@ -390,13 +390,23 @@
 "home_toolbar_capsule" = "Kapsula";
 "home_toolbar_icons" = "Samo ikone";
 "home_toolbar_bottom" = "Na dnu";
-"home_toolbar_belowSearch" = "Pod iskanjem";
 "home_toolbar_free" = "Prosta postavitev";
+"home_toolbar_search_bottom" = "Na dnu";
+"home_toolbar_alignment" = "Poravnava orodne vrstice";
 "home_toolbar_leading" = "Poravnaj na začetek";
 "home_toolbar_center" = "Na sredino";
 "home_toolbar_trailing" = "Poravnaj na konec";
 "home_toolbar_drag_position" = "Povleci orodno vrstico na želeno mesto.";
 "home_toolbar_drag_buttons" = "Tapni za zamenjavo gumba. Povleci za spremembo vrstnega reda.";
+"home_toolbar_style" = "Slog";
+"home_toolbar_visibility" = "Pokaži/skrij";
+"home_toolbar_visibility_page" = "Elementi domače strani";
+"home_toolbar_visibility_search_area" = "Območje iskanja";
+"home_toolbar_visibility_title" = "Naslov";
+"home_toolbar_visibility_subtitle" = "Podnaslov";
+"home_toolbar_visibility_search" = "Iskalna vrstica";
+"home_toolbar_visibility_search_hint" = "Povlecite navzgor ali navzdol na domači strani za prikaz iskalne vrstice.";
+"home_toolbar_visibility_recovery" = "Za odprtje menija pridržite prazen prostor na domači strani.";
 "home_toolbar_search" = "Poiščite stran";
 "group_default_search" = "Privzeto iskanje";
 "group_search_settings" = "Nastavitve skupine";
@@ -512,6 +522,7 @@
 "wallpaper_image_blur" = "Motno steklo";
 "wallpaper_blur_amount" = "Moč zameglitve";
 
+"home_quick_search_guide" = "Na domači strani vnesite ključno besedo, da se pod iskalno vrstico prikažejo platforme. Tapnite platformo za iskanje.";
 "auto_hide_platform_bar_hint" = "Ko je omogočeno, se vrstica skrije le po dotiku vsebine strani, če se njena domena ne ujema z nobeno platformo v trenutni vrstici. Ob ujemanju s katero koli platformo vrstica ostane vidna ali se znova prikaže. Pomikanje in samodejne preusmeritve je ne skrijejo.";
 
 "ad_subscription_add" = "Dodaj seznam filtrov";
@@ -621,3 +632,9 @@
 "browsing_web_display" = "Spletne strani";
 "manual_backups_empty" = "Ni še ročnih kopij";
 "browsing_display_settings_legacy" = "Prikaz brskanja";
+"media_lock_orientation" = "Zakleni usmerjenost";
+"media_unlock_orientation" = "Odkleni usmerjenost";
+
+"music_queue" = "Seznam predvajanja";
+"music_previous_track" = "Prejšnja skladba";
+"music_next_track" = "Naslednja skladba";

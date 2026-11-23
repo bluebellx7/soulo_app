@@ -24,6 +24,7 @@ final class WebExtensionURLDownload: NSObject, WKDownloadDelegate, WKNavigationD
     private var started = false
     private var expectedBytes: Int64 = -1
     private var temporaryDestination: URL?
+    private var temporaryByteLimit: Int64?
     var retainedTemporaryFileURL: URL? { temporaryDestination }
     private var temporaryCompletion: ((URL, String, Int64) -> Void)?
     private var mimeType = "application/octet-stream"
@@ -35,11 +36,12 @@ final class WebExtensionURLDownload: NSObject, WKDownloadDelegate, WKNavigationD
         super.init()
     }
 
-    convenience init(temporaryDestination: URL, url: URL,
+    convenience init(temporaryDestination: URL, url: URL, byteLimit: Int64? = nil,
                      completed: @escaping (URL, String, Int64) -> Void,
                      rejected: @escaping (Error) -> Void, ended: @escaping () -> Void) {
         self.init(url: url, filename: nil, accepted: { _ in }, rejected: rejected, ended: ended)
         self.temporaryDestination = temporaryDestination
+        self.temporaryByteLimit = byteLimit
         self.temporaryCompletion = completed
     }
 
@@ -99,6 +101,11 @@ final class WebExtensionURLDownload: NSObject, WKDownloadDelegate, WKNavigationD
         expectedBytes = response.expectedContentLength
         BrowserStartupTrace.mark("extension_download_destination", detail: "bytes=\(expectedBytes)")
         if let temporaryDestination {
+            if let temporaryByteLimit, expectedBytes < 0 || expectedBytes > temporaryByteLimit {
+                completionHandler(nil)
+                finish(error: URLError(.dataLengthExceedsMaximum))
+                return
+            }
             mimeType = response.mimeType ?? mimeType
             deadline?.cancel(); deadline = nil
             completionHandler(temporaryDestination)

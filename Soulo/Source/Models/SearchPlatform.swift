@@ -30,6 +30,30 @@ enum SearchPlatformURLInput {
     }
 }
 
+struct SearchPlatformDraft: Identifiable {
+    let id = UUID()
+    let template: String
+    static let command = "add-search-platform"
+
+    init?(link: URL) {
+        guard link.scheme?.lowercased() == "soulo", link.host?.lowercased() == Self.command,
+              link.user == nil, link.password == nil, link.port == nil, ["", "/"].contains(link.path),
+              link.fragment == nil, link.absoluteString.utf8.count <= 12_288,
+              let items = URLComponents(url: link, resolvingAgainstBaseURL: false)?.queryItems,
+              items.count == 1, items.first?.name == "template", let value = items.first?.value,
+              value.utf8.count <= 4096,
+              let template = SearchPlatformURLInput.searchTemplate(value),
+              template.components(separatedBy: "%@").count == 2 else { return nil }
+        let marker = "soulo-search-placeholder"
+        guard !template.lowercased().contains(marker),
+              let parts = URLComponents(string: template.replacingOccurrences(of: "%@", with: marker)),
+              parts.user == nil, parts.password == nil, parts.fragment == nil,
+              parts.percentEncodedPath.split(separator: "/").contains(where: { $0 == marker })
+                || parts.queryItems?.contains(where: { $0.value == marker }) == true else { return nil }
+        self.template = template
+    }
+}
+
 enum PlatformInteractionType: String, Codable {
     case urlSearch       // Standard: load search URL directly
     case aiChat          // AI chat: need to inject text into chat input and send

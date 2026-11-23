@@ -6,7 +6,14 @@ import WebKit
 /// its tab and is never returned to the pool with history, scripts or handlers.
 @MainActor
 final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
-    static let shared = BrowserWebViewPool()
+    static let shared = BrowserWebViewPool(allowsWarmupInMode: supportsSpeculativeWarmup)
+
+    static func supportsSpeculativeWarmup(isIncognito: Bool) -> Bool {
+        // On iOS 18, an already prewarmed, detached WebView sharing the
+        // extension controller can stall background startup even after release.
+        guard #available(iOS 18.4, *), ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 18 else { return true }
+        return isIncognito || !BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled
+    }
 
     private(set) var preparedWebView: AccessibleWebView?
     private(set) var isPreparedWebViewReady = false
@@ -20,12 +27,15 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
     private let warmupDelay: Duration
     private let refillDelay: Duration
     private let resources: BrowserResourcePolicy
+    private let allowsWarmupInMode: (Bool) -> Bool
 
-    init(warmupDelay: Duration = .milliseconds(350), refillDelay: Duration = .seconds(2), resources: BrowserResourcePolicy? = nil) {
+    init(warmupDelay: Duration = .milliseconds(350), refillDelay: Duration = .seconds(2), resources: BrowserResourcePolicy? = nil,
+         allowsWarmupInMode: @escaping (Bool) -> Bool = { _ in true }) {
         let resources = resources ?? .shared
         self.warmupDelay = warmupDelay
         self.refillDelay = refillDelay
         self.resources = resources
+        self.allowsWarmupInMode = allowsWarmupInMode
         super.init()
         resources.$allowsSpeculation.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] allowed in
             guard let self else { return }
@@ -69,7 +79,8 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
         discardPreparedWebView()
     }
 
-    func makeWebView(isIncognito: Bool, for url: URL?) -> AccessibleWebView {
+    func makeWebView(isIncognito: Bool, for url: URL?,
+                     prepareUserContent: (WKUserContentController) -> Void = { _ in }) -> AccessibleWebView {
         BrowserStartupTrace.mark("acquire_start")
         synchronizeMode(isIncognito)
         let webView: AccessibleWebView
@@ -81,9 +92,14 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
             self.preparedWebView = nil
             isPreparedWebViewReady = false
             webView.navigationDelegate = nil
+            prepareUserContent(webView.configuration.userContentController)
         } else {
             BrowserStartupTrace.mark("pool_miss")
-            webView = AccessibleWebView(frame: .zero, configuration: Self.configuration(isIncognito: isIncognito, for: url))
+            let configuration = Self.configuration(isIncognito: isIncognito, for: url)
+            // WebKit can initialize the content process with the complete
+            // controller state when it is ready before the view is created.
+            prepareUserContent(configuration.userContentController)
+            webView = AccessibleWebView(frame: .zero, configuration: configuration)
         }
         BrowserStartupTrace.mark("acquire_end")
         lastAcquiredWebView = webView
@@ -98,7 +114,7 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
     }
 
     private func scheduleWarmup(after delay: Duration) {
-        guard isActive, resources.allowsSpeculation, !isSuppressedForMemoryPressure,
+        guard isActive, allowsWarmupInMode(isIncognito), resources.allowsSpeculation, !isSuppressedForMemoryPressure,
               preparedWebView == nil, warmupTask == nil else { return }
         warmupTask = Task { @MainActor [weak self] in
             do {
@@ -112,7 +128,7 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
             } catch { return }
             guard let self else { return }
             self.warmupTask = nil
-            guard self.isActive, self.resources.allowsSpeculation, !self.isSuppressedForMemoryPressure,
+            guard self.isActive, self.allowsWarmupInMode(self.isIncognito), self.resources.allowsSpeculation, !self.isSuppressedForMemoryPressure,
                   self.preparedWebView == nil else { return }
             BrowserStartupTrace.mark("warmup_start")
             let webView = AccessibleWebView(frame: .zero, configuration: Self.configuration(isIncognito: self.isIncognito, for: nil))
@@ -160,9 +176,11 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
            !isIncognito, #available(iOS 18.4, *),
            let extensionConfiguration = NativeWebExtensionRuntime.shared.webViewConfiguration(for: url) {
+            // Extension popups and tabs use the owning context's data store.
             configuration = extensionConfiguration
         } else {
             configuration = WKWebViewConfiguration()
+            configuration.websiteDataStore = isIncognito ? .nonPersistent() : .default()
             if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
                !isIncognito, #available(iOS 18.4, *) {
                 NativeWebExtensionRuntime.shared.apply(to: configuration)
@@ -172,7 +190,6 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
         configuration.allowsInlineMediaPlayback = true
         configuration.preferences.isElementFullscreenEnabled = true
         configuration.mediaTypesRequiringUserActionForPlayback = []
-        configuration.websiteDataStore = isIncognito ? .nonPersistent() : .default()
         configuration.userContentController = WKUserContentController()
         return configuration
     }

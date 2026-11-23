@@ -3,17 +3,17 @@ import zlib
 @testable import Soulo
 
 final class ExtensionArchiveTests: XCTestCase {
-    func testPreparationIdentifiesAnInvalidManifestAndAMissingRequiredBackground() throws {
+    func testPreparationIdentifiesAnInvalidManifestAndAMissingRequiredBackground() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let manifest = root.appendingPathComponent("manifest.json")
         try Data("{".utf8).write(to: manifest)
-        XCTAssertThrowsError(try WebExtensionPackagePreparer.installCompatibilityLayer(in: root)) {
+        await assertExtensionPreparationThrows({ try await WebExtensionPackagePreparer.installCompatibilityLayer(in: root) }) {
             XCTAssertEqual(($0 as? WebExtensionInstallationFailure)?.stage, .manifest)
         }
         try Data(#"{"manifest_version":3,"name":"Missing background","version":"1.0","background":{"service_worker":"missing.js"}}"#.utf8).write(to: manifest)
-        XCTAssertThrowsError(try WebExtensionPackagePreparer.installCompatibilityLayer(in: root)) {
+        await assertExtensionPreparationThrows({ try await WebExtensionPackagePreparer.installCompatibilityLayer(in: root) }) {
             XCTAssertEqual(($0 as? WebExtensionInstallationFailure)?.stage, .background("missing.js"))
         }
     }
@@ -41,15 +41,15 @@ final class ExtensionArchiveTests: XCTestCase {
         return result
     }
 
-    private func prepare(_ data: Data, at root: URL, suffix: String = "zip") throws -> URL {
+    private func prepare(_ data: Data, at root: URL, suffix: String = "zip") async throws -> URL {
         let install = root.appendingPathComponent("installed")
         try FileManager.default.createDirectory(at: install, withIntermediateDirectories: true)
         let file = root.appendingPathComponent("fixture." + suffix)
         try data.write(to: file)
-        return try WebExtensionPackagePreparer.prepare(sourceURL: file, in: install)
+        return try await WebExtensionPackagePreparer.prepare(sourceURL: file, in: install)
     }
 
-    func testZIPXPIAndBothCRXHeadersPreserveExtensionResources() throws {
+    func testZIPXPIAndBothCRXHeadersPreserveExtensionResources() async throws {
         let zip = archive()
         var crx2 = Data("Cr24".utf8)
         crx2.u32(2); crx2.u32(2); crx2.u32(2); crx2.append(contentsOf: [0,0,0,0]); crx2.append(zip)
@@ -58,46 +58,60 @@ final class ExtensionArchiveTests: XCTestCase {
         for (data, suffix) in [(zip,"zip"),(zip,"xpi"),(crx2,"crx"),(crx3,"crx")] {
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: root) }
-            let prepared = try prepare(data, at: root, suffix: suffix)
+            let prepared = try await prepare(data, at: root, suffix: suffix)
             XCTAssertEqual(try Data(contentsOf: prepared.appendingPathComponent("manifest.json")), manifest)
             XCTAssertEqual(try String(contentsOf: prepared.appendingPathComponent("scripts/test.js"), encoding: .utf8), "var answer=42;")
         }
     }
 
-    func testCorruptionEncryptionTraversalAndOversizeEntriesAreRejected() throws {
+    func testCorruptionEncryptionTraversalAndOversizeEntriesAreRejected() async throws {
         for data in [archive(extraPath:"../outside.js"), archive(extraPath:"/outside.js"), archive(badCRC:true), archive(encrypted:true), archive(declaredSize:256 * 1_024 * 1_024 + 1), Data("Cr24".utf8), Data(archive().dropLast(12))] {
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: root) }
-            XCTAssertThrowsError(try prepare(data, at: root))
+            await assertExtensionPreparationThrows { try await prepare(data, at: root) }
             XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("installed/Extension").path))
             XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("outside.js").path))
         }
     }
 
-    func testArchiveCanInstallThroughAnAliasedContainerDirectory() throws {
+    func testArchiveCanInstallThroughAnAliasedContainerDirectory() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let real = root.appendingPathComponent("real")
         let alias = root.appendingPathComponent("alias")
         try FileManager.default.createDirectory(at: real, withIntermediateDirectories: true)
         try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: real)
-        let prepared = try prepare(archive(), at: alias)
+        let prepared = try await prepare(archive(), at: alias)
         XCTAssertEqual(try Data(contentsOf: prepared.appendingPathComponent("manifest.json")), manifest)
         XCTAssertEqual(try String(contentsOf: prepared.appendingPathComponent("scripts/test.js"), encoding: .utf8), "var answer=42;")
         XCTAssertEqual(prepared.resolvingSymlinksInPath().path, real.appendingPathComponent("installed/Extension").resolvingSymlinksInPath().path)
-        XCTAssertThrowsError(try prepare(archive(extraPath: "../../outside.js"), at: alias))
+        await assertExtensionPreparationThrows { try await prepare(archive(extraPath: "../../outside.js"), at: alias) }
         XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("outside.js").path))
     }
 
-    func testPopupQueryAndFragmentDoNotPreventCompatibilityInjection() throws {
+    func testPopupQueryAndFragmentDoNotPreventCompatibilityInjection() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         try Data(#"{"manifest_version":3,"name":"Popup query","version":"1.0","permissions":["notifications"],"action":{"default_popup":"popup.html?screen=main#fragment"}}"#.utf8)
             .write(to: root.appendingPathComponent("manifest.json"))
         try Data("<html><head></head><body>Popup</body></html>".utf8).write(to: root.appendingPathComponent("popup.html"))
-        try WebExtensionPackagePreparer.installCompatibilityLayer(in: root)
+        try await WebExtensionPackagePreparer.installCompatibilityLayer(in: root)
         XCTAssertTrue(try String(contentsOf: root.appendingPathComponent("popup.html"), encoding: .utf8).contains("__soulo_webextension_compatibility.js"))
+    }
+}
+
+func assertExtensionPreparationThrows<Value>(
+    _ operation: () async throws -> Value,
+    verify: (Error) -> Void = { _ in },
+    file: StaticString = #filePath,
+    line: UInt = #line
+) async {
+    do {
+        _ = try await operation()
+        XCTFail("Expected extension preparation to fail", file: file, line: line)
+    } catch {
+        verify(error)
     }
 }
 

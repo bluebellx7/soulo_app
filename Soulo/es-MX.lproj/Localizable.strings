@@ -241,8 +241,6 @@
 "login_required_toast" = "Por favor inicie sesión primero, luego busque nuevamente";
 "status_enabled" = "Habilitado";
 "status_disabled" = "Discapacitado";
-"show_top_search_bar" = "Mostrar barra de búsqueda superior";
-"show_top_search_bar_desc" = "Cuando esté oculto, use el control de dirección inferior para buscar o iniciar la entrada de voz";
 "ad_block_master_disabled_desc" = "Active Ad Block para usar y administrar las suscripciones de filtro a continuación.";
 "custom_groups" = "Grupos personalizados";
 "no_groups" = "Sin grupos personalizados";
@@ -364,8 +362,6 @@
 "batch_import_result" = "Plataformas %d importadas correctamente";
 "paste_from_clipboard" = "Pegar desde el portapapeles";
 "none" = "Ninguno";
-"show_group_picker_home" = "Mostrar selector de grupo en Inicio";
-"show_group_picker_home_desc" = "Muestre pestañas de grupos de plataformas en la pantalla de inicio para cambiar rápidamente";
 "error_no_internet" = "Sin conexión a Internet. Por favor verifique su red.";
 "error_timeout" = "Se agotó el tiempo de conexión. Por favor inténtalo de nuevo.";
 "error_ssl" = "La conexión segura falló. Es posible que este sitio no sea seguro.";

@@ -48,44 +48,28 @@ final class HomeToolbarUITests: XCTestCase {
         XCTAssertFalse(app.switches["settings.homeDisplay.bookmarks"].exists)
         XCTAssertFalse(app.switches["settings.browsingDisplay.topSearchBar"].exists)
         XCTAssertFalse(app.switches["settings.icloud-sync"].exists)
-        compactSettingsTap("settings.homeDisplay", app: app)
-        for id in ["bookmarks", "groups", "recentSearches", "liveActivity"] {
-            XCTAssertTrue(app.switches["settings.homeDisplay." + id].exists)
-        }
-        compactSettingsTap("settings.homeDisplay.title", app: app)
-        XCTAssertTrue(app.alerts.textFields.firstMatch.waitForExistence(timeout: 3))
-        app.alerts.buttons["Cancel"].tap()
-        compactSettingsTap("settings.homeDisplay.subtitle", app: app)
-        XCTAssertTrue(app.alerts.textFields.firstMatch.waitForExistence(timeout: 3))
-        app.alerts.buttons["Cancel"].tap()
-        let bookmarks = app.switches["settings.homeDisplay.bookmarks"]
-        let original = bookmarks.value as? String
-        bookmarks.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-        XCTAssertNotEqual(bookmarks.value as? String, original)
-        compactSettingsCapture(app, name: "compact-settings-home-display")
+        compactSettingsTap("settings.wallpaper", app: app)
+        XCTAssertTrue(app.navigationBars["Wallpaper"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["wallpaper.sources"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.segmentedControls["settings.personalization.section"].exists)
         app.navigationBars.buttons.firstMatch.tap()
         compactSettingsTap("settings.browsingDisplay", app: app)
-        for id in ["topSearchBar", "fullscreen", "pageAboveToolbar"] {
+        XCTAssertFalse(app.switches["settings.browsingDisplay.topSearchBar"].exists)
+        XCTAssertFalse(app.switches["settings.browsingDisplay.platformBar"].exists)
+        for id in ["fullscreen", "pageAboveToolbar"] {
             XCTAssertTrue(app.switches["settings.browsingDisplay." + id].exists)
         }
         compactSettingsCapture(app, name: "compact-settings-browsing-display")
         compactSettingsTap("settings.websiteZoom", app: app)
         XCTAssertTrue(app.switches["settings.zoom.remember"].waitForExistence(timeout: 5))
         app.navigationBars.buttons.firstMatch.tap()
-        XCTAssertTrue(app.switches["settings.browsingDisplay.topSearchBar"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["settings.browsingDisplay.fullscreen"].waitForExistence(timeout: 5))
         compactSettingsTap("settings.webAppearance", app: app)
         XCTAssertTrue(app.navigationBars["Web Appearance"].waitForExistence(timeout: 5))
         app.navigationBars.buttons.firstMatch.tap()
-        XCTAssertTrue(app.switches["settings.browsingDisplay.topSearchBar"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["settings.browsingDisplay.fullscreen"].waitForExistence(timeout: 5))
 
-        app.terminate(); app.launch(); openCompactSettings(app)
-        let search = app.searchFields.firstMatch
-        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Home Display")
-        compactSettingsTap("settings.homeDisplay", app: app)
-        XCTAssertTrue(bookmarks.waitForExistence(timeout: 5))
-        XCTAssertNotEqual(bookmarks.value as? String, original, "Moving controls must preserve saved settings after relaunch")
-        bookmarks.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-        XCTAssertEqual(bookmarks.value as? String, original)
+
     }
 
     func testCompactSettingsBackupsAboutAndFooter() {
@@ -99,15 +83,19 @@ final class HomeToolbarUITests: XCTestCase {
         compactSettingsTap("settings.backups", app: app)
         XCTAssertTrue(app.switches["settings.icloud-sync"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.switches["settings.icloud-sync"].value as? String, "0")
-        XCTAssertTrue(app.buttons["settings.backups.save"].exists)
+        let backupActions = ["save", "import", "export"].map { app.buttons["settings.backups." + $0] }
+        for action in backupActions {
+            XCTAssertTrue(action.exists)
+            XCTAssertGreaterThanOrEqual(action.frame.height, 44)
+            XCTAssertLessThanOrEqual(action.frame.height, 56)
+            XCTAssertEqual(action.frame.midY, backupActions[0].frame.midY, accuracy: 1)
+        }
         compactSettingsCapture(app, name: "compact-settings-backups-with-sync")
         app.navigationBars.buttons.firstMatch.tap()
         let storage = app.buttons["settings.storage"]
         compactSettingsReveal(storage, app: app)
         XCTAssertTrue(storage.isHittable)
-        compactSettingsTap("settings.clearCache", app: app)
-        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 3))
-        app.alerts.buttons["Cancel"].tap()
+        compactSettingsReveal(app.buttons["settings.quickClear"], app: app)
         let footer = app.staticTexts["settings.footer.version"]
         compactSettingsReveal(footer, app: app)
         XCTAssertNotNil(footer.label.range(of: "^Soulo [0-9]+\\.[0-9]+", options: .regularExpression))
@@ -226,7 +214,7 @@ final class HomeToolbarUITests: XCTestCase {
         app.launch(); defer { app.terminate() }
         openCompactSettings(app)
         compactSettingsTap("settings.browsingDisplay", app: app)
-        for (id, name) in [("topSearchBar", "topSearch"), ("fullscreen", "fullscreen"), ("backgroundExtension", "background"), ("pageAboveToolbar", "aboveToolbar")] {
+        for (id, name) in [("fullscreen", "fullscreen"), ("backgroundExtension", "background"), ("pageAboveToolbar", "aboveToolbar")] {
             let toggle = app.switches["settings.browsingDisplay." + id].firstMatch
             compactSettingsReveal(toggle, app: app)
             if toggle.value as? String == "1" { toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
@@ -237,7 +225,7 @@ final class HomeToolbarUITests: XCTestCase {
             compactSettingsCapture(app, name: "browsing-example-" + name)
             done.tap()
             XCTAssertTrue(done.waitForNonExistence(timeout: 3))
-            if id == "topSearchBar" || id == "fullscreen" { toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
+            if id == "fullscreen" { toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
         }
         app.navigationBars.buttons.firstMatch.tap()
         let settingsDone = app.navigationBars["Settings"].buttons["Done"]
@@ -410,7 +398,7 @@ final class HomeToolbarUITests: XCTestCase {
         app.buttons["Settings"].firstMatch.tap()
         let search = app.searchFields.firstMatch
         XCTAssertTrue(search.waitForExistence(timeout:5)); search.tap(); search.typeText("Ad Blocking")
-        app.buttons["Ad Blocking"].firstMatch.tap()
+        app.buttons["settings.adBlock"].firstMatch.tap()
         let routes = [("domainAllowlist","Trusted domains"),("manualRules","Marked ads"),
             ("builtInRules","Built-in rules"),("subscriptions","Filter lists"),("allowedSites","Allowed Sites")]
         for pass in 0..<2 {
@@ -442,7 +430,7 @@ final class HomeToolbarUITests: XCTestCase {
             app.buttons["Settings"].firstMatch.tap()
             let search = app.searchFields.firstMatch
             XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Ad Blocking")
-            let filtering = app.buttons["Ad Blocking"].firstMatch
+            let filtering = app.buttons["settings.adBlock"].firstMatch
             XCTAssertTrue(filtering.waitForExistence(timeout: 5)); filtering.tap()
             let lists = app.buttons["adBlock.subscriptions"]
             for _ in 0..<4 where !lists.isHittable { app.swipeUp() }
@@ -805,7 +793,9 @@ final class HomeToolbarUITests: XCTestCase {
             let homeShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             homeShot.name = "startup-home-" + wallpaper; homeShot.lifetime = .keepAlways; add(homeShot)
             menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-            let settings = app.buttons["Settings"].firstMatch
+            let settings = app.buttons.matching(NSPredicate(
+                format: "label == %@ AND NOT (identifier BEGINSWITH %@)", "Settings", "home.toolbar."
+            )).firstMatch
             XCTAssertTrue(settings.waitForExistence(timeout: 3), "The first home menu tap must work")
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.25)).tap()
             XCTAssertTrue(settings.waitForNonExistence(timeout: 3))
@@ -870,10 +860,14 @@ final class HomeToolbarUITests: XCTestCase {
         route.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
         app.open(try XCTUnwrap(route.url))
         XCTAssertTrue(app.webViews.staticTexts[title].waitForExistence(timeout: 15))
-        app.buttons["Bookmarks"].firstMatch.tap()
-        XCTAssertTrue(app.buttons["bookmark.fill"].waitForExistence(timeout: 5))
+        app.buttons["browser.action.bookmark"].tap()
         app.buttons["Home Screen"].firstMatch.tap()
         XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 5))
+        let bookmark = app.buttons[title]
+        XCTAssertTrue(bookmark.waitForExistence(timeout: 5))
+        let firstBookmark = app.scrollViews["home.bookmarks"].buttons.firstMatch
+        XCTAssertTrue(firstBookmark.exists)
+        XCTAssertEqual(firstBookmark.frame.minX, app.otherElements["home.search.field"].frame.minX, accuracy: 2)
         app.buttons["Home title, Soulo"].tap()
         XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 3))
         app.alerts.buttons["Cancel"].tap()
@@ -895,7 +889,6 @@ final class HomeToolbarUITests: XCTestCase {
         deleteRecent.tap()
         XCTAssertTrue(recent.waitForNonExistence(timeout: 5), "The delete action must remain tappable")
 
-        let bookmark = app.buttons[title]
         XCTAssertTrue(bookmark.waitForExistence(timeout: 5))
         bookmark.press(forDuration: 1)
         let remove = app.buttons["Delete"].firstMatch
@@ -1040,11 +1033,12 @@ final class HomeToolbarUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
         app.launchArguments = ["-app_language", "zh-Hans", "-appearance", "light", "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO", "-video.holdSpeed", "2"]
+        app.launchArguments += ["-home_title", "Soulo QA \(UUID().uuidString)"]
         app.launch(); app.open(URL(string: "soulo://")!)
         defer { app.terminate() }
         XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
         app.buttons["home.menu"].tap(); app.buttons["设置"].firstMatch.tap()
-        XCTAssertTrue(app.switches["settings.keepScreenAwake"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["设置"].waitForExistence(timeout: 5))
         func capture(_ name: String) {
             let image = XCTAttachment(screenshot: app.screenshot())
             image.name = name; image.lifetime = .keepAlways; add(image)
@@ -1056,19 +1050,28 @@ final class HomeToolbarUITests: XCTestCase {
         XCTAssertTrue(app.switches["video-settings.episode-dock"].waitForExistence(timeout: 5))
         XCTAssertTrue(holdSpeed.waitForExistence(timeout: 5))
         XCTAssertTrue(holdSpeed.label.contains("2") || (holdSpeed.value as? String)?.contains("2") == true, app.debugDescription)
-        XCTAssertTrue(app.staticTexts["Soulo"].firstMatch.exists)
-        capture("Video settings hold speed and decoder explanations")
+        XCTAssertFalse(app.descendants(matching: .any)["video-settings.player"].exists)
+        capture("Video settings with automatic playback")
         app.navigationBars.buttons.firstMatch.tap()
         let backups = app.buttons["settings.backups"]
         reveal(backups, in: app); backups.tap()
         let save = app.buttons["settings.backups.save"]
-        XCTAssertTrue(app.staticTexts["将当前设置备份到此设备，方便以后恢复。备份不包含浏览记录、登录状态和下载文件。"].exists)
-        XCTAssertTrue(save.waitForExistence(timeout: 5)); save.tap()
-        let copy = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "settings.backups.restore.")).firstMatch
+        XCTAssertTrue(app.staticTexts["settings.backups.explanation"].exists)
+        XCTAssertTrue(save.waitForExistence(timeout: 5))
+        let restoreButtons = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "settings.backups.restore."))
+        let existing = restoreButtons.allElementsBoundByIndex.map(\.identifier)
+        save.tap()
+        let copy = restoreButtons.matching(NSPredicate(format: "NOT (identifier IN %@)", existing)).firstMatch
         XCTAssertTrue(copy.waitForExistence(timeout: 5))
         let identifier = copy.identifier
-        copy.swipeLeft()
-        app.buttons["删除"].firstMatch.tap()
+        reveal(copy, in: app)
+        let menu = try XCTUnwrap(app.buttons.matching(identifier: "更多").allElementsBoundByIndex.first {
+            $0.isHittable && abs($0.frame.midY - copy.frame.midY) < 12
+        })
+        menu.tap()
+        let delete = app.buttons["删除"].firstMatch
+        XCTAssertTrue(delete.waitForExistence(timeout: 5))
+        delete.tap()
         XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 3))
         app.alerts.buttons["删除"].tap()
         XCTAssertTrue(app.buttons[identifier].waitForNonExistence(timeout: 3))
@@ -1086,10 +1089,13 @@ final class HomeToolbarUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["加入群组，交流问题与建议。"].exists)
         capture("Feedback Telegram group entry")
         app.navigationBars["用户反馈"].buttons["取消"].tap()
-        let versionTelegram = app.descendants(matching: .any)["version.telegram"].firstMatch
-        XCTAssertTrue(versionTelegram.waitForExistence(timeout: 5))
-        XCTAssertTrue(versionTelegram.isHittable)
-        capture("Version Telegram group entry and aligned icons")
+        app.navigationBars.buttons.firstMatch.tap()
+        let settingsTelegram = app.buttons["settings.telegram"]
+        reveal(settingsTelegram, in: app)
+        for _ in 0..<3 where settingsTelegram.frame.maxY > app.frame.maxY - 80 { app.swipeUp() }
+        settingsTelegram.tap()
+        XCTAssertTrue(app.staticTexts["settings.telegram.link"].waitForExistence(timeout: 5), app.debugDescription)
+        capture("Settings Telegram group entry")
     }
 
     func testOverviewPlusReturnsHomeAndKeepsTheExistingTabCount() async throws {
@@ -1123,6 +1129,68 @@ final class HomeToolbarUITests: XCTestCase {
         try await checkLibrarySelectionUsesSeparateTab(section: "history", returnHome: false)
     }
 
+    func testHistoryFiltersForPagesWhereVideoToolsWereUsed() async throws {
+        continueAfterFailure = false
+        let token = UUID().uuidString.prefix(8)
+        let marked = "Marked \(token)"
+        let unmarked = "Unmarked \(token)"
+        func page(_ title: String) -> Data {
+            Data("""
+                <meta name="viewport" content="width=device-width, initial-scale=1"><title>\(title)</title>
+                <h1>\(title)</h1><video width="330" height="185" controls playsinline preload="metadata" src="/history.mp4"></video>
+                """.utf8)
+        }
+        let media = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/marked.html": page(marked), "/unmarked.html": page(unmarked), "/history.mp4": try Data(contentsOf: media)
+        ], responseHeaders: ["/history.mp4": ["Content-Type": "video/mp4"]])
+        let root = try await server.start()
+        defer { server.stop() }
+        server.releaseDownloads()
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-is_incognito", "NO",
+            "-soulo_primary_browser_window_id", UUID().uuidString, "-icloud_sync_enabled", "NO",
+            "-privacy_https_upgrade_enabled", "NO", "-privacy_clear_browsing_on_exit", "NO",
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO",
+            "-browser_toolbar_actions", "(home,bookmark,library,tabs)", "-video.showsWebTools", "YES"]
+        app.launch()
+        defer { app.terminate() }
+        func open(_ url: URL, title: String) throws {
+            var route = URLComponents()
+            route.scheme = "soulo"; route.host = "open"
+            route.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
+            app.open(try XCTUnwrap(route.url))
+            XCTAssertTrue(app.webViews.staticTexts[title].waitForExistence(timeout: 12), app.debugDescription)
+        }
+        let address = root.appendingPathComponent("marked.html")
+        try open(address, title: marked)
+        let tools = app.webViews.buttons["Video tools"].firstMatch
+        XCTAssertTrue(tools.waitForExistence(timeout: 12), app.debugDescription)
+        tools.tap()
+        XCTAssertTrue(app.webViews.buttons["Fullscreen"].firstMatch.waitForExistence(timeout: 5))
+        var revisit = try XCTUnwrap(URLComponents(url: address, resolvingAgainstBaseURL: false))
+        revisit.queryItems = [URLQueryItem(name: "utm_source", value: "history-repeat")]
+        try open(XCTUnwrap(revisit.url), title: marked)
+        try open(root.appendingPathComponent("unmarked.html"), title: unmarked)
+        XCTAssertTrue(tools.waitForExistence(timeout: 12))
+
+        app.buttons["Library"].firstMatch.tap()
+        let history = app.buttons["library.section.history"]
+        XCTAssertTrue(history.waitForExistence(timeout: 6), app.debugDescription)
+        history.tap()
+        let markRows = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", marked + ","))
+        let otherRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", unmarked + ",")).firstMatch
+        XCTAssertTrue(otherRow.waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertEqual(markRows.count, 1, "Revisiting the same page must keep only the latest row")
+        let videoFilter = app.buttons["history.video-filter"]
+        XCTAssertTrue(videoFilter.isHittable)
+        videoFilter.tap()
+        XCTAssertTrue(otherRow.waitForNonExistence(timeout: 4))
+        XCTAssertEqual(markRows.count, 1)
+        videoFilter.tap()
+        XCTAssertTrue(otherRow.waitForExistence(timeout: 4))
+    }
+
     func testBookmarkFromHomeReusesTheExplicitBlankTab() async throws {
         try await checkLibrarySelectionUsesSeparateTab(section: "bookmarks", returnHome: true, createBlank: true)
     }
@@ -1146,7 +1214,7 @@ final class HomeToolbarUITests: XCTestCase {
             "-soulo_primary_browser_window_id", UUID().uuidString,
             "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO", "-privacy_https_upgrade_enabled", "NO",
             "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-show_top_tab_bar", "YES",
-            "-show_top_search_bar", "NO", "-browser_toolbar_actions", "(home,bookmark,library,tabs)"]
+            "-browser_toolbar_actions", "(home,bookmark,library,tabs)"]
         if createBlank { app.launchArguments += ["-home_toolbar_actions", "(newTab)"] }
         app.launch(); defer { app.terminate() }
         var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
@@ -1240,6 +1308,357 @@ final class HomeToolbarUITests: XCTestCase {
         XCTAssertTrue(entry.waitForExistence(timeout: 5), app.debugDescription)
         entry.tap()
     }
+
+    func testHomeToolbarDefaultsToButtonsAndOffersStorageAndMore() async throws {
+        continueAfterFailure = false
+        let server = try DownloadPlaybackHTTPFixture(files: ["/page": Data("<h1>Home toolbar fixture</h1>".utf8)])
+        let page = try await server.start().appendingPathComponent("page")
+        defer { server.stop() }
+        let app = compactSettingsApp()
+        app.launchArguments += ["-restore_last_page_on_launch", "NO", "-privacy_https_upgrade_enabled", "NO",
+            "-is_incognito", "NO",
+            "-home_toolbar_actions", "(settings)",
+            "-home_toolbar_layout", "{ tabsPlacement = bottom; menuPlacement = bottom; }"]
+        app.launch()
+        defer { app.terminate() }
+        var route = URLComponents()
+        route.scheme = "soulo"
+        route.host = "open"
+        route.queryItems = [URLQueryItem(name: "url", value: page.absoluteString)]
+        app.open(try XCTUnwrap(route.url))
+        XCTAssertTrue(app.webViews.staticTexts["Home toolbar fixture"].waitForExistence(timeout: 12), app.debugDescription)
+
+        let home = try XCTUnwrap(URL(string: "soulo://"))
+        app.open(home)
+        let settingsButton = app.buttons["home.toolbar.0"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 8))
+        settingsButton.tap()
+        let toolbar = app.buttons["settings.toolbar"]
+        XCTAssertTrue(toolbar.waitForExistence(timeout: 5))
+        toolbar.tap()
+
+        let buttons = app.buttons["home-toolbar.editor.buttons"]
+        let visibility = app.buttons["home-toolbar.editor.visibility"]
+        let position = app.buttons["home-toolbar.editor.position"]
+        XCTAssertTrue(buttons.waitForExistence(timeout: 5))
+        XCTAssertTrue(buttons.isSelected)
+        XCTAssertTrue(app.buttons["home-toolbar.style.tiles"].isHittable)
+        XCTAssertLessThan(buttons.frame.midX, visibility.frame.midX)
+        XCTAssertLessThan(visibility.frame.midX, position.frame.midX)
+        compactSettingsCapture(app, name: "home-toolbar-buttons-default")
+
+        position.tap()
+        XCTAssertTrue(app.buttons["home-toolbar.search-position.bottom"].exists)
+        XCTAssertFalse(app.buttons["home-toolbar.tabs-position.top"].exists)
+        XCTAssertFalse(app.buttons["home-toolbar.menu-position.bottom"].exists)
+        let previewTabs = app.descendants(matching: .any)["home-toolbar.preview.tabs"].firstMatch
+        let previewMenu = app.descendants(matching: .any)["home-toolbar.preview.menu"].firstMatch
+        let previewSlot = app.buttons["home-toolbar.slot.0"]
+        XCTAssertTrue(previewTabs.exists && previewMenu.exists)
+        XCTAssertEqual(previewTabs.frame.midY, previewMenu.frame.midY, accuracy: 2)
+        XCTAssertLessThan(previewMenu.frame.midY, previewSlot.frame.midY)
+        compactSettingsCapture(app, name: "home-toolbar-position-options")
+
+        buttons.tap()
+        for (slot, action) in [(1, "storage"), (2, "more")] {
+            let add = app.buttons["home-toolbar.slot.\(slot)"]
+            XCTAssertTrue(add.waitForExistence(timeout: 5))
+            add.tap()
+            let choice = app.buttons["home-toolbar.action." + action]
+            let filter = app.textFields["home-toolbar.action-search"]
+            XCTAssertTrue(filter.waitForExistence(timeout: 5))
+            let list = app.scrollViews["home-toolbar.action-list"]
+            XCTAssertTrue(list.waitForExistence(timeout: 5))
+            let filterTop = filter.frame.minY
+            for _ in 0..<8 where !choice.isHittable { list.swipeUp(velocity: .slow) }
+            XCTAssertTrue(choice.isHittable)
+            XCTAssertEqual(filter.frame.minY, filterTop, accuracy: 1)
+            XCTAssertLessThan(filter.frame.maxY, choice.frame.minY)
+            choice.tap()
+            XCTAssertTrue(choice.waitForNonExistence(timeout: 5))
+        }
+        let save = app.buttons["home-toolbar.save"]
+        save.tap()
+        let notice = app.descendants(matching: .any)["toolbar.saved"].firstMatch
+        XCTAssertTrue(notice.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        XCTAssertTrue(notice.waitForNonExistence(timeout: 8))
+        XCTAssertTrue(save.isHittable)
+        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars["Settings"].buttons["Done"].tap()
+
+        let menu = app.buttons["home.menu"]
+        let tabs = app.descendants(matching: .any)["home.tabs"].firstMatch
+        let storage = app.buttons["home.toolbar.1"]
+        XCTAssertTrue(storage.waitForExistence(timeout: 5))
+        XCTAssertTrue(menu.exists && tabs.exists)
+        XCTAssertEqual(menu.frame.midY, tabs.frame.midY, accuracy: 2)
+        XCTAssertLessThan(menu.frame.midY, storage.frame.midY)
+        storage.tap()
+        let storagePage = app.navigationBars["Storage"]
+        XCTAssertTrue(storagePage.waitForExistence(timeout: 5))
+        storagePage.buttons["Done"].tap()
+
+        let more = app.buttons["home.toolbar.2"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        more.tap()
+        let extensions = app.buttons["Scripts & Extensions"].firstMatch
+        XCTAssertTrue(extensions.waitForExistence(timeout: 5))
+        let settings = app.buttons["Settings"].firstMatch
+        XCTAssertTrue(settings.isHittable)
+        settings.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+    }
+
+    func testHomeToolbarPreviewKeepsFreeToolbarClearAndPanelsEqual() throws {
+        continueAfterFailure = false
+        let app = compactSettingsApp()
+        app.launchArguments += ["-restore_last_page_on_launch", "NO", "-home_toolbar_actions", "(settings,wallpaper,search)",
+            "-home_toolbar_layout", "{style=capsule;placement=free;}",
+            "-home_title", "Soulo", "-home_subtitle", "Search anytime, anywhere.",
+            "-show_bookmarks_on_home", "YES", "-show_recent_searches_on_home", "YES"]
+        app.launch()
+        defer { app.terminate() }
+        let entry = app.buttons["home.toolbar.0"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 8))
+        entry.tap()
+        let editor = app.buttons["settings.toolbar"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
+        let panel = app.scrollViews["home-toolbar.content"]
+        let preview = app.descendants(matching: .any)["home-toolbar.preview"].firstMatch
+        XCTAssertTrue(panel.waitForExistence(timeout: 5))
+        XCTAssertTrue(preview.exists)
+        let panelFrame = panel.frame
+        let previewFrame = preview.frame
+        XCTAssertLessThanOrEqual(panelFrame.height, 176)
+        for tab in ["position", "visibility", "buttons"] {
+            app.buttons["home-toolbar.editor." + tab].tap()
+            XCTAssertEqual(panel.frame.minY, panelFrame.minY, accuracy: 1)
+            XCTAssertEqual(panel.frame.height, panelFrame.height, accuracy: 1)
+            XCTAssertEqual(preview.frame.maxY, previewFrame.maxY, accuracy: 1)
+        }
+
+        app.buttons["home-toolbar.editor.visibility"].tap()
+        let searchToggle = app.buttons["home-toolbar.visibility.search"]
+        if searchToggle.isSelected { searchToggle.tap() }
+        XCTAssertFalse(searchToggle.isSelected)
+        let tileRows = [["tabs", "menu", "title", "subtitle"], ["search", "bookmarks", "recentSearches", "liveActivity"]]
+        for row in tileRows {
+            let frames = row.map { app.buttons["home-toolbar.visibility." + $0].frame }
+            for frame in frames {
+                XCTAssertEqual(frame.height, searchToggle.frame.height, accuracy: 0.5)
+                XCTAssertEqual(frame.minY, frames[0].minY, accuracy: 0.5)
+                XCTAssertTrue(panel.frame.insetBy(dx: -1, dy: -1).contains(frame))
+            }
+        }
+        func sample(_ name: String) -> XCUIElement {
+            app.descendants(matching: .any)["home-toolbar.preview." + name].firstMatch
+        }
+        let heading = sample("heading")
+        app.buttons["home-toolbar.editor.position"].tap()
+        XCTAssertTrue(app.buttons["home-toolbar.position.free"].isSelected)
+        let handle = app.descendants(matching: .any)["home-toolbar.drag"].firstMatch
+        let origin = handle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        origin.press(forDuration: 0.06, thenDragTo: origin.withOffset(CGVector(dx: 0, dy: heading.frame.midY - handle.frame.midY)))
+        XCTAssertFalse(handle.frame.intersects(heading.frame))
+
+        app.buttons["home-toolbar.editor.visibility"].tap()
+        let toolbar = app.buttons["home-toolbar.slot.1"]
+        let bookmarks = sample("bookmarks")
+        let recent = sample("recentSearches")
+        XCTAssertTrue(toolbar.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(heading.exists && bookmarks.exists && recent.exists)
+        XCTAssertFalse(sample("search").exists)
+        XCTAssertFalse(toolbar.frame.intersects(heading.frame))
+        XCTAssertFalse(toolbar.frame.intersects(bookmarks.frame))
+        XCTAssertFalse(toolbar.frame.intersects(recent.frame))
+        XCTAssertGreaterThanOrEqual(preview.frame.maxY - recent.frame.maxY, 8)
+        compactSettingsCapture(app, name: "home-toolbar-preview-with-hidden-search")
+        searchToggle.tap()
+        let search = sample("search")
+        XCTAssertTrue(search.exists)
+        XCTAssertTrue(toolbar.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(toolbar.frame.intersects(search.frame))
+        XCTAssertFalse(toolbar.frame.intersects(recent.frame))
+    }
+
+    func testHomeVisibilityKeepsPreviewFixedAndSharesSettingsAndSearch() throws {
+        continueAfterFailure = false
+        let app = compactSettingsApp()
+        app.launchArguments += ["-show_group_picker_on_home", "YES"]
+        app.launch()
+        defer { app.terminate() }
+        let home = try XCTUnwrap(URL(string: "soulo://"))
+        app.open(home)
+        XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["International"].exists)
+        openSettings(app)
+
+        let visibility = app.buttons["home-toolbar.editor.visibility"]
+        let searchPosition = app.buttons["home-toolbar.search-position.center"]
+        app.buttons["home-toolbar.editor.position"].tap()
+        XCTAssertTrue(searchPosition.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(app.buttons["home-toolbar.editor.style"].exists)
+        XCTAssertLessThan(visibility.frame.maxY, searchPosition.frame.minY)
+        searchPosition.tap()
+        visibility.tap()
+
+        let list = app.scrollViews["home-toolbar.content"]
+        XCTAssertTrue(list.waitForExistence(timeout: 5), app.debugDescription)
+        let pageHeading = list.staticTexts["home_toolbar_visibility_page"]
+        let searchHeading = list.staticTexts["home_toolbar_visibility_search_area"]
+        XCTAssertEqual(pageHeading.label, "Home Elements")
+        XCTAssertEqual(searchHeading.label, "Search Area")
+        compactSettingsCapture(app, name: "home-toolbar-visibility-page")
+        let listTop = list.coordinate(withNormalizedOffset: CGVector(dx: 0.55, dy: 0.32))
+        let listBottom = list.coordinate(withNormalizedOffset: CGVector(dx: 0.55, dy: 0.72))
+        func show(_ item: String) -> XCUIElement {
+            let tile = app.buttons["home-toolbar.visibility." + item]
+            for _ in 0..<10 {
+                if tile.exists && tile.isHittable && list.frame.insetBy(dx: -1, dy: -1).contains(tile.frame) { return tile }
+                if tile.exists && tile.frame.midY < list.frame.midY {
+                    listTop.press(forDuration: 0.03, thenDragTo: listBottom, withVelocity: .slow, thenHoldForDuration: 0.15)
+                } else {
+                    listBottom.press(forDuration: 0.03, thenDragTo: listTop, withVelocity: .slow, thenHoldForDuration: 0.15)
+                }
+            }
+            XCTAssertTrue(tile.isHittable, app.debugDescription)
+            return tile
+        }
+        func setVisibility(_ item: String, shown: Bool) {
+            let tile = show(item)
+            if tile.isSelected != shown { tile.tap() }
+            XCTAssertEqual(tile.isSelected, shown)
+        }
+        func saveAndReturn() {
+            app.buttons["home-toolbar.save"].tap()
+            XCTAssertTrue(app.descendants(matching: .any)["toolbar.saved"].firstMatch.waitForExistence(timeout: 5))
+            app.open(home)
+        }
+
+        func preview(_ item: String) -> XCUIElement {
+            app.descendants(matching: .any)["home-toolbar.preview." + item].firstMatch
+        }
+        let hadRecentSearches = show("recentSearches").isSelected
+        setVisibility("search", shown: true)
+        setVisibility("bookmarks", shown: true)
+        setVisibility("recentSearches", shown: true)
+        let searchTile = app.buttons["home-toolbar.visibility.search"]
+        let bookmarksTile = app.buttons["home-toolbar.visibility.bookmarks"]
+        XCTAssertLessThan(searchHeading.frame.midY, searchTile.frame.midY)
+        XCTAssertEqual(searchTile.frame.midY, bookmarksTile.frame.midY, accuracy: 1)
+        XCTAssertLessThan(searchTile.frame.maxX, bookmarksTile.frame.minX)
+        let topItems = ["tabs", "menu", "title"]
+        let bottomItems = ["search", "bookmarks", "recentSearches"]
+        for (top, bottom) in zip(topItems, bottomItems) {
+            let upperFrame = app.buttons["home-toolbar.visibility." + top].frame
+            let lowerFrame = app.buttons["home-toolbar.visibility." + bottom].frame
+            XCTAssertEqual(upperFrame.minX, lowerFrame.minX, accuracy: 1)
+            XCTAssertEqual(upperFrame.width, lowerFrame.width, accuracy: 1)
+            XCTAssertEqual(upperFrame.height, lowerFrame.height, accuracy: 1)
+        }
+        XCTAssertFalse(preview("groups").exists)
+        XCTAssertTrue(preview("bookmarks").label.contains("GitHub"))
+        XCTAssertTrue(preview("recentSearches").label.contains("SwiftUI"))
+        XCTAssertEqual(preview("bookmarks").frame.minX, preview("search").frame.minX, accuracy: 2)
+        XCTAssertEqual(preview("bookmarks").frame.minX, preview("recentSearches").frame.minX, accuracy: 2)
+        let scale = preview("search").frame.height / 46
+        XCTAssertEqual(preview("bookmarks").frame.minY - preview("search").frame.maxY, 16 * scale, accuracy: 2)
+        compactSettingsCapture(app, name: "home-toolbar-preview-examples")
+        setVisibility("bookmarks", shown: false)
+        XCTAssertFalse(preview("bookmarks").exists)
+        setVisibility("bookmarks", shown: true)
+        XCTAssertTrue(preview("bookmarks").exists)
+        XCTAssertTrue(preview("recentSearches").exists)
+        setVisibility("recentSearches", shown: hadRecentSearches)
+
+        setVisibility("search", shown: false)
+        let sectionY = visibility.frame.midY
+        _ = show("recentSearches")
+        XCTAssertEqual(visibility.frame.midY, sectionY, accuracy: 2)
+        XCTAssertTrue(visibility.isHittable)
+        for item in ["toolbar", "wallpaper", "quickSearch", "suggestions", "voice", "groups"] {
+            XCTAssertFalse(app.buttons["home-toolbar.visibility." + item].exists)
+        }
+        compactSettingsCapture(app, name: "home-toolbar-pinned-visibility")
+        saveAndReturn()
+
+        let search = app.textFields["search.query"]
+        let menu = app.buttons["home.menu"]
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertFalse(search.exists)
+        XCTAssertTrue(menu.waitForExistence(timeout: 8))
+        // Start on the wallpaper to avoid competing with the text field's own selection gestures.
+        let middle = app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.49))
+        let lower = app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.72))
+        middle.press(forDuration: 0.04, thenDragTo: lower)
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "A downward swipe should reveal search")
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        search.typeText("Swipe draft")
+        let upper = app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.28))
+        upper.press(forDuration: 0.04, thenDragTo: lower)
+        XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5), "Scrolling should dismiss the keyboard")
+        XCTAssertTrue(search.isHittable)
+        XCTAssertEqual(search.value as? String, "Swipe draft")
+        search.tap()
+        search.typeText(" survives")
+        XCTAssertEqual(search.value as? String, "Swipe draft survives")
+        middle.press(forDuration: 0.04, thenDragTo: upper)
+        XCTAssertTrue(search.waitForNonExistence(timeout: 5), "Swiping back up should close temporary search")
+        XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5))
+
+        lower.press(forDuration: 0.04, thenDragTo: middle)
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "An upward swipe should reveal search")
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        XCTAssertEqual(search.value as? String, "Swipe draft survives")
+        upper.press(forDuration: 0.04, thenDragTo: lower)
+        XCTAssertTrue(search.waitForNonExistence(timeout: 5), "Swiping back down should close temporary search")
+        XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5))
+        app.open(home)
+        XCTAssertTrue(search.waitForNonExistence(timeout: 6))
+
+        menu.tap()
+        let searchAction = app.buttons["home.menu.search"].firstMatch
+        XCTAssertTrue(searchAction.waitForExistence(timeout: 5), app.debugDescription)
+        searchAction.tap()
+        XCTAssertTrue(search.waitForExistence(timeout: 5), app.debugDescription)
+        search.typeText("Soulo QA")
+        XCTAssertEqual(search.value as? String, "Soulo QA")
+        app.open(home)
+        XCTAssertTrue(search.waitForNonExistence(timeout: 6), app.debugDescription)
+
+        openSettings(app)
+        visibility.tap()
+        XCTAssertTrue(show("bookmarks").isSelected)
+        setVisibility("bookmarks", shown: false)
+        setVisibility("menu", shown: false)
+        _ = show("search")
+        compactSettingsCapture(app, name: "home-toolbar-visibility-hints")
+        saveAndReturn()
+
+        XCTAssertFalse(menu.exists)
+        let recovery = app.descendants(matching: .any)["home.menu.recovery"].firstMatch
+        XCTAssertTrue(recovery.waitForExistence(timeout: 5), app.debugDescription)
+        let blankSpace = recovery.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.18))
+        blankSpace.press(forDuration: 0.7)
+        XCTAssertTrue(searchAction.waitForExistence(timeout: 5), app.debugDescription)
+        searchAction.tap()
+        XCTAssertTrue(search.waitForExistence(timeout: 5), app.debugDescription)
+        app.open(home)
+        XCTAssertTrue(search.waitForNonExistence(timeout: 5))
+        blankSpace.press(forDuration: 0.7)
+        let settings = app.buttons["Settings"].firstMatch
+        XCTAssertTrue(settings.waitForExistence(timeout: 5), app.debugDescription)
+        settings.tap()
+        let toolbar = app.buttons["settings.toolbar"]
+        reveal(toolbar, in: app); toolbar.tap()
+        visibility.tap()
+        setVisibility("menu", shown: true)
+        setVisibility("search", shown: true)
+        saveAndReturn()
+    }
+
     func testFiveHomeShortcutsPersistAndOpenTheirPages() throws {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
@@ -1247,17 +1666,23 @@ final class HomeToolbarUITests: XCTestCase {
         app.launch(); app.open(URL(string: "soulo://")!)
         XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
         openSettings(app)
-        let tiles = app.buttons["home-toolbar.style.tiles"]
-        XCTAssertTrue(tiles.waitForExistence(timeout: 5), app.debugDescription)
-        tiles.tap()
-        XCTAssertTrue(tiles.isSelected)
+        let buttons = app.buttons["home-toolbar.editor.buttons"]
+        func chooseStyle(_ value: String, title: String) {
+            let choice = app.buttons["home-toolbar.style." + value]
+            XCTAssertTrue(choice.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertEqual(choice.label, title)
+            choice.tap()
+            XCTAssertTrue(choice.isSelected)
+        }
+        buttons.tap()
+        chooseStyle("tiles", title: "Separate")
         let actions = ["downloads", "files", "bookmarks", "history", "wallpaper"]
         for (index, action) in actions.enumerated() {
             app.buttons["home-toolbar.slot.\(index)"].tap()
             app.buttons["home-toolbar.action.\(action)"].tap()
         }
         app.buttons["home-toolbar.save"].tap()
-        app.alerts.buttons["Done"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["toolbar.saved"].firstMatch.waitForExistence(timeout: 5))
         app.navigationBars.buttons.firstMatch.tap()
         app.buttons["Done"].firstMatch.tap()
         XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 5), app.debugDescription)
@@ -1277,25 +1702,27 @@ final class HomeToolbarUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(fifth.frame.minX, 0)
         XCTAssertLessThanOrEqual(fifth.frame.maxX, app.frame.width)
         fifth.tap()
-        XCTAssertTrue(app.navigationBars["Wallpaper"].waitForExistence(timeout: 5), app.debugDescription)
-        app.buttons["Done"].firstMatch.tap()
+        let appearance = app.navigationBars["Wallpaper"]
+        XCTAssertTrue(appearance.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any)["wallpaper.sources"].firstMatch.waitForExistence(timeout: 5))
+        appearance.buttons["Done"].tap()
         let returned = XCTAttachment(screenshot: app.screenshot())
         returned.name = "home-shortcuts-after-presentations"; returned.lifetime = .keepAlways; add(returned)
         openSettings(app)
-        XCTAssertTrue(tiles.isSelected)
-        let icons = app.buttons["home-toolbar.style.icons"]
-        icons.tap()
-        XCTAssertTrue(icons.isSelected)
+        buttons.tap()
+        XCTAssertTrue(app.buttons["home-toolbar.style.tiles"].isSelected)
+        chooseStyle("icons", title: "Icons only")
         let setting = XCTAttachment(screenshot: app.screenshot())
         setting.name = "home-toolbar-background-setting"; setting.lifetime = .keepAlways; add(setting)
         app.buttons["home-toolbar.save"].tap()
-        app.alerts.buttons["Done"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["toolbar.saved"].firstMatch.waitForExistence(timeout: 5))
         app.navigationBars.buttons.firstMatch.tap()
         app.buttons["Done"].firstMatch.tap()
         let plain = XCTAttachment(screenshot: app.screenshot())
         plain.name = "five-home-plain-shortcuts"; plain.lifetime = .keepAlways; add(plain)
         openSettings(app)
-        XCTAssertTrue(icons.isSelected)
+        buttons.tap()
+        XCTAssertTrue(app.buttons["home-toolbar.style.icons"].isSelected)
         app.buttons["toolbar.restore"].tap()
         app.alerts.buttons["Restore Defaults"].tap()
         app.navigationBars.buttons.firstMatch.tap()
@@ -1334,7 +1761,7 @@ final class HomeToolbarUITests: XCTestCase {
         app.launch(); app.open(URL(string: "soulo://")!)
         XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
         app.buttons["home.menu"].tap(); app.buttons["Settings"].firstMatch.tap()
-        XCTAssertTrue(app.switches["settings.keepScreenAwake"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
         let appearance = XCTAttachment(screenshot: app.screenshot())
         appearance.name = "settings-aligned-appearance-rows"; appearance.lifetime = .keepAlways; add(appearance)
         let toolbar = app.buttons["settings.toolbar"]
@@ -1359,7 +1786,7 @@ final class HomeToolbarUITests: XCTestCase {
         let storeLink = app.webViews.links.matching(NSPredicate(format: "label CONTAINS[c] %@", "App Store")).firstMatch
         XCTAssertTrue(storeLink.waitForExistence(timeout: 25), app.debugDescription)
         app.navigationBars.buttons.firstMatch.tap(); app.navigationBars.buttons.firstMatch.tap()
-        let adFiltering = app.buttons["Ad Blocking"].firstMatch
+        let adFiltering = app.buttons["settings.protection"]
         reveal(adFiltering, in: app, downward: true); adFiltering.tap()
         XCTAssertTrue(app.switches["adBlock.enabled"].waitForExistence(timeout: 5))
         app.swipeUp()
@@ -1388,16 +1815,11 @@ final class HomeToolbarUITests: XCTestCase {
             reveal(choice, in: app); choice.tap()
             XCTAssertTrue(choice.waitForNonExistence(timeout: 5))
         }
-        app.buttons["home-toolbar.save"].tap(); app.alerts.buttons["Done"].tap()
+        app.buttons["home-toolbar.save"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["toolbar.saved"].firstMatch.waitForExistence(timeout: 5))
         app.navigationBars.buttons.firstMatch.tap(); app.buttons["Done"].firstMatch.tap()
         app.terminate(); app.launch(); app.open(URL(string: "soulo://")!)
         XCTAssertTrue(app.buttons["home.toolbar.1"].waitForExistence(timeout: 10))
-        app.buttons["home.toolbar.1"].tap()
-        let randomSources = app.switches["wallpaper.randomSources"].firstMatch
-        reveal(randomSources, in: app)
-        let originalRandom = randomSources.value as? String
-        if originalRandom == "1" { randomSources.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap() }
-        app.buttons["Done"].firstMatch.tap()
         app.buttons["home.toolbar.0"].tap()
         XCTAssertTrue(app.buttons["home.menu"].exists, "Changing wallpaper stays on the home page")
         let changed = XCTAttachment(screenshot: app.screenshot())
@@ -1406,10 +1828,6 @@ final class HomeToolbarUITests: XCTestCase {
         let nextGradient = app.buttons["wallpaper.gradient.deep_sea"]
         reveal(nextGradient, in: app)
         XCTAssertTrue(nextGradient.isSelected, app.debugDescription)
-        if originalRandom == "1" {
-            reveal(randomSources, in: app, downward: true)
-            randomSources.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        }
         app.buttons["Done"].firstMatch.tap()
         app.buttons["home.toolbar.2"].tap()
         XCTAssertTrue(app.navigationBars["About & Feedback"].waitForExistence(timeout: 5), app.debugDescription)
@@ -1426,7 +1844,8 @@ final class HomeToolbarUITests: XCTestCase {
         XCTAssertTrue(app.buttons["home-toolbar.action.refreshWallpaper"].isSelected)
         app.navigationBars.buttons["Cancel"].tap()
         app.buttons["toolbar.restore"].tap(); app.alerts.buttons["Restore Defaults"].tap()
-        app.buttons["home-toolbar.save"].tap(); app.alerts.buttons["Done"].tap()
+        app.buttons["home-toolbar.save"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["toolbar.saved"].firstMatch.waitForExistence(timeout: 5))
         app.buttons["Done"].firstMatch.tap()
         XCTAssertFalse(app.buttons["home.toolbar.0"].exists)
     }

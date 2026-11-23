@@ -233,13 +233,18 @@ final class BrowserGestureUITests: XCTestCase {
         XCTAssertTrue(groups.waitForNonExistence(timeout: 5))
 
         func card(_ title: String) -> XCUIElement {
-            app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label BEGINSWITH %@", "tabs.card.", title + ",")).firstMatch
+            app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label BEGINSWITH %@", "tabs.card.", title)).firstMatch
         }
         let recent = card(fixture.secondTitle)
         let previous = card(fixture.firstTitle)
         for grouped in [false, true] {
-            if grouped { mode.tap(); XCTAssertTrue(groups.waitForExistence(timeout: 5)) }
-            XCTAssertTrue(recent.waitForExistence(timeout: 5))
+            if grouped {
+                mode.tap()
+                XCTAssertTrue(groups.waitForExistence(timeout: 5))
+                if !recent.exists { app.buttons["tabs.group.host:127.0.0.1"].tap() }
+            }
+            XCTAssertTrue(recent.waitForExistence(timeout: 5), app.debugDescription)
             for distance: CGFloat in [-6.5, 6.5] {
                 let start = recent.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
                 start.press(forDuration: 0, thenDragTo: start.withOffset(CGVector(dx: distance, dy: 0)),
@@ -290,15 +295,21 @@ final class BrowserGestureUITests: XCTestCase {
         let header = app.descendants(matching: .any).matching(identifier: "tabs.group.host:127.0.0.1").firstMatch
         header.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         XCTAssertTrue(groups.exists, "A group header is not an empty dismiss area")
-        let current = groups.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", fixture.secondTitle + ",")).firstMatch
-        let other = groups.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", fixture.firstTitle + ",")).firstMatch
-        XCTAssertTrue(current.isHittable && other.isHittable)
+        let cards = groups.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "tabs.card."))
+        let current = cards.matching(NSPredicate(format: "label BEGINSWITH %@", fixture.secondTitle)).firstMatch
+        let other = cards.matching(NSPredicate(format: "label BEGINSWITH %@", fixture.firstTitle)).firstMatch
+        if !current.exists { header.tap() }
+        XCTAssertTrue(current.isHittable && other.isHittable, app.debugDescription)
+        XCTAssertTrue(current.isSelected)
+        XCTAssertFalse(other.isSelected)
+        capture(app, "grouped-overview-active-card")
         other.tap()
         XCTAssertTrue(groups.waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.webViews.staticTexts[fixture.firstTitle].firstMatch.waitForExistence(timeout: 5),
                       "Tapping an inactive card must select it, not just dismiss the overview")
         app.buttons["browser.tabs"].tap()
         XCTAssertTrue(groups.waitForExistence(timeout: 5))
+        XCTAssertTrue(other.isSelected)
         let origin = app.coordinate(withNormalizedOffset: .zero)
         let blankDrag = origin.withOffset(CGVector(dx: 8, dy: current.frame.midY))
         blankDrag.press(forDuration: 0.05, thenDragTo: blankDrag.withOffset(CGVector(dx: 0, dy: -70)))

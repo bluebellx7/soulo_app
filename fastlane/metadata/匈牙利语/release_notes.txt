@@ -1,4 +1,1 @@
-• Javult az online videók teljes képernyőre váltása, pufferelése és lejátszási sebességmenüje.
-• Javult a magnet linkek felismerése és a partnerek keresése a BitTorrent-letöltéseknél.
-• A felhasználói szkriptek GM_webRequest segítségével megszakíthatják a fő keret Fetch és XHR kéréseit, vagy azonos eredeten belül átirányíthatják őket.
-• Javult a böngészőbővítmények kompatibilitása, többek között a letöltött fájlok elnevezése és a képernyőn kívüli oldalak betöltése.
+Javult a szkriptek betöltése a weboldalak megnyitásakor, valamint a böngészőbővítményekkel való kompatibilitás.

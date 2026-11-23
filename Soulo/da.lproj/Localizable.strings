@@ -241,8 +241,6 @@
 "login_required_toast" = "Log ind først, søg derefter igen";
 "status_enabled" = "Aktiveret";
 "status_disabled" = "Deaktiveret";
-"show_top_search_bar" = "Vis øverste søgelinje";
-"show_top_search_bar_desc" = "Når den er skjult, skal du bruge den nederste adressekontrol til at søge eller starte stemmeinput";
 "ad_block_master_disabled_desc" = "Slå Ad Block til for at bruge og administrere filterabonnementerne nedenfor.";
 "custom_groups" = "Brugerdefinerede grupper";
 "no_groups" = "Ingen brugerdefinerede grupper";
@@ -364,8 +362,6 @@
 "batch_import_result" = "%d-platforme blev importeret";
 "paste_from_clipboard" = "Indsæt fra udklipsholder";
 "none" = "Ingen";
-"show_group_picker_home" = "Vis gruppevælger på Hjem";
-"show_group_picker_home_desc" = "Vis platformsgruppefaner på startskærmen for hurtigt at skifte";
 "error_no_internet" = "Ingen internetforbindelse. Tjek venligst dit netværk.";
 "error_timeout" = "Forbindelsen fik timeout. Prøv venligst igen.";
 "error_ssl" = "Sikker forbindelse mislykkedes. Dette websted er muligvis ikke sikkert.";
