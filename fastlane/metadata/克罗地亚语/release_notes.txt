@@ -1,1 +1,2 @@
-Poboljšano je učitavanje skripti pri otvaranju web-stranica i kompatibilnost s proširenjima preglednika.
+Ispravili smo prebacivanje između grupa u brzom pretraživanju na početnom zaslonu i smanjili broj neočekivanih upita za lijepljenje na web-stranicama.
+Dodirnite platformu za pretraživanje na početnom zaslonu za trenutačnu pretragu. Poboljšani su preuzimanje videozapisa, prijelaz na cijeli zaslon i odziv adresne trake.

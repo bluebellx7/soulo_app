@@ -53,12 +53,12 @@ struct VideoOrientationErrorAlert: ViewModifier {
 }
 
 @MainActor enum VideoOrientation {
-    static func fullscreenLandscape(video: Bool, scene: UIWindowScene?) -> Bool {
+    static func fullscreenLandscape(video: Bool?, scene: UIWindowScene?) -> Bool {
         fullscreenLandscape(video: video, isPad: UIDevice.current.userInterfaceIdiom == .pad,
                             currentLandscape: scene?.interfaceOrientation.isLandscape == true)
     }
-    static func fullscreenLandscape(video: Bool, isPad: Bool, currentLandscape: Bool) -> Bool {
-        isPad ? currentLandscape : video || currentLandscape
+    static func fullscreenLandscape(video: Bool?, isPad: Bool, currentLandscape: Bool) -> Bool {
+        isPad ? currentLandscape : (video ?? currentLandscape)
     }
     private struct Restoration {
         let id: UUID
@@ -319,6 +319,7 @@ struct LandscapeMotionDetector {
     }
 
     func begin(token: String, controller: UIViewController? = nil, requestPortrait: Bool = false,
+               initialLandscapeDirection: UIInterfaceOrientation? = nil,
                onError: @escaping (Error) -> Void) {
         guard self.token == token, !began else { return }
         began = true
@@ -364,7 +365,7 @@ struct LandscapeMotionDetector {
                 self.alignFullscreen(token: token, deviceDirection: self.lastLandscapeDirection)
             }
         }
-        alignFullscreen(token: token, deviceDirection: lastLandscapeDirection)
+        alignFullscreen(token: token, deviceDirection: lastLandscapeDirection, initialLandscapeDirection: initialLandscapeDirection)
     }
 
     private func startMotionTracking() {
@@ -394,7 +395,8 @@ struct LandscapeMotionDetector {
         alignFullscreen(token: token, deviceDirection: direction)
     }
 
-    private func alignFullscreen(token: String, deviceDirection: UIDeviceOrientation? = nil) {
+    private func alignFullscreen(token: String, deviceDirection: UIDeviceOrientation? = nil,
+                                 initialLandscapeDirection: UIInterfaceOrientation? = nil) {
         transition?.cancel()
         transition = Task { @MainActor [weak self] in
             // AVKit's video transform outlives the controller presentation
@@ -425,8 +427,14 @@ struct LandscapeMotionDetector {
                    !controller.isBeingPresented, !controller.isBeingDismissed, controller.transitionCoordinator == nil,
                    !controller.supportedInterfaceOrientations.intersection(allowed).isEmpty {
                     self.fullscreenController = controller; self.fullscreenWindow = window
-                    let preferred = self.prefersLandscape
-                        ? VideoOrientation.landscapeMask(device: direction, interface: scene.interfaceOrientation) : .portrait
+                    let preferred: UIInterfaceOrientationMask
+                    if self.prefersLandscape, let initialLandscapeDirection {
+                        preferred = VideoOrientation.mask(for: initialLandscapeDirection)
+                    } else {
+                        preferred = self.prefersLandscape
+                            ? VideoOrientation.landscapeMask(device: direction, interface: scene.interfaceOrientation)
+                            : .portrait
+                    }
                     // If this fullscreen controller supports only one side,
                     // retain its supported landscape rather than failing entry.
                     let supported = preferred.intersection(controller.supportedInterfaceOrientations)
@@ -590,6 +598,7 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
     @Binding var isPresented: Bool
     var onDismiss: () -> Void
     var options: FileVideoOptions?
+    var videoLandscape: Bool?
 
     func makeCoordinator() -> Presenter { Presenter() }
     func makeUIViewController(context: Context) -> Host {
@@ -603,6 +612,7 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
         context.coordinator.selection = $isPresented
         context.coordinator.onDismiss = onDismiss
         context.coordinator.options = options
+        context.coordinator.videoLandscape = videoLandscape
         #if SOULO_ACCEPTANCE
         NSLog("[SouloEpisodeSource] native options %@", options?.playlist?.selectedSourceID ?? "none")
         #endif
@@ -624,21 +634,23 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
         var selection: Binding<Bool>?
         var onDismiss: (() -> Void)?
         var options: FileVideoOptions?
+        var videoLandscape: Bool?
         private let ownerID = UUID()
         private var sharedHost: SharedVideoFullscreenHost?
         private var presentedOptions: FileVideoOptions?
         private var presentationRetry: Task<Void, Never>?
         func synchronize(_ host: Host) {
             guard selection?.wrappedValue == true else { dismiss(); return }
+            let landscape = options?.initialFullscreenLandscape ?? videoLandscape
             if let sharedHost, sharedHost.owner == ownerID {
+                sharedHost.resolveVideoOrientation(owner: ownerID, landscape: landscape)
                 if presentedOptions != options { sharedHost.update(owner: ownerID, content: AnyView(content())); presentedOptions = options }
                 return
             }
             guard let window = SharedVideoFullscreenHost.window(for: host) else { return }
             sharedHost = SharedVideoFullscreenHost.present(owner: ownerID, in: window, content: AnyView(content()),
                 identifier: "media.fullscreen.player",
-                landscape: options?.initialFullscreenLandscape
-                    ?? VideoOrientation.fullscreenLandscape(video: MediaSession.shared.videoIsLandscape, scene: window.windowScene),
+                landscape: landscape,
                 onClose: { [weak self] reason in self?.finish(reason: reason) })
             if sharedHost == nil {
                 if presentationRetry == nil {
@@ -1701,7 +1713,7 @@ struct MediaPlaybackContent: View {
                 SessionPlayerController(isPresented: Binding(
                     get: { showingFullScreen },
                     set: { showingFullScreen = $0 }
-                ), onDismiss: {}, options: options)
+                ), onDismiss: {}, options: options, videoLandscape: session.hasVideo ? session.videoIsLandscape : nil)
                     .frame(width: 0, height: 0)
             }
         }

@@ -12,6 +12,7 @@ import UniformTypeIdentifiers
     @Published private(set) var elapsed = 0.0
     @Published private(set) var duration = 0.0
     @Published private(set) var hasVideo = true
+    @Published private(set) var videoLandscape: Bool?
     @Published private(set) var error: String?
     @Published private(set) var startupWarning: String?
     @Published private(set) var playbackStalled = false
@@ -209,6 +210,8 @@ import UniformTypeIdentifiers
                 let player = self.player
                 player?.update()
                 if !audioOnly, let hasVideo = player?.hasVideo, self.hasVideo != hasVideo { self.hasVideo = hasVideo }
+                if self.videoLandscape == nil, let size = player?.videoSize,
+                   let landscape = MediaSession.fullscreenLandscape(for: size) { self.videoLandscape = landscape }
                 let frameReady = (player?.decodedFrameCount ?? 0) > 0
                 let clock = player?.currentTime ?? 0
                 let warning = startup.update(now: Date.timeIntervalSinceReferenceDate,
@@ -409,6 +412,7 @@ import UniformTypeIdentifiers
         player?.seek(to: target)
     }
     func stop(deactivateAudioSession: Bool = true) {
+        if videoLandscape != nil { videoLandscape = nil }
         startupWarning = nil; playbackStalled = false; videoLoading = nil
         videoCacheProgress = .init()
         savePosition()
@@ -787,7 +791,8 @@ struct MatroskaPlayerView: View {
         }
         .background {
             MatroskaFullscreenPresenter(isPresented: $expanded, playback: playback, url: url,
-                                       resourceLease: resourceLease, title: title, options: playbackOptions)
+                                       resourceLease: resourceLease, title: title, options: playbackOptions,
+                                       videoLandscape: playback.sourceURL == url ? playback.videoLandscape : nil)
                 .frame(width: 0, height: 0)
         }
         .onAppear {
@@ -969,6 +974,7 @@ private struct MatroskaFullscreenPresenter: UIViewControllerRepresentable {
     var resourceLease: AnyObject?
     var title: String?
     var options: FileVideoOptions?
+    var videoLandscape: Bool?
     func makeCoordinator() -> Presenter { Presenter(playback: playback) }
     func makeUIViewController(context: Context) -> Host {
         let host = Host()
@@ -983,6 +989,7 @@ private struct MatroskaFullscreenPresenter: UIViewControllerRepresentable {
         context.coordinator.resourceLease = resourceLease
         context.coordinator.title = title
         context.coordinator.options = options
+        context.coordinator.videoLandscape = videoLandscape
         context.coordinator.synchronize(host)
     }
     static func dismantleUIViewController(_ host: Host, coordinator: Presenter) { coordinator.teardown() }
@@ -1006,6 +1013,7 @@ private struct MatroskaFullscreenPresenter: UIViewControllerRepresentable {
         var resourceLease: AnyObject?
         var title: String?
         var options: FileVideoOptions?
+        var videoLandscape: Bool?
         private let ownerID = UUID()
         private var sharedHost: SharedVideoFullscreenHost?
         private var presentedURL: URL?
@@ -1015,19 +1023,19 @@ private struct MatroskaFullscreenPresenter: UIViewControllerRepresentable {
         init(playback: MatroskaPlayback) { self.playback = playback }
         func synchronize(_ host: Host) {
             guard selection?.wrappedValue == true else { dismiss(); return }
+            let landscape = options?.initialFullscreenLandscape ?? videoLandscape
             if let sharedHost, sharedHost.owner == ownerID, let url {
+                sharedHost.resolveVideoOrientation(owner: ownerID, landscape: landscape)
                 if presentedURL != url || presentedOptions != options {
                     sharedHost.update(owner: ownerID, content: AnyView(content(url: url)))
                     presentedURL = url; presentedOptions = options
                 }
                 return
             }
-            guard let url, let window = SharedVideoFullscreenHost.window(for: host), let scene = window.windowScene else { return }
-            let size = playback.player?.videoSize ?? .zero
+            guard let url, let window = SharedVideoFullscreenHost.window(for: host) else { return }
             handingOff = false
             sharedHost = SharedVideoFullscreenHost.present(owner: ownerID, in: window, content: AnyView(content(url: url)),
-                identifier: "media.mkv.fullscreen.player", landscape: options?.initialFullscreenLandscape
-                    ?? VideoOrientation.fullscreenLandscape(video: size.width > size.height, scene: scene),
+                identifier: "media.mkv.fullscreen.player", landscape: landscape,
                 onClose: { [weak self] reason in self?.finish(reason: reason) })
             if sharedHost == nil {
                 if presentationRetry == nil {
@@ -1119,6 +1127,7 @@ struct FileMediaPlaybackView: View {
     @State private var episodeFailure: String?
     @State private var nativeAvailable: Bool?
     @State private var nativeFailed = false
+    @State private var resolvedFullscreenLandscape: Bool?
     @State private var handoff: (time: Double, playing: Bool)?
     @State private var episodesVisible = false
     @State private var airPlayRequested = false
@@ -1131,6 +1140,7 @@ struct FileMediaPlaybackView: View {
     private var currentPath: String { selectedURL?.path ?? path ?? url.path }
     private var isVideo: Bool { FileVideoEpisodes.isVideo(currentPath) }
     private var isAudio: Bool { FileVideoEpisodes.isAudio(currentPath) }
+    private var waitsForLocalVideoOrientation: Bool { shouldReadVideoOrientation(for: currentURL) && resolvedURL != currentURL }
     private var usesSystem: Bool { needsSystemPresentation && nativeAvailable == true && !nativeFailed }
     private var videoPlaylist: FileVideoPlaylist? {
         guard isVideo || FileVideoEpisodes.isAudio(currentPath) else { return nil }
@@ -1145,10 +1155,12 @@ struct FileMediaPlaybackView: View {
                 defer { if resolvingURL == next { resolvingURL = nil; episodeTask = nil } }
                 do {
                     let prepared = try await prepare(next, path: next.path)
+                    let landscape = await readVideoOrientation(for: next, asset: prepared.asset)
                     try Task.checkCancellation()
                     native.stop(deactivateAudioSession: false)
                     handoff = (0, true); nativeFailed = false
                     asset = prepared.asset; nativeAvailable = prepared.nativeAvailable
+                    resolvedFullscreenLandscape = landscape
                     preparedSource = prepared.soulo; resolvedURL = next; selectedURL = next
                 } catch is CancellationError { }
                 catch { episodeFailure = error.localizedDescription }
@@ -1159,6 +1171,7 @@ struct FileMediaPlaybackView: View {
         var result = FileVideoOptions(usesSystem: usesSystem, systemAvailable: nativeAvailable == true && !nativeFailed,
                          playlist: videoPlaylist)
         result.systemAvailabilityPending = currentURL.isFileURL && nativeAvailable == nil
+        if resolvedURL == currentURL { result.initialFullscreenLandscape = resolvedFullscreenLandscape }
         result.requestAirPlay = { time, _ in
             handoff = (time, native.isPlaybackRequested)
             airPlayRequested = true
@@ -1186,7 +1199,7 @@ struct FileMediaPlaybackView: View {
     }
     var body: some View {
         ZStack {
-            if (needsSystemPresentation && nativeAvailable == nil)
+            if waitsForLocalVideoOrientation || (needsSystemPresentation && nativeAvailable == nil)
                 || (["movpkg", "hls", "m3u8", OfflineHLSReference.fileExtension].contains(currentURL.pathExtension.lowercased()) && resolvedURL != currentURL) {
                 ProgressView(ToolText.text("loading"))
             } else if usesSystem {
@@ -1228,11 +1241,16 @@ struct FileMediaPlaybackView: View {
             guard resolvedURL != currentURL else { return }
             do {
                 let prepared = try await prepare(currentURL, path: currentPath)
+                let landscape = await readVideoOrientation(for: currentURL, asset: prepared.asset)
                 try Task.checkCancellation()
                 asset = prepared.asset; nativeAvailable = prepared.nativeAvailable
+                resolvedFullscreenLandscape = landscape
                 preparedSource = prepared.soulo; resolvedURL = currentURL
             } catch is CancellationError { }
-            catch { nativeAvailable = false; resolvedURL = currentURL; episodeFailure = error.localizedDescription }
+            catch {
+                nativeAvailable = false; resolvedFullscreenLandscape = nil; resolvedURL = currentURL
+                episodeFailure = error.localizedDescription
+            }
         }
         .task(id: url) {
             guard isVideo || FileVideoEpisodes.isAudio(currentPath), playlist == nil, url.isFileURL else { return }
@@ -1251,6 +1269,17 @@ struct FileMediaPlaybackView: View {
             guard FileVideoEpisodes.isAudio(currentPath), let next, siblings.contains(next), next != currentURL else { return }
             handoff = (0, true); resolvedURL = nil; preparedSource = nil; selectedURL = next
         }
+    }
+
+    private func shouldReadVideoOrientation(for url: URL) -> Bool {
+        UIDevice.current.userInterfaceIdiom == .phone && url.isFileURL
+            && ["mp4", "m4v", "mov"].contains(url.pathExtension.lowercased())
+    }
+
+    private func readVideoOrientation(for url: URL, asset: AVURLAsset?) async -> Bool? {
+        guard shouldReadVideoOrientation(for: url),
+              let size = await MediaSession.videoTrackDisplaySize(in: asset ?? AVURLAsset(url: url)) else { return nil }
+        return MediaSession.fullscreenLandscape(for: size)
     }
 
     private func prepare(_ url: URL, path: String) async throws -> (asset: AVURLAsset?, nativeAvailable: Bool, soulo: SouloMediaPlaybackSource?) {

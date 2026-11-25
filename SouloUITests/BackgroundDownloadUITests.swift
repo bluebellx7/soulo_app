@@ -26,8 +26,11 @@ final class BackgroundDownloadUITests: XCTestCase {
         link.tap()
         let status = app.buttons["browser.downloadStatus"]
         XCTAssertTrue(status.waitForExistence(timeout: 10), app.debugDescription)
+        let keepOpenNotice = "Keep Soulo open while downloading"
+        XCTAssertFalse(status.label.contains(keepOpenNotice))
         status.tap()
         XCTAssertTrue(app.staticTexts[filename].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(app.staticTexts[keepOpenNotice].exists)
         // Keep Soulo backgrounded well beyond the ordinary suspension delay.
         XCUIDevice.shared.press(.home)
         XCTAssertTrue(app.wait(for: .runningBackground, timeout: 5))

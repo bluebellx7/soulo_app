@@ -18,12 +18,20 @@ enum AppKeyboardDismissal {
     @MainActor
     @discardableResult
     static func install(on window: UIWindow) -> BackgroundKeyboardDismissGesture {
-        if let existing = window.gestureRecognizers?.first(where: { $0 is BackgroundKeyboardDismissGesture }) as? BackgroundKeyboardDismissGesture {
-            return existing
-        }
+        if let existing = gesture(in: window) { return existing }
         let gesture = BackgroundKeyboardDismissGesture(window: window)
         window.addGestureRecognizer(gesture)
         return gesture
+    }
+
+    @MainActor
+    static func cancelPendingDismissal(in window: UIWindow) {
+        gesture(in: window)?.cancelPendingDismissal()
+    }
+
+    @MainActor
+    private static func gesture(in window: UIWindow) -> BackgroundKeyboardDismissGesture? {
+        window.gestureRecognizers?.compactMap { $0 as? BackgroundKeyboardDismissGesture }.first
     }
 
     @MainActor
@@ -43,6 +51,7 @@ enum AppKeyboardDismissal {
 final class BackgroundKeyboardDismissGesture: UITapGestureRecognizer, UIGestureRecognizerDelegate {
     private weak var ownerWindow: UIWindow?
     private weak var touchedEditor: UIView?
+    private var tapRevision = 0
     private let editorAccessories = NSHashTable<UIView>.weakObjects()
 
     init(window: UIWindow) {
@@ -59,9 +68,17 @@ final class BackgroundKeyboardDismissGesture: UITapGestureRecognizer, UIGestureR
         // Let SwiftUI deliver a button/navigation action before keyboard-driven
         // sheet resizing moves its target. Never resign a newly focused field.
         let editor = touchedEditor
-        DispatchQueue.main.async { [weak editor] in
+        let revision = tapRevision
+        DispatchQueue.main.async { [weak self, weak editor] in
+            guard let self, self.tapRevision == revision else { return }
+            self.touchedEditor = nil
             if let editor, editor.isFirstResponder { editor.resignFirstResponder() }
         }
+    }
+
+    func cancelPendingDismissal() {
+        tapRevision &+= 1
+        touchedEditor = nil
     }
 
     private func firstResponder(in view: UIView) -> UIView? {
@@ -75,31 +92,34 @@ final class BackgroundKeyboardDismissGesture: UITapGestureRecognizer, UIGestureR
     func preserveFocus(in region: UIView) { editorAccessories.add(region) }
 
     func preservesFocus(at point: CGPoint, touchedView: UIView) -> Bool {
-        guard let window = ownerWindow else { return false }
+        guard let window = ownerWindow, let presentation = presentationRoot(for: touchedView) else { return false }
         return editorAccessories.allObjects.contains {
             $0.window === window && $0.convert($0.bounds, to: window).contains(point)
-                && sharesPresentation($0, with: touchedView)
+                && presentationRoot(for: $0) === presentation
         }
     }
 
-    private func sharesPresentation(_ region: UIView, with touchedView: UIView) -> Bool {
-        var responder: UIResponder? = region
+    private func presentationRoot(for view: UIView) -> UIViewController? {
+        var responder: UIResponder? = view
         while let current = responder {
-            if let view = current as? UIView, view.isHidden || view.alpha < 0.01 { return false }
+            if let view = current as? UIView, view.isHidden || view.alpha < 0.01 { return nil }
             if let controller = current as? UIViewController {
-                // An editor behind a presented sheet must not shield blank taps
-                // in the sheet just because their screen coordinates overlap.
-                return touchedView.isDescendant(of: controller.view)
+                // The accessory and the hit view can be in sibling hosts.
+                // A modal's presenting controller is separate from this chain.
+                var presentation = controller
+                while let parent = presentation.parent { presentation = parent }
+                return presentation
             }
             responder = current.next
         }
-        return false
+        return nil
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard let window = ownerWindow, let touchedView = touch.view, touchedView.window === window,
               !preservesFocus(at: touch.location(in: window), touchedView: touchedView) else { return false }
         guard AppKeyboardDismissal.acceptsBackgroundTap(on: touchedView) else { return false }
+        tapRevision &+= 1
         touchedEditor = firstResponder(in: window)
         return touchedEditor != nil
     }

@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Streaming ini tidak lagi tersedia di halaman saat ini. Muat ulang halaman dan coba lagi.";
+"resource_youtube_download_verification_required" = "YouTube memerlukan verifikasi pemutar. Unduhan dihentikan.";
+"downloads_keep_app_open" = "Biarkan Soulo tetap terbuka selama pengunduhan";
 "resource_stream_download_unsupported" = "Soulo mendeteksi streaming ini, tetapi format manifesnya belum dapat disimpan.";
 "resource_stream_download_invalid_chunk" = "Streaming media mengembalikan segmen yang tidak valid atau tidak berurutan.";
 "resource_stream_download_missing_track" = "Streaming yang diunduh tidak berisi trek video dan audio yang dapat diputar.";

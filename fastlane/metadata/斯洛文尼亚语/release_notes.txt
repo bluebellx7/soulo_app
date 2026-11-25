@@ -1,1 +1,2 @@
-Izboljšali smo nalaganje skriptov pri odpiranju spletnih strani in združljivost z razširitvami brskalnika.
+Odpravili smo težavo s preklapljanjem skupin v hitrem iskanju na začetnem zaslonu in zmanjšali število nepričakovanih pozivov za lepljenje na spletnih straneh.
+Tapnite iskalno platformo na začetnem zaslonu za takojšnje iskanje. Izboljšali smo prenos videoposnetkov, prehod v celozaslonski način in odziv naslovne vrstice na dotik.

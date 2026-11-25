@@ -1,1 +1,2 @@
-Förbättrad inläsning av skript när webbsidor öppnas och bättre kompatibilitet med webbläsartillägg.
+Vi har åtgärdat gruppbytet i snabbsökningen på startsidan och minskat antalet oväntade frågor om att klistra in innehåll på webbsidor.
+Tryck på en sökplattform på hemskärmen för att söka direkt. Vi har förbättrat videohämtningar, övergången till helskärm och adressfältets respons vid tryck.

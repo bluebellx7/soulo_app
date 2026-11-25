@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Αυτή η ροή δεν είναι πλέον διαθέσιμη στην τρέχουσα σελίδα. Ανανεώστε τη σελίδα και δοκιμάστε ξανά.";
+"resource_youtube_download_verification_required" = "Το YouTube απαιτεί επαλήθευση του προγράμματος αναπαραγωγής. Η λήψη διακόπηκε.";
+"downloads_keep_app_open" = "Κρατήστε το Soulo ανοιχτό κατά τη λήψη";
 "resource_stream_download_unsupported" = "Το Soulo εντόπισε αυτή τη ροή, αλλά δεν μπορεί ακόμη να αποθηκεύσει τη μορφή του αρχείου δήλωσής της.";
 "resource_stream_download_invalid_chunk" = "Η ροή πολυμέσων επέστρεψε μη έγκυρο τμήμα ή τμήμα εκτός σειράς.";
 "resource_stream_download_missing_track" = "Η ληφθείσα ροή δεν περιείχε αναπαραγώγιμα κομμάτια βίντεο και ήχου.";

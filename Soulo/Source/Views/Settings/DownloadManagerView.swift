@@ -234,6 +234,15 @@ struct DownloadManagerContentView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("downloads.open.\(item.id)")
+            } else if item.status == .failed, !item.errorMessage.isEmpty {
+                Button {
+                    fileError = item.errorMessage
+                } label: {
+                    downloadSummary(item)
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("downloads.failure.\(item.id)")
             } else {
                 downloadSummary(item)
             }
@@ -424,6 +433,13 @@ struct DownloadManagerContentView: View {
                     Text(progressText(item))
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.tertiary)
+                    if downloadManager.foregroundRequiredDownloadIDs.contains(item.id) {
+                        Label(LanguageManager.shared.localizedString("downloads_keep_app_open"), systemImage: "iphone")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(Color.themePrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("downloads.foregroundRequired.\(item.id)")
+                    }
                     if item.transport == .ed2k, item.status == .inProgress,
                        let state = ed2kDownloads.snapshots[item.id] {
                         Text(ByteCountFormatter.string(fromByteCount: state.speed, countStyle: .file) + "/s · "

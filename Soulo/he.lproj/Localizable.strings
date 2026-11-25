@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "השידור הזה אינו זמין עוד בדף הנוכחי. יש לטעון מחדש את הדף ולנסות שוב.";
+"resource_youtube_download_verification_required" = "YouTube דורש אימות של הנגן. ההורדה הופסקה.";
+"downloads_keep_app_open" = "יש להשאיר את Soulo פתוח בזמן ההורדה";
 "resource_stream_download_unsupported" = "Soulo זיהה את השידור הזה, אך עדיין לא ניתן לשמור את פורמט קובץ המניפסט שלו.";
 "resource_stream_download_invalid_chunk" = "זרם המדיה החזיר מקטע לא תקין או מקטע בסדר שגוי.";
 "resource_stream_download_missing_track" = "השידור שהורד לא כלל רצועות וידאו ושמע שניתן לנגן.";

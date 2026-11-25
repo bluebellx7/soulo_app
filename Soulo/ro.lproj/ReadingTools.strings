@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Sticlă mată";
 "wallpaper_blur_amount" = "Intensitatea estompării";
 
-"home_quick_search_guide" = "Introduceți un cuvânt-cheie pe pagina principală pentru a vedea platformele sub bara de căutare. Atingeți o platformă pentru a căuta în ea.";
+"home_quick_search_guide" = "Introdu un cuvânt-cheie pe ecranul principal, alege o platformă, apoi atinge Caută pe tastatură.";
 "auto_hide_platform_bar_hint" = "Când este activată, bara se ascunde doar după ce atingi conținutul paginii și domeniul nu corespunde niciunei platforme din bara curentă. Dacă există o potrivire, bara rămâne vizibilă sau reapare. Derularea și redirecționările automate nu o ascund.";
 
 "ad_subscription_add" = "Adaugă listă de filtre";

@@ -621,6 +621,14 @@ struct WebResourceInspectorView: View {
                         Spacer(minLength: 4)
                         mediaResourceActions(for: resource)
                     }
+                    if let item = activeDownload(for: downloadIdentityURL(for: resource)),
+                       downloadManager.foregroundRequiredDownloadIDs.contains(item.id) {
+                        Label(LanguageManager.shared.localizedString("downloads_keep_app_open"), systemImage: "iphone")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(Color.themePrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("resources.video.foregroundRequired")
+                    }
                 }
                 .padding(.vertical, 8)
                 if resource.id != viewModel.snapshot.videos.last?.id { Divider() }
@@ -1426,6 +1434,8 @@ struct WebResourceMediaPlayerView: View {
     @State private var isDownloading = false
     @State private var isPreparing = true
     @State private var hasPreparedPlayer = false
+    @State private var resolvedFullscreenLandscape: Bool?
+    @State private var pendingInitialAsset: AVURLAsset?
     @State private var isPlaying = false
     @State private var playbackError = ""
     @State private var selectedDownloadedItem: BrowserDownloadItem?
@@ -1435,6 +1445,7 @@ struct WebResourceMediaPlayerView: View {
     @State private var directSouloSource: DownloadPlaybackSource?
     @State private var selectedResource: WebMediaResource?
     @State private var selectedEpisodeID: String?
+    @State private var originalPlayingEpisodeID: String?
     @State private var selectedSourceID: String?
     @State private var resolvingEpisodeID: String?
     @State private var episodeFailure: String?
@@ -1443,6 +1454,7 @@ struct WebResourceMediaPlayerView: View {
     @State private var failedEpisode: WebEpisode?
     @State private var showEpisodeFailure = false
     private var currentResource: WebMediaResource { selectedResource ?? resource }
+    private var fullscreenLandscapeHint: Bool? { initialFullscreenLandscape ?? resolvedFullscreenLandscape }
 
     init(
         resource: WebMediaResource,
@@ -1454,6 +1466,7 @@ struct WebResourceMediaPlayerView: View {
         souloPlaying: Bool = true,
         initialRate: Float? = nil,
         initialFullscreenLandscape: Bool? = nil,
+        preparedAsset: AVURLAsset? = nil,
         episodeList: WebEpisodeList? = nil,
         showsEpisodes: Bool = false,
         restoredContext: WebMediaPlaybackContext? = nil,
@@ -1468,6 +1481,7 @@ struct WebResourceMediaPlayerView: View {
         self.souloPlaying = souloPlaying
         self.initialRate = initialRate
         self.initialFullscreenLandscape = initialFullscreenLandscape
+        _pendingInitialAsset = State(initialValue: preparedAsset)
         self.episodeList = episodeList
         self.showsEpisodes = showsEpisodes
         self.restoringPlayback = restoredContext != nil
@@ -1483,9 +1497,22 @@ struct WebResourceMediaPlayerView: View {
     @ViewBuilder var body: some View {
         if embedded { playerContent }
         else if resource.kind == .video {
-            playerContent
-                .background(Color.black.ignoresSafeArea())
-                .preferredColorScheme(.dark)
+            if let landscape = fullscreenLandscapeHint {
+                let window = sourceWebView?.window
+                let insets = window?.safeAreaInsets ?? .zero
+                VideoFullscreenCanvas(landscape: landscape ? nil : false,
+                    entryLandscapeDirection: landscape ? VideoOrientation.landscapePresentation(in: window?.windowScene) : nil,
+                    insets: EdgeInsets(top: insets.top, leading: insets.left, bottom: insets.bottom, trailing: insets.right),
+                    identifier: "media.web.preparation.canvas") { insets in
+                        playerContent.padding(insets)
+                    }
+                    .preferredColorScheme(.dark)
+                    .statusBarHidden()
+            } else {
+                playerContent
+                    .background(Color.black.ignoresSafeArea())
+                    .preferredColorScheme(.dark)
+            }
         }
         else { NavigationStack { playerContent } }
     }
@@ -1510,7 +1537,7 @@ struct WebResourceMediaPlayerView: View {
                                              initialRate: selectedEpisodeID == nil ? initialRate : nil,
                                              restoredSoulo: restoringPlayback ? MediaSession.shared.soulo : nil,
                                              initialFullscreen: currentResource.kind == .video,
-                                             initialFullscreenLandscape: initialFullscreenLandscape,
+                                             initialFullscreenLandscape: fullscreenLandscapeHint,
                                              fullscreenOnly: currentResource.kind == .video,
                                              initialSystemPlayer: restoringPlayback && directSouloSource == nil
                                                  && MediaSession.shared.soulo == nil,
@@ -1737,11 +1764,15 @@ struct WebResourceMediaPlayerView: View {
                     episode.matchesCurrentPage(currentResource.url)
                         || (currentResource.sourcePageURL.map { episode.matchesCurrentPage($0) } ?? false)
                 } }) ?? list.currentSource else { return nil }
-        let currentID = selectedEpisodeID.flatMap { selected in source.episodes.contains(where: { $0.id == selected }) ? selected : nil }
-            ?? source.episodes.first { episode in
+        let currentID: String
+        if let playingID = selectedEpisodeID ?? originalPlayingEpisodeID {
+            currentID = source.episodes.contains(where: { $0.id == playingID }) ? playingID : ""
+        } else {
+            currentID = source.episodes.first { episode in
                 episode.matchesCurrentPage(currentResource.url)
                     || (currentResource.sourcePageURL.map { episode.matchesCurrentPage($0) } ?? false)
             }?.id ?? (selectedSourceID == nil ? source.episodes.first { $0.matchesCurrentPage(list.pageURL) }?.id : nil) ?? ""
+        }
         return FileVideoPlaylist(episodes: source.episodes.map { FileVideoEpisode(id: $0.id, title: $0.title) },
             selectedID: currentID, sources: list.sources.enumerated().map { index, source in
                 .init(id: source.id, title: source.title.isEmpty ? "\(ToolText.text("episodes_source")) \(index + 1)" : source.title)
@@ -1757,11 +1788,17 @@ struct WebResourceMediaPlayerView: View {
             retry: failedEpisode.map { episode in { selectEpisode(episode) } }) { id in
                 guard let episode = source.episodes.first(where: { $0.id == id }) else { return }
                 if id == currentID && playbackError.isEmpty && episodeFailure == nil { return }
-                selectEpisode(episode)
+                selectEpisode(episode, currentID: currentID)
             }
     }
 
-    private func selectEpisode(_ episode: WebEpisode) {
+    private func selectEpisode(_ episode: WebEpisode, currentID: String? = nil) {
+        guard resolvingEpisodeID != episode.id else { return }
+        if selectedEpisodeID == nil, originalPlayingEpisodeID == nil, let currentID, !currentID.isEmpty {
+            // SPA controls can update the webpage's selection before the native
+            // player has switched. Keep the marker on the actual player source.
+            originalPlayingEpisodeID = currentID
+        }
         episodeTask?.cancel()
         let requestID = UUID(); episodeRequestID = requestID
         resolvingEpisodeID = episode.id; episodeFailure = nil; failedEpisode = nil; showEpisodeFailure = false
@@ -1771,9 +1808,14 @@ struct WebResourceMediaPlayerView: View {
                 let media: WebMediaResource
                 if let direct = episode.directMediaResource { media = direct }
                 else if let sourceWebView {
-                    let resolver = WebEpisodeMediaResolver(episode: episode, sourceView: sourceWebView, previousResourceURL: currentResource.url)
-                    defer { resolver.invalidate() }
-                    media = try await resolver.resolve()
+                    if episode.action != nil {
+                        media = try await WebEpisodeRuntime.resolveActionMedia(episode, in: sourceWebView,
+                            timeout: 20, excluding: currentResource.url)
+                    } else {
+                        let resolver = WebEpisodeMediaResolver(episode: episode, sourceView: sourceWebView)
+                        defer { resolver.invalidate() }
+                        media = try await resolver.resolve()
+                    }
                 } else { throw CocoaError(.fileReadUnsupportedScheme) }
                 try Task.checkCancellation()
                 let asset = await WebResourceMediaService.asset(for: media, webView: sourceWebView, cacheForPlayback: true)
@@ -1821,6 +1863,8 @@ struct WebResourceMediaPlayerView: View {
             return
         }
         useYouTubeWebPlayback = false
+        let prepared = pendingInitialAsset
+        pendingInitialAsset = nil
         let asset: AVURLAsset
         if let resolvedLocalURL {
             do {
@@ -1832,11 +1876,19 @@ struct WebResourceMediaPlayerView: View {
             } catch {
                 playbackError = error.localizedDescription; isPreparing = false; return
             }
+        } else if selectedResource == nil, let prepared {
+            asset = prepared
         } else {
             asset = selectedResource != nil ? await WebResourceMediaService.asset(for: currentResource, webView: sourceWebView, cacheForPlayback: true)
                 : await assetProvider()
         }
         guard !Task.isCancelled, playbackRequestID == requestID, MediaSession.shared.ownsPreparation(reservation) else { return }
+        if !embedded, currentResource.kind == .video, initialFullscreenLandscape == nil,
+           UIDevice.current.userInterfaceIdiom == .phone {
+            let size = await MediaSession.videoTrackDisplaySize(in: asset)
+            guard !Task.isCancelled, playbackRequestID == requestID, MediaSession.shared.ownsPreparation(reservation) else { return }
+            resolvedFullscreenLandscape = size.flatMap(MediaSession.fullscreenLandscape(for:))
+        }
         directSouloSource = sourceForPlayback(asset: asset, pageURL: pageURL)
         hasPreparedPlayer = true
         isPreparing = false

@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Mutno staklo";
 "wallpaper_blur_amount" = "Jačina zamućenja";
 
-"home_quick_search_guide" = "Unesite ključnu riječ na početnoj stranici za prikaz platformi ispod trake za pretraživanje. Dodirnite platformu za pretraživanje.";
+"home_quick_search_guide" = "Unesite ključnu riječ na početnom zaslonu, odaberite platformu i dodirnite Pretraži na tipkovnici.";
 "auto_hide_platform_bar_hint" = "Kad je uključeno, traka se skriva tek nakon dodira sadržaja stranice i samo ako domena stranice ne odgovara nijednoj platformi na trenutačnoj traci. Ako odgovara, traka ostaje vidljiva ili se ponovno prikazuje. Pomicanje i automatska preusmjeravanja ne skrivaju traku.";
 
 "ad_subscription_add" = "Dodaj popis filtara";

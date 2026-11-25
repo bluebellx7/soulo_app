@@ -169,6 +169,17 @@ enum WebResourceInspectionService {
         // Network observations alone must not turn an unrelated ad into a fallback.
         if (token === '__soulo_configured') return configuredVideo();
         const allVideos = mediaElements('video');
+        if (token === '__soulo_episode') {
+            let area = -1;
+            for (const video of allVideos) {
+                const id = video.getAttribute('data-soulo-media-id');
+                if (!id || !video.isConnected) continue;
+                const bounds = video.getBoundingClientRect();
+                const size = bounds.width * bounds.height;
+                if (size > area) { area = size; resolvedToken = id; }
+            }
+            if (area < 0) return configuredVideo();
+        }
         if (token === '__soulo_fallback') {
             // A rendered player keeps its own tools, even while paused or below
             // the fold. It must never promote an unrelated hidden frame's URL

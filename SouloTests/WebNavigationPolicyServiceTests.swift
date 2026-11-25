@@ -29,6 +29,20 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
             XCTAssertNil(policy.universalAppScheme(for: try XCTUnwrap(URL(string: raw))))
         }
     }
+
+    func testCrossSiteBilibiliHomepagePrefersBrowserWithoutChangingAppHandoffs() throws {
+        let policy = WebNavigationPolicyService.shared
+        let results = try XCTUnwrap(URL(string: "https://www.google.com/search?q=bilibili"))
+        for address in ["https://www.bilibili.com", "https://m.bilibili.com/?from=search", "https://bilibili.com/"] {
+            let homepage = try XCTUnwrap(URL(string: address))
+            XCTAssertTrue(policy.prefersBrowserForBilibiliHomepage(homepage, from: results))
+            XCTAssertFalse(policy.prefersBrowserForBilibiliHomepage(homepage, from: URL(string: "https://search.bilibili.com/all")))
+        }
+        for address in ["https://www.bilibili.com/video/BV1test", "https://www.bilibili.com.example.org/", "bilibili://home"] {
+            let destination = try XCTUnwrap(URL(string: address))
+            XCTAssertFalse(policy.prefersBrowserForBilibiliHomepage(destination, from: results))
+        }
+    }
     func testBaiduSDKAppHandoffResolvesToItsAppScheme() throws {
         let appURL = try XCTUnwrap(URL(string: "baiduboxapp://video/invokeVideoDetail?params=%7B%22name%22%3A%22a%2Bb%22%7D"))
         var wrapper = try XCTUnwrap(URLComponents(string: "https://boxer.baidu.com/scheme"))

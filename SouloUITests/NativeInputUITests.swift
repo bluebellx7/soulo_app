@@ -110,9 +110,9 @@ final class NativeInputUITests: XCTestCase {
         XCTAssertEqual(search.value as? String, "Wallpaper")
         // iOS keeps searchable active after resigning the keyboard. Close that
         // search session before using the settings navigation bar.
-        let closeSearch = app.buttons["关闭"]
+        let closeSearch = app.navigationBars["Settings"].buttons.matching(
+            NSPredicate(format: "label IN %@", ["Cancel", "取消", "关闭"])).firstMatch
         if closeSearch.exists { closeSearch.tap() }
-        else if app.buttons["Cancel"].exists { app.buttons["Cancel"].tap() }
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 3))
         app.navigationBars["Settings"].buttons["Done"].tap()
         app.open(try XCTUnwrap(URL(string: "soulo://downloads")))

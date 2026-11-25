@@ -15,6 +15,7 @@ enum StreamingMediaDownloadError: LocalizedError {
     case unsupportedManifest
     case invalidChunk
     case missingTrack
+    case youtubeVerificationRequired
     case exportFailed(String)
 
     var errorDescription: String? {
@@ -29,6 +30,8 @@ enum StreamingMediaDownloadError: LocalizedError {
             return AppLocalization.string("resource_stream_download_invalid_chunk")
         case .missingTrack:
             return AppLocalization.string("resource_stream_download_missing_track")
+        case .youtubeVerificationRequired:
+            return AppLocalization.string("resource_youtube_download_verification_required")
         case .exportFailed(let message):
             return message.isEmpty
                 ? AppLocalization.string("resource_stream_download_export_failed")
@@ -73,6 +76,16 @@ private actor StreamingTrackWriter {
         }
         return (byteCounts[.video, default: 0], byteCounts[.audio, default: 0])
     }
+
+    func reset() throws {
+        guard !isClosed else { throw CancellationError() }
+        for handle in [videoHandle, audioHandle] {
+            try handle.truncate(atOffset: 0)
+            try handle.seek(toOffset: 0)
+        }
+        nextIndexes = [.video: 0, .audio: 0]
+        byteCounts = [.video: 0, .audio: 0]
+    }
 }
 
 @MainActor
@@ -100,6 +113,10 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         var failureMessage = ""
         var isCanceled = false
         var isPaused = false
+        var isFinalizing = false
+        var exporter: AVAssetExportSession?
+        var playbackDownload: YouTubePlaybackDownload?
+        var isUsingPlaybackDownload = false
         var pendingChunkReplies: [(Any?, String?) -> Void] = []
 
         init(
@@ -412,25 +429,40 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             identifiersByItemID[item.id] = identifier
 
             let playerResponseJSON = try await prepareYouTubePlayerContext(in: webView)
-            try await installEngineIfNeeded(in: webView)
-            let engineResult = try await webView.callAsyncJavaScript(
-                "return await window.__souloSABRDownload(configuration);",
-                arguments: [
-                    "configuration": [
-                        "downloadID": identifier,
-                        "videoQuality": "720p",
-                        "playerResponseJSON": playerResponseJSON
-                    ]
-                ],
-                in: nil,
-                contentWorld: .page
-            )
-            let pageDurationSeconds = ((engineResult as? [String: Any])?["durationSeconds"] as? NSNumber)?
-                .doubleValue
+            let pageDurationSeconds: Double?
+            do {
+                try await installEngineIfNeeded(in: webView)
+                let engineResult = try await webView.callAsyncJavaScript(
+                    "return await window.__souloSABRDownload(configuration);",
+                    arguments: [
+                        "configuration": [
+                            "downloadID": identifier,
+                            "videoQuality": "720p",
+                            "playerResponseJSON": playerResponseJSON
+                        ]
+                    ],
+                    in: nil,
+                    contentWorld: .page
+                )
+                pageDurationSeconds = ((engineResult as? [String: Any])?["durationSeconds"] as? NSNumber)?.doubleValue
+            } catch {
+                guard let failure = Self.surfacedStreamingError(error) as? StreamingMediaDownloadError,
+                      case .youtubeVerificationRequired = failure,
+                      let page = pageURL ?? webView.url, let duration = Self.youtubeVODDuration(playerResponseJSON),
+                      !transfer.isCanceled, webView.url.flatMap(WebResourceMediaService.youtubeVideoID(for:))
+                        == WebResourceMediaService.youtubeVideoID(for: page) else { throw error }
+                pageDurationSeconds = try await downloadFromYouTubePlayback(transfer, pageURL: page,
+                    duration: duration, source: webView)
+            }
 
             if transfer.isCanceled { throw CancellationError() }
             if !transfer.failureMessage.isEmpty {
                 throw StreamingMediaDownloadError.exportFailed(transfer.failureMessage)
+            }
+            transfer.isFinalizing = true
+            if transfer.isPaused {
+                transfer.isPaused = false
+                manager.markResumed(id: item.id)
             }
             let byteCounts = try await transfer.writer.close()
             guard byteCounts.video > 0, byteCounts.audio > 0 else {
@@ -441,27 +473,72 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             let expected = SafeNumericValue.byteCountTotal(
                 [transfer.expectedVideoBytes, transfer.expectedAudioBytes], requirePositive: true) ?? -1
             manager.updateProgress(id: item.id, completed: completed, total: max(completed, expected))
+            let stagedMovie = directoryURL.appendingPathComponent("merged.mp4")
             try await mux(
                 videoURL: videoURL,
                 audioURL: audioURL,
-                destinationURL: destinationURL,
+                destinationURL: stagedMovie,
                 maximumDurationSeconds: pageDurationSeconds
-            )
+            ) { transfer.exporter = $0 }
+            try Task.checkCancellation()
+            guard !transfer.isCanceled else { throw CancellationError() }
+            try FileManager.default.moveItem(at: stagedMovie, to: destinationURL)
             manager.markFinished(id: item.id)
             finish(transfer)
             return destinationURL
         } catch {
             let surfacedError = Self.surfacedStreamingError(error)
+            if error is CancellationError || transfers[identifier]?.isCanceled == true { manager.markCanceled(id: item.id) }
+            else { manager.markFailed(id: item.id, error: surfacedError, includingPaused: true) }
             if let transfer = transfers[identifier] {
                 _ = try? await transfer.writer.close()
-                if !transfer.isCanceled,
-                   manager.downloads.first(where: { $0.id == item.id })?.status == .inProgress {
-                    manager.markFailed(id: item.id, error: surfacedError)
-                }
                 finish(transfer)
+            } else {
+                try? FileManager.default.removeItem(at: directoryURL)
             }
             throw surfacedError
         }
+    }
+
+    private func downloadFromYouTubePlayback(_ transfer: Transfer, pageURL: URL,
+                                             duration: Double, source: WKWebView) async throws -> Double {
+        transfer.isUsingPlaybackDownload = true
+        transfer.failureMessage = ""
+        transfer.expectedVideoBytes = 0
+        transfer.expectedAudioBytes = 0
+        try await transfer.writer.reset()
+        guard !transfer.isCanceled else { throw CancellationError() }
+        let manager = DownloadManagerService.shared
+        manager.updateProgress(id: transfer.itemID, completed: 0, total: 0)
+        var received: Int64 = 0
+        let capture = try YouTubePlaybackDownload(source: source, pageURL: pageURL, duration: duration) {
+            name, index, bytes in
+            guard let track = StreamingTrackWriter.Track(rawValue: name), !transfer.isCanceled else {
+                throw CancellationError()
+            }
+            let totals = try await transfer.writer.append(bytes, to: track, index: index)
+            received = SafeNumericValue.byteCountTotal([totals.video, totals.audio]) ?? .max
+        } progress: { fraction in
+            guard fraction > 0, received > 0 else { return }
+            let estimate = Int64(exactly: (Double(received) / fraction).rounded(.up)) ?? .max
+            manager.updateProgress(id: transfer.itemID, completed: received, total: estimate)
+        }
+        transfer.playbackDownload = capture
+        manager.setForegroundRequired(true, for: transfer.itemID)
+        defer {
+            manager.setForegroundRequired(false, for: transfer.itemID)
+            transfer.playbackDownload = nil
+        }
+        capture.setPaused(transfer.isPaused)
+        return try await capture.collect(behind: source)
+    }
+
+    private static func youtubeVODDuration(_ response: String) -> Double? {
+        guard let object = try? JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any],
+              let details = object["videoDetails"] as? [String: Any], details["isLive"] as? Bool != true,
+              let raw = details["lengthSeconds"] as? String, let duration = Double(raw),
+              duration.isFinite, duration > 0 else { return nil }
+        return duration
     }
 
     func downloadSeparatedTracks(
@@ -595,10 +672,10 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         if AuthenticatedHLSDownloadService.shared.owns(itemID) { AuthenticatedHLSDownloadService.shared.pause(itemID); return }
         guard hlsTransfers.values.first(where: { $0.itemID == itemID })?.finalizationTask == nil else { return }
         if let identifier = identifiersByItemID[itemID],
-           let transfer = transfers[identifier],
-           !transfer.isCanceled,
-           !transfer.isPaused {
+           let transfer = transfers[identifier] {
+            guard !transfer.isCanceled, !transfer.isPaused, !transfer.isFinalizing else { return }
             transfer.isPaused = true
+            transfer.playbackDownload?.setPaused(true)
             DownloadManagerService.shared.markPaused(id: itemID)
             return
         }
@@ -624,6 +701,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
            !transfer.isCanceled,
            transfer.isPaused {
             transfer.isPaused = false
+            transfer.playbackDownload?.setPaused(false)
             DownloadManagerService.shared.markResumed(id: itemID)
             let pendingReplies = transfer.pendingChunkReplies
             transfer.pendingChunkReplies.removeAll()
@@ -751,67 +829,43 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         }
         transfer.finalizationTask = Task { @MainActor in
             defer { cleanupHLSTransfer(transfer) }
-            var retainedReference: URL?
+            var finalizedURL: URL?
             do {
                 try Task.checkCancellation()
                 let managedAssetURL = try OfflineHLSReference.canonicalPackageURL(for: downloadedAssetURL)
-                let completedURL: URL
-                do {
-                    try await exportHLSAsset(
-                        at: managedAssetURL,
-                        destinationURL: transfer.destinationURL
-                    )
+                let manager = DownloadManagerService.shared
+                if manager.downloads.first(where: { $0.id == transfer.itemID })?.status == .paused {
+                    manager.markResumed(id: transfer.itemID)
+                }
+                let completedURL = try await finalizeHLSAsset(at: managedAssetURL, transfer: transfer)
+                finalizedURL = completedURL
+                let bytes = await Task.detached(priority: .utility, operation: { FileStorageSize.bytes(at: completedURL) }).value
+                try Task.checkCancellation()
+                guard !transfer.isCanceled else { throw CancellationError() }
+                if completedURL == transfer.destinationURL {
                     // The player may still read the task's local segment cache.
                     // Release it when that player source is replaced or stopped.
                     if playbackAsset.map({ MediaSession.shared.deferDownloadPackageRemoval(for: $0, at: managedAssetURL) }) != true {
                         try? FileManager.default.removeItem(at: managedAssetURL)
                     }
-                    completedURL = transfer.destinationURL
-                } catch {
-                    try Task.checkCancellation()
-                    let asset = AVURLAsset(url: managedAssetURL)
-                    asset.resourceLoader.setDelegate(transfer.keyLoader, queue: .main)
-                    guard asset.assetCache?.isPlayableOffline == true,
-                          try await asset.load(.isPlayable),
-                          await offlineHLSHasVideo(asset) else {
-                        throw error
-                    }
-                    let referenceURL = uniqueHLSReferenceURL(for: transfer.destinationURL)
-                    try OfflineHLSReference.write(
-                        packageURL: managedAssetURL, sourceURL: transfer.sourceURL, to: referenceURL
-                    )
-                    retainedReference = referenceURL
-                    DownloadManagerService.shared.updateFileReference(
-                        from: transfer.destinationURL, to: referenceURL
-                    )
+                } else {
                     try? FileManager.default.removeItem(at: transfer.destinationURL)
-                    // Do not advertise an encrypted download as complete until
-                    // its player material is on disk. Retain downloaded bytes if
-                    // the origin disappears during this final preparation.
-                    if let encryption = try await PortableHLSBundle.encryptionMaterial(
-                        packageURL: managedAssetURL, sourceURL: transfer.sourceURL,
-                        requestContext: transfer.requestContext
-                    ) {
-                        try OfflineHLSReference.storeEncryption(encryption, for: referenceURL)
-                    }
-                    completedURL = referenceURL
+                    manager.updateFileReference(from: transfer.destinationURL, to: completedURL)
                 }
-                try Task.checkCancellation()
-                if let bytes = await Task.detached(priority: .utility, operation: { FileStorageSize.bytes(at: completedURL) }).value {
-                    DownloadManagerService.shared.updateProgress(id: transfer.itemID, completed: bytes, total: bytes)
+                if let bytes {
+                    manager.updateProgress(id: transfer.itemID, completed: bytes, total: bytes)
                 }
-                DownloadManagerService.shared.markFinished(id: transfer.itemID)
+                manager.markFinished(id: transfer.itemID)
                 transfer.continuation?.resume(returning: completedURL)
             } catch {
+                if let finalizedURL { try? FileManager.default.removeItem(at: finalizedURL) }
+                removeHLSCache(at: downloadedAssetURL, playbackAsset: playbackAsset)
                 if transfer.isCanceled {
                     try? FileManager.default.removeItem(at: transfer.destinationURL)
-                    if let retainedReference { try? FileManager.default.removeItem(at: retainedReference) }
-                    removeHLSCache(at: downloadedAssetURL, playbackAsset: playbackAsset)
                     transfer.continuation?.resume(throwing: CancellationError())
                 } else {
-                    DownloadManagerService.shared.markFailed(id: transfer.itemID, error: error)
+                    DownloadManagerService.shared.markFailed(id: transfer.itemID, error: error, includingPaused: true)
                     transfer.continuation?.resume(throwing: error)
-                    if retainedReference == nil { removeHLSCache(at: downloadedAssetURL, playbackAsset: playbackAsset) }
                 }
             }
         }
@@ -860,7 +914,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         }
         guard let identifier = body["downloadID"] as? String,
               let transfer = transfers[identifier],
-              !transfer.isCanceled else {
+              !transfer.isCanceled, !transfer.isUsingPlaybackDownload else {
             replyHandler(nil, "Unknown or canceled streaming download")
             return
         }
@@ -1040,6 +1094,11 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     nonisolated static func surfacedStreamingError(_ error: Error) -> Error {
         if error is CancellationError { return error }
         let nsError = error as NSError
+        if let message = nsError.userInfo["WKJavaScriptExceptionMessage"] as? String,
+           message.trimmingCharacters(in: .whitespacesAndNewlines)
+               .hasSuffix("Cannot proceed with stream: attestation required") {
+            return StreamingMediaDownloadError.youtubeVerificationRequired
+        }
         let keys = [
             "WKJavaScriptExceptionMessage",
             "WKJavaScriptExceptionStackTrace",
@@ -1128,6 +1187,8 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     private func cancel(_ transfer: Transfer) {
         guard !transfer.isCanceled else { return }
         transfer.isCanceled = true
+        transfer.playbackDownload?.cancel()
+        transfer.exporter?.cancelExport()
         let pendingReplies = transfer.pendingChunkReplies
         transfer.pendingChunkReplies.removeAll()
         pendingReplies.forEach { $0(nil, "Streaming download canceled") }
@@ -1234,6 +1295,51 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         }
     }
 
+    private func finalizeHLSAsset(at packageURL: URL, transfer: HLSTransfer) async throws -> URL {
+        do {
+            try await exportHLSAsset(at: packageURL, destinationURL: transfer.destinationURL)
+            return transfer.destinationURL
+        } catch {
+            try Task.checkCancellation()
+        }
+
+        let reference = transfer.stagingDirectoryURL.appendingPathComponent("Cached.soulohls")
+        let encryption = try await PortableHLSBundle.encryptionMaterial(
+            packageURL: packageURL, sourceURL: transfer.sourceURL, requestContext: transfer.requestContext
+        )
+        try OfflineHLSReference.write(packageURL: packageURL, sourceURL: transfer.sourceURL,
+                                      encryption: encryption, to: reference)
+        var conversionError: Error?
+        if encryption == nil {
+            do {
+                try await Self.convertCachedHLS(reference: reference, to: transfer.destinationURL)
+                return transfer.destinationURL
+            } catch {
+                try Task.checkCancellation()
+                conversionError = error
+            }
+        }
+        let asset = AVURLAsset(url: packageURL)
+        asset.resourceLoader.setDelegate(transfer.keyLoader, queue: .main)
+        guard asset.assetCache?.isPlayableOffline == true,
+              try await asset.load(.isPlayable), await offlineHLSHasVideo(asset) else {
+            throw conversionError ?? StreamingMediaDownloadError.exportFailed("")
+        }
+        try Task.checkCancellation()
+        let destination = uniqueHLSReferenceURL(for: transfer.destinationURL)
+        try FileManager.default.moveItem(at: reference, to: destination)
+        return destination
+    }
+
+    static func convertCachedHLS(reference: URL, to destination: URL) async throws {
+        let output = try await OfflineVideoConversionService.exportMP4(
+            from: reference, into: reference.deletingLastPathComponent(), preferredFilename: destination.lastPathComponent
+        )
+        try Task.checkCancellation()
+        try? FileManager.default.removeItem(at: destination) // An earlier system export may have left a partial file.
+        try FileManager.default.moveItem(at: output, to: destination)
+    }
+
     func mux(
         videoURL: URL,
         audioURL: URL,
@@ -1293,6 +1399,12 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         exporter.shouldOptimizeForNetworkUse = true
         onExporter?(exporter)
         try await MediaExportBackgroundService.shared.export(exporter)
+        let output = AVURLAsset(url: destinationURL)
+        guard try await output.load(.isPlayable),
+              !(try await output.loadTracks(withMediaType: .video)).isEmpty,
+              !(try await output.loadTracks(withMediaType: .audio)).isEmpty else {
+            throw StreamingMediaDownloadError.exportFailed("")
+        }
     }
 
     private static func isYouTubePage(_ url: URL?) -> Bool {

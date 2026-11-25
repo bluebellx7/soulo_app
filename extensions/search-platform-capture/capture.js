@@ -1,22 +1,32 @@
 (() => {
     const pendingKey = "soulo-search-platform-pending";
-    const marker = "%s";
+    const markers = new Set(["%s", "s%"]);
     const placeholder = "%@";
     const lifetime = 120_000;
     const sensitiveParameter = /^(?:password|passwd|pwd|auth|authorization|api[_-]?key|session(?:[_-]?id)?|(?:access[_-]?|refresh[_-]?)?token|csrf(?:[_-]?token)?|authenticity_token|signature|sig)$/i;
     const editableFields = 'input:not([type]), input[type="text" i], input[type="search" i], textarea, [contenteditable]:not([contenteditable="false" i])';
     let pendingUntil = 0;
+    let pendingMarker;
     let input;
     let timer;
     let dismissBanner;
-    try { pendingUntil = Number(sessionStorage.getItem(pendingKey)) || 0; } catch (_) {}
+    try {
+        const pending = JSON.parse(sessionStorage.getItem(pendingKey));
+        if (typeof pending === "number") {
+            pendingUntil = pending;
+            pendingMarker = "%s";
+        } else if (pending && markers.has(pending.marker)) {
+            pendingUntil = Number(pending.until) || 0;
+            pendingMarker = pending.marker;
+        }
+    } catch (_) {}
 
     function decode(value, formEncoded = false) {
         try { return decodeURIComponent(formEncoded ? value.replace(/\+/g, " ") : value); }
         catch (_) { return value; }
     }
 
-    function searchTemplate(address) {
+    function searchTemplate(address, marker) {
         const url = new URL(address);
         if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return null;
 
@@ -47,6 +57,7 @@
 
     function clearPending() {
         pendingUntil = 0;
+        pendingMarker = undefined;
         input = undefined;
         clearTimeout(timer);
         try { sessionStorage.removeItem(pendingKey); } catch (_) {}
@@ -165,7 +176,7 @@
             clearPending();
             return;
         }
-        const template = searchTemplate(location.href);
+        const template = searchTemplate(location.href, pendingMarker);
         if (template && document.documentElement) {
             const searchField = input;
             clearPending();
@@ -178,13 +189,15 @@
     document.addEventListener("input", event => {
         const field = event.composedPath()[0];
         if (!event.isTrusted || !(field instanceof HTMLInputElement) || !["search", "text"].includes(field.type)) return;
-        if (field.value.trim() !== marker) {
+        const marker = field.value.trim();
+        if (!markers.has(marker)) {
             if (field === input) clearPending();
             return;
         }
         input = field;
+        pendingMarker = marker;
         pendingUntil = Date.now() + lifetime;
-        try { sessionStorage.setItem(pendingKey, String(pendingUntil)); } catch (_) {}
+        try { sessionStorage.setItem(pendingKey, JSON.stringify({ until: pendingUntil, marker })); } catch (_) {}
         inspectAddress();
     }, true);
     addEventListener("pageshow", inspectAddress);

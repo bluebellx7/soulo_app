@@ -9,6 +9,125 @@ import CommonCrypto
 
 @MainActor
 final class DownloadPlaybackTests: XCTestCase {
+    func testCachedHLSFallbackSavesMP4FromLocalSegments() async throws {
+        let library = try XCTUnwrap(FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first)
+        let root = library.appendingPathComponent("CachedHLS-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let package = root.appendingPathComponent("Sample.movpkg")
+        let rendition = package.appendingPathComponent("Data/rendition")
+        try FileManager.default.createDirectory(at: rendition, withIntermediateDirectories: true)
+        var playlist = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:2\n#EXT-X-MEDIA-SEQUENCE:0\n"
+        for index in 0..<4 {
+            let input = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment\(index)", withExtension: "ts",
+                subdirectory: "ReadingFixtures/HLSFragments"))
+            try FileManager.default.copyItem(at: input, to: rendition.appendingPathComponent("(\(index * 2))_(0)_(2.00001).frag"))
+            playlist += "#EXTINF:2.000000,\n\(index).ts\n"
+        }
+        try (playlist + "#EXT-X-ENDLIST\n").write(to: rendition.appendingPathComponent("playlist.m3u8"), atomically: true, encoding: .utf8)
+        let reference = root.appendingPathComponent("Cached.soulohls")
+        try OfflineHLSReference.write(packageURL: package, to: reference)
+        let destination = root.appendingPathComponent("Video.mp4")
+        try Data("system export failed".utf8).write(to: destination)
+        try await StreamingMediaDownloadService.convertCachedHLS(reference: reference, to: destination)
+        let asset = AVURLAsset(url: destination)
+        let duration = try await asset.load(.duration)
+        let tracks = try await asset.loadTracks(withMediaType: .video)
+        XCTAssertGreaterThan(duration.seconds, 7)
+        XCTAssertEqual(tracks.count, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: rendition.appendingPathComponent("(0)_(0)_(2.00001).frag").path))
+    }
+
+    func testYouTubeDownloadSavesBothTracksAndReportsAnInterruptedPausedTransfer() async throws {
+        let controller = WKUserContentController()
+        controller.addScriptMessageHandler(StreamingMediaDownloadService.shared, contentWorld: .page,
+                                           name: StreamingMediaDownloadService.messageHandlerName)
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController = controller
+        let web = WKWebView(frame: .zero, configuration: configuration)
+        let page = try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=\(UUID().uuidString)"))
+        let resource = WebMediaResource(kind: .video, url: page, title: "SABR QA", posterURL: nil, delivery: .youtubeSABR)
+        let identity = WebResourceMediaService.downloadIdentityURL(for: resource, pageURL: page)
+        web.loadHTMLString("<title>Streaming fixture</title>", baseURL: page)
+        try await waitFor("Fixture page did not load") { web.url == page && !web.isLoading }
+        func encodedFixture(_ name: String, _ ext: String) throws -> String {
+            let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: name, withExtension: ext,
+                subdirectory: "ReadingFixtures/ExtensionMedia"))
+            return try Data(contentsOf: url).base64EncodedString()
+        }
+        _ = try await web.callAsyncJavaScript(#"""
+            window.ytInitialPlayerResponse = {
+                videoDetails: {videoId: new URL(location.href).searchParams.get('v')},
+                streamingData: {serverAbrStreamingUrl: 'https://fixture.googlevideo.com/?sabr=1', adaptiveFormats: [{}]}
+            };
+            window.__souloSABREngineVersion = 2;
+            window.__souloSABRDownload = async ({downloadID}) => {
+                const post = (type, payload) => window.webkit.messageHandlers.souloSABRDownload.postMessage({type, downloadID, ...payload});
+                await post('started', {videoExpectedBytes: atob(video).length, audioExpectedBytes: atob(audio).length});
+                const receivedVideo = window.verificationRequired ? btoa(atob(video).slice(0, -1024)) : video;
+                await post('chunk', {track: 'video', index: 0, base64: receivedVideo});
+                await post('chunk', {track: 'audio', index: 0, base64: audio});
+                await new Promise(resolve => { window.finishFixture = resolve; });
+                if (window.fixtureFailure) throw new Error(window.fixtureFailure);
+                return {durationSeconds: 2};
+            };
+            """#, arguments: ["video": try encodedFixture("video", "mp4"), "audio": try encodedFixture("audio", "m4a")],
+            in: nil, contentWorld: .page)
+        let manager = DownloadManagerService.shared
+        let disconnected = "Fixture transport disconnected"
+        let verificationRequired = "Cannot proceed with stream: attestation required"
+        let failures: [String?] = [nil, disconnected, verificationRequired]
+        for failure in failures {
+            _ = try await web.callAsyncJavaScript("""
+                window.finishFixture = null;
+                window.fixtureFailure = failure;
+                window.verificationRequired = verificationRequired;
+                """, arguments: ["failure": (failure as Any?) ?? NSNull(),
+                                  "verificationRequired": failure == verificationRequired],
+                in: nil, contentWorld: .page)
+            let task = Task { try await WebResourceDownloadService.shared.download(resource, pageURL: page, webView: web) }
+            defer { task.cancel() }
+            try await waitFor("The transfer did not receive media") { (manager.activeDownload(for: identity)?.receivedBytes ?? 0) > 0 }
+            let item = try XCTUnwrap(manager.activeDownload(for: identity))
+            defer { if let current = manager.downloads.first(where: { $0.id == item.id }) { removeGeneratedDownload(current, manager: manager) } }
+            for _ in 0..<80 {
+                if (try? await web.evaluateJavaScript("typeof window.finishFixture === 'function'")) as? Bool == true { break }
+                try await Task.sleep(for: .milliseconds(25))
+            }
+            if failure == disconnected { StreamingMediaDownloadService.shared.pause(itemID: item.id) }
+            _ = try await web.evaluateJavaScript("window.finishFixture(); true")
+            if let failure {
+                do {
+                    _ = try await task.value
+                    XCTFail("An interrupted transfer must not publish a file")
+                } catch {
+                    let failed = try XCTUnwrap(manager.downloads.first(where: { $0.id == item.id }))
+                    XCTAssertEqual(failed.status, .failed)
+                    if failure == verificationRequired {
+                        guard let downloadError = error as? StreamingMediaDownloadError,
+                              case .youtubeVerificationRequired = downloadError else {
+                            XCTFail("Expected YouTube verification error, got \(error)")
+                            continue
+                        }
+                        XCTAssertEqual(failed.errorMessage, error.localizedDescription)
+                        XCTAssertLessThan(failed.receivedBytes, failed.expectedBytes)
+                        XCTAssertLessThan(failed.progress, 1)
+                    } else {
+                        XCTAssertTrue(failed.errorMessage.contains(failure))
+                    }
+                    XCTAssertFalse(FileManager.default.fileExists(atPath: failed.localPath))
+                }
+            } else {
+                let output = try await task.value
+                let asset = AVURLAsset(url: output)
+                let audio = try await asset.loadTracks(withMediaType: .audio)
+                let video = try await asset.loadTracks(withMediaType: .video)
+                XCTAssertEqual(audio.count, 1)
+                XCTAssertEqual(video.count, 1)
+                XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .finished)
+            }
+        }
+    }
+
     func testLiveMtyySampleDownloadsIntoPlayableMP4() async throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_MTY_QA"] == "1", "Opt-in user-reported live download")
         let configuration = URLSessionConfiguration.ephemeral
@@ -1225,7 +1344,7 @@ final class DownloadPlaybackTests: XCTestCase {
             service.hasPendingHLSFinalization && server.receivedRequests.contains(where: isOfflineRead)
         }
         let item = try XCTUnwrap(manager.activeDownload(for: resource.url))
-        let package = try OfflineHLSReference.packageURL(for: item.localURL)
+        XCTAssertEqual(item.localURL.pathExtension, "mp4", "Publish the offline reference after its key is available")
         var completions = 0
         service.backgroundEventsCompletionHandler = { completions += 1 }
         service.urlSessionDidFinishEvents(forBackgroundURLSession: URLSession.shared)
@@ -1239,7 +1358,8 @@ final class DownloadPlaybackTests: XCTestCase {
             catch { XCTAssertTrue(error is CancellationError) }
             XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .canceled)
             XCTAssertFalse(FileManager.default.fileExists(atPath: item.localURL.path))
-            XCTAssertFalse(FileManager.default.fileExists(atPath: package.path))
+            let unpublishedReference = item.localURL.deletingPathExtension().appendingPathExtension(OfflineHLSReference.fileExtension)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: unpublishedReference.path))
         } else {
             server.releaseDownloads()
             let file = try await download.value

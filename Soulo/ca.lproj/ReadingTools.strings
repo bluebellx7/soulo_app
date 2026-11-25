@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Vidre esmerilat";
 "wallpaper_blur_amount" = "Intensitat del desenfocament";
 
-"home_quick_search_guide" = "Escriu una paraula clau a l’inici per veure les plataformes sota la barra de cerca. Toca una plataforma per cercar-hi.";
+"home_quick_search_guide" = "Escriu una paraula clau a la pantalla d’inici, tria una plataforma i toca Cerca al teclat.";
 "auto_hide_platform_bar_hint" = "Quan s’activa, la barra només s’amaga després de tocar el contingut web i si el domini de la pàgina no coincideix amb cap plataforma de la barra actual. Si hi ha una coincidència, es manté visible o torna a aparèixer. El desplaçament i les redireccions automàtiques no l’amaguen.";
 
 "ad_subscription_add" = "Afegeix una llista";

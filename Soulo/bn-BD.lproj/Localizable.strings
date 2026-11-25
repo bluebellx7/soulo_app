@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "এই স্ট্রিমটি বর্তমান পৃষ্ঠায় আর উপলব্ধ নেই। পৃষ্ঠাটি আবার লোড করে চেষ্টা করুন।";
+"resource_youtube_download_verification_required" = "YouTube প্লেয়ার যাচাই করতে বলছে। ডাউনলোড বন্ধ হয়েছে।";
+"downloads_keep_app_open" = "ডাউনলোডের সময় Soulo খোলা রাখুন";
 "resource_stream_download_unsupported" = "Soulo এই স্ট্রিমটি শনাক্ত করেছে, তবে এর ম্যানিফেস্ট ফরম্যাট এখনো সংরক্ষণ করা যায় না।";
 "resource_stream_download_invalid_chunk" = "মিডিয়া স্ট্রিমটি একটি অবৈধ বা ভুল ক্রমের খণ্ড ফেরত দিয়েছে।";
 "resource_stream_download_missing_track" = "ডাউনলোড করা স্ট্রিমে চালানো যায় এমন ভিডিও ও অডিও ট্র্যাক ছিল না।";

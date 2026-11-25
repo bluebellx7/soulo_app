@@ -3,6 +3,31 @@ import WebKit
 @testable import Soulo
 
 final class AdBlockServiceTests: XCTestCase {
+    @MainActor func testYoukuPlayerExceptionsOnlyProtectStartupRequestsOnTheirPlayerPage() async throws {
+        let pages = ["https://m.youku.com/alipay_video/id_video.html", "https://www.youku.com/", "https://example.com/"]
+        let data = try XCTUnwrap(AdBlockService.encodedContentRuleList()?.data(using: .utf8))
+        let rules = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [[String: Any]])
+        let triggers = rules.compactMap { rule -> [String: Any]? in
+            guard (rule["action"] as? [String: String])?["type"] == "ignore-previous-rules",
+                  let trigger = rule["trigger"] as? [String: Any],
+                  let topFilters = trigger["if-top-url"] as? [String],
+                  topFilters.contains(where: { pages[0].range(of: $0, options: .regularExpression) != nil }) else { return nil }
+            for unrelated in pages.dropFirst() {
+                XCTAssertFalse(topFilters.contains { unrelated.range(of: $0, options: .regularExpression) != nil })
+            }
+            return trigger
+        }
+        let filters = triggers.compactMap { $0["url-filter"] as? String }
+        let initialization = "https://log.mmstat.com/eg.js?version=1"
+        XCTAssertTrue(filters.contains { initialization.range(of: $0, options: .regularExpression) != nil })
+        XCTAssertEqual(triggers.first?["resource-type"] as? [String], ["script"])
+        for unrelated in ["https://gm.mmstat.com/yt/youku.h5.control", "https://log.mmstat.com/eg.json", "https://cad.youku.com/imp"] {
+            XCTAssertFalse(filters.contains { unrelated.range(of: $0, options: .regularExpression) != nil })
+        }
+        let compiled = await AdBlockService.compileRuleLists()
+        XCTAssertNotNil(compiled)
+    }
+
     private var savedBuiltInOverrides: Data?
     private var savedBuiltInRevision: String?
     private var savedSubscriptionCache: Data?

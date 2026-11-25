@@ -146,18 +146,20 @@ enum WebEpisodeRuntime {
     @MainActor static func resolveActionMedia(_ episode: WebEpisode, in webView: WKWebView,
                                              timeout: TimeInterval, excluding previousResourceURL: URL? = nil) async throws -> WebMediaResource {
         func current() async -> WebMediaResource? {
-            let token = (try? await webView.evaluateCompatibleJavaScript("Array.from(document.querySelectorAll('video[data-soulo-media-id]')).sort((a,b)=>b.getBoundingClientRect().width*b.getBoundingClientRect().height-a.getBoundingClientRect().width*a.getBoundingClientRect().height)[0]?.getAttribute('data-soulo-media-id')??'__soulo_configured'")) as? String ?? "__soulo_configured"
-            return await WebResourceInspectionService.currentVideoResource(webView:webView,frame:nil,token:token)
+            await WebResourceInspectionService.currentVideoResource(webView: webView, frame: nil, token: "__soulo_episode")
         }
         let before = await current()
+        try Task.checkCancellation()
         try await activate(episode,in:webView)
-        let deadline = ProcessInfo.processInfo.systemUptime + timeout
+        let start = ProcessInfo.processInfo.systemUptime
+        let deadline = start + timeout
         var previous: URL?
         while ProcessInfo.processInfo.systemUptime < deadline {
             try Task.checkCancellation()
             if let media = await current(), media.delivery != .dash, media.url != previousResourceURL,
                media.url != before?.url || episode.action?.isCurrent == true {
                 if previous == media.url {
+                    try Task.checkCancellation()
                     _ = try? await webView.evaluateCompatibleJavaScript("document.querySelectorAll('video').forEach(v=>v.pause());true")
                     return WebMediaResource(kind:.video,url:media.url,title:episode.title,posterURL:media.posterURL,
                         delivery:media.delivery,companionAudioURL:media.companionAudioURL,
@@ -165,7 +167,7 @@ enum WebEpisodeRuntime {
                 }
                 previous = media.url
             } else { previous = nil }
-            try await Task.sleep(for:.milliseconds(250))
+            try await Task.sleep(for: .milliseconds(ProcessInfo.processInfo.systemUptime - start < 2 ? 120 : 250))
         }
         throw WebEpisodeDownloadError.unavailable
     }

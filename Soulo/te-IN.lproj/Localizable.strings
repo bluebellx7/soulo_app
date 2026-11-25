@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "ఈ స్ట్రీమ్ ప్రస్తుత పేజీలో ఇక అందుబాటులో లేదు. పేజీని మళ్లీ లోడ్ చేసి ప్రయత్నించండి.";
+"resource_youtube_download_verification_required" = "YouTube ప్లేయర్ ధృవీకరణను కోరుతోంది. డౌన్‌లోడ్ ఆపివేయబడింది.";
+"downloads_keep_app_open" = "డౌన్‌లోడ్ చేస్తున్నప్పుడు Soulo తెరిచి ఉంచండి";
 "resource_stream_download_unsupported" = "Soulo ఈ స్ట్రీమ్‌ను గుర్తించింది, కానీ దాని మానిఫెస్ట్ ఫార్మాట్‌ను ఇంకా సేవ్ చేయలేదు.";
 "resource_stream_download_invalid_chunk" = "మీడియా స్ట్రీమ్ చెల్లని లేదా తప్పు క్రమంలో ఉన్న భాగాన్ని అందించింది.";
 "resource_stream_download_missing_track" = "డౌన్‌లోడ్ చేసిన స్ట్రీమ్‌లో ప్లే చేయగల వీడియో, ఆడియో ట్రాక్‌లు లేవు.";

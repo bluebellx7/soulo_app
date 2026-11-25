@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "반투명 유리";
 "wallpaper_blur_amount" = "흐림 강도";
 
-"home_quick_search_guide" = "홈에서 검색어를 입력하면 검색 막대 아래에 플랫폼이 표시됩니다. 플랫폼을 탭하면 해당 플랫폼에서 검색합니다.";
+"home_quick_search_guide" = "홈 화면에서 검색어를 입력하고 플랫폼을 선택한 뒤 키보드의 검색 버튼을 누르세요.";
 "auto_hide_platform_bar_hint" = "켜면 웹페이지 내용을 직접 탭하고 현재 페이지의 도메인이 현재 플랫폼 막대의 어떤 플랫폼과도 일치하지 않을 때만 숨깁니다. 하나라도 일치하면 막대를 계속 표시하거나 다시 표시합니다. 스크롤과 자동 리디렉션은 막대를 숨기지 않습니다.";
 
 "ad_subscription_add" = "필터 목록 추가";

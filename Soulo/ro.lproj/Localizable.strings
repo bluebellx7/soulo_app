@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Acest flux nu mai este disponibil pe pagina curentă. Reîncarcă pagina și încearcă din nou.";
+"resource_youtube_download_verification_required" = "YouTube solicită verificarea playerului. Descărcarea a fost oprită.";
+"downloads_keep_app_open" = "Ține Soulo deschis în timpul descărcării";
 "resource_stream_download_unsupported" = "Soulo a detectat acest flux, dar încă nu poate salva formatul manifestului său.";
 "resource_stream_download_invalid_chunk" = "Fluxul media a returnat un segment nevalid sau într-o ordine incorectă.";
 "resource_stream_download_missing_track" = "Fluxul descărcat nu conținea piste video și audio care pot fi redate.";

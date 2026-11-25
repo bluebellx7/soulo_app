@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 final class WebPageProtectionUITests: XCTestCase {
     @MainActor
@@ -47,6 +48,41 @@ final class WebPageProtectionUITests: XCTestCase {
             XCTAssertTrue(app.webViews.staticTexts["Modern copied"].firstMatch.waitForExistence(timeout:5),app.debugDescription)
             app.webViews.buttons["Copy legacy"].firstMatch.tap()
             XCTAssertTrue(app.webViews.staticTexts["Legacy copied"].firstMatch.waitForExistence(timeout:5),app.debugDescription)
+        }
+    }
+
+    @MainActor
+    func testReadingTapDoesNotRequestClipboardAndPasteButtonRemainsUsable() async throws {
+        try await runPage(#"""
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <h3>Protection fixture</h3>
+        <button id="read">Read now</button>
+        <button id="paste">Paste from clipboard</button>
+        <p id="chapter"></p><p id="status"></p>
+        <script>
+        const status = document.getElementById('status');
+        document.getElementById('read').onclick = () => {
+          document.getElementById('chapter').textContent = 'Chapter opened';
+          navigator.clipboard.readText().then(() => status.textContent = 'Unexpected clipboard read',
+            error => status.textContent = error.name === 'NotAllowedError' ? 'Reading allowed without clipboard' : 'Unexpected read error');
+        };
+        document.getElementById('paste').onclick = () => navigator.clipboard.readText()
+          .then(text => status.textContent = text === 'soulo-reading-paste-fixture' ? 'Explicit paste received' : 'Unexpected clipboard content',
+            () => status.textContent = 'Paste was rejected');
+        </script>
+        """#) { app in
+            UIPasteboard.general.string = "soulo-reading-paste-fixture"
+            let paste = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Paste", "粘贴", "貼上"])).firstMatch
+            app.webViews.buttons["Read now"].firstMatch.tap()
+            XCTAssertTrue(app.webViews.staticTexts["Chapter opened"].firstMatch.waitForExistence(timeout: 5))
+            XCTAssertTrue(app.webViews.staticTexts["Reading allowed without clipboard"].firstMatch.waitForExistence(timeout: 5),
+                app.debugDescription)
+            XCTAssertFalse(paste.exists)
+            app.webViews.buttons["Paste from clipboard"].firstMatch.tap()
+            XCTAssertTrue(paste.waitForExistence(timeout: 5), app.debugDescription)
+            paste.tap()
+            XCTAssertTrue(app.webViews.staticTexts["Explicit paste received"].firstMatch.waitForExistence(timeout: 5),
+                app.debugDescription)
         }
     }
 

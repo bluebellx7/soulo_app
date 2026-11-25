@@ -95,6 +95,8 @@
 "resource_copy_url" = "複製資源網址";
 "resource_download_invalid_response" = "無法下載這個網頁資源。";
 "resource_stream_download_unavailable" = "目前頁面中的串流媒體已失效，請重新整理頁面後再試。";
+"resource_youtube_download_verification_required" = "YouTube 要求驗證播放器，下載已中止。";
+"downloads_keep_app_open" = "下載期間請保持 Soulo 在前景";
 "resource_stream_download_unsupported" = "已識別此串流媒體，但暫時無法儲存這種清單格式。";
 "resource_stream_download_invalid_chunk" = "串流媒體傳回了無效或順序錯誤的分段。";
 "resource_stream_download_missing_track" = "下載內容中缺少可播放的影片或音訊軌道。";

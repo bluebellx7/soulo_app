@@ -550,15 +550,20 @@ final class WebViewScriptsTests: XCTestCase {
     @MainActor
     func testLocalHLSDownloadProducesPlayableOfflineVideo() async throws {
         let environment = ProcessInfo.processInfo.environment
-        guard let port = environment["SOULO_QA_LOCAL_HLS_PORT"] else {
-            throw XCTSkip("Set SOULO_QA_LOCAL_HLS_PORT to run the device HLS test")
+        let url: URL
+        if let address = environment["SOULO_QA_HLS_URL"] {
+            url = try XCTUnwrap(URL(string: address))
+        } else {
+            guard let port = environment["SOULO_QA_LOCAL_HLS_PORT"] else {
+                throw XCTSkip("Set SOULO_QA_LOCAL_HLS_PORT or SOULO_QA_HLS_URL to run the HLS test")
+            }
+            let host = environment["SOULO_QA_LOCAL_HLS_HOST"] ?? "127.0.0.1"
+            let path = environment["SOULO_QA_LOCAL_HLS_PATH"] ?? "master.m3u8"
+            url = try XCTUnwrap(URL(string: "http://\(host):\(port)/\(path)"))
         }
-        let host = environment["SOULO_QA_LOCAL_HLS_HOST"] ?? "127.0.0.1"
-        let path = environment["SOULO_QA_LOCAL_HLS_PATH"] ?? "master.m3u8"
-        let url = try XCTUnwrap(URL(string: "http://\(host):\(port)/\(path)"))
+        let page = environment["SOULO_QA_HLS_PAGE"].flatMap(URL.init(string:)) ?? url.deletingLastPathComponent()
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
-        webView.loadHTMLString("<html><body><video src='\(url.absoluteString)'></video></body></html>",
-                               baseURL: url.deletingLastPathComponent())
+        webView.loadHTMLString("<html><body></body></html>", baseURL: page)
         for _ in 0..<100 {
             if webView.url != nil { break }
             try await Task.sleep(for: .milliseconds(50))
@@ -577,8 +582,17 @@ final class WebViewScriptsTests: XCTestCase {
                 DownloadManagerService.shared.delete(item)
             }
         }
-        let asset = file.pathExtension == OfflineHLSReference.fileExtension
-            ? try OfflineHLSReference.playableAsset(for: file) : AVURLAsset(url: file)
+        print("HLS_QA_SAVED format=\(file.pathExtension) bytes=\(FileStorageSize.bytes(at: file) ?? 0)")
+        let scratch = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let asset: AVURLAsset
+        if file.pathExtension == OfflineHLSReference.fileExtension {
+            asset = try OfflineHLSReference.playableAsset(for: file)
+        } else if file.pathExtension == "hls" {
+            asset = AVURLAsset(url: try await OfflineVideoConversionService.exportMP4(from: file, into: scratch))
+        } else {
+            asset = AVURLAsset(url: file)
+        }
         let playable = try await asset.load(.isPlayable)
         XCTAssertTrue(playable)
         let item = AVPlayerItem(asset: asset)
@@ -598,7 +612,7 @@ final class WebViewScriptsTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(100))
         }
         XCTAssertTrue(hasFrame, "The downloaded HLS must render video while offline")
-        if file.pathExtension == OfflineHLSReference.fileExtension {
+        if environment["SOULO_QA_HLS_URL"] == nil, file.pathExtension == OfflineHLSReference.fileExtension {
             let exported = try await PortableHLSBundle.export(
                 referenceURL: file, into: file.deletingLastPathComponent()
             )
@@ -742,9 +756,11 @@ final class WebViewScriptsTests: XCTestCase {
         guard ProcessInfo.processInfo.environment["SOULO_LIVE_MEDIA_QA"] == "1" else {
             throw XCTSkip("Run with SOULO_LIVE_MEDIA_QA=1 for live video sites")
         }
+        let youTubeURL = ProcessInfo.processInfo.environment["SOULO_QA_YOUTUBE_URL"]
+            ?? "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
         let sites: [(String, String)] = [
             ("Bilibili", "https://www.bilibili.com/video/BV1cf4y1h7Q6/"),
-            ("YouTube", "https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
+            ("YouTube", youTubeURL),
             ("Douyin", "https://www.douyin.com/video/7631522953741602074"),
             ("Youku", "https://v.youku.com/v_show/id_XNjU1ODU5NTQ5Ng%3D%3D.html"),
             ("MangoTV", "https://www.mgtv.com/b/292435/3285788.html"),
@@ -790,6 +806,7 @@ final class WebViewScriptsTests: XCTestCase {
                 name: StreamingMediaDownloadService.messageHandlerName
             )
             let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600), configuration: config)
+            if name == "YouTube" { web.customUserAgent = AppConstants.mobileWebViewUserAgent }
             host.view.addSubview(web)
             web.load(URLRequest(url: try XCTUnwrap(URL(string: address))))
             for _ in 0..<120 {
@@ -799,6 +816,16 @@ final class WebViewScriptsTests: XCTestCase {
             try await Task.sleep(for: .seconds(3))
             let page = web.url?.absoluteString ?? "nil"
             let domVideoCount = (try? await web.evaluateJavaScript("document.querySelectorAll('video').length")) as? Int ?? -1
+            if name == "YouTube" {
+                let playerState = (try? await web.evaluateJavaScript(#"""
+                    JSON.stringify({
+                        status: window.ytInitialPlayerResponse?.playabilityStatus?.status || 'unknown',
+                        hasStreamingData: !!window.__souloResolveCurrentYouTubePlayerResponse?.()?.streamingData,
+                        readyState: document.querySelector('video')?.readyState ?? -1
+                    })
+                    """#)) as? String ?? "unavailable"
+                print("SITE_QA_PLAYER \(name) \(playerState)")
+            }
             if name == "PBMovie" {
                 let adState = (try? await web.evaluateJavaScript(#"""
                     JSON.stringify(Array.from(document.querySelectorAll('[data-soulo-image-banner], [data-soulo-tiled-banner]'))

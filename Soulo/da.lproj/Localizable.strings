@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Denne stream er ikke længere tilgængelig på den aktuelle side. Genindlæs siden, og prøv igen.";
+"resource_youtube_download_verification_required" = "YouTube kræver bekræftelse af afspilleren. Downloaden blev stoppet.";
+"downloads_keep_app_open" = "Hold Soulo åben under download";
 "resource_stream_download_unsupported" = "Soulo fandt denne stream, men dens manifestformat kan endnu ikke gemmes.";
 "resource_stream_download_invalid_chunk" = "Mediestrømmen returnerede et ugyldigt segment eller et segment i forkert rækkefølge.";
 "resource_stream_download_missing_track" = "Den downloadede stream indeholdt ikke video- og lydspor, der kunne afspilles.";

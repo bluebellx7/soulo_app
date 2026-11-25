@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Frostat glas";
 "wallpaper_blur_amount" = "Oskärpans styrka";
 
-"home_quick_search_guide" = "Skriv ett sökord på startsidan för att visa plattformar under sökfältet. Tryck på en plattform för att söka där.";
+"home_quick_search_guide" = "Skriv ett sökord på startsidan, välj en plattform och tryck på Sök på tangentbordet.";
 "auto_hide_platform_bar_hint" = "När detta är på döljs fältet bara efter att du trycker på sidans innehåll och sidans domän inte matchar någon plattform i det aktuella fältet. Om någon plattform matchar förblir fältet synligt eller visas igen. Rullning och automatiska omdirigeringar döljer det inte.";
 
 "ad_subscription_add" = "Lägg till filterlista";

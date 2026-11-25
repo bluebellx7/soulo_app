@@ -1,1 +1,2 @@
-Am îmbunătățit încărcarea scripturilor la deschiderea paginilor web și compatibilitatea cu extensiile de browser.
+Am remediat schimbarea grupurilor în căutarea rapidă de pe ecranul principal și am redus solicitările neașteptate de lipire pe paginile web.
+Atinge o platformă de căutare pe ecranul de pornire pentru a căuta imediat. Am îmbunătățit descărcarea videoclipurilor, trecerea la ecran complet și răspunsul barei de adrese la atingere.

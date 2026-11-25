@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "ଏହି ଷ୍ଟ୍ରିମ୍ ବର୍ତ୍ତମାନ ପୃଷ୍ଠାରେ ଆଉ ଉପଲବ୍ଧ ନାହିଁ। ପୃଷ୍ଠା ପୁନଃ ଲୋଡ୍ କରି ଚେଷ୍ଟା କରନ୍ତୁ।";
+"resource_youtube_download_verification_required" = "YouTube ପ୍ଲେୟାର ଯାଞ୍ଚ କରିବାକୁ କହୁଛି। ଡାଉନଲୋଡ୍ ବନ୍ଦ ହୋଇଛି।";
+"downloads_keep_app_open" = "ଡାଉନଲୋଡ୍ ହେଉଥିବା ବେଳେ Soulo ଖୋଲା ରଖନ୍ତୁ";
 "resource_stream_download_unsupported" = "Soulo ଏହି ଷ୍ଟ୍ରିମ୍ ଚିହ୍ନଟ କରିଛି, କିନ୍ତୁ ଏହାର ମାନିଫେଷ୍ଟ ଫର୍ମାଟ୍ ଏପର୍ଯ୍ୟନ୍ତ ସେଭ୍ କରାଯାଇପାରିବ ନାହିଁ।";
 "resource_stream_download_invalid_chunk" = "ମିଡିଆ ଷ୍ଟ୍ରିମ୍ ଏକ ଅବୈଧ କିମ୍ବା ଭୁଲ କ୍ରମର ଖଣ୍ଡ ଫେରାଇଛି।";
 "resource_stream_download_missing_track" = "ଡାଉନଲୋଡ୍ ହୋଇଥିବା ଷ୍ଟ୍ରିମ୍‌ରେ ଚଲାଇବାଯୋଗ୍ୟ ଭିଡିଓ ଏବଂ ଅଡିଓ ଟ୍ରାକ୍ ନଥିଲା।";

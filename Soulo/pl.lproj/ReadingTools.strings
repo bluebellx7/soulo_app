@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Matowe szkło";
 "wallpaper_blur_amount" = "Siła rozmycia";
 
-"home_quick_search_guide" = "Wpisz słowo kluczowe na stronie głównej, aby zobaczyć platformy pod paskiem wyszukiwania. Stuknij platformę, by w niej wyszukać.";
+"home_quick_search_guide" = "Wpisz słowo kluczowe na ekranie głównym, wybierz platformę i stuknij Szukaj na klawiaturze.";
 "auto_hide_platform_bar_hint" = "Po włączeniu pasek ukrywa się tylko po stuknięciu treści strony, jeśli jej domena nie pasuje do żadnej platformy na bieżącym pasku. Dopasowanie do dowolnej platformy zachowuje lub przywraca pasek. Przewijanie i automatyczne przekierowania go nie ukrywają.";
 
 "ad_subscription_add" = "Dodaj listę filtrów";

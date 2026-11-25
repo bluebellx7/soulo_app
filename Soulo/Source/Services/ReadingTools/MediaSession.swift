@@ -242,6 +242,19 @@ final class MediaSession: ObservableObject {
         width.isFinite && height.isFinite && height > 0 && width > height * 1.1
     }
 
+    static func fullscreenLandscape(for size: CGSize) -> Bool? {
+        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return nil }
+        return prefersLandscape(width: size.width, height: size.height)
+    }
+
+    static func videoTrackDisplaySize(in asset: AVAsset) async -> CGSize? {
+        guard let track = try? await asset.loadTracks(withMediaType: .video).first,
+              let size = try? await track.load(.naturalSize),
+              let transform = try? await track.load(.preferredTransform) else { return nil }
+        let transformed = size.applying(transform)
+        return CGSize(width: abs(transformed.width), height: abs(transformed.height))
+    }
+
     func open(url: URL, title: String? = nil, pageURL: URL? = nil, asset: AVURLAsset? = nil, webView: WKWebView? = nil, reservation: UUID? = nil, persistPosition: Bool? = nil, downloadSource: DownloadPlaybackSource? = nil, startAt: Double? = nil, autoplay: Bool = true, initialRate: Float? = nil) {
         if let reservation, !ownsPreparation(reservation) { return }
         let audioOnly = downloadSource?.webMediaContext?.resource.kind == .audio || FileVideoEpisodes.isAudio(url.path)
@@ -366,19 +379,14 @@ final class MediaSession: ObservableObject {
         }
         Task {
             guard !audioOnly else { return }
-            let tracks = try? await item.asset.loadTracks(withMediaType: .video)
-            guard self.generation == token else { return }
-            if let track = tracks?.first,
-               let size = try? await track.load(.naturalSize),
-               let transform = try? await track.load(.preferredTransform),
+            if let size = await Self.videoTrackDisplaySize(in: item.asset),
                self.generation == token {
-                let orientedSize = size.applying(transform)
                 // The presentation size is authoritative for adaptive streams.
                 // Publish the video surface and its orientation together so a
                 // quick fullscreen tap cannot use the old portrait default.
                 let presented = item.presentationSize
-                let width = presented.width > 0 ? presented.width : abs(orientedSize.width)
-                let height = presented.height > 0 ? presented.height : abs(orientedSize.height)
+                let width = presented.width > 0 ? presented.width : size.width
+                let height = presented.height > 0 ? presented.height : size.height
                 if width > 0, height > 0 {
                     self.videoIsLandscape = Self.prefersLandscape(width: width, height: height)
                     self.hasVideo = true

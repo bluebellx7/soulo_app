@@ -5,6 +5,18 @@ import XCTest
 
 @MainActor
 final class DownloadManagerServiceTests: XCTestCase {
+    func testStreamingProgressReachesOneHundredOnlyAfterSaving() {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (hls, _) = service.beginDownload(suggestedFilename: "HLS.mp4", sourceURL: nil, transport: .hls)
+        let (stream, _) = service.beginDownload(suggestedFilename: "SABR.mp4", sourceURL: nil, transport: .streaming)
+        service.updateHLSProgress(id: hls.id, fraction: 1, receivedBytes: 890_000)
+        service.updateProgress(id: stream.id, completed: 890_000, total: 890_000)
+        XCTAssertTrue(service.downloads.allSatisfy { $0.status == .inProgress && $0.progress == 0.99 })
+        service.markFinished(id: hls.id)
+        service.markFinished(id: stream.id)
+        XCTAssertTrue(service.downloads.allSatisfy { $0.status == .finished && $0.progress == 1 })
+    }
+
     func testHLSTimeFractionNeverBecomesAFictitiousMegabyte() {
         let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
         let (item, _) = service.beginDownload(suggestedFilename: "stream.mp4", sourceURL: nil, transport: .hls)

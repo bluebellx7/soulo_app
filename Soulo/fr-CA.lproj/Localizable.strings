@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Ce flux n’est plus disponible sur la page actuelle. Rechargez la page et réessayez.";
+"resource_youtube_download_verification_required" = "YouTube exige la vérification du lecteur. Le téléchargement a été interrompu.";
+"downloads_keep_app_open" = "Laissez Soulo ouvert pendant le téléchargement";
 "resource_stream_download_unsupported" = "Soulo a détecté ce flux, mais ne peut pas encore enregistrer son format de manifeste.";
 "resource_stream_download_invalid_chunk" = "Le flux multimédia a renvoyé un segment non valide ou dans le mauvais ordre.";
 "resource_stream_download_missing_track" = "Le flux téléchargé ne contenait pas de pistes vidéo et audio lisibles.";

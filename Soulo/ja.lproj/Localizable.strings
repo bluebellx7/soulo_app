@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "このストリームは現在のページでは利用できなくなりました。ページを再読み込みして、もう一度お試しください。";
+"resource_youtube_download_verification_required" = "YouTube でプレーヤーの認証が必要なため、ダウンロードを中止しました。";
+"downloads_keep_app_open" = "ダウンロード中はSouloを開いたままにしてください";
 "resource_stream_download_unsupported" = "Soulo はこのストリームを検出しましたが、マニフェスト形式の保存にはまだ対応していません。";
 "resource_stream_download_invalid_chunk" = "メディアストリームから無効なセグメント、または順序が正しくないセグメントが返されました。";
 "resource_stream_download_missing_track" = "ダウンロードしたストリームに、再生可能な映像と音声のトラックが含まれていませんでした。";

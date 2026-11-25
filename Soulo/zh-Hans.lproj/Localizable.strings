@@ -95,6 +95,8 @@
 "resource_copy_url" = "复制资源网址";
 "resource_download_invalid_response" = "无法下载这个网页资源。";
 "resource_stream_download_unavailable" = "当前页面中的流媒体已失效，请刷新页面后重试。";
+"resource_youtube_download_verification_required" = "YouTube 要求验证播放器，下载已中止。";
+"downloads_keep_app_open" = "下载期间请保持 Soulo 在前台";
 "resource_stream_download_unsupported" = "已识别这个流媒体，但暂时无法保存这种清单格式。";
 "resource_stream_download_invalid_chunk" = "流媒体返回了无效或顺序错误的分段。";
 "resource_stream_download_missing_track" = "下载内容中缺少可播放的视频或音频轨道。";

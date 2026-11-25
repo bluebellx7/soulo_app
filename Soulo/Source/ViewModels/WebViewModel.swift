@@ -1,3 +1,4 @@
+import AVFoundation
 import UIKit
 import WebKit
 import Combine
@@ -23,6 +24,8 @@ struct WebVideoPlaybackRequest: Identifiable {
     let resource: WebMediaResource
     let time: Double
     var orientation: WebVideoFullscreenOrientation?
+    var initialFullscreenLandscape: Bool?
+    var preparedAsset: AVURLAsset?
     var playing = true
     var rate: Float?
     var showsEpisodes = false

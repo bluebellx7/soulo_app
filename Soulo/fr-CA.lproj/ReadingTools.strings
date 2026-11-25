@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Verre dépoli";
 "wallpaper_blur_amount" = "Intensité du flou";
 
-"home_quick_search_guide" = "Saisissez un mot-clé sur l’accueil pour afficher les plateformes sous la barre de recherche. Touchez une plateforme pour y lancer la recherche.";
+"home_quick_search_guide" = "Saisissez un mot-clé à l’accueil, choisissez une plateforme, puis touchez Rechercher sur le clavier.";
 "auto_hide_platform_bar_hint" = "Si l’option est activée, la barre se masque uniquement après un appui sur le contenu Web et si le domaine de la page ne correspond à aucune plateforme de la barre actuelle. Une correspondance maintient ou rétablit son affichage. Le défilement et les redirections automatiques ne la masquent pas.";
 
 "ad_subscription_add" = "Ajouter une liste";

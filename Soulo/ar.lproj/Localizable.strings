@@ -590,6 +590,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "لم يعد هذا البث متاحًا في الصفحة الحالية. أعد تحميل الصفحة وحاول مجددًا.";
+"resource_youtube_download_verification_required" = "يطلب YouTube التحقّق من مشغّل الفيديو. توقّف التنزيل.";
+"downloads_keep_app_open" = "اترك Soulo مفتوحًا أثناء التنزيل";
 "resource_stream_download_unsupported" = "اكتشف Soulo هذا البث، لكن تنسيق ملف البيان الخاص به غير مدعوم للحفظ بعد.";
 "resource_stream_download_invalid_chunk" = "أعاد بث الوسائط مقطعًا غير صالح أو بترتيب غير صحيح.";
 "resource_stream_download_missing_track" = "لم يتضمن البث الذي تم تنزيله مسارات فيديو وصوت قابلة للتشغيل.";

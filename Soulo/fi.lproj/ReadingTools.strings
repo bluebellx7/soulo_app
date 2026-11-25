@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Huurrelasi";
 "wallpaper_blur_amount" = "Sumennuksen voimakkuus";
 
-"home_quick_search_guide" = "Kirjoita hakusana aloitussivulla, niin alustat näkyvät hakupalkin alla. Hae valitsemallasi alustalla napauttamalla sitä.";
+"home_quick_search_guide" = "Kirjoita aloitussivulla hakusana, valitse alusta ja napauta näppäimistön Hae-painiketta.";
 "auto_hide_platform_bar_hint" = "Kun toiminto on käytössä, palkki piilotetaan vasta napautettuasi verkkosivun sisältöä ja vain, jos sivun verkkotunnus ei vastaa mitään nykyisen palkin alustaa. Osuma pitää palkin näkyvissä tai palauttaa sen. Vieritys ja automaattiset uudelleenohjaukset eivät piilota palkkia.";
 
 "ad_subscription_add" = "Lisää suodatinlista";

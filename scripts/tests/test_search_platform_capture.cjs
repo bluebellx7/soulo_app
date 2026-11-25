@@ -6,9 +6,15 @@ const { chromium } = require(process.env.SOULO_PLAYWRIGHT_MODULE || 'playwright'
 const extension = path.resolve(__dirname, '../../extensions/search-platform-capture');
 const origin = 'https://soulo-search.test';
 
-async function checkPlacement(browser, anchoredAt) {
+async function checkPlacement(browser, anchoredAt, marker) {
     const page = await browser.newPage({ viewport: { width: 390, height: 520 }, locale: 'zh-CN' });
     try {
+        await page.addInitScript(() => {
+            const attachShadow = Element.prototype.attachShadow;
+            Element.prototype.attachShadow = function(options) {
+                return attachShadow.call(this, { ...options, mode: 'open' });
+            };
+        });
         await page.addInitScript({ path: path.join(extension, 'capture.js') });
         await page.route(`${origin}/**`, route => route.fulfill({
             contentType: 'text/html; charset=utf-8',
@@ -20,11 +26,14 @@ async function checkPlacement(browser, anchoredAt) {
         await page.goto(origin);
         const field = page.getByRole('searchbox');
         await field.focus();
-        await page.keyboard.type('%s');
+        await page.keyboard.type(marker);
         await page.getByRole('button', { name: '搜索' }).click();
-        await page.waitForURL(`${origin}/results?q=%25s`);
+        await page.waitForURL(`${origin}/results?q=${encodeURIComponent(marker)}`);
 
         const banner = page.locator('[data-soulo-search-platform]');
+        await banner.waitFor({ state: 'visible' });
+        const add = new URL(await banner.getByRole('link', { name: '添加平台' }).getAttribute('href'));
+        assert.equal(add.searchParams.get('template'), `${origin}/results?q=%@`);
         for (const width of [390, 320]) {
             await page.setViewportSize({ width, height: 520 });
             await banner.waitFor({ state: 'visible' });
@@ -59,7 +68,7 @@ async function checkInstructions(browser, locale, heading) {
         const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'), 'utf8'));
         await page.goto(`${origin}/${manifest.action.default_popup}`);
         await page.getByRole('heading', { name: heading }).waitFor();
-        assert.equal(await page.locator('main:visible code').innerText(), '%s');
+        assert.deepEqual(await page.locator('main:visible code').allTextContents(), ['%s', 's%']);
         assert.equal(await page.locator('main:visible li').count(), 3);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 320);
     } finally {
@@ -70,8 +79,8 @@ async function checkInstructions(browser, locale, heading) {
 (async () => {
     const browser = await chromium.launch({ executablePath: process.env.SOULO_CHROME_PATH });
     try {
-        await checkPlacement(browser, 'top');
-        await checkPlacement(browser, 'bottom');
+        await checkPlacement(browser, 'top', '%s');
+        await checkPlacement(browser, 'bottom', 's%');
         await checkInstructions(browser, 'zh-CN', '怎样添加搜索平台');
         await checkInstructions(browser, 'en-US', 'How to add a search platform');
         console.log('Search platform banner placement and packaged instructions passed.');

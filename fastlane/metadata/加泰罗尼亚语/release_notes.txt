@@ -1,1 +1,2 @@
-S’ha millorat la càrrega de scripts en obrir pàgines web i la compatibilitat amb les extensions del navegador.
+Hem corregit el canvi de grup a la cerca ràpida de la pantalla d’inici i hem reduït els avisos de confirmació inesperats en enganxar contingut en pàgines web.
+Toca una plataforma de cerca a la pantalla d’inici per cercar-hi de seguida. Hem millorat les baixades de vídeo, el pas a pantalla completa i la resposta de la barra d’adreces.

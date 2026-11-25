@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Ta tok na trenutni strani ni več na voljo. Znova naložite stran in poskusite znova.";
+"resource_youtube_download_verification_required" = "YouTube zahteva preverjanje predvajalnika. Prenos je bil ustavljen.";
+"downloads_keep_app_open" = "Med prenosom pustite Soulo odprt";
 "resource_stream_download_unsupported" = "Soulo je zaznal ta tok, vendar oblike njegovega manifesta še ne more shraniti.";
 "resource_stream_download_invalid_chunk" = "Predstavnostni tok je vrnil neveljaven segment ali segment v napačnem vrstnem redu.";
 "resource_stream_download_missing_track" = "Preneseni tok ni vseboval video- in zvočnih sledi, ki bi jih bilo mogoče predvajati.";

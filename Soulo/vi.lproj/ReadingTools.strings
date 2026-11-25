@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Kính mờ";
 "wallpaper_blur_amount" = "Mức độ làm mờ";
 
-"home_quick_search_guide" = "Nhập từ khóa trên trang chủ để hiện các nền tảng dưới thanh tìm kiếm. Chạm vào một nền tảng để tìm kiếm ở đó.";
+"home_quick_search_guide" = "Nhập từ khóa trên màn hình chính, chọn một nền tảng, rồi chạm Tìm kiếm trên bàn phím.";
 "auto_hide_platform_bar_hint" = "Khi bật, thanh chỉ ẩn sau khi bạn trực tiếp chạm vào nội dung trang và tên miền không khớp với nền tảng nào trên thanh hiện tại. Nếu khớp với bất kỳ nền tảng nào, thanh được giữ hoặc hiện lại. Cuộn và chuyển hướng tự động không làm ẩn thanh.";
 
 "ad_subscription_add" = "Thêm danh sách lọc";

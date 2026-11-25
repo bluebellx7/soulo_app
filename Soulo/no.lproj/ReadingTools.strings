@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Frostet glass";
 "wallpaper_blur_amount" = "Uskarphetsstyrke";
 
-"home_quick_search_guide" = "Skriv inn et søkeord på startsiden for å se plattformer under søkefeltet. Trykk på en plattform for å søke der.";
+"home_quick_search_guide" = "Skriv et søkeord på startsiden, velg en plattform og trykk på Søk på tastaturet.";
 "auto_hide_platform_bar_hint" = "Når dette er på, skjules linjen bare etter at du trykker på sideinnholdet og sidens domene ikke samsvarer med noen plattform i den gjeldende linjen. Ved treff på en plattform beholdes eller gjenopprettes linjen. Rulling og automatiske omdirigeringer skjuler den ikke.";
 
 "ad_subscription_add" = "Legg til filterliste";

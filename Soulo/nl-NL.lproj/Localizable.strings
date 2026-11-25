@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Deze stream is niet meer beschikbaar op de huidige pagina. Herlaad de pagina en probeer het opnieuw.";
+"resource_youtube_download_verification_required" = "YouTube vereist verificatie van de speler. De download is gestopt.";
+"downloads_keep_app_open" = "Houd Soulo open tijdens het downloaden";
 "resource_stream_download_unsupported" = "Soulo heeft deze stream gedetecteerd, maar kan de manifestindeling nog niet opslaan.";
 "resource_stream_download_invalid_chunk" = "De mediastream gaf een ongeldig segment of een segment in de verkeerde volgorde terug.";
 "resource_stream_download_missing_track" = "De gedownloade stream bevatte geen afspeelbare video- en audiotracks.";

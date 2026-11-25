@@ -9,16 +9,18 @@ final class WebClipboardProtectionTests: XCTestCase {
         config.websiteDataStore = .nonPersistent()
         // Instrument the native entry points before installing protection.
         config.userContentController.addUserScript(WKUserScript(source: #"""
-            window.writes=[]; window.commands=[];
+            window.writes=[]; window.reads=[]; window.commands=[];
             const clipboard=Object.create({writeText(value){writes.push(value);return Promise.resolve()},
-                write(value){writes.push(value);return Promise.resolve()}});
+                write(value){writes.push(value);return Promise.resolve()},
+                readText(){reads.push('readText');return Promise.resolve('fixture')},
+                read(){reads.push('read');return Promise.resolve([])}});
             Object.defineProperty(navigator,'clipboard',{value:clipboard});
             Document.prototype.execCommand=function(command){commands.push(command);return true};
         """#, injectionTime: .atDocumentStart, forMainFrameOnly: false))
         config.userContentController.addUserScript(WKUserScript(source: WebViewScripts.clipboardProtection,
             injectionTime: .atDocumentStart, forMainFrameOnly: false))
         let web = WKWebView(frame: .zero, configuration: config)
-        web.loadHTMLString("<html><body><button id='copy'>Copy</button><iframe srcdoc='<p>Frame</p>'></iframe></body></html>",
+        web.loadHTMLString("<html><body><button id='copy'>Copy</button><button id='paste'>Paste</button><iframe srcdoc='<p>Frame</p>'></iframe></body></html>",
             baseURL: URL(string: "https://example.test"))
         for _ in 0..<200 {
             if (try? await web.evaluateJavaScript("document.readyState==='complete' && !!document.getElementById('copy')")) as? Bool == true { return web }
@@ -46,6 +48,20 @@ final class WebClipboardProtectionTests: XCTestCase {
             document.getElementById('copy').click();
             try {await navigator.clipboard.writeText('spam');return false}
             catch(e){return e.name==='NotAllowedError' && writes.length===0}
+        """#, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(denied as? Bool, true)
+    }
+
+    func testSyntheticPasteCannotAuthorizeClipboardReads() async throws {
+        let web = try await fixture()
+        let denied = try await web.callAsyncJavaScript(#"""
+            document.getElementById('paste').click();
+            document.dispatchEvent(new Event('paste', {bubbles:true}));
+            const result = await Promise.all([
+                navigator.clipboard.readText(),
+                Object.getPrototypeOf(navigator.clipboard).read.call(navigator.clipboard)
+            ].map(request => request.then(() => false, error => error.name === 'NotAllowedError')));
+            return result.every(Boolean) && reads.length === 0 && document.execCommand('paste') === false;
         """#, arguments: [:], in: nil, contentWorld: .page)
         XCTAssertEqual(denied as? Bool, true)
     }

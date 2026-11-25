@@ -5,10 +5,11 @@ struct BrowserPlatformPickerContext {
     let selectedPlatformID: UUID?
     let onSelect: (SearchGroupScope, SearchPlatform) -> Void
     var onManage: (() -> Void)? = nil
+    var onScopeChange: ((SearchGroupScope) -> Void)? = nil
 }
 
-/// Browsing the groups is local to this panel. Only choosing a platform commits
-/// the group and navigates, so inspecting another group never replaces the page.
+/// The browser previews groups locally until a platform is chosen. Home can
+/// adopt the scope immediately for its search field.
 struct BrowserPlatformPanel: View {
     static let inlineChromeHeight: CGFloat = 64
     let context: BrowserPlatformPickerContext
@@ -79,7 +80,9 @@ struct BrowserPlatformPanel: View {
                 Menu {
                     ForEach(scopes) { group in
                         Button {
-                            scope = group; HapticsManager.selection()
+                            scope = group
+                            context.onScopeChange?(group)
+                            HapticsManager.selection()
                         } label: {
                             if currentScope == group { Label(title(group), systemImage: "checkmark") }
                             else { Text(title(group)) }

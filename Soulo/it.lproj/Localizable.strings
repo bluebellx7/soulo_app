@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Questo flusso non è più disponibile nella pagina attuale. Ricarica la pagina e riprova.";
+"resource_youtube_download_verification_required" = "YouTube richiede la verifica del lettore. Il download è stato interrotto.";
+"downloads_keep_app_open" = "Tieni Soulo aperto durante il download";
 "resource_stream_download_unsupported" = "Soulo ha rilevato questo flusso, ma non può ancora salvare il suo formato manifest.";
 "resource_stream_download_invalid_chunk" = "Il flusso multimediale ha restituito un segmento non valido o fuori ordine.";
 "resource_stream_download_missing_track" = "Il flusso scaricato non conteneva tracce video e audio riproducibili.";

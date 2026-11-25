@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Kaca Buram";
 "wallpaper_blur_amount" = "Kekuatan Buram";
 
-"home_quick_search_guide" = "Masukkan kata kunci di Beranda untuk melihat platform di bawah bilah pencarian. Ketuk platform untuk mencari di sana.";
+"home_quick_search_guide" = "Masukkan kata kunci di beranda, pilih platform, lalu ketuk Cari di papan ketik.";
 "auto_hide_platform_bar_hint" = "Saat diaktifkan, bilah hanya disembunyikan setelah Anda mengetuk konten halaman web dan domain halaman tidak cocok dengan platform mana pun di bilah saat ini. Jika cocok, bilah tetap atau kembali ditampilkan. Menggulir dan pengalihan otomatis tidak menyembunyikannya.";
 
 "ad_subscription_add" = "Tambah daftar filter";

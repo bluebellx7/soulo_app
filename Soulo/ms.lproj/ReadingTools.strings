@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Kaca Kabur";
 "wallpaper_blur_amount" = "Kekuatan Kabur";
 
-"home_quick_search_guide" = "Masukkan kata kunci pada Halaman Utama untuk melihat platform di bawah bar carian. Ketik platform untuk membuat carian.";
+"home_quick_search_guide" = "Masukkan kata kunci pada skrin utama, pilih platform, kemudian ketik Cari pada papan kekunci.";
 "auto_hide_platform_bar_hint" = "Apabila dihidupkan, bar hanya disembunyikan selepas anda mengetik kandungan halaman dan domain halaman tidak sepadan dengan mana-mana platform dalam bar semasa. Jika sepadan dengan mana-mana platform, bar kekal atau dipaparkan semula. Menatal dan ubah hala automatik tidak menyembunyikannya.";
 
 "ad_subscription_add" = "Tambah senarai penapis";

@@ -111,6 +111,38 @@ final class IncrementalFeatureTests: XCTestCase {
         session.pause()
     }
 
+    @MainActor func testLandscapeFullscreenUsesLandscapeForItsFirstLayout() async throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "Exercises iPhone fullscreen entry")
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        let root = UIViewController()
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        let owner = UUID()
+        defer {
+            SharedVideoFullscreenHost.current(in: window)?.dismiss(owner: owner)
+            window.isHidden = true
+            previous?.makeKeyAndVisible()
+        }
+        VideoOrientation.request(.portrait, in: scene) { XCTFail($0.localizedDescription) }
+        try await wait { scene.interfaceOrientation == .portrait }
+        var initialSize: CGSize?
+        let probe = GeometryReader { geometry in
+            Color.black.onAppear { if initialSize == nil { initialSize = geometry.size } }
+        }
+        let host = try XCTUnwrap(SharedVideoFullscreenHost.present(owner: owner, in: window,
+            content: AnyView(probe), identifier: "media.fullscreen.player", landscape: true, onClose: { _ in }))
+        try await wait { initialSize != nil }
+        let size = try XCTUnwrap(initialSize)
+        XCTAssertGreaterThan(size.width, size.height)
+        try await wait { scene.interfaceOrientation.isLandscape }
+        host.dismiss(owner: owner)
+        try await wait { root.presentedViewController == nil }
+        await VideoOrientation.waitForRestoration(in: scene)
+        XCTAssertEqual(scene.interfaceOrientation, .portrait)
+    }
+
     @MainActor func testDecoderSwitchKeepsOneFullscreenWindowAndSourceMounted() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
@@ -1034,6 +1066,8 @@ extension IncrementalFeatureTests {
         XCTAssertFalse(VideoOrientation.fullscreenLandscape(video: true, isPad: true, currentLandscape: false))
         XCTAssertTrue(VideoOrientation.fullscreenLandscape(video: false, isPad: true, currentLandscape: true))
         XCTAssertTrue(VideoOrientation.fullscreenLandscape(video: true, isPad: false, currentLandscape: false))
+        XCTAssertFalse(VideoOrientation.fullscreenLandscape(video: false, isPad: false, currentLandscape: true))
+        XCTAssertTrue(VideoOrientation.fullscreenLandscape(video: nil, isPad: false, currentLandscape: true))
         let landscape = CGSize(width: 1366, height: 900)
         let aspect = TabPreviewLayout.aspect(isPad: true, snapshot: landscape, viewport: .zero)
         XCTAssertEqual(aspect, 1366.0 / 900, accuracy: 0.01)

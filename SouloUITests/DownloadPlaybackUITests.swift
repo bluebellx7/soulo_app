@@ -470,12 +470,24 @@ final class DownloadPlaybackUITests: XCTestCase {
 
     @MainActor
     func testWebsiteMP4AttachmentOffersPlaybackWhileDownloading() async throws {
+        try await checkPlaybackWhileDownloading(portrait: false)
+    }
+
+    @MainActor
+    func testPortraitMP4StaysPortraitWhileDownloading() async throws {
+        try await checkPlaybackWhileDownloading(portrait: true)
+    }
+
+    @MainActor
+    private func checkPlaybackWhileDownloading(portrait: Bool) async throws {
         continueAfterFailure = false
-        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
-        let path = "/attachment-\(UUID()).mp4"
+        XCUIDevice.shared.orientation = .portrait
+        let video = try await longVideoFixtureData(portrait: portrait)
+        let filename = "attachment-\(UUID()).mp4"
+        let path = "/" + filename
         let html = "<meta name='viewport' content='width=device-width,initial-scale=1'><a href='\(path)'>Download attachment</a>"
-        let server = try DownloadPlaybackHTTPFixture(files: ["/page.html": Data(html.utf8), path: Data(contentsOf: video)],
-            responseHeaders: [path: ["Content-Disposition": "attachment; filename=\"attachment.mp4\""]], slowChunkSize: 128)
+        let server = try DownloadPlaybackHTTPFixture(files: ["/page.html": Data(html.utf8), path: video],
+            responseHeaders: [path: ["Content-Disposition": "attachment; filename=\"\(filename)\""]], slowChunkSize: 128)
         let root = try await server.start()
         defer { server.stop() }
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
@@ -500,6 +512,15 @@ final class DownloadPlaybackUITests: XCTestCase {
         await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             server.rangeRequests > 0
         }, object: nil)], timeout: 8)
+        func verifyOrientation() async {
+            guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+            let canvas = app.otherElements["media.fullscreen.canvas"].firstMatch
+            let expected = portrait ? "portrait" : "landscape"
+            await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                canvas.exists && canvas.value as? String == expected && (app.frame.height > app.frame.width) == portrait
+            }, object: nil)], timeout: 10)
+        }
+        await verifyOrientation()
         let pause = app.buttons["media.mkv.play"].firstMatch
         if !pause.exists || pause.label == "Pause" {
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.78, dy: 0.38)).doubleTap()
@@ -516,6 +537,24 @@ final class DownloadPlaybackUITests: XCTestCase {
         miniClose.tap()
         XCTAssertTrue(miniClose.waitForNonExistence(timeout: 4))
         XCTAssertEqual(app.state, .runningForeground)
+
+        server.releaseDownloads()
+        let downloads = app.buttons["library.section.downloads"]
+        XCTAssertTrue(downloads.waitForExistence(timeout: 6)); downloads.tap()
+        let downloaded = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+            "downloads.open.", filename)).firstMatch
+        XCTAssertTrue(downloaded.waitForExistence(timeout: 15)); downloaded.tap()
+        XCTAssertTrue(player.waitForExistence(timeout: 12), app.debugDescription)
+        await verifyOrientation()
+
+        app.terminate()
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        app.open(try XCTUnwrap(URL(string: "soulo://files")))
+        let file = app.descendants(matching: .any)["files.item.\(filename)"].firstMatch
+        XCTAssertTrue(file.waitForExistence(timeout: 15), app.debugDescription); file.tap()
+        XCTAssertTrue(player.waitForExistence(timeout: 12), app.debugDescription)
+        await verifyOrientation()
     }
 
     @MainActor

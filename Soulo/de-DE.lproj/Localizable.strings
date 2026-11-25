@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Dieser Stream ist auf der aktuellen Seite nicht mehr verfügbar. Lade die Seite neu und versuche es erneut.";
+"resource_youtube_download_verification_required" = "YouTube verlangt eine Überprüfung des Players. Der Download wurde abgebrochen.";
+"downloads_keep_app_open" = "Soulo während des Downloads geöffnet lassen";
 "resource_stream_download_unsupported" = "Soulo hat diesen Stream erkannt, kann sein Manifestformat aber noch nicht speichern.";
 "resource_stream_download_invalid_chunk" = "Der Medienstream hat ein ungültiges Segment oder ein Segment in falscher Reihenfolge geliefert.";
 "resource_stream_download_missing_track" = "Der heruntergeladene Stream enthielt keine abspielbaren Video- und Audiospuren.";

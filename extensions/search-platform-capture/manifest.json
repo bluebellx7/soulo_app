@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Soulo Search Platform",
-  "description": "Search for %s in a website’s search box, tap Add platform in the results, then save it in Soulo.",
-  "version": "1.0.2",
+  "description": "Search for %s or s% on a website, tap Add platform in the results, then save it in Soulo.",
+  "version": "1.0.3",
   "icons": {
     "16": "icons/16.png",
     "32": "icons/32.png",

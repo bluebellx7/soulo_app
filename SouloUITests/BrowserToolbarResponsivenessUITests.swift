@@ -238,8 +238,11 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
     func testToolbarRespondsAfterAddressKeyboardDismissal() throws {
         try open("slow")
         XCTAssertTrue(app.webViews.links["Next page"].firstMatch.waitForExistence(timeout: 20))
-        for _ in 0..<2 {
-            tap(app.buttons["Edit Address or Search"].firstMatch)
+        for edge in [0.05, 0.95] {
+            let address = app.buttons["browser.edit-address"].firstMatch
+            XCTAssertTrue(address.waitForExistence(timeout: 5))
+            XCTAssertGreaterThanOrEqual(address.frame.height, 39)
+            address.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: edge)).tap()
             let field = app.textFields["addressEditor.query"].firstMatch
             tap(field)
             XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))

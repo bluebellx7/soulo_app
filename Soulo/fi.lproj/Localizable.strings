@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Tämä suoratoisto ei ole enää saatavilla nykyisellä sivulla. Lataa sivu uudelleen ja yritä uudelleen.";
+"resource_youtube_download_verification_required" = "YouTube vaatii soittimen vahvistamisen. Lataus keskeytettiin.";
+"downloads_keep_app_open" = "Pidä Soulo auki latauksen ajan";
 "resource_stream_download_unsupported" = "Soulo havaitsi tämän suoratoiston, mutta sen manifestimuotoa ei vielä voi tallentaa.";
 "resource_stream_download_invalid_chunk" = "Mediavirta palautti virheellisen tai väärässä järjestyksessä olevan osan.";
 "resource_stream_download_missing_track" = "Ladattu suoratoisto ei sisältänyt toistettavia video- ja ääniraitoja.";

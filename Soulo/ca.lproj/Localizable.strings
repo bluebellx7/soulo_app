@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Aquest flux ja no està disponible a la pàgina actual. Torna a carregar la pàgina i prova-ho de nou.";
+"resource_youtube_download_verification_required" = "YouTube requereix verificar el reproductor. S’ha aturat la baixada.";
+"downloads_keep_app_open" = "Mantén Soulo obert mentre es baixa el fitxer";
 "resource_stream_download_unsupported" = "Soulo ha detectat aquest flux, però encara no es pot desar el seu format de manifest.";
 "resource_stream_download_invalid_chunk" = "El flux multimèdia ha retornat un segment no vàlid o fora d'ordre.";
 "resource_stream_download_missing_track" = "El flux baixat no contenia pistes de vídeo i àudio reproduïbles.";

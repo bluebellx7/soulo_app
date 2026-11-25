@@ -61,4 +61,27 @@ final class KeyboardDismissalTests: XCTestCase {
         accessory = nil
         XCTAssertFalse(gesture.preservesFocus(at: CGPoint(x: 30, y: 110), touchedView: content.view))
     }
+
+    func testEditorAccessoryProtectsTapsAcrossChildControllersInTheSamePresentation() {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let root = UIViewController()
+        window.rootViewController = root
+        window.addSubview(root.view)
+
+        let accessoryHost = UIViewController()
+        root.addChild(accessoryHost)
+        accessoryHost.view.frame = root.view.bounds
+        root.view.addSubview(accessoryHost.view)
+        accessoryHost.didMove(toParent: root)
+        let accessory = UIView(frame: CGRect(x: 30, y: 50, width: 200, height: 100))
+        accessoryHost.view.addSubview(accessory)
+
+        let platformButtonView = UIView(frame: accessory.frame)
+        root.view.addSubview(platformButtonView)
+        let gesture = AppKeyboardDismissal.install(on: window)
+        gesture.preserveFocus(in: accessory)
+        XCTAssertTrue(gesture.preservesFocus(at: CGPoint(x: 40, y: 60), touchedView: platformButtonView))
+        accessoryHost.view.isHidden = true
+        XCTAssertFalse(gesture.preservesFocus(at: CGPoint(x: 40, y: 60), touchedView: platformButtonView))
+    }
 }

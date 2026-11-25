@@ -756,10 +756,44 @@ struct HomeView: View {
         platformStore.customGroups.first { $0.id.uuidString == lastGroupID }
     }
 
+    private var homeSearchScope: SearchGroupScope {
+        homeSearchGroup.map { .custom($0.id) } ?? .region(homeSearchRegion)
+    }
+
     private var homePlatformPicker: BrowserPlatformPickerContext? {
         guard homeQuickSearch else { return nil }
-        return BrowserPlatformPickerContext(scope: homeSearchGroup.map { .custom($0.id) } ?? .region(homeSearchRegion),
-            selectedPlatformID: nil, onSelect: searchFromHomePlatform, onManage: { showPlatformManagement = true })
+        return BrowserPlatformPickerContext(scope: homeSearchScope,
+            selectedPlatformID: nil, onSelect: searchOnHomePlatform,
+            onManage: { showPlatformManagement = true },
+            onScopeChange: { scope in
+                selectHomeSearchScope(scope)
+                retainHomePlatformSearchFocus()
+            })
+    }
+
+    private func selectHomeSearchScope(_ scope: SearchGroupScope) {
+        switch scope {
+        case .region(let region):
+            lastRegion = region.rawValue
+            lastGroupID = ""
+            searchVM.selectRegion(region)
+        case .custom(let id):
+            guard let group = platformStore.customGroups.first(where: { $0.id == id }) else { return }
+            lastGroupID = group.id.uuidString
+            lastRegion = ""
+            searchVM.selectCustomGroup(group)
+        }
+    }
+
+    private func searchOnHomePlatform(_ scope: SearchGroupScope, _ platform: SearchPlatform) {
+        guard case .search? = BrowserNavigationResolver.classify(searchVM.searchText) else { return }
+        if scope != homeSearchScope { selectHomeSearchScope(scope) }
+        performSearch(platform: platform)
+    }
+
+    private func retainHomePlatformSearchFocus() {
+        if let window = keyboardContext.window { AppKeyboardDismissal.cancelPendingDismissal(in: window) }
+        if showsHomeSearch, keyboardCommandsEnabled, !searchVM.input.isEditing { postHomeSearchFocus() }
     }
 
     private func homeSearchField(width: CGFloat) -> some View {
@@ -774,16 +808,8 @@ struct HomeView: View {
                 onScanTap: { showScanner = true },
                 selectedRegion: homeSearchRegion,
                 selectedGroupID: homeSearchGroup?.id,
-                onRegionSelect: { region in
-                    lastRegion = region.rawValue
-                    lastGroupID = ""
-                    searchVM.selectRegion(region)
-                },
-                onGroupSelect: { group in
-                    lastGroupID = group.id.uuidString
-                    lastRegion = ""
-                    searchVM.prepareForHomeSearch(preferredRegion: nil, customGroup: group)
-                },
+                onRegionSelect: { selectHomeSearchScope(.region($0)) },
+                onGroupSelect: { selectHomeSearchScope(.custom($0.id)) },
                 onPlatformManagementTap: { showPlatformManagement = true }
             )
             .accessibilityElement(children: .contain)
@@ -1168,35 +1194,14 @@ struct HomeView: View {
         NotificationCenter.default.post(name: .focusHomeSearch, object: tabManager)
     }
 
-    private func performSearch() {
-        let selectedGroup = lastGroupID.isEmpty
-            ? nil
-            : platformStore.customGroups.first { $0.id.uuidString == lastGroupID }
-        let selectedRegion = PlatformRegion(rawValue: lastRegion)
+    private func performSearch(platform: SearchPlatform? = nil) {
         searchVM.performHomeSearch(
             tabManager: tabManager,
-            preferredRegion: selectedRegion,
-            customGroup: selectedGroup,
+            preferredRegion: homeSearchRegion,
+            customGroup: homeSearchGroup,
+            platform: platform,
             context: modelContext
         )
-    }
-
-    private func searchFromHomePlatform(_ scope: SearchGroupScope, _ platform: SearchPlatform) {
-        let region: PlatformRegion?
-        let group: CustomGroup?
-        switch scope {
-        case .region(let selectedRegion):
-            region = selectedRegion
-            group = nil
-        case .custom(let id):
-            guard let selectedGroup = platformStore.customGroups.first(where: { $0.id == id }) else { return }
-            region = nil
-            group = selectedGroup
-        }
-        guard searchVM.performHomeSearch(tabManager: tabManager, preferredRegion: region,
-            customGroup: group, platform: platform, context: modelContext) else { return }
-        lastRegion = region?.rawValue ?? ""
-        lastGroupID = group?.id.uuidString ?? ""
     }
 
     private func togglePrivateModeFromSearchBar() {
@@ -1374,8 +1379,10 @@ private struct HomeSearchPanel: View {
                         BrowserPlatformPanel(context: platformPicker, inlineWidth: searchFrame.width,
                             inlineHeight: availableHeight, inlineRowLimit: rowLimit, onSelect: platformPicker.onSelect,
                             onManage: { platformPicker.onManage?() }, onClose: { dismissedText = input.text })
+                            .scrollDismissesKeyboard(.never)
                             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
                             .accessibilityIdentifier("home.quick-search.platforms")
+                            .preservesKeyboardFocusOnTap()
                     } else {
                         ViewThatFits(in: .vertical) {
                             suggestions.fixedSize(horizontal: false, vertical: true)

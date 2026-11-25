@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Matt üveg";
 "wallpaper_blur_amount" = "Elmosás erőssége";
 
-"home_quick_search_guide" = "Írjon be egy kulcsszót a kezdőlapon, és a keresősáv alatt megjelennek a platformok. Koppintson egy platformra a kereséshez.";
+"home_quick_search_guide" = "Írj be egy kulcsszót a kezdőképernyőn, válassz platformot, majd koppints a billentyűzet Keresés gombjára.";
 "auto_hide_platform_bar_hint" = "Bekapcsolva a sáv csak a weboldal tartalmának megérintése után rejtőzik el, és csak akkor, ha az oldal domainje a jelenlegi sáv egyik platformjával sem egyezik. Egyezéskor a sáv látható marad vagy újra megjelenik. Görgetés és automatikus átirányítás nem rejti el.";
 
 "ad_subscription_add" = "Szűrőlista hozzáadása";

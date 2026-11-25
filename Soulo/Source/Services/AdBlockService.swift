@@ -525,6 +525,15 @@ struct AdBlockService {
                 "action": ["type": "ignore-previous-rules"]
             ])
         }
+        // The mobile player stalls at its storage check if this bootstrap
+        // script and its logging fallback are both blocked on a fresh visit.
+        for filter in [#"^https://log\.mmstat\.com/eg\.js$"#, #"^https://log\.mmstat\.com/eg\.js[?]"#] {
+            rulesArray.append([
+                "trigger": ["url-filter": filter, "resource-type": ["script"],
+                            "if-top-url": [#"^https?://m\.youku\.com/alipay_video/"#]],
+                "action": ["type": "ignore-previous-rules"]
+            ])
+        }
         return rulesArray
     }
 
@@ -643,7 +652,7 @@ struct AdBlockService {
             .appendingPathComponent("AdBlock/merged-rules.json")
         let attributes = archive.flatMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) }
         let fields = [
-            "startup-cache-v11", startupBuildIdentity, String(nativeCosmeticFiltering),
+            "startup-cache-v12", startupBuildIdentity, String(nativeCosmeticFiltering),
             normalizedAllowlist(allowlistedHosts).joined(separator: ","),
             cosmetic.map(String.init) ?? "native", AdBlockSubscriptionService.rulesSignature(),
             BuiltInAdRuleStore.signature(),

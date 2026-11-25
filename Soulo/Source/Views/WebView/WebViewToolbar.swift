@@ -346,10 +346,11 @@ struct WebViewToolbar: View {
                 }
                 .padding(.leading, 7)
                 .padding(.trailing, 6)
-                .frame(maxWidth: .infinity, minHeight: 32)
+                .frame(maxWidth: .infinity, minHeight: BrowserChromeLayout.controlHeight)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("browser.edit-address")
             .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
             .accessibilityValue(fullAddressDisplayText)
             .accessibilityHint(LanguageManager.shared.localizedString("accessibility_edit_address_hint"))

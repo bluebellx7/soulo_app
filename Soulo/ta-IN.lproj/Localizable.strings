@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "இந்த ஸ்ட்ரீம் தற்போதைய பக்கத்தில் இனி கிடைக்காது. பக்கத்தை மீண்டும் ஏற்றி முயற்சிக்கவும்.";
+"resource_youtube_download_verification_required" = "இயக்கியைச் சரிபார்க்க YouTube கோருகிறது. பதிவிறக்கம் நிறுத்தப்பட்டது.";
+"downloads_keep_app_open" = "பதிவிறக்கத்தின்போது Soulo-ஐத் திறந்தே வைத்திருக்கவும்";
 "resource_stream_download_unsupported" = "Soulo இந்த ஸ்ட்ரீமைக் கண்டறிந்தது, ஆனால் அதன் மேனிஃபெஸ்ட் வடிவத்தை இன்னும் சேமிக்க முடியாது.";
 "resource_stream_download_invalid_chunk" = "மீடியா ஸ்ட்ரீம் செல்லாத அல்லது தவறான வரிசையிலுள்ள பகுதியை வழங்கியது.";
 "resource_stream_download_missing_track" = "பதிவிறக்கிய ஸ்ட்ரீமில் இயக்கக்கூடிய வீடியோ மற்றும் ஆடியோ தடங்கள் இல்லை.";

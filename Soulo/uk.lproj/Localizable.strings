@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Цей потік більше недоступний на поточній сторінці. Оновіть сторінку й повторіть спробу.";
+"resource_youtube_download_verification_required" = "YouTube вимагає перевірки програвача. Завантаження зупинено.";
+"downloads_keep_app_open" = "Залишайте Soulo відкритим під час завантаження";
 "resource_stream_download_unsupported" = "Soulo виявив цей потік, але збереження його формату маніфесту поки не підтримується.";
 "resource_stream_download_invalid_chunk" = "Медіапотік повернув недійсний сегмент або сегмент у неправильному порядку.";
 "resource_stream_download_missing_track" = "Завантажений потік не містив відтворюваних відео- й аудіодоріжок.";

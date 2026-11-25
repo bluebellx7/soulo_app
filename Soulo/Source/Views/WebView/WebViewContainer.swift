@@ -250,6 +250,7 @@ struct WebViewContainer: View {
     @State private var extensionInstallCandidate: BrowserExtensionInstallCandidate?
     @State private var showExternalOpenFailed = false
     @State private var showDownloadFailed = false
+    @State private var foregroundRequiredDownloadIDs: Set<UUID> = []
     @State private var showAddressEditor = false
     @State private var requestVoiceAfterAddressEditorDismisses = false
     @State private var showFullscreenExitHandle = false
@@ -614,6 +615,7 @@ struct WebViewContainer: View {
         .modifier(VideoOrientationErrorAlert(message: $webViewModel.videoOrientationError))
         .onCompatibleChange(of: isActiveTab) { _, active in
             if !active {
+                showAddressEditor = false
                 dismissSwipePanel()
                 webViewModel.clearVideoHoldSpeed()
                 webViewModel.cancelMarkingAdvertisement()
@@ -955,7 +957,8 @@ struct WebViewContainer: View {
                     try? await WebResourceDownloadService.shared.download(request.resource,
                         pageURL: request.resource.sourcePageURL, webView: webViewModel.webView)
                 }, souloStartAt: request.fullscreen ? request.time : nil, souloPlaying: request.playing, initialRate: request.rate,
-                initialFullscreenLandscape: UIDevice.current.userInterfaceIdiom == .phone ? request.orientation?.prefersLandscape : nil,
+                initialFullscreenLandscape: UIDevice.current.userInterfaceIdiom == .phone ? request.initialFullscreenLandscape : nil,
+                preparedAsset: request.preparedAsset,
                 episodeList: webViewModel.episodeList,
                 showsEpisodes: request.showsEpisodes)
                 .onAppear { videoPlaybackOrientation = request.orientation }
@@ -1025,44 +1028,71 @@ struct WebViewContainer: View {
 
     // MARK: - Toast
 
-    @ViewBuilder
     private var downloadFeedback: some View {
+        let foregroundDownload = foregroundDownloadForCurrentPage
+        let detail = foregroundDownload?.fileName ?? downloadStatusDetail
+        let foregroundHint = foregroundDownload.map { _ in
+            LanguageManager.shared.localizedString("downloads_keep_app_open")
+        }
         // Completion uses the shared DownloadCompletionToast, including its
         // VoiceOver announcement and the link to the downloads list.
-        if webViewModel.isDownloading {
-            VStack {
-                Spacer()
-                Button {
-                    HapticsManager.selection()
-                    librarySection = .downloads
-                } label: {
-                    HStack(spacing: 8) {
-                        ProgressView().controlSize(.small).tint(.white)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(LanguageManager.shared.localizedString("downloading"))
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.white)
-                            Text(downloadStatusDetail)
-                                .font(.system(size: 10))
-                                .foregroundStyle(.white.opacity(0.6))
-                                .lineLimit(1)
-                        }
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.65))
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(LanguageManager.shared.localizedString("downloading") + ", " + downloadStatusDetail)
-                .accessibilityIdentifier("browser.downloadStatus")
-                .padding(.bottom, bottomOverlayClearance)
+        return Group {
+            if webViewModel.isDownloading || foregroundDownload != nil {
+                downloadFeedbackCard(detail: detail, foregroundHint: foregroundHint)
             }
-            .transition(.move(edge: .bottom).combined(with: .opacity))
         }
+        .onReceive(DownloadManagerService.shared.$foregroundRequiredDownloadIDs) { foregroundRequiredDownloadIDs = $0 }
+    }
+
+    private func downloadFeedbackCard(detail: String, foregroundHint: String?) -> some View {
+        let downloading = LanguageManager.shared.localizedString("downloading")
+        return VStack {
+            Spacer()
+            Button {
+                HapticsManager.selection()
+                librarySection = .downloads
+            } label: {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small).tint(.white)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(downloading)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.white)
+                        Text(detail)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.6))
+                            .lineLimit(1)
+                        if let foregroundHint {
+                            Text(foregroundHint)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.65))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel([downloading, detail, foregroundHint].compactMap { $0 }.joined(separator: ", "))
+            .accessibilityIdentifier("browser.downloadStatus")
+            .padding(.bottom, bottomOverlayClearance)
+        }
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    private var foregroundDownloadForCurrentPage: BrowserDownloadItem? {
+        guard !foregroundRequiredDownloadIDs.isEmpty,
+              let pageURL = webViewModel.currentURL,
+              let identity = WebResourceMediaService.youtubeCanonicalURL(for: pageURL),
+              let item = DownloadManagerService.shared.activeDownload(for: identity),
+              foregroundRequiredDownloadIDs.contains(item.id) else { return nil }
+        return item
     }
 
     private var downloadStatusDetail: String {
@@ -1797,6 +1827,10 @@ struct WebViewContainer: View {
     }
 
     private func presentAddressEditor() {
+        guard isActiveTab, !showAddressEditor else { return }
+        dismissSwipePanel()
+        toolbarInteractionLocked = true
+        toolbarMinimized = false
         showAddressEditor = true
     }
 

@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Den här strömmen är inte längre tillgänglig på den aktuella sidan. Ladda om sidan och försök igen.";
+"resource_youtube_download_verification_required" = "YouTube kräver verifiering av spelaren. Nedladdningen stoppades.";
+"downloads_keep_app_open" = "Håll Soulo öppet under nedladdningen";
 "resource_stream_download_unsupported" = "Soulo upptäckte den här strömmen, men dess manifestformat kan ännu inte sparas.";
 "resource_stream_download_invalid_chunk" = "Medieströmmen returnerade ett ogiltigt segment eller ett segment i fel ordning.";
 "resource_stream_download_missing_track" = "Den nedladdade strömmen innehöll inga spelbara video- och ljudspår.";

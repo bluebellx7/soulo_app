@@ -1,1 +1,2 @@
-Pemuatan skrip ketika membuka halaman web dan keserasian dengan sambungan pelayar telah dipertingkat.
+Kami membetulkan masalah menukar kumpulan dalam Carian Pantas pada skrin utama dan mengurangkan permintaan tampal yang muncul tanpa diduga pada halaman web.
+Ketik platform carian pada skrin utama untuk terus mencari. Muat turun video, peralihan ke skrin penuh dan respons bar alamat terhadap ketikan telah ditambah baik.

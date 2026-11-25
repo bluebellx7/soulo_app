@@ -1,1 +1,2 @@
-Forbedret indlæsning af scripts ved åbning af websider og bedre kompatibilitet med browserudvidelser.
+Vi har rettet gruppeskift i hurtigsøgning på startsiden og reduceret antallet af uventede spørgsmål om at indsætte indhold på websider.
+Tryk på en søgeplatform på startskærmen for at søge med det samme. Videodownloads, overgangen til fuld skærm og adresselinjens reaktion på tryk er forbedret.

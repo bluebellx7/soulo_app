@@ -8,8 +8,105 @@ final class GroupDefaultSearchUITests: XCTestCase {
         return "<" + data.map { String(format: "%02x", $0) }.joined() + ">"
     }
 
-    func testHomeQuickSearchUsesTappedPlatformAndMatchesSearchWidth() async throws {
+    func testHomeQuickSearchUsesSelectedPlatformAndMatchesSearchWidth() async throws {
         try await checkHomeQuickSearch(landscape: false)
+    }
+
+    func testCenteredHomeQuickSearchKeepsPanelOpenWhenSwitchingGroups() async throws {
+        try await checkHomeQuickSearchGroupSwitch(placement: "center")
+    }
+
+    func testBottomHomeQuickSearchKeepsPanelOpenWhenSwitchingGroups() async throws {
+        try await checkHomeQuickSearchGroupSwitch(placement: "bottom")
+    }
+
+    private func checkHomeQuickSearchGroupSwitch(placement: String) async throws {
+        continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
+        let page = """
+        <meta name='viewport' content='width=device-width,initial-scale=1'>
+        <h1 id='result'></h1><script>
+        document.getElementById('result').textContent = 'Group platform: ' + new URLSearchParams(location.search).get('q');
+        </script>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/group": Data(page.utf8)])
+        let root = try await server.start()
+        defer { server.stop() }
+        let chinaID = UUID()
+        let internationalID = UUID()
+        let groupID = UUID()
+        func platform(id: UUID, name: String, path: String, region: String) -> [String: Any] {
+            ["id": id.uuidString, "name": name, "iconName": "icon_google",
+             "searchURLTemplate": root.appendingPathComponent(path).absoluteString + "?q=%@",
+             "homeURL": root.absoluteString, "region": region, "isBuiltIn": false,
+             "isVisible": true, "sortOrder": 0, "usageCount": 0, "isCustom": true]
+        }
+        let platforms = [platform(id: chinaID, name: "China fixture", path: "china", region: "china"),
+                         platform(id: internationalID, name: "International fixture", path: "group", region: "international")]
+        let groups = [["id": groupID.uuidString, "name": "Custom fixture", "platformIDs": [internationalID.uuidString]] as [String: Any]]
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-AppleLanguages", "(en)", "-AppleLocale", "en_US",
+            "-wallpaper_source", "solid", "-icloud_sync_enabled", "NO",
+            "-restore_last_page_on_launch", "NO", "-review.requestedOnce", "YES", "-home_quick_search", "YES",
+            "-is_incognito", placement == "center" ? "YES" : "NO",
+            "-home_toolbar_layout", "{placement=bottom;searchPlacement=\(placement);}",
+            "-privacy_https_upgrade_enabled", "NO", "-platform_config_version", "47",
+            "-platform_config", try argumentData(platforms), "-custom_groups", try argumentData(groups)]
+        app.launch()
+        defer { app.terminate() }
+        let query = app.textFields["search.query"].firstMatch
+        let keyboard = app.keyboards.firstMatch
+        let field = app.otherElements["home.search.field"]
+        let panel = app.otherElements["home.quick-search.platforms"]
+        let picker = panel.buttons["browser.platformGroupPicker"]
+        let chinaPlatform = panel.buttons["browser.platform." + chinaID.uuidString]
+        let internationalPlatform = panel.buttons["browser.platform." + internationalID.uuidString]
+
+        func selectGroup(_ id: String, title: String, platform: XCUIElement) {
+            XCTAssertTrue(picker.waitForExistence(timeout: 5))
+            picker.tap()
+            let option = app.buttons["browser.platformGroup." + id]
+            XCTAssertTrue(option.waitForExistence(timeout: 5), "The group menu must stay open while editing")
+            option.tap()
+            XCTAssertTrue(platform.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertEqual(picker.label, title)
+            XCTAssertTrue(keyboard.exists)
+            XCTAssertEqual(query.value as? String, "123")
+        }
+
+        XCTAssertTrue(query.waitForExistence(timeout: 10))
+        query.tap()
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        query.typeText("123")
+        XCTAssertTrue(picker.waitForExistence(timeout: 5), app.debugDescription)
+        if placement == "bottom" {
+            XCTAssertLessThan(panel.frame.maxY, field.frame.minY)
+        } else {
+            XCTAssertGreaterThan(panel.frame.minY, field.frame.maxY)
+        }
+        selectGroup("region:china", title: "China", platform: chinaPlatform)
+        selectGroup("region:international", title: "International", platform: internationalPlatform)
+        XCTAssertFalse(chinaPlatform.exists)
+        selectGroup("group:" + groupID.uuidString, title: "Custom fixture", platform: internationalPlatform)
+        query.typeText("x")
+        XCTAssertEqual(query.value as? String, "123x")
+        XCTAssertTrue(panel.exists)
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: 2, dy: field.frame.midY - app.frame.minY)).tap()
+        XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(panel.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(query.value as? String, "123x")
+
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(query.waitForExistence(timeout: 10))
+        query.tap()
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        query.typeText("123")
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertEqual(picker.label, "Custom fixture")
+        query.typeText("\n")
+        XCTAssertTrue(app.webViews.staticTexts["Group platform: 123"].waitForExistence(timeout: 15))
     }
 
     func testLandscapeIPadQuickSearchUsesMoreVerticalSpaceAboveKeyboard() async throws {
@@ -135,9 +232,11 @@ final class GroupDefaultSearchUITests: XCTestCase {
         let targetPlatform = panel.buttons["browser.platform." + target.uuidString]
         XCTAssertFalse(targetPlatform.isHittable)
         for _ in 0..<4 where !targetPlatform.isHittable { grid.swipeUp() }
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "Scrolling through platforms must keep the search field active")
         XCTAssertTrue(targetPlatform.isHittable, app.debugDescription)
         targetPlatform.tap()
         XCTAssertTrue(app.webViews.staticTexts["Second platform: swift tests"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(panel.waitForNonExistence(timeout: 5))
     }
 
     func testOptionalPlatformBarWaitsForTrustedPageTapAndSharesHomeToggle() async throws {

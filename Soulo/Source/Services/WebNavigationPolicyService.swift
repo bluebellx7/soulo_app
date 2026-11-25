@@ -68,6 +68,17 @@ struct WebNavigationPolicyService {
         return fallback
     }
 
+    /// Bilibili associates even its homepage with the native app. Open ordinary
+    /// links from other sites as browser requests so the homepage stays in Soulo.
+    func prefersBrowserForBilibiliHomepage(_ url: URL, from source: URL?) -> Bool {
+        let hosts: Set<String> = ["bilibili.com", "www.bilibili.com", "m.bilibili.com"]
+        guard ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+              hosts.contains(url.host?.lowercased() ?? ""),
+              url.path.isEmpty || url.path == "/",
+              let sourceHost = source?.host?.lowercased() else { return false }
+        return sourceHost != "bilibili.com" && !sourceHost.hasSuffix(".bilibili.com")
+    }
+
     /// A normal HTTPS navigation can itself invoke an installed app, without
     /// passing through a custom-scheme policy action. Keep this list narrow.
     func universalAppScheme(for url: URL) -> String? {

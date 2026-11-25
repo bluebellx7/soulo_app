@@ -122,14 +122,12 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
     let webView: WKWebView
     private let episode: WebEpisode
     private weak var actionSourceView: WKWebView?
-    private let previousResourceURL: URL?
     private var frames: [WKFrameInfo] = []
     private var committed = false
     private var navigationError: Error?
 
-    init(episode: WebEpisode, sourceView: WKWebView, previousResourceURL: URL? = nil) {
+    init(episode: WebEpisode, sourceView: WKWebView) {
         self.episode = episode
-        self.previousResourceURL = previousResourceURL
         actionSourceView = sourceView
         let config = WKWebViewConfiguration()
         config.websiteDataStore = sourceView.configuration.websiteDataStore
@@ -165,10 +163,16 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
         if let resource = episode.directMediaResource { return resource }
         if episode.action != nil {
             guard let source = actionSourceView else { throw WebEpisodeDownloadError.unavailable }
-            return try await WebEpisodeRuntime.resolveActionMedia(episode,in:source,timeout:timeout,excluding:previousResourceURL)
+            return try await WebEpisodeRuntime.resolveActionMedia(episode, in: source, timeout: timeout)
         }
+        BrowserStartupTrace.mark("episode_document_prepare")
         if AdBlockSettingsService.filteringEnabled() {
-            for rule in await AdBlockService.compileRuleLists(allowlistedHosts: AdBlockSettingsService.shared.allowlistedHosts) ?? [] {
+            let allowlist = AdBlockSettingsService.shared.allowlistedHosts
+            let rules: [WKContentRuleList]?
+            if let cached = WebViewRepresentable.cachedContentRules(for: allowlist) { rules = cached }
+            else { rules = await AdBlockService.compileRuleLists(allowlistedHosts: allowlist) }
+            try Task.checkCancellation()
+            for rule in rules ?? [] {
                 webView.configuration.userContentController.add(rule)
             }
         }
@@ -182,6 +186,7 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
         var request = URLRequest(url: episode.url)
         request.timeoutInterval = timeout
         if let origin = episode.resourcePageURL { request.setValue(origin.absoluteString, forHTTPHeaderField: "Referer") }
+        BrowserStartupTrace.mark("episode_document_request")
         webView.load(request)
         let deadline = ProcessInfo.processInfo.systemUptime + timeout
         var previous: WebMediaResource?
@@ -190,6 +195,7 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
         var auditIteration = 0
         #endif
         while ProcessInfo.processInfo.systemUptime < deadline {
+            var delay: Duration = .milliseconds(committed ? 500 : 120)
             #if SOULO_ACCEPTANCE
             auditIteration += 1
             if auditIteration % 8 == 1 { NSLog("[SouloEpisodeResolve] page:%@ committed:%d frames:%d", webView.url?.lastPathComponent ?? "nil", committed, frames.count) }
@@ -207,6 +213,7 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
                 // in Resources without treating them as competing downloads.
                 let candidates = !mainPlayer.isEmpty ? mainPlayer
                     : !configured.isEmpty ? configured : snapshot.videos.filter { $0.delivery != .dash }
+                if mainPlayer.count == 1 { delay = .milliseconds(120) }
                 #if SOULO_ACCEPTANCE
                 if auditIteration % 8 == 1 {
                     NSLog("[SouloEpisodeResolve] configured:%d videos:%d candidates:%@", configured.count, snapshot.videos.count,
@@ -235,7 +242,7 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
                     previous = candidate
                 } else { previous = nil }
             }
-            try await Task.sleep(for: .milliseconds(500))
+            try await Task.sleep(for: delay)
         }
         throw ambiguous ? WebEpisodeDownloadError.ambiguous : WebEpisodeDownloadError.unavailable
     }
@@ -258,6 +265,18 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) { committed = true }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         if !WebNavigationErrorClassifier.isExpectedInterruption(error) { navigationError = error }
+    }
+    func webView(_ webView: WKWebView, decidePolicyFor response: WKNavigationResponse,
+                 decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+        if response.isForMainFrame, let http = response.response as? HTTPURLResponse {
+            BrowserStartupTrace.mark("episode_document_response", detail: String(http.statusCode))
+            if http.statusCode >= 400 {
+                navigationError = WebEpisodeDownloadError.unavailable
+                decisionHandler(.cancel)
+                return
+            }
+        }
+        decisionHandler(.allow)
     }
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {

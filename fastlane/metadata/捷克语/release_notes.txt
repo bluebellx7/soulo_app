@@ -1,1 +1,2 @@
-Vylepšili jsme načítání skriptů při otevírání webových stránek a kompatibilitu s rozšířeními prohlížeče.
+Opravili jsme přepínání skupin v rychlém vyhledávání na domovské obrazovce a omezili neočekávané výzvy k vložení obsahu na webových stránkách.
+Klepnutím na platformu na domovské obrazovce ihned spustíte vyhledávání. Vylepšili jsme stahování videí, přechod na celou obrazovku a odezvu adresního řádku.

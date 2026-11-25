@@ -110,6 +110,8 @@
 "resource_copy_url" = "Copy resource URL";
 "resource_download_invalid_response" = "The resource could not be downloaded.";
 "resource_stream_download_unavailable" = "This stream is no longer available on the current page. Reload the page and try again.";
+"resource_youtube_download_verification_required" = "YouTube requires player verification. The download was stopped.";
+"downloads_keep_app_open" = "Keep Soulo open while downloading";
 "resource_stream_download_unsupported" = "Soulo detected this stream, but its manifest format cannot be saved yet.";
 "resource_stream_download_invalid_chunk" = "The media stream returned an invalid or out-of-order segment.";
 "resource_stream_download_missing_track" = "The downloaded stream did not contain playable video and audio tracks.";

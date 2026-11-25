@@ -1,1 +1,2 @@
-Paransimme komentosarjojen lataamista verkkosivuja avattaessa sekä yhteensopivuutta selainlaajennusten kanssa.
+Korjasimme ryhmän vaihtamisen aloitussivun pikahaussa ja vähensimme verkkosivujen odottamattomia liittämispyyntöjä.
+Napauta hakualustaa aloitusnäytössä, niin haku käynnistyy heti. Videoiden lataamista, siirtymistä koko näytön tilaan ja osoitepalkin reagointia on parannettu.

@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Matné sklo";
 "wallpaper_blur_amount" = "Intenzita rozmazania";
 
-"home_quick_search_guide" = "Po zadaní kľúčového slova na domovskej stránke sa pod poľom vyhľadávania zobrazia platformy. Klepnutím spustíte vyhľadávanie na platforme.";
+"home_quick_search_guide" = "Na domovskej obrazovke zadajte kľúčové slovo, vyberte platformu a ťuknite na Hľadať na klávesnici.";
 "auto_hide_platform_bar_hint" = "Po zapnutí sa lišta skryje iba po klepnutí na obsah stránky, ak jej doména nezodpovedá žiadnej platforme na aktuálnej lište. Zhoda s ľubovoľnou platformou lištu ponechá alebo znova zobrazí. Posúvanie a automatické presmerovania ju neskryjú.";
 
 "ad_subscription_add" = "Pridať zoznam filtrov";

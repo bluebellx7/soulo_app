@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Ten strumień nie jest już dostępny na bieżącej stronie. Odśwież stronę i spróbuj ponownie.";
+"resource_youtube_download_verification_required" = "YouTube wymaga weryfikacji odtwarzacza. Pobieranie zostało przerwane.";
+"downloads_keep_app_open" = "Pozostaw Soulo otwarte podczas pobierania";
 "resource_stream_download_unsupported" = "Soulo wykryło ten strumień, ale nie może jeszcze zapisać jego formatu manifestu.";
 "resource_stream_download_invalid_chunk" = "Strumień multimediów zwrócił nieprawidłowy segment lub segment w niewłaściwej kolejności.";
 "resource_stream_download_missing_track" = "Pobrany strumień nie zawierał ścieżek wideo i audio możliwych do odtworzenia.";

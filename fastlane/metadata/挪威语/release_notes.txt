@@ -1,1 +1,2 @@
-Forbedret innlasting av skript når nettsider åpnes, og bedre kompatibilitet med nettleserutvidelser.
+Vi har rettet gruppebytte i hurtigsøket på startsiden og redusert antallet uventede spørsmål om innliming på nettsider.
+Trykk på en søkeplattform på startskjermen for å søke med én gang. Videonedlastinger, overgangen til fullskjerm og adressefeltets respons på trykk er forbedret.

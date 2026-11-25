@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Matglas";
 "wallpaper_blur_amount" = "Vervagingssterkte";
 
-"home_quick_search_guide" = "Typ een zoekterm op de startpagina om platforms onder de zoekbalk te zien. Tik op een platform om daar te zoeken.";
+"home_quick_search_guide" = "Typ een zoekterm op het beginscherm, kies een platform en tik op Zoek op het toetsenbord.";
 "auto_hide_platform_bar_hint" = "Als dit is ingeschakeld, verbergt de balk pas nadat je op webpagina-inhoud tikt en het domein met geen enkel platform in de huidige balk overeenkomt. Bij een overeenkomst blijft de balk zichtbaar of verschijnt deze opnieuw. Scrollen en automatische omleidingen verbergen de balk niet.";
 
 "ad_subscription_add" = "Filterlijst toevoegen";

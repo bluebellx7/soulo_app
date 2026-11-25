@@ -1,1 +1,2 @@
-Melhorámos o carregamento de scripts ao abrir páginas Web e a compatibilidade com extensões do navegador.
+Corrigimos a mudança de grupo na pesquisa rápida do ecrã inicial e reduzimos os pedidos inesperados para colar conteúdo em páginas Web.
+Toque numa plataforma de pesquisa no ecrã inicial para começar a pesquisar de imediato. Melhorámos as transferências de vídeo, a transição para ecrã inteiro e a resposta da barra de endereço ao toque.

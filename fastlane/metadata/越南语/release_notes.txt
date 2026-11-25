@@ -1,1 +1,2 @@
-Cải thiện khả năng tải tập lệnh khi mở trang web và khả năng tương thích với tiện ích mở rộng của trình duyệt.
+Đã sửa lỗi chuyển nhóm trong tìm kiếm nhanh trên màn hình chính và giảm số lần hiện yêu cầu dán ngoài ý muốn trên trang web.
+Chạm vào một nền tảng tìm kiếm trên màn hình chính để tìm ngay. Đã cải thiện tải video, chuyển sang chế độ toàn màn hình và độ nhạy khi chạm vào thanh địa chỉ.

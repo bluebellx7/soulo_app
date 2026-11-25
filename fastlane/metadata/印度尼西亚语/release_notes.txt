@@ -1,1 +1,2 @@
-Pemuatan skrip saat membuka halaman web dan kompatibilitas dengan ekstensi browser telah ditingkatkan.
+Kami memperbaiki perpindahan grup pada Pencarian Cepat di beranda dan mengurangi permintaan untuk menempel yang muncul tanpa diduga di halaman web.
+Ketuk platform pencarian di layar utama untuk langsung mencari. Kami meningkatkan pengunduhan video, peralihan ke layar penuh, dan respons bilah alamat saat diketuk.

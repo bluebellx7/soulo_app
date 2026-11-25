@@ -1,1 +1,2 @@
-Web sayfaları açılırken betiklerin yüklenmesi ve tarayıcı uzantılarıyla uyumluluk iyileştirildi.
+Ana ekrandaki Hızlı Arama’da grup değiştirme sorunu giderildi ve web sayfalarında beklenmedik yapıştırma istemleri azaltıldı.
+Hemen aramak için ana ekranda bir arama platformuna dokunun. Video indirme, tam ekrana geçiş ve adres çubuğunun dokunmaya verdiği yanıt iyileştirildi.

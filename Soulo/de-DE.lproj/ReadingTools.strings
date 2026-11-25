@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Milchglas";
 "wallpaper_blur_amount" = "Unschärfestärke";
 
-"home_quick_search_guide" = "Gib auf der Startseite einen Suchbegriff ein. Tippe unter der Suchleiste auf eine Plattform, um dort zu suchen.";
+"home_quick_search_guide" = "Gib auf der Startseite einen Suchbegriff ein, wähle eine Plattform und tippe auf der Tastatur auf Suchen.";
 "auto_hide_platform_bar_hint" = "Wenn aktiviert, wird die Leiste erst ausgeblendet, nachdem du auf Webseiteninhalt tippst, und nur, wenn die Domain keiner Plattform der aktuellen Leiste entspricht. Bei einer Übereinstimmung bleibt die Leiste sichtbar oder wird wieder eingeblendet. Scrollen und automatische Weiterleitungen blenden sie nicht aus.";
 
 "ad_subscription_add" = "Filterliste hinzufügen";

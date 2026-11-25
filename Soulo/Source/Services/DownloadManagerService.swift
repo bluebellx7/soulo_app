@@ -134,6 +134,7 @@ final class DownloadManagerService: ObservableObject {
 
     @Published private(set) var downloads: [BrowserDownloadItem] = []
     @Published private(set) var hasUnreadableHistory = false
+    @Published private(set) var foregroundRequiredDownloadIDs: Set<UUID> = []
     let didFinishDownload = PassthroughSubject<BrowserDownloadItem, Never>()
 
     private let userDefaults: UserDefaults
@@ -156,6 +157,16 @@ final class DownloadManagerService: ObservableObject {
     func playbackSource(for id: UUID) -> DownloadPlaybackSource? {
         guard downloads.contains(where: { $0.id == id && $0.status == .inProgress }) else { return nil }
         return playbackSources[id]
+    }
+
+    func setForegroundRequired(_ required: Bool, for id: UUID) {
+        guard foregroundRequiredDownloadIDs.contains(id) != required else { return }
+        if required {
+            guard downloads.contains(where: { $0.id == id && [.inProgress, .paused].contains($0.status) }) else { return }
+            foregroundRequiredDownloadIDs.insert(id)
+        } else {
+            foregroundRequiredDownloadIDs.remove(id)
+        }
     }
 
     init(
@@ -251,7 +262,8 @@ final class DownloadManagerService: ObservableObject {
               downloads[index].status == .inProgress else { return }
         var item = downloads[index]
         let received = max(0, completed), expected = max(0, total)
-        let progress = expected > 0 ? min(max(Double(received) / Double(expected), 0), 1) : 0
+        let maximum = [.hls, .streaming].contains(item.transport) ? 0.99 : 1.0
+        let progress = expected > 0 ? min(max(Double(received) / Double(expected), 0), maximum) : 0
         guard item.receivedBytes != received || item.expectedBytes != expected || item.progress != progress else { return }
         item.receivedBytes = received
         item.expectedBytes = expected
@@ -266,7 +278,7 @@ final class DownloadManagerService: ObservableObject {
         guard fraction.isFinite, let index = downloads.firstIndex(where: { $0.id == id }),
               downloads[index].transport == .hls, downloads[index].status == .inProgress else { return }
         var item = downloads[index]
-        item.progress = min(max(fraction, 0), 1)
+        item.progress = min(max(fraction, 0), 0.99)
         item.receivedBytes = receivedBytes.map { max(0, $0) } ?? (item.expectedBytes == 1_000_000 ? 0 : item.receivedBytes)
         item.expectedBytes = 0 // The system has not supplied a whole-file size.
         guard downloads[index] != item else { return }
@@ -306,9 +318,10 @@ final class DownloadManagerService: ObservableObject {
         try? FileManager.default.removeItem(at: resumeDataURL(id: id))
     }
 
-    func markFailed(id: UUID, error: Error) {
+    func markFailed(id: UUID, error: Error, includingPaused: Bool = false) {
         guard let index = downloads.firstIndex(where: { $0.id == id }),
-              downloads[index].status == .inProgress else { return }
+              downloads[index].status == .inProgress ||
+              (includingPaused && downloads[index].status == .paused) else { return }
         playbackSources.removeValue(forKey: id)
         downloads[index].status = .failed
         downloads[index].completedAt = Date()

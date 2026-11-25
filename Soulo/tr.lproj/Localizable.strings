@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Bu akış artık geçerli sayfada kullanılamıyor. Sayfayı yenileyip tekrar deneyin.";
+"resource_youtube_download_verification_required" = "YouTube, oynatıcı doğrulaması gerektiriyor. İndirme durduruldu.";
+"downloads_keep_app_open" = "İndirme sırasında Soulo’yu açık tutun";
 "resource_stream_download_unsupported" = "Soulo bu akışı algıladı ancak bildirim dosyası biçimini henüz kaydedemiyor.";
 "resource_stream_download_invalid_chunk" = "Medya akışı geçersiz veya yanlış sıralanmış bir bölüm döndürdü.";
 "resource_stream_download_missing_track" = "İndirilen akış, oynatılabilir video ve ses parçaları içermiyordu.";

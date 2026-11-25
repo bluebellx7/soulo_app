@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "ಈ ಸ್ಟ್ರೀಮ್ ಪ್ರಸ್ತುತ ಪುಟದಲ್ಲಿ ಇನ್ನು ಲಭ್ಯವಿಲ್ಲ. ಪುಟವನ್ನು ಮರುಲೋಡ್ ಮಾಡಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.";
+"resource_youtube_download_verification_required" = "YouTube ಗೆ ಪ್ಲೇಯರ್ ಪರಿಶೀಲನೆ ಅಗತ್ಯವಿದೆ. ಡೌನ್‌ಲೋಡ್ ನಿಲ್ಲಿಸಲಾಗಿದೆ.";
+"downloads_keep_app_open" = "ಡೌನ್‌ಲೋಡ್ ಮಾಡುವಾಗ Soulo ತೆರೆದಿರಲಿ";
 "resource_stream_download_unsupported" = "Soulo ಈ ಸ್ಟ್ರೀಮ್ ಅನ್ನು ಪತ್ತೆಹಚ್ಚಿದೆ, ಆದರೆ ಅದರ ಮ್ಯಾನಿಫೆಸ್ಟ್ ಸ್ವರೂಪವನ್ನು ಇನ್ನೂ ಉಳಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ.";
 "resource_stream_download_invalid_chunk" = "ಮಾಧ್ಯಮ ಸ್ಟ್ರೀಮ್ ಅಮಾನ್ಯ ಅಥವಾ ತಪ್ಪು ಕ್ರಮದ ಭಾಗವನ್ನು ಹಿಂದಿರುಗಿಸಿದೆ.";
 "resource_stream_download_missing_track" = "ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಸ್ಟ್ರೀಮ್‌ನಲ್ಲಿ ಪ್ಲೇ ಮಾಡಬಹುದಾದ ವೀಡಿಯೊ ಮತ್ತು ಆಡಿಯೊ ಟ್ರ್ಯಾಕ್‌ಗಳಿರಲಿಲ್ಲ.";

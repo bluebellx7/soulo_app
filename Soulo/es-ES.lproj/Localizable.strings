@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Esta transmisión ya no está disponible en la página actual. Recarga la página e inténtalo de nuevo.";
+"resource_youtube_download_verification_required" = "YouTube requiere verificar el reproductor. Se ha detenido la descarga.";
+"downloads_keep_app_open" = "Mantén Soulo abierto durante la descarga";
 "resource_stream_download_unsupported" = "Soulo ha detectado esta transmisión, pero todavía no puede guardar su formato de manifiesto.";
 "resource_stream_download_invalid_chunk" = "La transmisión multimedia ha devuelto un segmento no válido o fuera de orden.";
 "resource_stream_download_missing_track" = "La transmisión descargada no contenía pistas de vídeo y audio reproducibles.";

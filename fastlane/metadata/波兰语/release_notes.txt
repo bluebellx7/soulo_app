@@ -1,1 +1,2 @@
-Usprawniono wczytywanie skryptów podczas otwierania stron internetowych i zgodność z rozszerzeniami przeglądarki.
+Naprawiliśmy przełączanie grup w szybkim wyszukiwaniu na ekranie głównym i ograniczyliśmy liczbę nieoczekiwanych monitów o wklejenie na stronach internetowych.
+Stuknij platformę na ekranie głównym, aby od razu wyszukać. Usprawniliśmy pobieranie filmów, przechodzenie do trybu pełnoekranowego i reakcję paska adresu na dotyk.

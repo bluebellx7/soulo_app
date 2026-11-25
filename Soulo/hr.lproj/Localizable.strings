@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Ovaj tok više nije dostupan na trenutačnoj stranici. Ponovno učitajte stranicu i pokušajte opet.";
+"resource_youtube_download_verification_required" = "YouTube zahtijeva provjeru reproduktora. Preuzimanje je zaustavljeno.";
+"downloads_keep_app_open" = "Ostavite Soulo otvoren tijekom preuzimanja";
 "resource_stream_download_unsupported" = "Soulo je otkrio ovaj tok, ali još ne može spremiti njegov format manifesta.";
 "resource_stream_download_invalid_chunk" = "Medijski tok vratio je neispravan segment ili segment izvan redoslijeda.";
 "resource_stream_download_missing_track" = "Preuzeti tok nije sadržavao videozapise i zvučne zapise koji se mogu reproducirati.";

@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Luồng này không còn khả dụng trên trang hiện tại. Hãy tải lại trang và thử lại.";
+"resource_youtube_download_verification_required" = "YouTube yêu cầu xác minh trình phát. Quá trình tải xuống đã dừng.";
+"downloads_keep_app_open" = "Giữ Soulo mở trong khi tải xuống";
 "resource_stream_download_unsupported" = "Soulo đã phát hiện luồng này nhưng chưa thể lưu định dạng tệp kê khai của luồng.";
 "resource_stream_download_invalid_chunk" = "Luồng phương tiện trả về một phân đoạn không hợp lệ hoặc sai thứ tự.";
 "resource_stream_download_missing_track" = "Luồng đã tải xuống không có các bản video và âm thanh có thể phát.";

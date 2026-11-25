@@ -1,1 +1,2 @@
-Skripte werden beim Öffnen von Webseiten besser geladen. Auch die Kompatibilität mit Browsererweiterungen wurde verbessert.
+Der Gruppenwechsel in der Schnellsuche auf der Startseite funktioniert wieder. Unerwartete Aufforderungen zum Einfügen auf Webseiten wurden reduziert.
+Tippe auf dem Startbildschirm auf eine Plattform, um sofort zu suchen. Videodownloads, der Wechsel in den Vollbildmodus und die Reaktion der Adressleiste auf Tippen wurden verbessert.

@@ -33,6 +33,9 @@ enum WebVideoOrientationRuntime {
       function send(action, token, details = {}) {
         try { window.webkit.messageHandlers.souloVideoOrientation.postMessage({action, token, ...details}); } catch (_) {}
       }
+      function videoLandscape(video) {
+        return video.videoWidth > 0 && video.videoHeight > 0 ? video.videoWidth / video.videoHeight > 1.1 : null;
+      }
       function isFullscreen(video) {
         const full=document.fullscreenElement || video.getRootNode()?.fullscreenElement;
         let contained=false;
@@ -47,7 +50,7 @@ enum WebVideoOrientationRuntime {
         const video=event.currentTarget;
         if(event.type==='playing') { send('sourceReady',video.getAttribute('data-soulo-media-id')||''); schedule(); }
         if(isFullscreen(video)) send('nativePlayback',video.getAttribute('data-soulo-media-id'),
-          {playing:event.type!=='waiting' && nativePlaying(video),muted:video.muted,landscape:video.videoWidth>video.videoHeight});
+          {playing:event.type!=='waiting' && nativePlaying(video),muted:video.muted,landscape:videoLandscape(video)});
       }
       function computed(node, styles) {
         if (!styles.has(node)) styles.set(node, getComputedStyle(node));
@@ -164,19 +167,19 @@ enum WebVideoOrientationRuntime {
           if(current) {
             documentFullscreenVideo=current;
             send('nativeFullscreen',current.getAttribute('data-soulo-media-id')||'',
-              {rate:current.playbackRate,playing:nativePlaying(current),landscape:!current.videoWidth || current.videoWidth>current.videoHeight});
+              {rate:current.playbackRate,playing:nativePlaying(current),landscape:videoLandscape(current)});
           } else if(documentFullscreenVideo) {
             send('nativeFullscreenEnd',documentFullscreenVideo.getAttribute('data-soulo-media-id')||'');
             documentFullscreenVideo=null;
           }
         }
         if(active?.mode==='document') {
-          if(isFullscreen(active.video)) send('nativeFullscreen',active.video.getAttribute('data-soulo-media-id')||'',{rate:active.video.playbackRate,playing:nativePlaying(active.video),muted:active.video.muted,landscape:active.video.videoWidth>active.video.videoHeight});
+          if(isFullscreen(active.video)) send('nativeFullscreen',active.video.getAttribute('data-soulo-media-id')||'',{rate:active.video.playbackRate,playing:nativePlaying(active.video),muted:active.video.muted,landscape:videoLandscape(active.video)});
           else if(active.began) send('nativeFullscreenEnd',active.video.getAttribute('data-soulo-media-id')||'');
         }
         if (['webkitbeginfullscreen','webkitpresentationmodechanged'].includes(event?.type)
             && video instanceof HTMLVideoElement && isFullscreen(video))
-          send('nativeFullscreen',video.getAttribute('data-soulo-media-id') || '', {rate:video.playbackRate,playing:nativePlaying(video),muted:video.muted,landscape:video.videoWidth>video.videoHeight});
+          send('nativeFullscreen',video.getAttribute('data-soulo-media-id') || '', {rate:video.playbackRate,playing:nativePlaying(video),muted:video.muted,landscape:videoLandscape(video)});
         if (event?.type === 'webkitendfullscreen' && video instanceof HTMLVideoElement)
           send('nativeFullscreenEnd',video.getAttribute('data-soulo-media-id') || '');
         if(event?.type==='webkitpresentationmodechanged' && video instanceof HTMLVideoElement && !isFullscreen(video))
@@ -214,14 +217,14 @@ enum WebVideoOrientationRuntime {
             if (!document.fullscreenEnabled || typeof video.requestFullscreen !== 'function') { failed(); return; }
             active.mode = 'document';
             active.documentControls=video.controls;video.controls=true;
-            send('prepare', token, {landscape:video.videoWidth / video.videoHeight > 1.1});
+            send('prepare', token, {landscape:videoLandscape(video)});
             try { Promise.resolve(video.requestFullscreen()).catch(failed); } catch (_) { failed(); }
           };
           // Enter native fullscreen first; the coordinator waits for AVKit's
           // video transform to settle before applying the landscape preference.
           if (typeof video.webkitEnterFullscreen === 'function' && video.webkitSupportsFullscreen !== false) {
             active.mode = 'native';
-            const landscape=video.videoWidth / video.videoHeight > 1.1;
+            const landscape=videoLandscape(video);
             const enter=()=>{try { video.webkitEnterFullscreen(); } catch (_) { documentFullscreen(); }};
             send('prepare', token, {landscape,native:true});
             enter();
@@ -467,7 +470,7 @@ enum WebVideoOrientationRuntime {
         sourceReady();
         // Media documents may enter AVKit before a video intersects the page
         // or before our mutation scan runs. Recover the current native session.
-        if (isFullscreen(video)) send('nativeFullscreen',video.getAttribute('data-soulo-media-id'),{rate:video.playbackRate,playing:nativePlaying(video),muted:video.muted,landscape:video.videoWidth>video.videoHeight});
+        if (isFullscreen(video)) send('nativeFullscreen',video.getAttribute('data-soulo-media-id'),{rate:video.playbackRate,playing:nativePlaying(video),muted:video.muted,landscape:videoLandscape(video)});
       }
       function createGroup() {
         const button = document.createElement('div');
@@ -549,7 +552,7 @@ enum WebVideoOrientationRuntime {
           event.preventDefault(); event.stopImmediatePropagation();
           if (!event.isTrusted || !video.isConnected) return;
           collapse();
-          send('fullscreenPlayer',button.dataset.souloMediaID,{landscape:true,play:true});
+          send('fullscreenPlayer',button.dataset.souloMediaID,{landscape:videoLandscape(video),play:true});
         };
         const download = document.createElement('button'); download.type = 'button'; download.style.cssText = controlStyle;
         download.setAttribute('data-video-download','');
@@ -732,7 +735,7 @@ enum WebVideoOrientationRuntime {
             if(document.exitFullscreen)await document.exitFullscreen();
             else document.webkitExitFullscreen?.();
           }
-          return {time:Number.isFinite(time) ? time : 0,playing,rate:video.playbackRate};
+          return {time:Number.isFinite(time) ? time : 0,playing,rate:video.playbackRate,landscape:videoLandscape(video)};
         }
         return null;
       }, async setRate(token, rate) {

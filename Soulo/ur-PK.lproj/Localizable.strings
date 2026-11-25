@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "یہ اسٹریم موجودہ صفحے پر اب دستیاب نہیں ہے۔ صفحہ دوبارہ لوڈ کر کے کوشش کریں۔";
+"resource_youtube_download_verification_required" = "YouTube کو پلیئر کی تصدیق درکار ہے۔ ڈاؤن لوڈ روک دیا گیا ہے۔";
+"downloads_keep_app_open" = "ڈاؤن لوڈ کے دوران Soulo کھلا رکھیں";
 "resource_stream_download_unsupported" = "Soulo نے یہ اسٹریم دریافت کی ہے، لیکن اس کے مینی فیسٹ فارمیٹ کو ابھی محفوظ نہیں کیا جا سکتا۔";
 "resource_stream_download_invalid_chunk" = "میڈیا اسٹریم نے ایک نامعتبر یا غلط ترتیب والا حصہ واپس کیا۔";
 "resource_stream_download_missing_track" = "ڈاؤن لوڈ کی گئی اسٹریم میں چلنے کے قابل ویڈیو اور آڈیو ٹریک نہیں تھے۔";

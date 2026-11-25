@@ -1,1 +1,2 @@
-Improved script loading when opening webpages and compatibility with browser extensions.
+Fixed group switching in Home Quick Search and reduced unexpected paste prompts on webpages.
+Tap a platform on the Home screen to search immediately. We improved video downloads, the transition to full screen and address bar responsiveness.

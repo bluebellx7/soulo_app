@@ -589,7 +589,7 @@
 "wallpaper_image_blur" = "毛玻璃";
 "wallpaper_blur_amount" = "模糊強度";
 
-"home_quick_search_guide" = "在首頁輸入關鍵字，搜尋框下方會顯示平台。點一下平台即可在該平台搜尋。";
+"home_quick_search_guide" = "在首頁輸入關鍵字，選擇一個平台，再點一下鍵盤上的「搜尋」。";
 "auto_hide_platform_bar_hint" = "開啟後，只有手動點選網頁內容，且網頁網域不符合目前平台列中的任何平台時才隱藏；符合任一平台則保持或恢復顯示。捲動和自動重新導向不會主動隱藏平台列。";
 
 "ad_subscription_add" = "新增規則";

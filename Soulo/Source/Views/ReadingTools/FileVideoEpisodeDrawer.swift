@@ -11,6 +11,7 @@ struct FileVideoEpisodeDrawer: ViewModifier {
     @Environment(\.videoFullscreenInsets) private var windowInsets
     @State private var settingsVisible = false
     @State private var sourcesVisible = false
+    @State private var closesAfterSelection = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var episodeMinimumWidth: CGFloat = 52
 
@@ -45,6 +46,15 @@ struct FileVideoEpisodeDrawer: ViewModifier {
         .onAppear { updateEpisodeWidth() }
         .onCompatibleChange(of: playlist?.episodes) { _, _ in updateEpisodeWidth() }
         .onCompatibleChange(of: dynamicTypeSize) { _, _ in updateEpisodeWidth() }
+        .onCompatibleChange(of: isPresented) { _, visible in
+            if !visible { closesAfterSelection = false }
+        }
+        .onCompatibleChange(of: playlist?.selectedID) { _, selected in
+            if closesAfterSelection, let selected, !selected.isEmpty {
+                closesAfterSelection = false
+                isPresented = false
+            }
+        }
         .onCompatibleChange(of: playlist?.failure) { _, failure in
             // Decoder failure can arrive after the selection drawer has closed.
             // Present the error and retry in the active fullscreen surface.
@@ -92,6 +102,7 @@ struct FileVideoEpisodeDrawer: ViewModifier {
                     VStack(spacing: 0) {
                         ForEach(playlist.sources, id: \.id) { source in
                             Button {
+                                closesAfterSelection = false
                                 playlist.selectSource?(source.id); sourcesVisible = false
                             } label: {
                                 HStack(spacing: 10) {
@@ -107,10 +118,18 @@ struct FileVideoEpisodeDrawer: ViewModifier {
                 HStack(alignment: .top, spacing: 8) {
                     Text(failure).font(.footnote).lineLimit(3).frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityIdentifier("media.file.episodes.failure.text")
-                    if let retry = playlist.retry { Button(ToolText.text("retry"), action: retry).font(.subheadline.weight(.semibold)).accessibilityIdentifier("media.file.episodes.retry") }
+                    if let retry = playlist.retry {
+                        Button(ToolText.text("retry")) {
+                            closesAfterSelection = true
+                            retry()
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .accessibilityIdentifier("media.file.episodes.retry")
+                    }
                 }
                 .foregroundStyle(fullscreen ? Color.white.opacity(0.85) : .secondary)
                 .padding(.horizontal, 20).padding(.bottom, 10)
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("media.file.episodes.failure")
             }
             Divider().overlay(fullscreen ? Color.white.opacity(0.12) : Color.clear)
@@ -119,13 +138,21 @@ struct FileVideoEpisodeDrawer: ViewModifier {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: episodeMinimumWidth), spacing: 10)], spacing: 10) {
                         ForEach(playlist.episodes) { episode in
                             let selected = episode.id == playlist.selectedID
+                            let resolving = episode.id == playlist.resolvingID
                             Button {
-                                isPresented = false
+                                guard !resolving else { return }
+                                if !playlist.asynchronous || selected { isPresented = false }
+                                else { closesAfterSelection = true }
                                 playlist.select(episode.id)
                             } label: {
                                 HStack(spacing: 5) {
-                                    if selected { Image(systemName: "play.fill").font(.caption2).accessibilityHidden(true) }
-                                    Text(episode.title).font(.subheadline.weight(selected ? .semibold : .regular))
+                                    if resolving {
+                                        ProgressView().controlSize(.mini).tint(.themePrimary)
+                                            .accessibilityHidden(true)
+                                    } else if selected {
+                                        Image(systemName: "play.fill").font(.caption2).accessibilityHidden(true)
+                                    }
+                                    Text(episode.title).font(.subheadline.weight(selected || resolving ? .semibold : .regular))
                                         .lineLimit(2).truncationMode(.tail)
                                         .multilineTextAlignment(.center)
                                 }
@@ -135,10 +162,16 @@ struct FileVideoEpisodeDrawer: ViewModifier {
                                 .background(selected ? Color.themePrimary.opacity(fullscreen ? 0.22 : 0.1)
                                             : fullscreen ? Color.white.opacity(0.08) : Color(uiColor: .tertiarySystemFill),
                                             in: RoundedRectangle(cornerRadius: 10))
+                                .overlay {
+                                    if resolving {
+                                        RoundedRectangle(cornerRadius: 10).strokeBorder(Color.themePrimary.opacity(0.55))
+                                    }
+                                }
                                 .contentShape(Rectangle())
                             }
                             .accessibilityAddTraits(selected ? .isSelected : [])
                             .accessibilityLabel(episode.title)
+                            .accessibilityValue(resolving ? ToolText.text("loading") : "")
                             .accessibilityIdentifier("media.file.episode.\(episode.id)")
                             .id(episode.id)
                         }

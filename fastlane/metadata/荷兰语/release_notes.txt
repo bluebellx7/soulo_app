@@ -1,1 +1,2 @@
-Verbeterd laden van scripts bij het openen van webpagina’s en betere compatibiliteit met browserextensies.
+Het wisselen van groepen in Snel zoeken op het beginscherm werkt weer goed. Webpagina’s tonen minder onverwachte meldingen over plakken.
+Tik op een zoekplatform op het startscherm om direct te zoeken. Videodownloads, de overgang naar volledig scherm en de reactie van de adresbalk op tikken zijn verbeterd.

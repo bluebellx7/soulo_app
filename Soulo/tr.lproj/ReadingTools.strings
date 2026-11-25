@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Buzlu Cam";
 "wallpaper_blur_amount" = "Bulanıklık Gücü";
 
-"home_quick_search_guide" = "Arama çubuğunun altında platformları görmek için ana sayfada anahtar kelime yazın. Aramak için bir platforma dokunun.";
+"home_quick_search_guide" = "Ana ekranda bir anahtar kelime girin, bir platform seçin ve klavyedeki Ara düğmesine dokunun.";
 "auto_hide_platform_bar_hint" = "Açıkken çubuk yalnızca sayfa içeriğine dokunduğunuzda ve sayfanın alan adı mevcut çubuktaki hiçbir platformla eşleşmediğinde gizlenir. Herhangi biriyle eşleşirse çubuk görünür kalır veya yeniden gösterilir. Kaydırma ve otomatik yönlendirmeler çubuğu gizlemez.";
 
 "ad_subscription_add" = "Filtre listesi ekle";

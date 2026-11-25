@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Strim ini tidak lagi tersedia pada halaman semasa. Muat semula halaman dan cuba lagi.";
+"resource_youtube_download_verification_required" = "YouTube memerlukan pengesahan pemain. Muat turun dihentikan.";
+"downloads_keep_app_open" = "Pastikan Soulo kekal terbuka semasa muat turun";
 "resource_stream_download_unsupported" = "Soulo mengesan strim ini, tetapi format manifesnya belum boleh disimpan.";
 "resource_stream_download_invalid_chunk" = "Strim media mengembalikan segmen yang tidak sah atau di luar turutan.";
 "resource_stream_download_missing_track" = "Strim yang dimuat turun tidak mengandungi trek video dan audio yang boleh dimainkan.";

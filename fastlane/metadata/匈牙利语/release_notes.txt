@@ -1,1 +1,2 @@
-Javult a szkriptek betöltése a weboldalak megnyitásakor, valamint a böngészőbővítményekkel való kompatibilitás.
+Javítottuk a csoportváltást a kezdőképernyő gyorskeresőjében, és ritkábban jelennek meg váratlan beillesztési kérések a weboldalakon.
+Koppints egy keresőplatformra a kezdőképernyőn az azonnali kereséshez. Javítottuk a videók letöltését, a teljes képernyőre váltást és a címsor reakcióját.

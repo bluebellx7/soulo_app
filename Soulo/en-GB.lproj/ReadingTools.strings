@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Frosted Glass";
 "wallpaper_blur_amount" = "Blur Strength";
 
-"home_quick_search_guide" = "Enter a keyword on Home to see platforms below the search bar. Tap a platform to search there.";
+"home_quick_search_guide" = "Enter a keyword on Home, choose a platform, then tap Search on the keyboard.";
 "auto_hide_platform_bar_hint" = "When enabled, the platform bar hides only after you tap webpage content and the page’s domain matches none of the platforms in the current bar. A match keeps or restores the bar. Scrolling and automatic redirects do not hide it.";
 
 "ad_subscription_add" = "Add filter list";

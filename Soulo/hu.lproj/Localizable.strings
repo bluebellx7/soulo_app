@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Ez a stream már nem érhető el az aktuális oldalon. Töltse újra az oldalt, és próbálja újra.";
+"resource_youtube_download_verification_required" = "A YouTube a lejátszó ellenőrzését kéri. A letöltés leállt.";
+"downloads_keep_app_open" = "Letöltés közben tartsa nyitva a Soulo alkalmazást";
 "resource_stream_download_unsupported" = "A Soulo felismerte ezt a streamet, de a manifest formátumát még nem tudja menteni.";
 "resource_stream_download_invalid_chunk" = "A médiafolyam érvénytelen vagy nem megfelelő sorrendű szegmenst adott vissza.";
 "resource_stream_download_missing_track" = "A letöltött stream nem tartalmazott lejátszható video- és hangsávokat.";

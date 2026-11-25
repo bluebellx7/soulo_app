@@ -522,7 +522,7 @@
 "wallpaper_image_blur" = "Motno steklo";
 "wallpaper_blur_amount" = "Moč zameglitve";
 
-"home_quick_search_guide" = "Na domači strani vnesite ključno besedo, da se pod iskalno vrstico prikažejo platforme. Tapnite platformo za iskanje.";
+"home_quick_search_guide" = "Na začetnem zaslonu vnesite ključno besedo, izberite platformo in tapnite Išči na tipkovnici.";
 "auto_hide_platform_bar_hint" = "Ko je omogočeno, se vrstica skrije le po dotiku vsebine strani, če se njena domena ne ujema z nobeno platformo v trenutni vrstici. Ob ujemanju s katero koli platformo vrstica ostane vidna ali se znova prikaže. Pomikanje in samodejne preusmeritve je ne skrijejo.";
 
 "ad_subscription_add" = "Dodaj seznam filtrov";

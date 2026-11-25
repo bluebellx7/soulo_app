@@ -214,6 +214,7 @@ private extension EnvironmentValues {
         private var playerContent = AnyView(EmptyView())
         private var playerInsets = EdgeInsets()
         private(set) var canvasLandscape: Bool?
+        private(set) var entryLandscapeDirection: UIInterfaceOrientation?
         private var reversedLandscape = false
         var closed: (() -> Void)?
         var rotate: ((Bool, @escaping (Error) -> Void) -> Void)?
@@ -224,22 +225,49 @@ private extension EnvironmentValues {
         override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation { openingOrientation }
         override var supportedInterfaceOrientations: UIInterfaceOrientationMask { allowedOrientations }
         override var prefersStatusBarHidden: Bool { true }
-        func setContent(_ content: AnyView, initialInsets: UIEdgeInsets? = nil) {
+        func setContent(_ content: AnyView, initialInsets: UIEdgeInsets? = nil,
+                        initialCanvasLandscape: Bool? = nil,
+                        entryLandscapeDirection: UIInterfaceOrientation? = nil) {
             playerContent = content
             if let initialInsets { playerInsets = Self.insets(initialInsets) }
+            if let initialCanvasLandscape { canvasLandscape = initialCanvasLandscape }
+            if let entryLandscapeDirection { self.entryLandscapeDirection = entryLandscapeDirection }
             rebuildCanvas()
         }
-        func setCanvasLandscape(_ value: Bool?) { canvasLandscape = value; rebuildCanvas() }
+        func setCanvasLandscape(_ value: Bool?, entryLandscapeDirection: UIInterfaceOrientation? = nil) {
+            self.entryLandscapeDirection = entryLandscapeDirection
+            canvasLandscape = value
+            rebuildCanvas()
+        }
         func setReversedLandscape(_ value: Bool) {
             guard reversedLandscape != value else { return }
             reversedLandscape = value
             rebuildCanvas()
         }
+        func useLandscapeCanvasIfGeometryIsUnavailable() {
+            guard entryLandscapeDirection != nil else { return }
+            setCanvasLandscape(true)
+        }
         private func rebuildCanvas() {
-            rootView = AnyView(VideoFullscreenCanvas(content: playerContent, landscape: canvasLandscape,
-                                                     reversedLandscape: reversedLandscape, insets: playerInsets)
+            let content = playerContent
+            if entryLandscapeDirection != nil {
+                rootView = AnyView(Color.black.ignoresSafeArea().accessibilityHidden(true))
+                return
+            }
+            rootView = AnyView(VideoFullscreenCanvas(landscape: canvasLandscape,
+                                                     entryLandscapeDirection: canvasLandscape == true ? openingOrientation : nil,
+                                                     reversedLandscape: reversedLandscape, insets: playerInsets) { _ in
+                content
+            }
                 .environment(\.videoOrientationLock, toggleOrientationLock.map { .init(isLocked: directionLocked, toggle: $0) })
                 .environment(\.videoFullscreenRotation, rotate).preferredColorScheme(.dark))
+        }
+        override func viewDidLayoutSubviews() {
+            super.viewDidLayoutSubviews()
+            guard entryLandscapeDirection != nil, view.window?.windowScene?.interfaceOrientation.isLandscape == true,
+                  view.bounds.width > view.bounds.height else { return }
+            entryLandscapeDirection = nil
+            rebuildCanvas()
         }
         override func viewSafeAreaInsetsDidChange() {
             super.viewSafeAreaInsetsDidChange()
@@ -265,6 +293,8 @@ private extension EnvironmentValues {
     private var handingOff = false
     private var rotationTask: Task<Void, Never>?
     private var rotationID = UUID()
+    private var awaitsVideoOrientation = false
+    private var detectedVideoLandscape: Bool?
     private var sceneActivation: NSObjectProtocol?
     private weak var sourceWindow: UIWindow?
     private weak var accessibilitySource: UIView?
@@ -289,12 +319,14 @@ private extension EnvironmentValues {
         return nil
     }
     static func present(owner: UUID, in window: UIWindow, content: AnyView, identifier: String,
-                        landscape: Bool, onClose: @escaping (VideoFullscreenDismissal) -> Void) -> SharedVideoFullscreenHost? {
+                        landscape: Bool?, onClose: @escaping (VideoFullscreenDismissal) -> Void) -> SharedVideoFullscreenHost? {
         guard let scene = window.windowScene else { return nil }
         if let current = current(in: window), let screen = current.screen {
             current.handoffTask?.cancel(); current.handoffTask = nil; current.handingOff = false
+            if current.owner != owner { current.detectedVideoLandscape = nil }
             current.owner = owner; current.onClose = onClose
             screen.view.accessibilityIdentifier = identifier; screen.setContent(content)
+            current.resolveVideoOrientation(owner: owner, landscape: landscape)
             return current
         }
         guard let source = VideoOrientation.topController(in: window),
@@ -310,10 +342,20 @@ private extension EnvironmentValues {
         }
         screen.toggleOrientationLock = { [weak current] in current?.toggleOrientationLock() }
         current.orientation.setReversedLandscape = { [weak screen] in screen?.setReversedLandscape($0) }
-        screen.setContent(content, initialInsets: window.safeAreaInsets)
         screen.modalPresentationCapturesStatusBarAppearance = true
-        screen.openingOrientation = UIDevice.current.userInterfaceIdiom == .pad ? scene.interfaceOrientation : (landscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait)
-        screen.allowedOrientations = landscape ? .landscape : .allButUpsideDown
+        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
+        let startsLandscape = VideoOrientation.fullscreenLandscape(video: landscape, scene: scene)
+        current.awaitsVideoOrientation = isPhone && landscape == nil
+        let requestsPortrait = isPhone && !startsLandscape
+        screen.openingOrientation = isPhone ? (startsLandscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait)
+            : scene.interfaceOrientation
+        // Let UIKit settle the landscape window before revealing the video.
+        // A provisional rotated canvas would animate again with the scene.
+        let entryLandscapeDirection = isPhone && startsLandscape && !scene.interfaceOrientation.isLandscape
+            ? screen.openingOrientation : nil
+        screen.setContent(content, initialInsets: window.safeAreaInsets, initialCanvasLandscape: requestsPortrait ? false : nil,
+                          entryLandscapeDirection: entryLandscapeDirection)
+        screen.allowedOrientations = startsLandscape ? .landscape : (requestsPortrait ? .portrait : .allButUpsideDown)
         // Keep the source mounted so the destination decoder can start while
         // this same fullscreen controller remains visible during a handoff.
         screen.modalPresentationStyle = .overFullScreen; screen.view.backgroundColor = .black
@@ -329,9 +371,13 @@ private extension EnvironmentValues {
         current.accessibilitySource = source.view
         current.sourceAccessibilityWasHidden = source.view.accessibilityElementsHidden
         source.view.accessibilityElementsHidden = true
-        current.orientation.prepare(token: "shared-video", scene: scene, prefersLandscape: landscape, sourceView: source.view)
+        current.orientation.prepare(token: "shared-video", scene: scene, prefersLandscape: startsLandscape, sourceView: source.view)
         source.present(screen, animated: false) {
-            current.orientation.begin(token: "shared-video", controller: screen) { _ in }
+            current.orientation.begin(token: "shared-video", controller: screen, requestPortrait: requestsPortrait,
+                                      initialLandscapeDirection: entryLandscapeDirection) { [weak screen] _ in
+                screen?.useLandscapeCanvasIfGeometryIsUnavailable()
+            }
+            current.resolveVideoOrientation(owner: current.owner, landscape: current.detectedVideoLandscape)
         }
         return current
     }
@@ -340,16 +386,25 @@ private extension EnvironmentValues {
         handoffTask?.cancel(); handoffTask = nil; handingOff = false
         screen?.setContent(content)
     }
+    func resolveVideoOrientation(owner: UUID, landscape: Bool?) {
+        guard self.owner == owner, awaitsVideoOrientation, let screen, let landscape else { return }
+        detectedVideoLandscape = landscape
+        guard screen.viewIfLoaded?.window != nil, !screen.isBeingPresented else { return }
+        awaitsVideoOrientation = false
+        if landscape != screen.openingOrientation.isLandscape { setLandscape(landscape, resolvingVideo: true) }
+    }
     private func toggleOrientationLock() {
         guard let screen, let scene = screen.viewIfLoaded?.window?.windowScene,
               !screen.isBeingDismissed, scene.interfaceOrientation != .unknown else { return }
         rotationTask?.cancel(); rotationID = UUID()
+        awaitsVideoOrientation = false
         orientation.stopTracking()
         screen.directionLocked.toggle()
         if screen.directionLocked {
-            let surfaceIsLandscape = screen.view.bounds.width > screen.view.bounds.height
+            let surfaceIsLandscape = screen.canvasLandscape
+                ?? (screen.entryLandscapeDirection != nil || screen.view.bounds.width > screen.view.bounds.height)
             let direction = surfaceIsLandscape == scene.interfaceOrientation.isLandscape ? scene.interfaceOrientation
-                : surfaceIsLandscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait
+                : surfaceIsLandscape ? (screen.entryLandscapeDirection ?? VideoOrientation.landscapePresentation(in: scene)) : .portrait
             screen.openingOrientation = direction
             screen.allowedOrientations = VideoOrientation.mask(for: direction)
             BrowserStartupTrace.mark("video_orientation_locked", detail: "\(direction.rawValue)")
@@ -382,15 +437,18 @@ private extension EnvironmentValues {
             }
         }
     }
-    func setLandscape(_ landscape: Bool, onError: @escaping (Error) -> Void = { _ in }) {
+    func setLandscape(_ landscape: Bool, resolvingVideo: Bool = false,
+                      onError: @escaping (Error) -> Void = { _ in }) {
         guard let screen, !screen.directionLocked, !screen.isBeingDismissed, let scene = screen.view.window?.windowScene else {
             onError(CocoaError(.featureUnsupported)); return
         }
         rotationTask?.cancel(); rotationID = UUID()
+        awaitsVideoOrientation = false
         let request = rotationID, previous = screen.allowedOrientations
         screen.setReversedLandscape(false)
-        screen.setCanvasLandscape(nil)
         screen.openingOrientation = landscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait
+        screen.setCanvasLandscape(resolvingVideo && !landscape ? false : nil,
+            entryLandscapeDirection: resolvingVideo && landscape ? screen.openingOrientation : nil)
         screen.allowedOrientations = landscape ? .landscape : .portrait
         screen.setNeedsUpdateOfSupportedInterfaceOrientations()
         orientation.setFullscreenOrientation(landscape, in: scene, sourceView: nil,
@@ -478,28 +536,38 @@ struct VideoPlaybackControls: View {
 /// only differences between web, download and file fullscreen playback.
 /// Keeps the decoder mounted when a window cannot change its orientation.
 /// The logical canvas, chrome and touch targets rotate together inside that window.
-private struct VideoFullscreenCanvas: View {
-    let content: AnyView
-    let landscape: Bool?
-    let reversedLandscape: Bool
+struct VideoFullscreenCanvas<Content: View>: View {
+    var landscape: Bool? = nil
+    var entryLandscapeDirection: UIInterfaceOrientation? = nil
+    var reversedLandscape = false
     let insets: EdgeInsets
+    var identifier = "media.fullscreen.canvas"
+    @ViewBuilder var content: (EdgeInsets) -> Content
     var body: some View {
         GeometryReader { geometry in
             let wide = geometry.size.width > geometry.size.height
-            let rotated = landscape.map { $0 != wide } ?? false
+            let logicalLandscape = landscape ?? (entryLandscapeDirection != nil || wide)
+            let rotated = logicalLandscape != wide
+            let counterclockwise = entryLandscapeDirection == .landscapeLeft
             let reversed = wide && !rotated && reversedLandscape
-            let logicalInsets = rotated
-                ? EdgeInsets(top: insets.trailing, leading: insets.top, bottom: insets.leading, trailing: insets.bottom)
-                : reversed ? EdgeInsets(top: insets.bottom, leading: insets.trailing, bottom: insets.top, trailing: insets.leading) : insets
-            content
+            let logicalInsets = if rotated {
+                counterclockwise
+                    ? EdgeInsets(top: insets.leading, leading: insets.bottom, bottom: insets.trailing, trailing: insets.top)
+                    : EdgeInsets(top: insets.trailing, leading: insets.top, bottom: insets.leading, trailing: insets.bottom)
+            } else if reversed {
+                EdgeInsets(top: insets.bottom, leading: insets.trailing, bottom: insets.top, trailing: insets.leading)
+            } else {
+                insets
+            }
+            content(logicalInsets)
                 .environment(\.videoFullscreenInsets, logicalInsets)
                 .frame(width: rotated ? geometry.size.height : geometry.size.width,
                        height: rotated ? geometry.size.width : geometry.size.height)
-                .rotationEffect(.degrees(rotated ? 90 : reversed ? 180 : 0))
+                .rotationEffect(.degrees(rotated ? (counterclockwise ? -90 : 90) : reversed ? 180 : 0))
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .accessibilityElement(children: .contain)
-                .accessibilityIdentifier("media.fullscreen.canvas")
-                .accessibilityValue((landscape ?? wide) ? "landscape" : "portrait")
+                .accessibilityIdentifier(identifier)
+                .accessibilityValue(logicalLandscape ? "landscape" : "portrait")
         }
         .ignoresSafeArea().background(.black)
     }
@@ -547,7 +615,7 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
         GeometryReader { geometry in
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .modifier(VideoTransportOverlay(visibility: visibility, playing: playing, buffering: buffering || awaitingEpisode,
+                .modifier(VideoTransportOverlay(visibility: visibility, playing: playing, buffering: buffering,
                     identifier: identifier + ".play", toggle: toggle, seek: { seek(elapsed + $0) }))
                 .overlay(alignment: .top) {
                     if visibility.visible && !episodesVisible {
@@ -944,7 +1012,7 @@ struct VideoTransportButtons: View {
     func update(enabled: Bool, playing: Bool, buffering: Bool, voiceOver: Bool) {
         let becameReady = playing && (!self.playing || self.buffering)
         self.enabled = enabled; self.playing = playing; self.buffering = buffering; self.voiceOver = voiceOver
-        if becameReady || !playing || buffering || voiceOver { visible = true }
+        if !visible && (becameReady || !playing || buffering || voiceOver) { visible = true }
         scheduleHide()
     }
     func toggle() {
@@ -952,7 +1020,10 @@ struct VideoTransportButtons: View {
         withAnimation(.easeInOut(duration: 0.18)) { visible.toggle() }
         scheduleHide()
     }
-    func show() { visible = true; scheduleHide() }
+    func show() {
+        if !visible { visible = true }
+        scheduleHide()
+    }
     func interaction(_ active: Bool) { interacting = active; show() }
     func cancel() { hideTask?.cancel(); interacting = false }
     private func scheduleHide() {

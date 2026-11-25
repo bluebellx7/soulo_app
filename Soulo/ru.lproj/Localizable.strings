@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Этот поток больше недоступен на текущей странице. Обновите страницу и повторите попытку.";
+"resource_youtube_download_verification_required" = "YouTube требует проверки проигрывателя. Скачивание остановлено.";
+"downloads_keep_app_open" = "Не закрывайте Soulo во время загрузки";
 "resource_stream_download_unsupported" = "Soulo обнаружил этот поток, но сохранение его формата манифеста пока не поддерживается.";
 "resource_stream_download_invalid_chunk" = "Медиапоток вернул недопустимый сегмент или сегмент в неверном порядке.";
 "resource_stream_download_missing_track" = "Загруженный поток не содержал воспроизводимых видео- и аудиодорожек.";

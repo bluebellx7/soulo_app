@@ -1075,6 +1075,11 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
     }
 
+    static func cachedContentRules(for allowlist: [String]) -> [WKContentRuleList]? {
+        guard cachedAdBlockAllowlistSignature == allowlistSignature(for: allowlist) else { return nil }
+        return cachedAdBlockRules
+    }
+
     /// Recheck current preferences when asynchronous compilation completes.
     static func applyContentRules(_ rules: WKContentRuleList?, on webView: WKWebView, allowlist: [String]) {
         applyContentRules(rules.map { [$0] }, on: webView, allowlist: allowlist)
@@ -1955,7 +1960,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 case "fullscreenPlayer":
                     guard let webView = message.webView else { return }
                     presentUnifiedVideoPlayer(on: webView, frame: message.frameInfo, token: token,
-                                              inlineLandscape: body["landscape"] as? Bool ?? true,
+                                              initialLandscape: body["landscape"] as? Bool,
                                               autoplay: body["play"] as? Bool)
                 case "nativeFullscreen":
                     guard !token.isEmpty else { return }
@@ -1970,12 +1975,13 @@ struct WebViewRepresentable: UIViewRepresentable {
                           message.frameInfo.requestURL?.scheme != "webkit-extension",
                           message.frameInfo.securityOrigin.protocol != "webkit-extension" else { return }
                     if let directVideoDocumentURL, directVideoDocumentURL == webView.url { return }
+                    let landscape = body["landscape"] as? Bool
                     if let scene = webView.window?.windowScene {
                         videoFullscreenOrientation.prepare(token: token, scene: scene,
-                            prefersLandscape: body["landscape"] as? Bool ?? true, nativeWebKit: true, sourceView: webView)
+                            prefersLandscape: landscape ?? scene.interfaceOrientation.isLandscape, nativeWebKit: true, sourceView: webView)
                     }
                     presentUnifiedVideoPlayer(on: webView, frame: message.frameInfo, token: token,
-                                              automatic: true)
+                                              initialLandscape: landscape, automatic: true)
                 case "nativePlayback":
                     guard nativeVideoFullscreenToken == token, let playing = body["playing"] as? Bool else { return }
                     _ = playing
@@ -3253,7 +3259,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         func playConfiguredVideo(on webView: WKWebView) {
             guard viewModel.configuredVideo != nil else { return }
             recordVideoToolsUse(on: webView)
-            presentUnifiedVideoPlayer(on: webView, frame: configuredVideoFrame, token: configuredVideoToken, inlineLandscape: true,
+            presentUnifiedVideoPlayer(on: webView, frame: configuredVideoFrame, token: configuredVideoToken,
                 autoplay: true)
         }
 
@@ -3263,7 +3269,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             onVideoToolsUsed?(url, webView.title ?? viewModel.pageTitle)
         }
 
-        private func presentUnifiedVideoPlayer(on webView: WKWebView, frame: WKFrameInfo?, token: String, inlineLandscape: Bool? = nil,
+        private func presentUnifiedVideoPlayer(on webView: WKWebView, frame: WKFrameInfo?, token: String, initialLandscape: Bool? = nil,
                                                autoplay: Bool? = nil, automatic: Bool = false) {
             // Automatic handoff is opt-in. Explicit Soulo tool actions remain
             // available without altering the site's own fullscreen APIs.
@@ -3288,27 +3294,38 @@ struct WebViewRepresentable: UIViewRepresentable {
                 #endif
                 guard self.navigationGeneration == generation, !Task.isCancelled else { return }
                 if automatic, !VideoPlaybackPreferences.takesOverWebPlayers() || self.nativeVideoFullscreenToken != token { return }
-                guard resource != nil else {
+                guard let resource else {
                     // Blob/MSE streams can play in WebKit without an exportable
                     // URL. Keep that fullscreen session instead of showing an
                     // error for an unsolicited native-player handoff.
                     if !automatic { self.viewModel.videoOrientationError = ToolText.text("media_unavailable") }
                     return
                 }
-                if inlineLandscape == nil { self.videoFullscreenOrientation.handOff() }
+                // Prepare the replacement while the webpage can still play.
+                // The same asset is handed to the player after capturing its position.
+                async let preparation = WebResourceMediaService.asset(for: resource, webView: webView, cacheForPlayback: true)
                 if automatic {
                     // AVKit announces begin before its presentation transition
                     // finishes. An exit during that transition is ignored.
                     try? await Task.sleep(for: .milliseconds(650))
                     guard !Task.isCancelled, self.navigationGeneration == generation else { return }
                 }
+                let asset = await preparation
+                guard !Task.isCancelled, self.navigationGeneration == generation else { return }
+                if automatic {
+                    guard VideoPlaybackPreferences.takesOverWebPlayers(), self.nativeVideoFullscreenToken == token else { return }
+                    self.videoFullscreenOrientation.handOff()
+                }
                 let state = try? await webView.callAsyncJavaScript("return window.__souloVideoOrientation?.exitForPlayer(token);",
-                    arguments: ["token": token], in: frame, contentWorld: WebVideoOrientationRuntime.world) as? [String: Double]
+                    arguments: ["token": token], in: frame, contentWorld: WebVideoOrientationRuntime.world) as? [String: Any]
+                let landscape = (state?["landscape"] as? Bool) ?? initialLandscape
+                let wasPlaying = (state?["playing"] as? Double) != 0
                 #if SOULO_ACCEPTANCE
                 NSLog("[SouloVideoTakeover] exit state:%@", String(describing: state))
                 #endif
                 if let scene = webView.window?.windowScene {
-                    self.videoFullscreenOrientation.prepare(token: token, scene: scene, prefersLandscape: UIDevice.current.userInterfaceIdiom == .pad ? scene.interfaceOrientation.isLandscape : (inlineLandscape ?? true), sourceView: webView)
+                    self.videoFullscreenOrientation.prepare(token: token, scene: scene,
+                        prefersLandscape: VideoOrientation.fullscreenLandscape(video: landscape, scene: scene), sourceView: webView)
                 }
                 self.videoFullscreenOrientation.handOff()
                 var settled = 0
@@ -3355,19 +3372,27 @@ struct WebViewRepresentable: UIViewRepresentable {
                     self.topViewController(for: webView)?.viewIfLoaded.map { webView.isDescendant(of: $0) } == true)
                 #endif
                 if automatic, !VideoPlaybackPreferences.takesOverWebPlayers() { return }
-                guard settled >= 2, let resource else {
+                guard settled >= 2 else {
                     _ = try? await webView.callAsyncJavaScript("window.__souloVideoOrientation?.resumeAfterPlayerFailure(token,playing);",
-                        arguments: ["token": token, "playing": state?["playing"] != 0], in: frame, contentWorld: WebVideoOrientationRuntime.world)
+                        arguments: ["token": token, "playing": wasPlaying], in: frame, contentWorld: WebVideoOrientationRuntime.world)
                     self.videoFullscreenOrientation.end()
                     if !automatic { self.viewModel.videoOrientationError = ToolText.text("media_unavailable") }
                     return
                 }
                 self.videoFullscreenOrientation.rebaseSource(on: webView)
                 guard !Task.isCancelled, self.navigationGeneration == generation else { return }
-                let time = max(0, state?["time"] ?? 0)
-                let rate = state?["rate"].flatMap { time > 0 ? Float($0) : nil }
-                self.viewModel.webVideoPlayback = WebVideoPlaybackRequest(resource: resource, time: time,
-                    orientation: self.videoFullscreenOrientation, playing: autoplay ?? (state?["playing"] != 0), rate: rate)
+                let time = max(0, state?["time"] as? Double ?? 0)
+                let rate = (state?["rate"] as? Double).flatMap { time > 0 ? Float($0) : nil }
+                let playback = WebVideoPlaybackRequest(resource: resource, time: time,
+                    orientation: self.videoFullscreenOrientation, initialFullscreenLandscape: landscape, preparedAsset: asset,
+                    playing: autoplay ?? wasPlaying, rate: rate)
+                if UIDevice.current.userInterfaceIdiom == .phone {
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { self.viewModel.webVideoPlayback = playback }
+                } else {
+                    self.viewModel.webVideoPlayback = playback
+                }
             }
         }
 
@@ -3753,6 +3778,25 @@ struct WebViewRepresentable: UIViewRepresentable {
                     if openRequestedNewTab(navigationAction, in: webView) { decide(.cancel); return }
                     let method = navigationAction.request.httpMethod?.uppercased() ?? "GET"
                     let isMainFrame = navigationAction.targetFrame?.isMainFrame == true
+                    if !nativeRequest, method == "GET",
+                       navigationAction.navigationType == .linkActivated
+                        || (navigationAction.navigationType == .other && userInitiatedNavigationChain),
+                       WebNavigationPolicyService.shared.prefersBrowserForBilibiliHomepage(
+                        url, from: navigationAction.sourceFrame.requestURL ?? webView.url
+                       ) {
+                        if isMainFrame {
+                            decide(.cancel)
+                            webView.load(navigationAction.request)
+                            return
+                        }
+                        if navigationAction.targetFrame == nil, navigationAction.navigationType == .linkActivated {
+                            decide(.cancel)
+                            NotificationCenter.default.post(name: .openInNewTab, object: viewModel,
+                                userInfo: ["url": url, "request": navigationAction.request,
+                                           "mainFrameNavigation": navigationAction.sourceFrame.isMainFrame])
+                            return
+                        }
+                    }
                     if !nativeRequest, (isMainFrame || navigationAction.targetFrame == nil), method == "GET",
                        navigationAction.navigationType != .reload,
                        (navigationAction.navigationType == .linkActivated || userInitiatedNavigationChain

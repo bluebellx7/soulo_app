@@ -1,40 +1,58 @@
 import Foundation
 
 enum WebViewScripts {
-    // Page world, document start, every frame. A generic tap must not authorize
-    // the advertising pattern that writes to the clipboard on the first click.
+    // A generic page tap should neither write to the clipboard nor open WebKit's
+    // paste confirmation. Explicit paste controls still use WebKit's permission check.
     static let clipboardProtection = #"""
     (() => {
         \#(WebCompatibilityService.verificationContextDetectionScript)
         if (isVerificationResourceContext()) return;
         if (window.__souloClipboardProtectionInstalled) return;
         window.__souloClipboardProtectionInstalled = true;
-        let intentUntil = 0, commandDepth = 0;
+        let copyIntentUntil = 0, pasteIntentUntil = 0, commandDepth = 0;
         const now = performance.now.bind(performance);
         const copyLabel = /copy|clipboard|复制|複製|拷贝|拷貝|コピー|복사|copier|copiar|copia|còpia|kopi[eéë]r|kopioi|kopiraj|копир|копія|kopiuj|kopyala|kopírova|másolás|salin|sao chép|αντιγραφή|העתק|نسخ|کاپی|कॉपी|प्रतिलिपि|কপি|ਕਾਪੀ|નકલ|କପି|நகலெடுக்க|కాపీ|ನಕಲು|പകർത്തുക|คัดลอก/i;
-        function copyControl(event) {
+        const pasteLabel = /\bpaste\b|\b(?:read|import from) (?:the )?clipboard\b|粘贴|黏贴|貼上|贴上|读取剪贴板|讀取剪貼簿|ペースト|貼り付け|붙여넣기|\bcoller\b|\bpegar\b|einfügen|вставить|вставити|\bcolar\b|\bincolla\b|plakken|wklej|vložit|vložiť|beilleszt|yapıştır|dán|วางจากคลิปบอร์ด|הדבק|لصق/i;
+        const controls = 'button,a,[role="button"],input[type="button"],[onclick]';
+        function clipboardControls(event) {
+            let copy = false, paste = false;
             for (const el of event.composedPath()) {
                 if (!(el instanceof Element)) continue;
                 if (el === document.body || el === document.documentElement) break;
-                if (el.matches('[data-clipboard-text],[data-clipboard-target]')) return true;
                 const label = [el.getAttribute('aria-label'), el.getAttribute('title'),
                     el.getAttribute('data-action'), el.id, typeof el.className === 'string' ? el.className : ''].join(' ');
-                if (copyLabel.test(label)) return true;
-                if (el.matches('button,a,[role="button"],input[type="button"],[onclick]')
-                    && copyLabel.test((el.innerText || el.value || '').slice(0,120))) return true;
+                const control = el.matches(controls);
+                const pasteControl = control || el.matches('[role="menuitem"],input[type="submit"],[data-clipboard-action="paste"]');
+                const text = pasteControl ? (el.innerText || el.value || '').slice(0,120) : '';
+                copy ||= el.matches('[data-clipboard-text],[data-clipboard-target]')
+                    || copyLabel.test(label) || (control && copyLabel.test(text));
+                paste ||= pasteControl && (el.getAttribute('data-clipboard-action') === 'paste'
+                    || pasteLabel.test((label + ' ' + text).replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/_/g,' ')));
+                if (copy && paste) break;
             }
-            return false;
+            return { copy, paste };
         }
         function interacted(event) {
             if (!event.isTrusted) return;
-            if (event.type === 'keydown' && !['Enter',' '].includes(event.key)) return;
-            intentUntil = copyControl(event) ? now()+1500 : 0;
+            if (event.type === 'keydown') {
+                const pasteShortcut = ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey
+                    && event.key.toLowerCase() === 'v') || (event.shiftKey && event.key === 'Insert');
+                if (pasteShortcut) { pasteIntentUntil = now()+1500; return; }
+                if (!['Enter',' '].includes(event.key)) return;
+            }
+            const { copy, paste } = clipboardControls(event);
+            const deadline = now()+1500;
+            copyIntentUntil = copy ? deadline : 0;
+            pasteIntentUntil = paste ? deadline : 0;
         }
         window.addEventListener('click', interacted, true);
         window.addEventListener('keydown', interacted, true);
-        function consumeIntent() {
-            const allowed = intentUntil > now();
-            intentUntil = 0;
+        window.addEventListener('paste', event => {
+            if (event.isTrusted) pasteIntentUntil = now()+1500;
+        }, true);
+        function consumeCopyIntent() {
+            const allowed = copyIntentUntil > now();
+            copyIntentUntil = 0;
             return allowed;
         }
         function protectMethod(object, name, wrap) {
@@ -44,10 +62,13 @@ enum WebViewScripts {
             catch (_) {}
         }
         const clipboard = navigator.clipboard;
-        for (const name of ['writeText','write']) {
+        for (const name of ['writeText','write','readText','read']) {
             if (!clipboard) break;
+            const reading = name.startsWith('read');
             protectMethod(clipboard, name, original => function(...args) {
-                if (!consumeIntent()) return Promise.reject(new DOMException('User copy action required','NotAllowedError'));
+                const allowed = reading ? pasteIntentUntil > now() : consumeCopyIntent();
+                if (!allowed) return Promise.reject(new DOMException(
+                    reading ? 'User paste action required' : 'User copy action required','NotAllowedError'));
                 return Reflect.apply(original,this,args);
             });
             // Protect the prototype entry too, so calling it directly cannot
@@ -59,8 +80,10 @@ enum WebViewScripts {
             }
         }
         protectMethod(Document.prototype, 'execCommand', original => function(command,...args) {
-            if (!/^(copy|cut)$/i.test(String(command))) return Reflect.apply(original,this,[command,...args]);
-            if (!consumeIntent()) return false;
+            const action = String(command);
+            if (/^paste$/i.test(action) && pasteIntentUntil <= now()) return false;
+            if (!/^(copy|cut)$/i.test(action)) return Reflect.apply(original,this,[command,...args]);
+            if (!consumeCopyIntent()) return false;
             commandDepth++;
             try { return Reflect.apply(original,this,[command,...args]); }
             finally { commandDepth--; }

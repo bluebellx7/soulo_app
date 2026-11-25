@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "Tento stream už nie je na aktuálnej stránke dostupný. Obnovte stránku a skúste to znova.";
+"resource_youtube_download_verification_required" = "YouTube vyžaduje overenie prehrávača. Sťahovanie bolo zastavené.";
+"downloads_keep_app_open" = "Počas sťahovania nechajte Soulo otvorené";
 "resource_stream_download_unsupported" = "Soulo rozpoznalo tento stream, ale jeho formát manifestu zatiaľ nedokáže uložiť.";
 "resource_stream_download_invalid_chunk" = "Mediálny stream vrátil neplatný segment alebo segment v nesprávnom poradí.";
 "resource_stream_download_missing_track" = "Stiahnutý stream neobsahoval prehrateľné obrazové a zvukové stopy.";

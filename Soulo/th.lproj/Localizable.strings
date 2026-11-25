@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "สตรีมนี้ไม่พร้อมใช้งานบนหน้าปัจจุบันแล้ว โปรดโหลดหน้าใหม่แล้วลองอีกครั้ง";
+"resource_youtube_download_verification_required" = "YouTube ต้องยืนยันโปรแกรมเล่นวิดีโอ การดาวน์โหลดจึงหยุดลง";
+"downloads_keep_app_open" = "โปรดเปิด Soulo ไว้ระหว่างดาวน์โหลด";
 "resource_stream_download_unsupported" = "Soulo ตรวจพบสตรีมนี้ แต่ยังไม่รองรับการบันทึกรูปแบบไฟล์รายการของสตรีม";
 "resource_stream_download_invalid_chunk" = "สตรีมสื่อส่งกลับส่วนข้อมูลที่ไม่ถูกต้องหรือผิดลำดับ";
 "resource_stream_download_missing_track" = "สตรีมที่ดาวน์โหลดไม่มีแทร็กวิดีโอและเสียงที่เล่นได้";

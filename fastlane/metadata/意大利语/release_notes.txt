@@ -1,1 +1,2 @@
-Migliorato il caricamento degli script all’apertura delle pagine web e la compatibilità con le estensioni del browser.
+Abbiamo corretto il cambio di gruppo nella ricerca rapida della schermata iniziale e ridotto le richieste inattese di incollare contenuti nelle pagine web.
+Tocca una piattaforma nella schermata iniziale per avviare subito la ricerca. Abbiamo migliorato il download dei video, il passaggio a schermo intero e la risposta al tocco della barra degli indirizzi.

@@ -1,1 +1,2 @@
-Mejoramos la carga de scripts al abrir páginas web y la compatibilidad con las extensiones del navegador.
+Corregimos el cambio de grupo en la búsqueda rápida de la pantalla de inicio y redujimos las solicitudes inesperadas para pegar contenido en páginas web.
+Toca una plataforma de búsqueda en la pantalla de inicio para buscar de inmediato. Mejoramos las descargas de video, la transición a pantalla completa y la respuesta de la barra de direcciones al tocarla.

@@ -841,6 +841,8 @@
 
 // Stream download errors
 "resource_stream_download_unavailable" = "നിലവിലെ പേജിൽ ഈ സ്ട്രീം ഇനി ലഭ്യമല്ല. പേജ് വീണ്ടും ലോഡ് ചെയ്ത് ശ്രമിക്കുക.";
+"resource_youtube_download_verification_required" = "YouTube-ന് പ്ലേയർ സ്ഥിരീകരണം ആവശ്യമാണ്. ഡൗൺലോഡ് നിർത്തി.";
+"downloads_keep_app_open" = "ഡൗൺലോഡ് ചെയ്യുമ്പോൾ Soulo തുറന്നുവയ്ക്കുക";
 "resource_stream_download_unsupported" = "Soulo ഈ സ്ട്രീം കണ്ടെത്തി, എന്നാൽ ഇതിന്റെ മാനിഫെസ്റ്റ് ഫോർമാറ്റ് ഇതുവരെ സംരക്ഷിക്കാനാവില്ല.";
 "resource_stream_download_invalid_chunk" = "മീഡിയ സ്ട്രീം അസാധുവായതോ തെറ്റായ ക്രമത്തിലുള്ളതോ ആയ ഒരു ഭാഗം തിരികെ നൽകി.";
 "resource_stream_download_missing_track" = "ഡൗൺലോഡ് ചെയ്ത സ്ട്രീമിൽ പ്ലേ ചെയ്യാവുന്ന വീഡിയോ, ഓഡിയോ ട്രാക്കുകൾ ഉണ്ടായിരുന്നില്ല.";

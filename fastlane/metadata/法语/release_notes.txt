@@ -1,1 +1,2 @@
-Amélioration du chargement des scripts à l’ouverture des pages web et de la compatibilité avec les extensions de navigateur.
+Nous avons corrigé le changement de groupe dans la recherche rapide de l’accueil et réduit les demandes de collage inattendues sur les pages web.
+Touchez une plateforme sur l’écran d’accueil pour lancer la recherche aussitôt. Nous avons amélioré le téléchargement des vidéos, le passage en plein écran et la réactivité de la barre d’adresse.
