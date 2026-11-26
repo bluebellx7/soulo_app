@@ -69,6 +69,11 @@ private enum BoundedMediaHTTP {
     static func read(_ request: URLRequest, session: URLSession, delegate: any URLSessionTaskDelegate, limit: Int) async throws -> (Data, URLResponse) {
         let (bytes, response) = try await session.bytes(for: request, delegate: delegate)
         defer { bytes.task.cancel() }
+        // An error body can exceed the payload limit, especially for a 16-byte HLS key.
+        // Keep the HTTP status and Retry-After available to the caller.
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            return (Data(), response)
+        }
         guard response.expectedContentLength <= Int64(limit) || response.expectedContentLength < 0 else { throw URLError(.dataLengthExceedsMaximum) }
         var data = Data(); data.reserveCapacity(Int(max(0, response.expectedContentLength)))
         for try await byte in bytes {
@@ -225,6 +230,7 @@ final class HLSKeyResourceLoader: NSObject, @preconcurrency AVAssetResourceLoade
     let native: DownloadPlaybackSource
     private let temporaryDirectory: URL?
     private var systemServer: TorrentStreamServer?
+    private var startingSystemServer: Task<TorrentStreamServer, Error>?
 
     private init(url: URL, native: DownloadPlaybackSource, temporaryDirectory: URL? = nil) {
         self.url = url; self.native = native; self.temporaryDirectory = temporaryDirectory
@@ -266,11 +272,20 @@ final class HLSKeyResourceLoader: NSObject, @preconcurrency AVAssetResourceLoade
         // AVPlayer requires HTTP for local HLS manifests as well as movpkg
         // exports. Serve only the validated bundle's regular media files.
         guard temporaryDirectory != nil || (url.isFileURL && url.pathExtension.lowercased() == "m3u8") else { return native.asset }
-        if systemServer == nil {
-            systemServer = try await TorrentStreamServer.startHLS(directory: url.deletingLastPathComponent(),
-                                                                 playlist: url.lastPathComponent)
+        if let systemServer { return AVURLAsset(url: systemServer.url) }
+        // The player and its compatibility probe can open the same bundle
+        // concurrently. Share the listener so neither AVAsset loses its URL.
+        if let startingSystemServer { return AVURLAsset(url: try await startingSystemServer.value.url) }
+        let playlist = url
+        let startup = Task {
+            try await TorrentStreamServer.startHLS(directory: playlist.deletingLastPathComponent(),
+                                                   playlist: playlist.lastPathComponent)
         }
-        return AVURLAsset(url: systemServer!.url)
+        startingSystemServer = startup
+        defer { startingSystemServer = nil }
+        let server = try await startup.value
+        systemServer = server
+        return AVURLAsset(url: server.url)
     }
 
     deinit {
@@ -378,6 +393,7 @@ private actor DecoratedHLSResources {
     let directory: URL
     let transfer = VideoPlaybackTransfer()
     private let diskLease: VideoPlaybackCacheDirectory?
+    private let downloadPackage: URL?
     var resources: [String: Resource] = [:]
     var names: [URL: String] = [:]
     var ready: [String: URL] = [:]
@@ -399,8 +415,9 @@ private actor DecoratedHLSResources {
     var cachedBytes = 0
     var stopped = false
     var canCacheEntireVideo: Bool { !renditions.isEmpty }
-    init(context: VideoPlaybackRequestContext, cacheForPlayback: Bool = false) {
+    init(context: VideoPlaybackRequestContext, cacheForPlayback: Bool = false, downloadPackage: URL? = nil) {
         self.context = context
+        self.downloadPackage = downloadPackage
         let config = URLSessionConfiguration.ephemeral
         config.httpCookieStorage = nil; config.httpShouldSetCookies = false; config.httpMaximumConnectionsPerHost = 4
         config.urlCache = nil
@@ -409,15 +426,27 @@ private actor DecoratedHLSResources {
         diskLease = cacheForPlayback ? try? VideoPlaybackCacheDirectory(reserving: 0) : nil
         directory = diskLease?.url ?? FileManager.default.temporaryDirectory.appendingPathComponent("SouloHLSPlayback/" + UUID().uuidString)
     }
-    func prepare(url: URL) async throws -> Bool {
+    func prepare(url: URL, forDownload: Bool = false) async throws -> Bool {
         #if SOULO_ACCEPTANCE
         NSLog("[SouloHLSBridge] probe start")
         #endif
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let manifestSession: URLSession
+        if downloadPackage != nil {
+            let config = URLSessionConfiguration.ephemeral
+            config.timeoutIntervalForResource = 2
+            config.httpCookieStorage = nil
+            config.httpShouldSetCookies = false
+            manifestSession = URLSession(configuration: config)
+        } else {
+            manifestSession = session
+        }
+        defer { if manifestSession !== session { manifestSession.invalidateAndCancel() } }
         resources["index.m3u8"] = Resource(url: url, playlist: true, key: false); names[url] = "index.m3u8"
         var probe = url
+        var highestDownloadVariant: URL?
         for _ in 0..<4 {
-            let (data, response) = try await context.boundedData(for: probe, referrer: context.referrer ?? url, maximumBytes: 2 * 1024 * 1024, session: session)
+            let (data, response) = try await context.boundedData(for: probe, referrer: context.referrer ?? url, maximumBytes: 2 * 1024 * 1024, session: manifestSession)
             #if SOULO_ACCEPTANCE
             NSLog("[SouloHLSBridge] manifest status:%d length:%d prefix:%@", (response as? HTTPURLResponse)?.statusCode ?? -1,
                 data.count, data.prefix(12).map { String(format: "%02x", $0) }.joined())
@@ -431,6 +460,19 @@ private actor DecoratedHLSResources {
             guard !lines.contains(where: { $0.hasPrefix("#EXT-X-BYTERANGE:") }) else { return false }
             let base = http.url ?? probe
             if let i = lines.firstIndex(where: { $0.hasPrefix("#EXT-X-STREAM-INF:") }), i+1 < lines.count {
+                if forDownload, probe == url, context.manifests[probe] != nil {
+                    highestDownloadVariant = lines.indices.compactMap { index -> (URL, Int)? in
+                        guard lines[index].hasPrefix("#EXT-X-STREAM-INF:"), index + 1 < lines.count,
+                              let target = resolve(lines[index + 1], base: base) else { return nil }
+                        let bandwidth = AuthenticatedHLSDownloadService.attributes(lines[index])["BANDWIDTH"].flatMap(Int.init) ?? 0
+                        return (target, bandwidth)
+                    }.max(by: { $0.1 < $1.1 })?.0
+                }
+                if downloadPackage != nil {
+                    guard lines.filter({ $0.hasPrefix("#EXT-X-STREAM-INF:") }).count == 1,
+                          !lines.contains(where: { $0.hasPrefix("#EXT-X-MEDIA:") || $0.hasPrefix("#EXT-X-SESSION-KEY:") })
+                    else { return false }
+                }
                 let name = name(for: probe, playlist: true, key: false)
                 let cacheVariants = diskLease != nil && !lines.contains { $0.hasPrefix("#EXT-X-MEDIA:") || $0.hasPrefix("#EXT-X-SESSION-KEY:") }
                 try rewrite(text, base: base, cacheVariants: cacheVariants).write(to: directory.appendingPathComponent(name), options: .atomic)
@@ -442,7 +484,38 @@ private actor DecoratedHLSResources {
                   let line = lines.first(where: { !$0.isEmpty && !$0.hasPrefix("#") }),
                   let segment = resolve(line, base: base) else { return false }
             guard lines.contains("#EXT-X-ENDLIST") else { return false }
+            if forDownload, lines.contains("#EXT-X-DISCONTINUITY") {
+                // Preserve every section in a finite stream when its timestamps or codec change.
+                return true
+            }
+            // A master observed in WebKit can advertise the wrong program as its highest rendition.
+            // Xigua reproducer: https://www.cnxgct.com/video/doupocangqiongnianfanguoyu-tiancantudou/hJAQn8npav.html
+            if let highestDownloadVariant, highestDownloadVariant != probe,
+               let duration = HLSDownloadTimeline.duration(of: text),
+               let highestDuration = await downloadVariantDuration(at: highestDownloadVariant),
+               !HLSDownloadTimeline.match(duration, highestDuration) {
+                return true
+            }
             let playlistName = name(for: probe, playlist: true, key: false)
+            if let downloadPackage {
+                guard !lines.contains(where: { $0.hasPrefix("#EXT-X-MAP:") }),
+                      let cached = Self.downloadedFragments(in: downloadPackage, matching: lines, base: base)
+                else { return false }
+                let localPlaylist = directory.appendingPathComponent(playlistName)
+                try rewrite(text, base: base).write(to: localPlaylist, options: .atomic)
+                ready[playlistName] = localPlaylist
+                var linked = 0
+                for (url, file) in cached {
+                    guard let name = names[url] else { continue }
+                    let local = directory.appendingPathComponent(name)
+                    do {
+                        try FileManager.default.linkItem(at: file, to: local)
+                        ready[name] = local
+                        linked += 1
+                    } catch { continue }
+                }
+                return linked > 0
+            }
             let cacheRendition = diskLease != nil && (probe == url || cacheablePlaylists.contains(playlistName)) ? playlistName : nil
             if let cacheRendition {
                 let rewritten = try rewrite(text, base: base, cacheRendition: cacheRendition)
@@ -481,6 +554,87 @@ private actor DecoratedHLSResources {
             return true
         }
         return false
+    }
+
+    private func downloadVariantDuration(at url: URL) async -> Double? {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForResource = 3
+        config.httpCookieStorage = nil
+        config.httpShouldSetCookies = false
+        let probeSession = URLSession(configuration: config)
+        defer { probeSession.invalidateAndCancel() }
+        guard let (data, response) = try? await context.boundedData(for: url,
+                referrer: context.referrer ?? context.url, maximumBytes: 2 * 1024 * 1024, session: probeSession),
+              let http = response as? HTTPURLResponse, Self.containsWholeResource(http, size: data.count),
+              let text = String(data: data, encoding: .utf8), text.hasPrefix("#EXTM3U"),
+              text.split(whereSeparator: \.isNewline).contains("#EXT-X-ENDLIST") else { return nil }
+        return HLSDownloadTimeline.duration(of: text)
+    }
+
+    private static func downloadedFragments(in package: URL, matching lines: [String], base: URL) -> [URL: URL]? {
+        func segments(_ lines: [String]) -> [(String, Double)] {
+            var duration: Double?
+            var result: [(String, Double)] = []
+            for line in lines {
+                if line.hasPrefix("#EXTINF:") { duration = Double(line.dropFirst(8).prefix { $0 != "," }) }
+                else if !line.isEmpty, !line.hasPrefix("#"), let seconds = duration,
+                        seconds.isFinite, seconds > 0, seconds <= 600 {
+                    result.append((line, seconds)); duration = nil
+                }
+            }
+            return result
+        }
+        let playlist = segments(lines)
+        guard !playlist.isEmpty, playlist.count <= 10_000,
+              Set(playlist.map(\.0)).count == playlist.count,
+              playlist.count == lines.filter({ $0.hasPrefix("#EXTINF:") }).count,
+              let folders = try? FileManager.default.contentsOfDirectory(at: package, includingPropertiesForKeys: [.isDirectoryKey])
+        else { return nil }
+        // A discontinuity can shift the system cache's timeline relative to
+        // EXTINF. For those later ranges, leave segment resolution to the origin.
+        var uninterruptedCount = 0
+        for line in lines {
+            if line == "#EXT-X-DISCONTINUITY", uninterruptedCount > 0 { break }
+            if line.hasPrefix("#EXTINF:") { uninterruptedCount += 1 }
+        }
+        for folder in folders.prefix(32) where folder.lastPathComponent != "Data" {
+            guard (try? folder.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true,
+                  let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.fileSizeKey, .isSymbolicLinkKey]),
+                  let manifest = files.first(where: { $0.pathExtension == "m3u8" }),
+                  let manifestInfo = try? manifest.resourceValues(forKeys: [.fileSizeKey, .isSymbolicLinkKey]),
+                  manifestInfo.isSymbolicLink != true, (manifestInfo.fileSize ?? Int.max) <= 2 * 1024 * 1024,
+                  let text = try? String(contentsOf: manifest, encoding: .utf8) else { continue }
+            let stored = segments(text.replacingOccurrences(of: "\0", with: "").components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) })
+            guard stored.count == playlist.count, zip(stored, playlist).allSatisfy({ $0.0 == $1.0 && abs($0.1 - $1.1) < 0.001 })
+            else { continue }
+            var starts: [Int: (url: URL, duration: Double)] = [:]
+            var offset = 0.0
+            for (name, duration) in playlist.prefix(uninterruptedCount) {
+                if let url = URL(string: name, relativeTo: base)?.absoluteURL {
+                    starts[Int((offset * 100).rounded())] = (url, duration)
+                }
+                offset += duration
+            }
+            var result: [URL: URL] = [:]
+            for file in files where file.pathExtension == "frag" {
+                let fields = file.deletingPathExtension().lastPathComponent.split(separator: "_")
+                guard fields.count == 3, fields[1] == "(0)",
+                      let time = Double(fields[0].dropFirst().dropLast()), time.isFinite, time >= 0, time <= offset,
+                      let segment = starts[Int((time * 100).rounded())],
+                      let duration = Double(fields[2].dropFirst().dropLast()), abs(duration - segment.duration) < 0.02,
+                      let info = try? file.resourceValues(forKeys: [.fileSizeKey, .isSymbolicLinkKey]),
+                      info.isSymbolicLink != true, let size = info.fileSize, size >= 564, size.isMultiple(of: 188),
+                      let handle = try? FileHandle(forReadingFrom: file)
+                else { continue }
+                defer { try? handle.close() }
+                guard let header = try? handle.read(upToCount: 377), header.count == 377,
+                      header[0] == 0x47, header[188] == 0x47, header[376] == 0x47 else { continue }
+                result[segment.url] = file
+            }
+            if !result.isEmpty { return result }
+        }
+        return nil
     }
     private func resolve(_ raw: String, base: URL) -> URL? {
         guard let value = URL(string: raw, relativeTo: base)?.absoluteURL,
@@ -779,13 +933,16 @@ private final class DecoratedHLSLease: @unchecked Sendable {
     static func transfer(for asset: AVURLAsset) -> VideoPlaybackTransfer? {
         (objc_getAssociatedObject(asset, &leaseKey) as? DecoratedHLSLease)?.resources.transfer
     }
-    static func requiresSegmentNormalization(resource: WebMediaResource, webView: WKWebView?) async -> Bool {
+    static func prefersSegmentDownload(resource: WebMediaResource, webView: WKWebView?) async -> Bool {
         guard resource.delivery == .hls else { return false }
         let context = await VideoPlaybackRequestContext.load(url: resource.url, pageURL: resource.sourcePageURL, webView: webView)
         let resources = DecoratedHLSResources(context: context)
-        let needed = (try? await resources.prepare(url: resource.url)) == true
+        let needed = (try? await resources.prepare(url: resource.url, forDownload: true)) == true
         await resources.stop()
         return needed
+    }
+    static func assetUsingDownloadCache(context: VideoPlaybackRequestContext, package: URL) async -> AVURLAsset? {
+        await makeAsset(resources: DecoratedHLSResources(context: context, downloadPackage: package), url: context.url)
     }
     static func assetIfNeeded(resource: WebMediaResource, webView: WKWebView?, cacheForPlayback: Bool = false) async -> AVURLAsset? {
         #if SOULO_ACCEPTANCE
@@ -793,9 +950,12 @@ private final class DecoratedHLSLease: @unchecked Sendable {
         #endif
         guard resource.delivery == .hls, ["http","https"].contains(resource.url.scheme?.lowercased() ?? "") else { return nil }
         let context = await VideoPlaybackRequestContext.load(url: resource.url, pageURL: resource.sourcePageURL, webView: webView)
-        let resources = DecoratedHLSResources(context: context, cacheForPlayback: cacheForPlayback)
+        return await makeAsset(resources: DecoratedHLSResources(context: context, cacheForPlayback: cacheForPlayback), url: resource.url)
+    }
+
+    private static func makeAsset(resources: DecoratedHLSResources, url: URL) async -> AVURLAsset? {
         do {
-            guard try await resources.prepare(url: resource.url) else { await resources.stop(); return nil }
+            guard try await resources.prepare(url: url) else { await resources.stop(); return nil }
             try Task.checkCancellation()
             let server = try await TorrentStreamServer.startHLSResources { [weak resources] name in try await resources?.file(name) }
             let asset = AVURLAsset(url: server.url)

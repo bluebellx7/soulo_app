@@ -737,6 +737,24 @@ final class TabManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testPageDownloadRetainsItsWebViewAcrossTabEvictionAndMemoryPressure() async throws {
+        let manager = TabManager()
+        let model = try XCTUnwrap(manager.activeWebViewModel)
+        let web = AccessibleWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        model.webView = web
+        let id = UUID()
+        web.activePageDownloadIDs.insert(id)
+        for _ in 0..<TabManager.maxAliveTabs + 1 { manager.createTab() }
+        manager.releaseInactiveTabsForMemoryPressure()
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertTrue(model.webView === web)
+        web.activePageDownloadIDs.remove(id)
+        manager.releaseInactiveTabsForMemoryPressure()
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertNil(model.webView)
+    }
+
+    @MainActor
     func testIndependentWindowStorageKeepsTabSessionsSeparate() {
         let firstKey = "soulo_saved_tabs.window-a.\(UUID().uuidString)"
         let secondKey = "soulo_saved_tabs.window-b.\(UUID().uuidString)"

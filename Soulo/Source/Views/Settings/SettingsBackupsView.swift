@@ -58,8 +58,6 @@ struct SettingsBackupsView: View {
                         Button(LanguageManager.shared.localizedString("retry")) { sync.refresh() }
                     }
                 }
-            }
-            Section {
                 Toggle(isOn: $bookmarkSyncEnabled) {
                     SettingsDescriptionLabel(icon: "bookmark.fill", color: bookmarkSyncEnabled ? .themePrimary : Color(uiColor: .systemGray3),
                         title: ToolText.text("icloud_bookmark_sync"),

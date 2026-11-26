@@ -150,10 +150,12 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         var isCanceled = false
         var requestContext: VideoPlaybackRequestContext?
         var keyLoader: HLSKeyResourceLoader?
+        var playbackAsset: AVURLAsset?
         var finalizationTask: Task<Void, Never>?
         var backgroundAssertion: UIBackgroundTaskIdentifier = .invalid
         var loadedFraction: Double = 0
         var receivedBytes: Int64?
+        var progressObservation: NSKeyValueObservation?
         var byteSampleTime: TimeInterval = 0
         var byteSampleTask: Task<Void, Never>?
 
@@ -333,6 +335,8 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                         stagingDirectoryURL: stagingDirectory,
                         continuation: nil
                     )
+                    transfer.loadedFraction = item.progress
+                    if item.receivedBytes > 0 { transfer.receivedBytes = item.receivedBytes }
                     self.hlsTransfers[task.taskIdentifier] = transfer
                     // Restored AVFoundation tasks on iOS 18 can return a nil
                     // NSURL through the nonnull AVURLAsset.URL getter.
@@ -350,17 +354,22 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                             url: resource.url, referrer: nil,
                             userAgent: options[AVURLAssetHTTPUserAgentKey] as? String ?? AppConstants.mobileWebViewUserAgent,
                             cookies: options[AVURLAssetHTTPCookiesKey] as? [HTTPCookie] ?? [])
-                        let playback = AVURLAsset(url: resource.url, options: options)
                         let loader = HLSKeyResourceLoader(context: context)
                         let downloadAsset = assetTask.perform(#selector(getter: AVAssetDownloadTask.urlAsset))?
                             .takeUnretainedValue() as? AVURLAsset
-                        downloadAsset?.resourceLoader.setDelegate(loader, queue: .main)
+                        let restoredURL = downloadAsset?.perform(#selector(getter: AVURLAsset.url))?
+                            .takeUnretainedValue() as? URL
+                        let playback = (restoredURL == sourceURL ? downloadAsset : nil)
+                            ?? AVURLAsset(url: sourceURL, options: options)
                         playback.resourceLoader.setDelegate(loader, queue: .main)
                         transfer.requestContext = context
                         transfer.keyLoader = loader
+                        transfer.playbackAsset = playback
                         manager.registerPlaybackSource(id: itemID, asset: playback,
                                                        persistPosition: false, downloadAsset: downloadAsset,
                                                        resourceLease: loader)
+                        self.prepareHLSCachePlayback(transfer)
+                        self.observeHLSProgress(of: assetTask, transfer: transfer)
                     }
                     if manager.downloads.first(where: { $0.id == itemID })?.status == .inProgress,
                        task.state == .suspended {
@@ -375,12 +384,24 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     func downloadYouTubeVideo(
         resource: WebMediaResource,
         preferredFilename: String?,
-        pageURL: URL?,
         webView: WKWebView
     ) async throws -> URL {
         guard resource.kind == .video,
               resource.delivery == .youtubeSABR,
-              Self.isYouTubePage(pageURL ?? webView.url) else {
+              let currentPage = webView.url else {
+            throw StreamingMediaDownloadError.unavailable
+        }
+        // YouTube result links update the live URL without replacing the frame.
+        // WKFrameInfo can still refer to /results while the player is on /watch.
+        let currentVideoPage = WebResourceMediaService.youtubeCanonicalURL(for: currentPage)
+        let resourceVideoPage = WebResourceMediaService.youtubeCanonicalURL(for: resource.url)
+        // A search preview keeps /results as its live URL. Only a video with
+        // a watch URL from its player response can be downloaded in that case.
+        let collectionPage = currentVideoPage == nil && WebResourceMediaService.isYouTubeCollectionPage(currentPage)
+            ? currentPage : nil
+        guard let sourceURL = currentVideoPage ?? collectionPage.flatMap({ _ in resourceVideoPage }),
+              let videoID = WebResourceMediaService.youtubeVideoID(for: sourceURL),
+              resourceVideoPage == nil || resourceVideoPage == sourceURL else {
             throw StreamingMediaDownloadError.unavailable
         }
 
@@ -389,10 +410,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             fallback: resource.title
         )
         let manager = DownloadManagerService.shared
-        let sourceURL = WebResourceMediaService.downloadIdentityURL(
-            for: resource,
-            pageURL: pageURL ?? webView.url
-        )
+        let sourceWindow = webView.window
         guard manager.activeDownload(for: sourceURL) == nil else {
             throw StreamingMediaDownloadError.alreadyInProgress
         }
@@ -402,6 +420,9 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             sourceURL: sourceURL,
             transport: .streaming
         )
+        let sourceWebView = webView as? AccessibleWebView
+        sourceWebView?.activePageDownloadIDs.insert(item.id)
+        defer { sourceWebView?.activePageDownloadIDs.remove(item.id) }
 
         let identifier = UUID().uuidString
         let directoryURL = Self.streamingTemporaryDirectory
@@ -428,7 +449,9 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             transfers[identifier] = transfer
             identifiersByItemID[item.id] = identifier
 
-            let playerResponseJSON = try await prepareYouTubePlayerContext(in: webView)
+            let playerResponseJSON = try await prepareYouTubePlayerContext(
+                in: webView, videoID: videoID, collectionPage: collectionPage
+            )
             let pageDurationSeconds: Double?
             do {
                 try await installEngineIfNeeded(in: webView)
@@ -446,13 +469,15 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                 )
                 pageDurationSeconds = ((engineResult as? [String: Any])?["durationSeconds"] as? NSNumber)?.doubleValue
             } catch {
-                guard let failure = Self.surfacedStreamingError(error) as? StreamingMediaDownloadError,
-                      case .youtubeVerificationRequired = failure,
-                      let page = pageURL ?? webView.url, let duration = Self.youtubeVODDuration(playerResponseJSON),
-                      !transfer.isCanceled, webView.url.flatMap(WebResourceMediaService.youtubeVideoID(for:))
-                        == WebResourceMediaService.youtubeVideoID(for: page) else { throw error }
-                pageDurationSeconds = try await downloadFromYouTubePlayback(transfer, pageURL: page,
-                    duration: duration, source: webView)
+                guard Self.canRetryUsingYouTubePlayback(error),
+                      let duration = Self.youtubeVODDuration(playerResponseJSON),
+                      let window = sourceWindow ?? webView.window,
+                      !Task.isCancelled, !transfer.isCanceled,
+                      webView.url == currentPage || webView.url.flatMap(WebResourceMediaService.youtubeVideoID(for:)) == videoID else {
+                    throw error
+                }
+                pageDurationSeconds = try await downloadFromYouTubePlayback(transfer, pageURL: sourceURL,
+                    duration: duration, source: webView, window: window)
             }
 
             if transfer.isCanceled { throw CancellationError() }
@@ -480,6 +505,12 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                 destinationURL: stagedMovie,
                 maximumDurationSeconds: pageDurationSeconds
             ) { transfer.exporter = $0 }
+            if transfer.isUsingPlaybackDownload, let pageDurationSeconds {
+                let savedDuration = try await AVURLAsset(url: stagedMovie).load(.duration).seconds
+                guard YouTubePlaybackDownload.hasCompleteCoverage(duration: pageDurationSeconds, covered: savedDuration) else {
+                    throw StreamingMediaDownloadError.missingTrack
+                }
+            }
             try Task.checkCancellation()
             guard !transfer.isCanceled else { throw CancellationError() }
             try FileManager.default.moveItem(at: stagedMovie, to: destinationURL)
@@ -501,7 +532,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     private func downloadFromYouTubePlayback(_ transfer: Transfer, pageURL: URL,
-                                             duration: Double, source: WKWebView) async throws -> Double {
+                                             duration: Double, source: WKWebView, window: UIWindow) async throws -> Double {
         transfer.isUsingPlaybackDownload = true
         transfer.failureMessage = ""
         transfer.expectedVideoBytes = 0
@@ -518,6 +549,11 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             }
             let totals = try await transfer.writer.append(bytes, to: track, index: index)
             received = SafeNumericValue.byteCountTotal([totals.video, totals.audio]) ?? .max
+        } restart: {
+            try await transfer.writer.reset()
+            guard !transfer.isCanceled else { throw CancellationError() }
+            received = 0
+            manager.updateProgress(id: transfer.itemID, completed: 0, total: 0)
         } progress: { fraction in
             guard fraction > 0, received > 0 else { return }
             let estimate = Int64(exactly: (Double(received) / fraction).rounded(.up)) ?? .max
@@ -530,7 +566,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             transfer.playbackDownload = nil
         }
         capture.setPaused(transfer.isPaused)
-        return try await capture.collect(behind: source)
+        return try await capture.collect(in: window)
     }
 
     private static func youtubeVODDuration(_ response: String) -> Double? {
@@ -578,7 +614,8 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         resource: WebMediaResource,
         preferredFilename: String?,
         pageURL: URL?,
-        webView: WKWebView
+        webView: WKWebView,
+        transferURL: URL? = nil
     ) async throws -> URL {
         guard resource.kind == .video, resource.delivery == .hls else {
             throw StreamingMediaDownloadError.unavailable
@@ -591,12 +628,22 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             preferredFilename ?? resource.suggestedFilename,
             fallback: resource.title
         )
+        if let transferURL {
+            let replacement = WebMediaResource(kind: resource.kind, url: transferURL, title: resource.title,
+                posterURL: resource.posterURL, delivery: .hls, sourcePageURL: resource.sourcePageURL)
+            return try await AuthenticatedHLSDownloadService.shared.download(resource: replacement, preferredName: filename,
+                pageURL: pageURL, webView: webView, sourceURL: resource.url)
+        }
         let options = await WebResourceMediaService.networkAssetOptions(for: resource, webView: webView)
         let scopedUserAgent = options[AVURLAssetHTTPUserAgentKey] as? String
-        let decoratedSegments = await HLSPlaybackBridge.requiresSegmentNormalization(resource: resource, webView: webView)
-        if decoratedSegments || (options[AVURLAssetHTTPCookiesKey] as? [HTTPCookie])?.isEmpty == false
+        let prefersSegments = await HLSPlaybackBridge.prefersSegmentDownload(resource: resource, webView: webView)
+        if prefersSegments || (options[AVURLAssetHTTPCookiesKey] as? [HTTPCookie])?.isEmpty == false
             || scopedUserAgent.map({ $0 != AppConstants.mobileWebViewUserAgent }) == true {
-            return try await AuthenticatedHLSDownloadService.shared.download(resource: resource, preferredName: filename, pageURL: pageURL, webView: webView)
+            return try await AuthenticatedHLSDownloadService.shared.download(resource: resource, preferredName: filename,
+                pageURL: pageURL, webView: webView)
+        }
+        guard manager.activeDownload(for: resource.url) == nil else {
+            throw StreamingMediaDownloadError.alreadyInProgress
         }
         let (item, destinationURL) = manager.beginDownload(
             suggestedFilename: filename,
@@ -605,14 +652,14 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             hlsUsesPersistentCookies: webView.configuration.websiteDataStore.isPersistent
         )
         let asset = AVURLAsset(url: resource.url, options: options)
-        let playbackAsset = AVURLAsset(url: resource.url, options: options)
         let requestContext = VideoPlaybackRequestContext(
-            url: resource.url, referrer: pageURL,
+            url: resource.url, referrer: resource.sourcePageURL ?? pageURL,
             userAgent: options[AVURLAssetHTTPUserAgentKey] as? String ?? AppConstants.mobileWebViewUserAgent,
-            cookies: options[AVURLAssetHTTPCookiesKey] as? [HTTPCookie] ?? [])
+            cookies: options[AVURLAssetHTTPCookiesKey] as? [HTTPCookie] ?? [],
+            manifests: WebMediaManifestCache.snapshot(webView: webView),
+            omitsReferrer: WebMediaManifestCache.omitsReferrer(for: resource.url, webView: webView))
         let keyLoader = HLSKeyResourceLoader(context: requestContext)
         asset.resourceLoader.setDelegate(keyLoader, queue: .main)
-        playbackAsset.resourceLoader.setDelegate(keyLoader, queue: .main)
         guard let initialStatus = manager.downloads.first(where: { $0.id == item.id })?.status,
               initialStatus == .inProgress || initialStatus == .paused else {
             throw CancellationError()
@@ -628,12 +675,9 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         }
 
         return try await withCheckedThrowingContinuation { continuation in
-            guard let task = hlsSession.makeAssetDownloadTask(
-                asset: asset,
+            guard let task = hlsSession.makeAssetDownloadTask(asset: asset,
                 assetTitle: resource.title.isEmpty ? filename : resource.title,
-                assetArtworkData: nil,
-                options: nil
-            ) else {
+                assetArtworkData: nil, options: nil) else {
                 manager.markFailed(id: item.id, error: StreamingMediaDownloadError.unavailable)
                 try? FileManager.default.removeItem(at: stagingDirectory)
                 continuation.resume(throwing: StreamingMediaDownloadError.unavailable)
@@ -641,10 +685,10 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             }
             task.taskDescription = item.id.uuidString
             task.urlAsset.resourceLoader.setDelegate(keyLoader, queue: .main)
-            // Sharing task.urlAsset with AVPlayer can stall the native download
-            // at 25–50%. Separate objects retain the same UA/cookie snapshot.
-            manager.registerPlaybackSource(id: item.id, asset: playbackAsset, pageURL: pageURL,
-                                           webView: webView, downloadAsset: task.urlAsset, resourceLease: keyLoader)
+            // The player and download use the original asset so AVFoundation
+            // can reuse the completed segments of the same variant.
+            manager.registerPlaybackSource(id: item.id, asset: asset, pageURL: pageURL,
+                                           webView: webView, downloadAsset: asset, resourceLease: keyLoader)
             hlsTransfers[task.taskIdentifier] = HLSTransfer(
                 itemID: item.id,
                 sourceURL: resource.url,
@@ -654,7 +698,22 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                 requestContext: requestContext
             )
             hlsTransfers[task.taskIdentifier]?.keyLoader = keyLoader
+            hlsTransfers[task.taskIdentifier]?.playbackAsset = asset
+            if let transfer = hlsTransfers[task.taskIdentifier] {
+                prepareHLSCachePlayback(transfer)
+                observeHLSProgress(of: task, transfer: transfer)
+            }
             if initialStatus == .inProgress { task.resume() }
+        }
+    }
+
+    private func prepareHLSCachePlayback(_ transfer: HLSTransfer) {
+        DownloadManagerService.shared.setCachedPlaybackPreparation(for: transfer.itemID) { [weak transfer] in
+            guard let transfer, transfer.loadedFraction > 0, let destination = transfer.downloadedAssetURL,
+                  let context = transfer.requestContext,
+                  let package = try? OfflineHLSReference.canonicalPackageURL(for: destination)
+            else { return nil }
+            return await HLSPlaybackBridge.assetUsingDownloadCache(context: context, package: package)
         }
     }
 
@@ -739,25 +798,38 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         totalTimeRangesLoaded loadedTimeRanges: [NSValue],
         timeRangeExpectedToLoad: CMTimeRange
     ) {
-        guard let transfer = hlsTransfers[assetDownloadTask.taskIdentifier] else { return }
         let loaded = loadedTimeRanges.reduce(0.0) {
             $0 + $1.timeRangeValue.duration.seconds
         }
         let expected = timeRangeExpectedToLoad.duration.seconds
         guard loaded.isFinite, expected.isFinite, expected > 0 else { return }
-        transfer.loadedFraction = min(max(loaded / expected, 0), 1)
-        if assetDownloadTask.countOfBytesReceived > 0 {
-            transfer.receivedBytes = max(transfer.receivedBytes ?? 0, assetDownloadTask.countOfBytesReceived)
+        publishHLSProgress(loaded / expected, for: assetDownloadTask)
+    }
+
+    private func observeHLSProgress(of task: AVAssetDownloadTask, transfer: HLSTransfer) {
+        transfer.progressObservation = task.progress.observe(\.fractionCompleted, options: [.initial, .new]) { [weak self, weak task] progress, _ in
+            let fraction = progress.fractionCompleted
+            Task { @MainActor in
+                guard let self, let task else { return }
+                self.publishHLSProgress(fraction, for: task)
+            }
         }
+    }
+
+    private func publishHLSProgress(_ fraction: Double, for task: AVAssetDownloadTask) {
+        guard let transfer = hlsTransfers[task.taskIdentifier], !transfer.isCanceled, transfer.finalizationTask == nil else { return }
+        if fraction.isFinite { transfer.loadedFraction = max(transfer.loadedFraction, min(fraction, 1)) }
+        let received = task.countOfBytesReceived
+        if received > 0 { transfer.receivedBytes = max(transfer.receivedBytes ?? 0, received) }
         DownloadManagerService.shared.updateHLSProgress(id: transfer.itemID,
             fraction: transfer.loadedFraction, receivedBytes: transfer.receivedBytes)
         // Some AVAssetDownloadURLSession implementations expose only time.
         // Sample the actual saved package off the main actor, at most once/sec.
         let now = ProcessInfo.processInfo.systemUptime
-        guard assetDownloadTask.countOfBytesReceived <= 0, transfer.byteSampleTask == nil,
+        guard received <= 0, transfer.byteSampleTask == nil,
               now - transfer.byteSampleTime >= 1, let location = transfer.downloadedAssetURL else { return }
         transfer.byteSampleTime = now
-        let taskID = assetDownloadTask.taskIdentifier
+        let taskID = task.taskIdentifier
         transfer.byteSampleTask = Task { @MainActor [weak self] in
             defer { transfer.byteSampleTask = nil }
             let work = Task.detached(priority: .utility) { FileStorageSize.bytes(at: location) }
@@ -794,7 +866,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         didCompleteWithError error: Error?
     ) {
         guard let transfer = hlsTransfers[task.taskIdentifier], transfer.finalizationTask == nil else { return }
-        let playbackAsset = (task as? AVAssetDownloadTask)?.urlAsset
+        let playbackAsset = transfer.playbackAsset
         if transfer.isCanceled {
             transfer.continuation?.resume(throwing: CancellationError())
             if let package = transfer.downloadedAssetURL { removeHLSCache(at: package, playbackAsset: playbackAsset) }
@@ -824,16 +896,24 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         }
         transfer.backgroundAssertion = UIApplication.shared.beginBackgroundTask(withName: "Finish HLS download") {
             Task { @MainActor in
-                if !MediaExportBackgroundService.shared.isRunning { transfer.finalizationTask?.cancel() }
+                // The expiration callback can arrive after the app returns
+                // to the foreground. Let that active finalization finish.
+                if UIApplication.shared.applicationState == .background, !MediaExportBackgroundService.shared.isRunning {
+                    transfer.finalizationTask?.cancel()
+                }
             }
         }
         transfer.finalizationTask = Task { @MainActor in
-            defer { cleanupHLSTransfer(transfer) }
+            let manager = DownloadManagerService.shared
+            manager.setHLSFinalizing(true, for: transfer.itemID)
+            defer {
+                manager.setHLSFinalizing(false, for: transfer.itemID)
+                cleanupHLSTransfer(transfer)
+            }
             var finalizedURL: URL?
             do {
                 try Task.checkCancellation()
                 let managedAssetURL = try OfflineHLSReference.canonicalPackageURL(for: downloadedAssetURL)
-                let manager = DownloadManagerService.shared
                 if manager.downloads.first(where: { $0.id == transfer.itemID })?.status == .paused {
                     manager.markResumed(id: transfer.itemID)
                 }
@@ -850,12 +930,8 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                     }
                 } else {
                     try? FileManager.default.removeItem(at: transfer.destinationURL)
-                    manager.updateFileReference(from: transfer.destinationURL, to: completedURL)
                 }
-                if let bytes {
-                    manager.updateProgress(id: transfer.itemID, completed: bytes, total: bytes)
-                }
-                manager.markFinished(id: transfer.itemID)
+                manager.markFinished(id: transfer.itemID, savedURL: completedURL, savedBytes: bytes)
                 transfer.continuation?.resume(returning: completedURL)
             } catch {
                 if let finalizedURL { try? FileManager.default.removeItem(at: finalizedURL) }
@@ -993,10 +1069,17 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         guard ready else { throw StreamingMediaDownloadError.unavailable }
     }
 
-    private func prepareYouTubePlayerContext(in webView: WKWebView) async throws -> String {
-        for attempt in 0..<20 {
-            let playerResponseJSON = try await webView.evaluateCompatibleJavaScript(#"""
-        (() => {
+    private func prepareYouTubePlayerContext(in webView: WKWebView, videoID: String, collectionPage: URL?) async throws -> String {
+        // A result click can commit the watch URL before the player publishes
+        // its response. Keep accepting the same video while it initializes.
+        let deadline = ContinuousClock.now + .seconds(8)
+        repeat {
+            guard let page = webView.url,
+                  page == collectionPage || WebResourceMediaService.youtubeVideoID(for: page) == videoID else {
+                throw StreamingMediaDownloadError.unavailable
+            }
+            let playerResponseJSON = try await webView.callAsyncJavaScript(#"""
+        return (() => {
             function currentVideoID() {
                 try {
                     const pageURL = new URL(location.href);
@@ -1016,13 +1099,13 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                 }
             }
 
-            const expectedVideoID = currentVideoID();
+            if (currentVideoID() !== videoID && (!collectionURL || new URL(collectionURL).href !== location.href)) return '';
             function cache(value) {
                 try {
                     if (typeof value === 'string') value = JSON.parse(value);
                     const snapshot = JSON.parse(JSON.stringify(value));
                     const responseVideoID = String(snapshot?.videoDetails?.videoId || '');
-                    if (expectedVideoID && responseVideoID !== expectedVideoID) return false;
+                    if (responseVideoID !== videoID) return false;
                     const streamingData = snapshot && snapshot.streamingData;
                     if (!streamingData || typeof streamingData !== 'object') return false;
                     if (!streamingData.serverAbrStreamingUrl
@@ -1045,7 +1128,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                 }
             } catch (_) {}
             candidates.push(
-                expectedVideoID && window.__souloYouTubePlayerResponses?.[expectedVideoID],
+                window.__souloYouTubePlayerResponses?.[videoID],
                 window.__souloYouTubePlayerResponse,
                 window.ytInitialPlayerResponse,
                 window.ytplayer?.bootstrapPlayerResponse,
@@ -1066,10 +1149,12 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             }
             return '';
         })();
-        """#) as? String ?? ""
+        """#, arguments: ["videoID": videoID, "collectionURL": collectionPage?.absoluteString ?? ""],
+                in: nil, contentWorld: .page) as? String ?? ""
             if !playerResponseJSON.isEmpty { return playerResponseJSON }
-            if attempt < 19 { try await Task.sleep(for: .milliseconds(100)) }
-        }
+            try await Task.sleep(for: .milliseconds(200))
+        } while .now < deadline
+        BrowserStartupTrace.mark("youtube_download_player_context_unavailable")
         throw StreamingMediaDownloadError.unavailable
     }
 
@@ -1089,6 +1174,20 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                 of: "fetch:window.fetch.bind(window)",
                 with: "fetch:window.__souloNativeFetch.bind(window)"
             )
+    }
+
+    nonisolated static func canRetryUsingYouTubePlayback(_ error: Error) -> Bool {
+        switch surfacedStreamingError(error) as? StreamingMediaDownloadError {
+        case .youtubeVerificationRequired:
+            return true
+        case .exportFailed(let message):
+            let reason = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            return reason.hasPrefix("Error: SABR Error: sabr.malformed_config - ")
+                || reason == "TypeError: Load failed"
+                || reason == "Error: No suitable formats found for download"
+        default:
+            return false
+        }
     }
 
     nonisolated static func surfacedStreamingError(_ error: Error) -> Error {
@@ -1226,6 +1325,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     private func cleanupHLSTransfer(_ transfer: HLSTransfer) {
+        transfer.progressObservation?.invalidate(); transfer.progressObservation = nil
         transfer.byteSampleTask?.cancel(); transfer.byteSampleTask = nil
         if let key = hlsTransfers.first(where: { $0.value === transfer })?.key { hlsTransfers.removeValue(forKey: key) }
         transfer.finalizationTask = nil
@@ -1321,19 +1421,27 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         }
         let asset = AVURLAsset(url: packageURL)
         asset.resourceLoader.setDelegate(transfer.keyLoader, queue: .main)
-        guard asset.assetCache?.isPlayableOffline == true,
-              try await asset.load(.isPlayable), await offlineHLSHasVideo(asset) else {
-            throw conversionError ?? StreamingMediaDownloadError.exportFailed("")
+        if asset.assetCache?.isPlayableOffline == true,
+           (try? await asset.load(.isPlayable)) == true,
+           await offlineHLSHasVideo(asset) {
+            try Task.checkCancellation()
+            let destination = uniqueHLSReferenceURL(for: transfer.destinationURL)
+            try FileManager.default.moveItem(at: reference, to: destination)
+            return destination
         }
         try Task.checkCancellation()
-        let destination = uniqueHLSReferenceURL(for: transfer.destinationURL)
-        try FileManager.default.moveItem(at: reference, to: destination)
-        return destination
+        // An ordinary AES-128 package can have complete segments and a verified
+        // key even when AVFoundation cannot reopen its managed offline asset.
+        // Use the same validated cached conversion as the explicit MP4 export.
+        guard encryption != nil else { throw conversionError ?? StreamingMediaDownloadError.exportFailed("") }
+        try await Self.convertCachedHLS(reference: reference, to: transfer.destinationURL)
+        return transfer.destinationURL
     }
 
     static func convertCachedHLS(reference: URL, to destination: URL) async throws {
         let output = try await OfflineVideoConversionService.exportMP4(
-            from: reference, into: reference.deletingLastPathComponent(), preferredFilename: destination.lastPathComponent
+            from: reference, into: reference.deletingLastPathComponent(),
+            preferredFilename: destination.lastPathComponent, allowTranscoding: false
         )
         try Task.checkCancellation()
         try? FileManager.default.removeItem(at: destination) // An earlier system export may have left a partial file.

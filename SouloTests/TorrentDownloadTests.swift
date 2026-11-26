@@ -7,14 +7,98 @@ import XCTest
 @testable import Soulo
 
 final class TorrentDownloadTests: XCTestCase {
+    func testLiveMagnetDownloadMatrix() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        try XCTSkipUnless(environment["SOULO_LIVE_MAGNET_QA"] == "1", "Opt-in live BitTorrent check")
+        let input = try XCTUnwrap(environment["SOULO_QA_MAGNETS"].flatMap { Data(base64Encoded: $0) },
+                                  "Supply base64-encoded magnet links, one per line")
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let worker = TorrentEngineWorker()
+        struct Sample {
+            let label: String
+            let started: ContinuousClock.Instant
+            var metadataAt: ContinuousClock.Instant?
+            var firstData = false
+            var finished = false
+            var peers = 0
+            var knownPeers = 0
+            var seeders = 0
+            var bytes: Int64 = 0
+            var total: Int64 = 0
+        }
+        var samples: [UUID: Sample] = [:]
+        let timeout = max(10, min(900, Int(environment["SOULO_QA_MAGNET_SECONDS"] ?? "") ?? 180))
+        let maxBytes = Int64(8 * 1024 * 1024 * 1024)
+        for raw in String(decoding: input, as: UTF8.self).split(whereSeparator: \.isNewline) {
+            guard case .magnet(let url) = try PeerDownloadLink.parse(String(raw)) else {
+                XCTFail("Expected a magnet link")
+                continue
+            }
+            let info = try await worker.inspect(magnet: url.absoluteString)
+            let explicit = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.filter { $0.name == "tr" }.count ?? 0
+            let id = UUID()
+            let directory = root.appendingPathComponent(id.uuidString, isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+            let label = String(info.hash.prefix(7))
+            samples[id] = Sample(label: label, started: .now)
+            print("MAGNET_QA_START \(label) explicitTrackers=\(explicit)")
+            try await worker.add(id: id, data: nil, magnet: url.absoluteString, directory: directory,
+                                 resume: nil, priorities: [], metadataOnly: true)
+        }
+        XCTAssertFalse(samples.isEmpty)
+        let deadline = ContinuousClock.now + .seconds(timeout)
+        while .now < deadline, samples.values.contains(where: { !$0.finished }) {
+            for snapshot in await worker.snapshots() {
+                guard var sample = samples[snapshot.id], !sample.finished else { continue }
+                sample.peers = max(sample.peers, snapshot.peers)
+                sample.knownPeers = max(sample.knownPeers, snapshot.knownPeers)
+                sample.seeders = max(sample.seeders, snapshot.seeders)
+                sample.bytes = max(sample.bytes, snapshot.completed)
+                if !snapshot.error.isEmpty {
+                    print("MAGNET_QA_ERROR \(sample.label) \(snapshot.error)")
+                    sample.finished = true
+                } else if sample.metadataAt == nil, let metadata = snapshot.metadata, !metadata.files.isEmpty {
+                    let total = metadata.files.filter { !$0.pad }.reduce(Int64(0)) { $0 + $1.size }
+                    sample.metadataAt = .now
+                    sample.total = total
+                    print("MAGNET_QA_METADATA \(sample.label) elapsed=\(sample.started.duration(to: .now)) files=\(metadata.files.count) bytes=\(total)")
+                    if total > 0, total <= maxBytes {
+                        await worker.resume(id: snapshot.id, priorities: metadata.files.map { !$0.pad })
+                    } else {
+                        print("MAGNET_QA_SIZE \(sample.label) outside test capacity")
+                        sample.finished = true
+                    }
+                }
+                if sample.metadataAt != nil, !sample.firstData, snapshot.completed > 0 {
+                    sample.firstData = true
+                    print("MAGNET_QA_FIRST_DATA \(sample.label) elapsed=\(sample.started.duration(to: .now)) bytes=\(snapshot.completed)")
+                }
+                if sample.total > 0, snapshot.finished, snapshot.completed >= sample.total {
+                    print("MAGNET_QA_COMPLETE \(sample.label) elapsed=\(sample.started.duration(to: .now)) bytes=\(snapshot.completed)")
+                    sample.finished = true
+                }
+                samples[snapshot.id] = sample
+            }
+            try await Task.sleep(for: .seconds(1))
+        }
+        for (id, sample) in samples {
+            print("MAGNET_QA_RESULT \(sample.label) metadata=\(sample.metadataAt != nil) verified=\(sample.bytes) total=\(sample.total) peers=\(sample.peers) knownPeers=\(sample.knownPeers) seeders=\(sample.seeders)")
+            _ = await worker.remove(id: id, deleteFiles: false)
+        }
+    }
+
     func testPublicTrackerCacheRefreshesDailyKeepsLastGoodAndCoalescesRequests() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let cache = root.appendingPathComponent("trackers.json"), calls = TrackerFetchCounter()
-        let list = ["udp://one.example:1337/announce", "https://two.example/announce"]
-        let store = PublicTorrentTrackerStore(cacheURL: cache) { _ in
+        let firstList = ["udp://one.example:1337/announce", "https://two.example/announce"]
+        let secondList = [firstList[0], "https://three.example/announce"]
+        let list = firstList + [secondList[1]]
+        let store = PublicTorrentTrackerStore(cacheURL: cache) { url in
             await calls.add(); try await Task.sleep(for: .milliseconds(100))
-            return Data(list.joined(separator: "\n").utf8)
+            return Data((url.path.contains("ngosang") ? firstList : secondList).joined(separator: "\n").utf8)
         }
         let initial = await store.current(); XCTAssertEqual(initial, PublicTorrentTrackerStore.fallback)
         let now = Date()
@@ -22,14 +106,26 @@ final class TorrentDownloadTests: XCTestCase {
         async let second = store.refreshIfNeeded(now: now)
         let results = await (first, second)
         XCTAssertEqual(results.0, list); XCTAssertEqual(results.1, list)
-        let count = await calls.count; XCTAssertEqual(count, 1)
+        let count = await calls.count; XCTAssertEqual(count, 2)
         let daily = await store.refreshIfNeeded(now: now.addingTimeInterval(86399)); XCTAssertEqual(daily, list)
-        let countAfter = await calls.count; XCTAssertEqual(countAfter, 1)
+        let countAfter = await calls.count; XCTAssertEqual(countAfter, 2)
         let restored = PublicTorrentTrackerStore(cacheURL: cache) { _ in throw URLError(.notConnectedToInternet) }
         let persisted = await restored.current(); XCTAssertEqual(persisted, list)
         let offline = await restored.refreshIfNeeded(now: now.addingTimeInterval(86401)); XCTAssertEqual(offline, list)
         let invalid = PublicTorrentTrackerStore(cacheURL: cache) { _ in Data("<html>service unavailable</html>".utf8) }
         let malformed = await invalid.refreshIfNeeded(now: now.addingTimeInterval(172801)); XCTAssertEqual(malformed, list)
+
+        let newList = ["https://four.example/announce", "https://five.example/announce"]
+        let partlyAvailable = PublicTorrentTrackerStore(cacheURL: cache) { url in
+            guard url.host == "trackerslist.com" else { throw URLError(.cannotConnectToHost) }
+            return Data(newList.joined(separator: "\n").utf8)
+        }
+        let combined = [firstList[0], newList[0], firstList[1], newList[1]]
+        let refreshed = await partlyAvailable.refreshIfNeeded(now: now.addingTimeInterval(86401))
+        XCTAssertEqual(refreshed, combined)
+        let reloaded = PublicTorrentTrackerStore(cacheURL: cache) { _ in throw URLError(.notConnectedToInternet) }
+        let reloadedTrackers = await reloaded.current()
+        XCTAssertEqual(reloadedTrackers, combined)
     }
 
     func testPublicTrackerParserRejectsUnsafeAndOversizedListsAndBoundsFanout() {
@@ -41,12 +137,47 @@ final class TorrentDownloadTests: XCTestCase {
         XCTAssertEqual(PublicTorrentTrackerStore.parse(Data(many.utf8)).count, 24)
     }
 
-    func testDiscoveryKeepsHTTPSInsideTheTrackerLimit() {
+    func testDiscoveryKeepsHTTPAndHTTPSInsideTheTrackerLimit() {
         let udp = (0..<24).map { "udp://tracker\($0).example:1337/announce" }
         let discovery = PublicTorrentTrackerStore.discoveryTrackers(udp)
         XCTAssertEqual(discovery.count, 24)
+        XCTAssertTrue(discovery.contains("http://tracker.opentrackr.org:1337/announce"))
         XCTAssertTrue(discovery.contains { $0.hasPrefix("https://") })
         XCTAssertEqual(PublicTorrentTrackerStore.discoveryTrackers(discovery), discovery)
+    }
+
+    func testPastedHTMLMagnetPreservesTrackersAndOtherDownloadURLs() throws {
+        let hash = "0123456789abcdef0123456789abcdef01234567"
+        let tracker = "https://tracker.example/announce?token=a%26amp%3Bb"
+        let raw = "MAGNET:?xt=urn:btih:\(hash)&amp;dn=Study%20notes&amp;tr=\(tracker)&amp;tr=udp://tracker.example:1337/announce"
+        guard case .magnet(let url) = try PeerDownloadLink.parse(raw) else { return XCTFail("Expected a magnet") }
+        XCTAssertTrue(url.absoluteString.hasPrefix("magnet:"))
+        XCTAssertTrue(url.absoluteString.contains(tracker))
+        let items = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
+        XCTAssertEqual(items.first(where: { $0.name == "dn" })?.value, "Study notes")
+        XCTAssertEqual(items.filter { $0.name == "tr" }.compactMap(\.value),
+                       ["https://tracker.example/announce?token=a&amp;b", "udp://tracker.example:1337/announce"])
+
+        let web = try XCTUnwrap(URL(string: "https://example.org/file?word=a&amp;part=b"))
+        XCTAssertEqual(try PeerDownloadLink.parse(web.absoluteString), .web(web))
+    }
+
+    func testMagnetTrackersAreRecoveredFromAnOlderCheckpoint() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let magnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567"
+        let tracker = "http://127.0.0.1:9/original"
+        let engine = SLTorrentEngine(certificateFile: "", discoveryEnabled: false)
+        try engine.addIdentifier("old", data: nil, magnet: magnet, directory: root.path,
+                                 resumeData: nil, priorities: [], metadataOnly: true)
+        let checkpoint = try XCTUnwrap(engine.pauseAndSave("old"))
+        XCTAssertTrue(engine.remove("old", deleteFiles: false))
+        let restored = SLTorrentEngine(certificateFile: "", discoveryEnabled: false)
+        try restored.addIdentifier("restored", data: nil, magnet: magnet + "&tr=" + tracker, directory: root.path,
+                                   resumeData: checkpoint, priorities: [], metadataOnly: true)
+        XCTAssertEqual(restored.trackerURLs("restored"), [tracker])
+        XCTAssertTrue(restored.remove("restored", deleteFiles: false))
     }
 
     func testAutomaticTrackersPreservePublisherEntriesExcludePrivateAndAreNotSavedAsUserTrackers() async throws {
@@ -60,6 +191,8 @@ final class TorrentDownloadTests: XCTestCase {
         engine.updatePublicTrackers([first])
         try engine.addIdentifier("public", data: bencode(["announce": publisher, "info": info]), magnet: nil, directory: root.appendingPathComponent("public").path, resumeData: nil, priorities: [1], metadataOnly: true)
         try await wait { Set(engine.trackerURLs("public")) == Set([publisher, first]) }
+        engine.updatePublicTrackers([first, second])
+        try await wait { Set(engine.trackerURLs("public")) == Set([publisher, first, second]) }
         engine.updatePublicTrackers([second])
         try await wait { Set(engine.trackerURLs("public")) == Set([publisher, second]) }
         let resume = try XCTUnwrap(engine.pauseAndSave("public"))
@@ -343,14 +476,19 @@ final class TorrentDownloadTests: XCTestCase {
                                 priorities: [1,1], metadataOnly: false)
         try await wait { (seeder.snapshots().first?["finished"] as? Bool) == true && seeder.listeningPort > 0 }
         var leecher: SLTorrentEngine? = SLTorrentEngine(certificateFile: "", discoveryEnabled: false)
-        try leecher!.addIdentifier("download", data: fixture.data, magnet: nil, directory: download.path, resumeData: nil,
+        let downloadID = UUID().uuidString
+        try leecher!.addIdentifier(downloadID, data: fixture.data, magnet: nil, directory: download.path, resumeData: nil,
                                   priorities: [1,0], metadataOnly: false)
-        leecher!.setDownloadLimit(96 * 1024, identifier: "download")
-        leecher!.connectIdentifier("download", host: "127.0.0.1", port: seeder.listeningPort)
+        leecher!.setDownloadLimit(96 * 1024, identifier: downloadID)
+        leecher!.connectIdentifier(downloadID, host: "127.0.0.1", port: seeder.listeningPort)
+        try await wait {
+            guard let values = leecher?.snapshots().first, let snapshot = TorrentSnapshot(values) else { return false }
+            return snapshot.knownPeers >= snapshot.peers && snapshot.peers > 0 && snapshot.seeders > 0
+        }
         try await wait { (leecher!.snapshots().first?["done"] as? Int64 ?? 0) > 128 * 1024 }
-        let resume = try XCTUnwrap(leecher!.pauseAndSave("download"))
+        let resume = try XCTUnwrap(leecher!.pauseAndSave(downloadID))
         XCTAssertFalse(resume.isEmpty)
-        leecher!.remove("download", deleteFiles: false)
+        leecher!.remove(downloadID, deleteFiles: false)
         leecher = nil
         let restored = SLTorrentEngine(certificateFile: "", discoveryEnabled: false)
         try restored.addIdentifier("restored", data: nil, magnet: nil, directory: download.path, resumeData: resume,

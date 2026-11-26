@@ -44,6 +44,86 @@ final class ManualAdBlockTests: XCTestCase {
         super.tearDown()
     }
 
+    func testPBKanTiledOverlayIsScopedAndPreservesPlayerAndEpisodeLinks() async throws {
+        let rule = try XCTUnwrap(AdBlockService.defaultBuiltInRules.first { $0.id == "pbkan-tiled-overlay" })
+        let html = #"""
+            <body><rntafp style="position:fixed;z-index:2147483646;display:block;width:40px;height:30px;
+                background-position:0 20px;background-size:390px 120px"></rntafp>
+            <iframe id="player" style="position:fixed;z-index:2147483646" srcdoc="<video controls></video>"></iframe>
+            <ul id="play-box"><li><a href="/yun/241110-3-14.html">Episode 14</a></li></ul></body>
+            """#
+        for (name, allowlist, shouldHide) in [("www.pbkan.com", [String](), true), ("www.pbkan.com", ["pbkan.com"], false),
+                                             ("pbkan.com.example.test", [String](), false)] {
+            let config = WKWebViewConfiguration()
+            config.websiteDataStore = .nonPersistent()
+            config.userContentController.addUserScript(WKUserScript(source: AdBlockService.adHidingScript(allowlistedHosts: allowlist),
+                injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+            let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 700), configuration: config)
+            web.loadHTMLString(html, baseURL: URL(string: "https://\(name)/yun/241110-3-14.html"))
+            for _ in 0..<100 {
+                if (try? await js("typeof window.__souloAdBlockRemoveAds === 'function' && !!document.querySelector('rntafp')", web)) as? Bool == true { break }
+                try await Task.sleep(for: .milliseconds(30))
+            }
+            let hidden = try await web.callAsyncJavaScript("""
+                window.__souloAdBlockRemoveAds?.();
+                return {matched:document.querySelectorAll(selector).length,
+                    promo:getComputedStyle(document.querySelector('rntafp')).display === 'none',
+                    player:getComputedStyle(document.getElementById('player')).display !== 'none',
+                    episodes:document.querySelectorAll('#play-box a').length};
+                """, arguments: ["selector": rule.pattern], in: nil, contentWorld: .page) as? [String: Any]
+            XCTAssertEqual(hidden?["matched"] as? Int, 1)
+            XCTAssertEqual(hidden?["promo"] as? Bool, shouldHide, name)
+            XCTAssertEqual(hidden?["player"] as? Bool, true)
+            XCTAssertEqual(hidden?["episodes"] as? Int, 1)
+        }
+    }
+
+    func testLivePBKanHidesOverlayTilesWhilePlayerAndEpisodesStayAvailable() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_PBKAN_AD_QA"] == "1", "Opt-in live overlay inspection")
+        let page = try XCTUnwrap(URL(string: "https://www.pbkan.com/yun/241110-3-14.html"))
+        let rule = try XCTUnwrap(AdBlockService.defaultBuiltInRules.first { $0.id == "pbkan-tiled-overlay" })
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene), host = UIViewController()
+        window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        configuration.allowsInlineMediaPlayback = true
+        configuration.mediaTypesRequiringUserActionForPlayback = []
+        let web = WKWebView(frame: host.view.bounds, configuration: configuration)
+        web.customUserAgent = AppConstants.mobileWebViewUserAgent
+        host.view.addSubview(web)
+        web.load(URLRequest(url: page))
+        func state() async -> [String: Int] {
+            (try? await web.callAsyncJavaScript("""
+                const found=[...document.querySelectorAll(selector)];
+                const frame=document.querySelector('iframe[src*="/static/player/"]');
+                const video=frame?.contentDocument?.querySelector('video');
+                return {tiles:found.length, visible:found.filter(e=>e.getClientRects().length).length,
+                    player:video ? 1 : 0, episodes:document.querySelectorAll('#play-box a').length};
+                """, arguments: ["selector": rule.pattern], in: nil, contentWorld: .page)) as? [String: Int] ?? [:]
+        }
+        var before: [String: Int] = [:]
+        for _ in 0..<100 {
+            before = await state()
+            if (before["visible"] ?? 0) > 0, before["player"] == 1 { break }
+            try await Task.sleep(for: .milliseconds(200))
+        }
+        _ = try await web.evaluateJavaScript(AdBlockService.adHidingScript() + "\nnull")
+        var after: [String: Int] = [:]
+        for _ in 0..<30 {
+            after = await state()
+            if after["visible"] == 0, (after["tiles"] ?? 0) > 0 { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        print("PBKAN_AD before=\(before) after=\(after)")
+        XCTAssertGreaterThan(before["visible"] ?? 0, 0)
+        XCTAssertEqual(after["visible"], 0)
+        XCTAssertEqual(after["player"], 1)
+        XCTAssertEqual(after["episodes"], before["episodes"])
+        XCTAssertGreaterThan(after["episodes"] ?? 0, 0)
+    }
+
     func testPersistenceDeduplicationScopesAndRestore() throws {
         let suite = "ManualAdRules-\(UUID())"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

@@ -369,6 +369,7 @@
 "torrent_select_all" = "Seleccioneu Tot";
 "torrent_select_none" = "Desseleccioneu-ho tot";
 "torrent_peers" = "%d iguals";
+"torrent_peer_counts" = "Connectats %d/%d · Llavors %d";
 "torrent_duplicate" = "Aquest torrent ja està a Descàrregues.";
 "torrent_task_limit" = "Elimina alguns registres de baixada abans d'afegir més tasques.";
 "torrent_save_error" = "No es pot desar la tasca. Comprova l'emmagatzematge disponible i torna-ho a provar.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Intensitat del desenfocament";
 
 "home_quick_search_guide" = "Escriu una paraula clau a la pantalla d’inici, tria una plataforma i toca Cerca al teclat.";
-"auto_hide_platform_bar_hint" = "Quan s’activa, la barra només s’amaga després de tocar el contingut web i si el domini de la pàgina no coincideix amb cap plataforma de la barra actual. Si hi ha una coincidència, es manté visible o torna a aparèixer. El desplaçament i les redireccions automàtiques no l’amaguen.";
+"auto_hide_platform_bar_hint" = "Amaga la barra als llocs web fora del grup de plataformes actual. La barra torna a aparèixer quan tornes a una plataforma del grup.";
 
 "ad_subscription_add" = "Afegeix una llista";
 "ad_subscription_name" = "Nom";

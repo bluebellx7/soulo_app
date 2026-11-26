@@ -73,6 +73,14 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
         XCTAssertGreaterThan(try XCTUnwrap(Data(base64Encoded: encoded)).count, 1_000)
     }
 
+    func testOfficialExtensionUpdateRecognizesTheSouloSearchPlatformSource() {
+        let official = "https://soulo.dkluge.com/downloads/soulo-search-platform.zip"
+        XCTAssertEqual(WebExtensionStoreInstallService.officialUpdateSource(for: official), official)
+        XCTAssertNil(WebExtensionStoreInstallService.officialUpdateSource(for: nil))
+        XCTAssertNil(WebExtensionStoreInstallService.officialUpdateSource(for: "https://example.com/downloads/soulo-search-platform.zip"))
+        XCTAssertNil(WebExtensionStoreInstallService.officialUpdateSource(for: "https://soulo.dkluge.com/downloads/another-extension.zip"))
+    }
+
     func testChromeStoreLinkResolvesToNativeCRXDownload() throws {
         let package = try WebExtensionStoreLinkResolver.resolve(
             "https://chromewebstore.google.com/detail/example/cjpalhdlnbpafiamejdnhcphjbkeiagm"

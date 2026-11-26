@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import AVFoundation
 import WebKit
+import Darwin
 
 /// Playback credentials and live HLS assets stay in memory, never in download history.
 @MainActor
@@ -16,6 +17,15 @@ final class DownloadPlaybackSource {
     /// Keeps a playback-scoped local resource alive after its sheet is closed.
     var resourceLease: AnyObject?
     var webMediaContext: WebMediaPlaybackContext?
+    var prepareCachedPlayback: (() async -> AVURLAsset?)?
+
+    func preparedForPlayback() async -> DownloadPlaybackSource {
+        guard let asset = await prepareCachedPlayback?() else { return self }
+        let source = DownloadPlaybackSource(asset: asset, pageURL: pageURL, webView: webView,
+            persistPosition: persistsPosition, downloadAsset: downloadAsset)
+        source.resourceLease = resourceLease
+        return source
+    }
 
     func removePackageWhenReleased(_ url: URL) { packageToRemove = url }
 
@@ -135,6 +145,7 @@ final class DownloadManagerService: ObservableObject {
     @Published private(set) var downloads: [BrowserDownloadItem] = []
     @Published private(set) var hasUnreadableHistory = false
     @Published private(set) var foregroundRequiredDownloadIDs: Set<UUID> = []
+    @Published private(set) var finalizingHLSDownloadIDs: Set<UUID> = []
     let didFinishDownload = PassthroughSubject<BrowserDownloadItem, Never>()
 
     private let userDefaults: UserDefaults
@@ -157,6 +168,10 @@ final class DownloadManagerService: ObservableObject {
     func playbackSource(for id: UUID) -> DownloadPlaybackSource? {
         guard downloads.contains(where: { $0.id == id && $0.status == .inProgress }) else { return nil }
         return playbackSources[id]
+    }
+
+    func setCachedPlaybackPreparation(for id: UUID, prepare: @escaping () async -> AVURLAsset?) {
+        playbackSources[id]?.prepareCachedPlayback = prepare
     }
 
     func setForegroundRequired(_ required: Bool, for id: UUID) {
@@ -225,16 +240,30 @@ final class DownloadManagerService: ObservableObject {
         save()
     }
 
-    func markFinished(id: UUID) {
+    func markFinished(id: UUID, savedURL: URL? = nil, savedBytes: Int64? = nil) {
         guard let index = downloads.firstIndex(where: { $0.id == id }),
               downloads[index].status == .inProgress else { return }
         playbackSources.removeValue(forKey: id)
+        if let savedURL {
+            downloads[index].localPath = savedURL.path
+            downloads[index].fileName = savedURL.lastPathComponent
+        }
+        if let savedBytes {
+            downloads[index].receivedBytes = savedBytes
+            downloads[index].expectedBytes = savedBytes
+        }
         downloads[index].status = .finished
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = ""
         downloads[index].progress = 1
         save()
+        if finalizingHLSDownloadIDs.contains(id) { finalizingHLSDownloadIDs.remove(id) }
         didFinishDownload.send(downloads[index])
+    }
+
+    func setHLSFinalizing(_ finalizing: Bool, for id: UUID) {
+        if finalizing { finalizingHLSDownloadIDs.insert(id) }
+        else { finalizingHLSDownloadIDs.remove(id) }
     }
 
     /// Adopt a validated conversion as a separate file and record. Original
@@ -315,7 +344,11 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func removeResumeData(id: UUID) {
-        try? FileManager.default.removeItem(at: resumeDataURL(id: id))
+        // A download that never paused has no resume file. Unlink keeps this
+        // cleanup idempotent, including when storage cleanup has removed it.
+        resumeDataURL(id: id).withUnsafeFileSystemRepresentation { path in
+            if let path { _ = unlink(path) }
+        }
     }
 
     func markFailed(id: UUID, error: Error, includingPaused: Bool = false) {

@@ -36,6 +36,7 @@ struct LibraryFilesView: View {
     @State private var archive: LocalFile?
     @State private var book: LibraryBook?
     @State private var preview: LocalFile?
+    @State private var videoPreview: LocalFile?
     @State private var extensionPackage: LocalFile?
     @State private var extensionInstallNotice: String?
     @State private var openedDirectory: LocalFile?
@@ -268,6 +269,9 @@ struct LibraryFilesView: View {
         .compatibleNavigationDestination(item: $book) { BookReaderView(book: $0) }
         .compatiblePreviewDestination(item: $preview, isMedia: { [.video, .audio].contains($0.info.kind) }) { file in
             LocalDocumentContent(url: file.url)
+        }
+        .fullScreenCover(item: $videoPreview) { file in
+            LibraryVideoPreview { LocalDocumentContent(url: file.url) }
         }
         .sheet(item: $extensionPackage) { file in
             LocalWebExtensionInstallView(url: file.url) { record in
@@ -781,6 +785,10 @@ struct LibraryFilesView: View {
                     self.error = error.localizedDescription
                 }
             }
+        } else if file.info.kind == .video, #available(iOS 16.4, *) {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { videoPreview = file }
         } else if file.info.kind == .video || file.info.kind == .audio {
             // The file list must use the same codec and partial-torrent checks
             // as download previews; a .mp4 suffix does not guarantee native video.

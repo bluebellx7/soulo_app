@@ -477,6 +477,10 @@ final class SearchVideoNavigationTests: XCTestCase {
     func testHashLinksSubframesAndBlockedPopupsDoNotStopTheCurrentVideo() async throws {
         let server = try fixture()
         let root = try await server.start()
+        // Some WebKit versions start with a full-file request. Keep this
+        // navigation test independent from the fixture's slow-download mode.
+        server.releaseDownloads()
+        UserDefaults.standard.set(true, forKey: BrowserDomainNavigationPolicy.preferenceKey)
         defer { server.stop() }
         let model = WebViewModel()
         let (window,previous) = try host(model)
@@ -491,8 +495,11 @@ final class SearchVideoNavigationTests: XCTestCase {
         try await Task.sleep(for:.milliseconds(300))
         let afterFrame = try await web.evaluateJavaScript("v.paused===false") as? Bool
         XCTAssertEqual(afterFrame,true,"Subframe navigation must preserve main-frame playback")
-        _ = try await web.evaluateJavaScript("window.open('https://unrelated.invalid/ad','_blank'); null")
-        try await Task.sleep(for:.milliseconds(300))
+        _ = try await web.evaluateJavaScript("window.open(location.origin.replace('127.0.0.1','localhost') + '/empty.html','_blank'); null")
+        for _ in 0..<200 where model.domainNavigationConfirmation == nil { try await Task.sleep(for: .milliseconds(25)) }
+        let confirmation = try XCTUnwrap(model.domainNavigationConfirmation)
+        XCTAssertEqual(confirmation.destinationURL.host, "localhost")
+        model.resolveDomainNavigationConfirmation(id: confirmation.id, allowed: false)
         let playing = try await web.evaluateJavaScript("v.paused===false") as? Bool
         XCTAssertEqual(playing,true,"Rejected popup must preserve main-frame playback")
         XCTAssertEqual(web.url?.host,root.host)

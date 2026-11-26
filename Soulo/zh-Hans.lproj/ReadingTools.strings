@@ -421,6 +421,7 @@
 "torrent_select_all" = "全选";
 "torrent_select_none" = "取消全选";
 "torrent_peers" = "%d 个连接";
+"torrent_peer_counts" = "已连接 %d/%d · 做种 %d";
 "torrent_duplicate" = "此种子已在下载列表中。";
 "torrent_task_limit" = "请先清理部分下载记录，再添加任务。";
 "torrent_save_error" = "无法保存任务，请检查剩余空间后重试。";
@@ -555,7 +556,7 @@
 "shake_direction_any" = "任意方向";
 
 "gesture_settings_title" = "网页手势";
-"gesture_no_history" = "无法后退时";
+"gesture_no_history" = "页面无法后退时";
 "gesture_no_history_hint" = "没有可返回的记录时，从左侧边缘右滑会显示此操作，回滑可取消。选择“无”可关闭。";
 
 "gesture_execution" = "执行方式";
@@ -590,7 +591,7 @@
 "wallpaper_blur_amount" = "模糊强度";
 
 "home_quick_search_guide" = "在首页输入关键词，选中一个平台，再点键盘上的「搜索」。";
-"auto_hide_platform_bar_hint" = "开启后，只有手动点击网页内容，且网页域名不匹配当前平台栏中的任何平台时才隐藏；匹配任一平台则保持或恢复显示。滚动和自动跳转不会主动隐藏平台栏。";
+"auto_hide_platform_bar_hint" = "打开当前分组以外的网站时隐藏平台栏，回到组内平台时重新显示。";
 
 "ad_subscription_add" = "添加规则";
 "ad_subscription_name" = "名称";

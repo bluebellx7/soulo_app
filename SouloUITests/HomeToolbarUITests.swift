@@ -83,6 +83,7 @@ final class HomeToolbarUITests: XCTestCase {
         compactSettingsTap("settings.backups", app: app)
         XCTAssertTrue(app.switches["settings.icloud-sync"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.switches["settings.icloud-sync"].value as? String, "0")
+        XCTAssertTrue(app.switches["settings.icloud-bookmarks"].exists)
         let backupActions = ["save", "import", "export"].map { app.buttons["settings.backups." + $0] }
         for action in backupActions {
             XCTAssertTrue(action.exists)
@@ -346,11 +347,16 @@ final class HomeToolbarUITests: XCTestCase {
         XCTAssertTrue(haptics.waitForExistence(timeout: 5))
         let originalHaptics = haptics.value as? String == "1"
         let originalSound = sound.value as? String == "1"
+        let preview = app.buttons["settings.feedback.preview"]
         set(haptics, enabled: false); set(sound, enabled: false)
-        XCTAssertFalse(app.buttons["settings.feedback.preview"].isEnabled)
+        XCTAssertTrue(preview.waitForNonExistence(timeout: 5))
+        set(haptics, enabled: true)
+        XCTAssertTrue(preview.waitForExistence(timeout: 5))
+        set(haptics, enabled: false)
+        XCTAssertTrue(preview.waitForNonExistence(timeout: 5))
         set(sound, enabled: true)
-        XCTAssertTrue(app.buttons["settings.feedback.preview"].isEnabled)
-        app.buttons["settings.feedback.preview"].tap()
+        XCTAssertTrue(preview.waitForExistence(timeout: 5))
+        preview.tap()
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         shot.name = "global-sounds-and-haptics"; shot.lifetime = .keepAlways; add(shot)
 

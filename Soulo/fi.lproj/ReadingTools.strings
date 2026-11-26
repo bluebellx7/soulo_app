@@ -369,6 +369,7 @@
 "torrent_select_all" = "Valitse Kaikki";
 "torrent_select_none" = "Poista kaikki valinta";
 "torrent_peers" = "%d vertaista";
+"torrent_peer_counts" = "Yhdistetty %d/%d · Jakajat %d";
 "torrent_duplicate" = "Tämä torrent on jo Lataukset-kohdassa.";
 "torrent_task_limit" = "Poista joitakin lataustietueita ennen kuin lisäät tehtäviä.";
 "torrent_save_error" = "Tehtävää ei voi tallentaa. Tarkista käytettävissä oleva tallennustila ja yritä uudelleen.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Sumennuksen voimakkuus";
 
 "home_quick_search_guide" = "Kirjoita aloitussivulla hakusana, valitse alusta ja napauta näppäimistön Hae-painiketta.";
-"auto_hide_platform_bar_hint" = "Kun toiminto on käytössä, palkki piilotetaan vasta napautettuasi verkkosivun sisältöä ja vain, jos sivun verkkotunnus ei vastaa mitään nykyisen palkin alustaa. Osuma pitää palkin näkyvissä tai palauttaa sen. Vieritys ja automaattiset uudelleenohjaukset eivät piilota palkkia.";
+"auto_hide_platform_bar_hint" = "Palkki piilotetaan nykyisen alustaryhmän ulkopuolisilla sivustoilla. Se tulee näkyviin, kun palaat ryhmän alustalle.";
 
 "ad_subscription_add" = "Lisää suodatinlista";
 "ad_subscription_name" = "Nimi";

@@ -3,6 +3,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// Call from one serial worker queue. No network or disk work belongs on the UI thread.
 @interface SLTorrentEngine : NSObject
 - (instancetype)initWithCertificateFile:(NSString *)certificateFile discoveryEnabled:(BOOL)discoveryEnabled;
+- (instancetype)initWithCertificateFile:(NSString *)certificateFile discoveryEnabled:(BOOL)discoveryEnabled
+                               dhtState:(nullable NSData *)dhtState;
+/// Exports only the DHT routing state once the session has discovered nodes.
+- (nullable NSData *)dhtState;
 @property (nonatomic, readonly) NSInteger listeningPort;
 /// Bounded public discovery hints. Private metainfo never uses these entries.
 - (void)updatePublicTrackers:(NSArray<NSString *> *)trackers;

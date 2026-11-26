@@ -9,6 +9,509 @@ import CommonCrypto
 
 @MainActor
 final class DownloadPlaybackTests: XCTestCase {
+    private struct MovieDownloadSample: Decodable {
+        let id: String
+        let page: URL
+        let inspectOnly: Bool?
+        let expectedDuration: Double?
+        let useSegmentDownloader: Bool?
+        let search: MovieSearch?
+        let hlsURL: URL?
+    }
+
+    private struct MovieSearch: Decodable {
+        let entry: URL
+        let query: String
+        let field: String
+        let submit: String?
+        let result: String?
+        let resultText: String?
+        let play: String?
+    }
+
+    func testPreviouslySavedMoviePlaysOffline() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let name = environment["SOULO_QA_SAVED_MOVIE"], name.hasPrefix("Movie QA "), !name.contains("/") else {
+            throw XCTSkip("Supply a retained movie from a simulator acceptance run")
+        }
+        let manager = DownloadManagerService.shared
+        let item = manager.downloads.first { $0.fileName == name && $0.status == .finished }
+        let file = try XCTUnwrap(item?.localURL ?? environment["SOULO_QA_RETAINED_COPY"].map { URL(fileURLWithPath: $0) })
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController()
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            previous?.makeKeyAndVisible()
+        }
+        let duration = environment["SOULO_QA_SAVED_MOVIE_DURATION"].flatMap(Double.init)
+        let details = try await verifyOfflinePlayback(file, expected: duration, in: host.view)
+        print("MOVIE_QA|retained-download|played-offline|\(details)")
+        if let item { removeGeneratedDownload(item, manager: manager) }
+    }
+
+    func testLocalHLSBundlePlaysThroughSouloPlayer() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_QA_OFFLINE_PLAYBACK"] == "1",
+                          "Opt-in decoder playback on the simulator")
+        let bundle = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Offline-\(UUID()).hls", isDirectory: true)
+        try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: bundle) }
+        var manifest = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:2\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+        for index in 0..<4 {
+            let name = "segment\(index)"
+            let segment = try XCTUnwrap(Bundle(for: Self.self).url(forResource: name,
+                withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
+            let filename = segment.lastPathComponent
+            try FileManager.default.copyItem(at: segment, to: bundle.appendingPathComponent(filename))
+            manifest += "#EXTINF:2.0,\n\(filename)\n"
+        }
+        try (manifest + "#EXT-X-ENDLIST\n").write(to: bundle.appendingPathComponent("index.m3u8"),
+                                                    atomically: true, encoding: .utf8)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController()
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        let details = try await verifyOfflinePlayback(bundle, expected: 8, in: host.view)
+        print("MOVIE_QA|local-hls-fixture|played-offline|\(details)")
+    }
+
+    func testClosingWebViewResolvesPageConfirm() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let model = WebViewModel()
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: WebViewRepresentable(viewModel: model))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        try await waitFor("The web view did not attach") { model.webView?.window === window }
+        let web = try XCTUnwrap(model.webView)
+        let coordinator = try XCTUnwrap(web.uiDelegate as? WebViewRepresentable.Coordinator)
+        web.loadHTMLString("<body>Confirm test</body>", baseURL: nil)
+        try await waitFor("The local page did not finish loading") { web.url != nil && !web.isLoading }
+        let result = Task {
+            try await web.callAsyncJavaScript("return confirm('Leave this page?');",
+                                              arguments: [:], in: nil, contentWorld: .page) as? Bool
+        }
+        try await waitFor("WebKit did not show the confirm dialog") { host.presentedViewController is UIAlertController }
+        WebViewRepresentable.dismantleUIView(web, coordinator: coordinator)
+        let confirmed = try await result.value
+        XCTAssertEqual(confirmed, false)
+    }
+
+    /// Runs an opt-in cohort through the normal browser and video downloader.
+    /// Entries are public page URLs, never cached media URLs or session tokens.
+    func testLiveMovieDirectoryDownloadCohort() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let manifest = environment["SOULO_MOVIE_DOWNLOAD_COHORT"],
+              let data = Data(base64Encoded: manifest) else { throw XCTSkip("Opt-in live movie QA") }
+        let samples = try JSONDecoder().decode([MovieDownloadSample].self, from: data)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let window = UIWindow(windowScene: scene), previous = scene.keyWindow
+        let models = samples.map { _ in WebViewModel() }
+        let manager = DownloadManagerService.shared
+        let prefix = "Movie QA \(UUID().uuidString)"
+        window.rootViewController = UIHostingController(rootView: ZStack {
+            ForEach(models.indices, id: \.self) { index in
+                WebViewRepresentable(viewModel: models[index])
+            }
+        })
+        window.makeKeyAndVisible()
+        defer {
+            window.rootViewController = nil; window.isHidden = true; previous?.makeKeyAndVisible()
+            for item in manager.downloads where item.fileName.hasPrefix(prefix) {
+                removeGeneratedDownload(item, manager: manager)
+            }
+        }
+        let scanOnly = environment["SOULO_MOVIE_SCAN_ONLY"] == "1"
+        let replayOffline = environment["SOULO_QA_OFFLINE_PLAYBACK"] == "1"
+        let timeout = Double(environment["SOULO_MOVIE_DOWNLOAD_TIMEOUT"] ?? "") ?? 240
+        let deadline = ContinuousClock.now + .seconds(timeout)
+        var jobs: [Task<Void, Never>] = []
+        var pending = Set(samples.indices)
+        var saved: [Int: (file: URL, expected: Double?)] = [:]
+        var activePeak = 0
+        var pausedOne = false
+        let exercisePause = environment["SOULO_MOVIE_PAUSE_RESUME"] == "1"
+        for (index, sample) in samples.enumerated() {
+            let model = models[index]
+            model.loadURL(sample.search?.entry ?? sample.page)
+            jobs.append(Task { @MainActor in
+                defer { pending.remove(index) }
+                do {
+                    if let search = sample.search {
+                        try await runMovieSearch(search, sample: sample, model: model)
+                    }
+                    let source: (WKWebView, WebMediaResource, Double?)?
+                    if let hlsURL = sample.hlsURL {
+                        try await waitFor("The requesting page did not open") { model.webView?.url?.host == sample.page.host }
+                        let web = try XCTUnwrap(model.webView)
+                        let resource = WebMediaResource(kind: .video, url: hlsURL, title: "Previously observed HLS",
+                            posterURL: nil, delivery: .hls, sourcePageURL: sample.page)
+                        source = (web, resource, nil)
+                    } else {
+                        source = try await movieDownloadSource(model, inspectOnly: sample.inspectOnly == true)
+                    }
+                    guard let (web, resource, duration) = source else {
+                        print("MOVIE_QA|\(sample.id)|no-source|httpHost=\(model.webView?.url?.host ?? "")|title=\(model.webView?.title ?? "")|error=\(model.errorMessage ?? "")")
+                        if !scanOnly, sample.inspectOnly != true { XCTFail("\(sample.id) produced no downloadable video") }
+                        return
+                    }
+                    print("MOVIE_QA|\(sample.id)|source|delivery=\(resource.delivery.rawValue)|host=\(resource.url.host ?? "")|duration=\(duration ?? 0)")
+                    guard !scanOnly, sample.inspectOnly != true else { return }
+                    let expected: Double?
+                    if let seconds = sample.expectedDuration ?? duration {
+                        expected = seconds
+                    } else if resource.delivery == .hls || resource.delivery == .direct {
+                        let options = await WebResourceMediaService.networkAssetOptions(for: resource, webView: web)
+                        let source = AVURLAsset(url: resource.url, options: options)
+                        let seconds = try? await source.load(.duration).seconds
+                        expected = seconds.flatMap { $0.isFinite && $0 > 0 ? $0 : nil }
+                    } else { expected = nil }
+                    let name = "\(prefix) \(index).mp4"
+                    let file: URL
+                    if sample.useSegmentDownloader == true, resource.delivery == .hls {
+                        file = try await AuthenticatedHLSDownloadService.shared.download(resource: resource,
+                            preferredName: name, pageURL: model.currentURL, webView: web)
+                    } else {
+                        file = try await WebResourceDownloadService.shared.download(resource,
+                            preferredFilename: name, pageURL: model.currentURL, webView: web)
+                    }
+                    let item = try XCTUnwrap(manager.downloads.first {
+                        $0.localURL.standardizedFileURL.path == file.standardizedFileURL.path
+                    })
+                    XCTAssertEqual(item.status, .finished)
+                    print("MOVIE_QA|\(sample.id)|finished-transfer|format=\(file.pathExtension)|bytes=\(item.receivedBytes)")
+                    if replayOffline {
+                        saved[index] = (file, expected)
+                    } else {
+                        let media = try await verifyDownloadedMovie(file, expected: expected)
+                        print("MOVIE_QA|\(sample.id)|saved|\(media)|bytes=\(item.receivedBytes)")
+                    }
+                } catch {
+                    let issue = error as NSError
+                    print("MOVIE_QA|\(sample.id)|failed|domain=\(issue.domain)|code=\(issue.code)|message=\(issue.localizedDescription)")
+                    if !scanOnly, sample.inspectOnly != true { XCTFail("\(sample.id) download or verification failed") }
+                }
+            })
+        }
+        defer { jobs.forEach { $0.cancel() } }
+        while !pending.isEmpty, .now < deadline {
+            let active = manager.downloads.filter { $0.fileName.hasPrefix(prefix) && $0.status == .inProgress }
+            activePeak = max(activePeak, active.count)
+            if exercisePause, !pausedOne, active.count >= 2,
+               let item = active.first(where: { [.background, .hls].contains($0.transport) && $0.receivedBytes > 0 }) {
+                pausedOne = true
+                if item.transport == .background { BackgroundDownloadService.shared.pause(id: item.id) }
+                else { StreamingMediaDownloadService.shared.pause(itemID: item.id) }
+                try await waitFor("A live download should pause independently") {
+                    manager.downloads.first { $0.id == item.id }?.status == .paused
+                }
+                try await Task.sleep(for: .milliseconds(750))
+                if item.transport == .background { BackgroundDownloadService.shared.resume(id: item.id) }
+                else { StreamingMediaDownloadService.shared.resume(itemID: item.id) }
+                print("MOVIE_QA|cohort|pause-resume=\(item.transport.rawValue)")
+            }
+            try await Task.sleep(for: .milliseconds(150))
+        }
+        for index in pending.sorted() {
+            print("MOVIE_QA|\(samples[index].id)|timeout")
+        }
+        print("MOVIE_QA|cohort|peak=\(activePeak)")
+        XCTAssertTrue(pending.isEmpty, "The cohort did not finish before the deadline")
+        if environment["SOULO_MOVIE_REQUIRE_CONCURRENCY"] == "1" { XCTAssertGreaterThanOrEqual(activePeak, 2) }
+        if exercisePause { XCTAssertTrue(pausedOne) }
+        if replayOffline, !scanOnly, pending.isEmpty {
+            let host = UIViewController()
+            window.rootViewController = host
+            for (index, item) in saved.sorted(by: { $0.key < $1.key }) {
+                do {
+                    let media = try await verifyOfflinePlayback(item.file, expected: item.expected, in: host.view)
+                    print("MOVIE_QA|\(samples[index].id)|played-offline|\(media)")
+                } catch {
+                    XCTFail("\(samples[index].id) offline playback failed: \(error)")
+                }
+            }
+        }
+    }
+
+    private func runMovieSearch(_ search: MovieSearch, sample: MovieDownloadSample, model: WebViewModel) async throws {
+        try await waitFor("Search entry did not load") { model.webView?.url?.host == search.entry.host }
+        let web = try XCTUnwrap(model.webView)
+        let submit = """
+            const input = document.querySelector(field);
+            if (!input || (submit ? !document.querySelector(submit) : !input.form)) return false;
+            const prototype = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+            Object.getOwnPropertyDescriptor(prototype, 'value').set.call(input, query);
+            input.dispatchEvent(new Event('input', {bubbles: true}));
+            input.dispatchEvent(new Event('change', {bubbles: true}));
+            setTimeout(() => submit ? document.querySelector(submit)?.click() : input.form?.requestSubmit(), 100);
+            return true;
+            """
+        let click = """
+            const result = [...document.querySelectorAll('a, button, [role="button"]')].find(link =>
+                link.href === target || (link.textContent.trim() === target && link.getBoundingClientRect().width > 0));
+            if (!result) return false;
+            result.removeAttribute('target');
+            setTimeout(() => result.click(), 50);
+            return true;
+            """
+        func perform(_ script: String, arguments: [String: Any]) async throws {
+            for _ in 0..<100 {
+                let result = try? await web.callAsyncJavaScript(script, arguments: arguments, in: nil, contentWorld: .page)
+                if result as? Bool == true { return }
+                try await Task.sleep(for: .milliseconds(200))
+            }
+            throw URLError(.timedOut)
+        }
+        try await perform(submit, arguments: ["field": search.field, "query": search.query, "submit": search.submit ?? ""])
+        if let resultText = search.resultText {
+            try await perform("return document.body?.innerText.includes(text) && location.pathname !== initialPath;",
+                              arguments: ["text": resultText, "initialPath": search.entry.path.isEmpty ? "/" : search.entry.path])
+        }
+        if let result = search.result {
+            try await perform(click, arguments: ["target": result])
+        }
+        if let play = search.play { try await perform(click, arguments: ["target": play]) }
+        if search.resultText == nil {
+            try await waitFor("The result did not open the expected video page") { web.url == sample.page }
+        }
+        print("MOVIE_QA|\(sample.id)|search-result|query=\(search.query)|host=\(web.url?.host ?? "")")
+    }
+
+    private func verifyOfflinePlayback(_ file: URL, expected: Double?, in view: UIView) async throws -> String {
+        let ext = file.pathExtension.lowercased()
+        let asset: AVURLAsset?
+        switch ext {
+        case "movpkg":
+            asset = try OfflineHLSReference.playablePackage(at: file)
+        case OfflineHLSReference.fileExtension, "hls", "m3u8":
+            if ext == OfflineHLSReference.fileExtension, try file.resourceValues(forKeys: [.isDirectoryKey]).isDirectory != true {
+                asset = try OfflineHLSReference.playableAsset(for: file)
+            } else {
+                asset = AVURLAsset(url: try LocalHLSMedia.playlistURL(for: file))
+            }
+        default:
+            asset = nil
+        }
+        let prepared: SouloMediaPlaybackSource?
+        if let asset {
+            let native = DownloadPlaybackSource(asset: asset, pageURL: nil, webView: nil)
+            prepared = try await SouloMediaPlaybackSource.prepare(native: native, originalURL: file)
+        } else {
+            prepared = nil
+        }
+        let player = MatroskaPlayback()
+        player.attach(view)
+        player.open(prepared?.url ?? file, resourceLease: prepared, originalURL: file, initialRate: 1)
+        defer { player.stop() }
+        try await waitFor("The file did not play: \(file.pathExtension)") {
+            guard let decoder = player.player else { return false }
+            return decoder.currentTime > 0.30 && decoder.decodedFrameCount > 1 && decoder.duration > 0
+        }
+        let decoder = try XCTUnwrap(player.player)
+        let duration = decoder.duration
+        if let expected {
+            XCTAssertEqual(duration, expected, accuracy: max(2, expected * 0.01), "Saved length must match the full source")
+        }
+        XCTAssertTrue(decoder.isSeekable)
+        let tail = duration < 15 ? 0.75 : 0.93
+        for target in [duration * 0.5, duration * tail] where target > 0.85 {
+            let frames = decoder.decodedFrameCount
+            player.seek(target)
+            do {
+                try await waitFor("The downloaded file did not render after seeking to \(target)") {
+                    decoder.currentTime >= target - 0.1 && decoder.decodedFrameCount > frames
+                }
+            } catch {
+                print("PLAYBACK_QA seek=\(target) actual=\(decoder.currentTime) duration=\(decoder.duration) frames=\(decoder.decodedFrameCount) before=\(frames) state=\(decoder.state)")
+                throw error
+            }
+        }
+        return "duration=\(duration)|expected=\(expected ?? 0)|decodedFrames=\(decoder.decodedFrameCount)|format=\(file.pathExtension)|decoder=\(type(of: decoder))"
+    }
+
+    private func movieDownloadSource(_ model: WebViewModel, inspectOnly: Bool) async throws -> (WKWebView, WebMediaResource, Double?)? {
+        let deadline = ContinuousClock.now + .seconds(inspectOnly ? 8 : 28)
+        while .now < deadline {
+            try Task.checkCancellation()
+            if let web = model.webView, web.url != nil,
+               let snapshot = try? await WebResourceInspectionService.inspect(webView: web, frames: model.mediaFrameInfos) {
+                let frames: [WKFrameInfo?] = [nil] + model.mediaFrameInfos.map(Optional.some)
+                let candidates = snapshot.videos + snapshot.configuredVideos
+                var detected = candidates.first(where: { $0.delivery != .dash }) ?? candidates.first
+                if detected == nil, !inspectOnly {
+                    for frame in frames {
+                        if let target = await WebResourceInspectionService.fallbackVideoTarget(webView: web, frame: frame) {
+                            detected = target.resource
+                            break
+                        }
+                    }
+                }
+                guard let detected else {
+                    try await Task.sleep(for: .milliseconds(350))
+                    continue
+                }
+                var observedDuration: Double?
+                var activeResource: WebMediaResource?
+                for frame in frames {
+                    let query = """
+                        const v = [...document.querySelectorAll('video')].find(v => v.videoWidth > 1 && Number.isFinite(v.duration));
+                        if (!v || v.mediaKeys) return null;
+                        return {d:v.duration, token:v.getAttribute('data-soulo-media-id')};
+                        """
+                    guard let video = try? await web.callAsyncJavaScript(query, arguments: [:], in: frame, contentWorld: .page) as? [String: Any],
+                          let seconds = video["d"] as? Double, seconds > 0 else { continue }
+                    if let token = video["token"] as? String,
+                       let current = await WebResourceInspectionService.currentVideoResource(webView: web, frame: frame, token: token),
+                       current.delivery != .direct || detected.delivery == .direct {
+                        activeResource = current
+                        observedDuration = seconds
+                        break
+                    }
+                    observedDuration = max(observedDuration ?? 0, seconds)
+                }
+                let resource = activeResource ?? detected
+                let observedManifest = WebMediaManifestCache.snapshot(webView: web)[resource.url]
+                if let observedManifest, observedManifest.contains("#EXT-X-ENDLIST") {
+                    let duration = observedManifest.split(separator: "\n").compactMap { line -> Double? in
+                        guard line.hasPrefix("#EXTINF:") else { return nil }
+                        return Double(line.dropFirst(8).split(separator: ",").first ?? "")
+                    }.reduce(0, +)
+                    if duration > 0 { observedDuration = duration }
+                }
+                return (web, resource, observedDuration)
+            }
+            try await Task.sleep(for: .milliseconds(350))
+        }
+        return nil
+    }
+
+    private func verifyDownloadedMovie(_ file: URL, expected: Double?) async throws -> String {
+        var mp4 = file
+        let temporary = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        if file.pathExtension == OfflineHLSReference.fileExtension || file.pathExtension == "hls" {
+            try FileManager.default.createDirectory(at: temporary, withIntermediateDirectories: true)
+            mp4 = try await OfflineVideoConversionService.exportMP4(from: file, into: temporary, preferredFilename: "Verify.mp4")
+        }
+        let asset = AVURLAsset(url: mp4)
+        let duration = try await asset.load(.duration).seconds
+        XCTAssertGreaterThan(duration, 0)
+        let video = try await asset.loadTracks(withMediaType: .video)
+        let audio = try await asset.loadTracks(withMediaType: .audio)
+        XCTAssertFalse(video.isEmpty)
+        if let expected {
+            XCTAssertEqual(duration, expected, accuracy: max(2, expected * 0.01), "Saved length must match the full source")
+        }
+        let generator = AVAssetImageGenerator(asset: asset)
+        let tolerance = CMTime(seconds: 0.5, preferredTimescale: 600)
+        generator.requestedTimeToleranceBefore = tolerance
+        generator.requestedTimeToleranceAfter = tolerance
+        for fraction in [0.05, 0.5, 0.95] {
+            let frame = try await generator.image(at: CMTime(seconds: fraction * duration, preferredTimescale: 600))
+            XCTAssertGreaterThan(frame.image.width, 0)
+        }
+        return "duration=\(duration)|expected=\(expected ?? 0)|video=\(video.count)|audio=\(audio.count)|format=\(file.pathExtension)"
+    }
+
+    func testPreviouslySavedHLSBundleExportsAndDecodes() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let name = environment["SOULO_QA_HLS_BUNDLE"], !name.contains("/"),
+              let expected = environment["SOULO_QA_HLS_BUNDLE_DURATION"].flatMap(Double.init)
+        else { throw XCTSkip("Supply a saved simulator HLS bundle") }
+        let bundle = FileManager.default.temporaryDirectory.appendingPathComponent(name, isDirectory: true)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { if FileManager.default.fileExists(atPath: directory.path) { try? FileManager.default.removeItem(at: directory) } }
+        let exported = try await OfflineVideoConversionService.exportMP4(from: bundle, into: directory)
+        let details = try await verifyDownloadedMovie(exported, expected: expected)
+        if let sample = environment["SOULO_QA_HLS_BUNDLE_SAMPLE"] {
+            print("MOVIE_QA|\(sample)|saved|\(details)")
+        }
+    }
+
+    func testCCTVDownloadUsesOnlyAnAdvertisedPublicRenditionForTheSameProgram() throws {
+        let id = "0ecab3b5755e4d8f8499ce2cf793eed4"
+        let page = try XCTUnwrap(URL(string: "https://tv.cctv.com/program.shtml"))
+        let source = try XCTUnwrap(URL(string: "https://dh5wx.cntv.kfcbest.com/asp/h5e/hls/main/default/\(id)/main.m3u8"))
+        let plain = "https://hls.cntv.lxdns.com/asp/hls/main/default/\(id)/main.m3u8"
+        let request = try XCTUnwrap(CCTVDownloadSource.manifestRequest(for: source, page: page))
+        XCTAssertEqual(request.absoluteString, "https://vdn.apps.cntv.cn/api/getHttpVideoInfo.do?pid=\(id)")
+        XCTAssertNil(CCTVDownloadSource.manifestRequest(for: source, page: URL(string: "https://example.com")))
+        XCTAssertNil(CCTVDownloadSource.manifestRequest(for: try XCTUnwrap(URL(string: plain)), page: page))
+
+        func metadata(_ url: String, protected: String = "0", invalid: String = "0") throws -> Data {
+            try JSONSerialization.data(withJSONObject: [
+                "hls_url": url, "is_protected": protected, "is_invalid_copyright": invalid, "play": "1"
+            ])
+        }
+        XCTAssertEqual(try CCTVDownloadSource.publicStream(in: metadata(plain), replacing: source).absoluteString, plain)
+        let cdn = plain.replacingOccurrences(of: "hls.cntv.lxdns.com", with: "newcntv.qcloudcdn.com")
+        XCTAssertEqual(try CCTVDownloadSource.publicStream(in: metadata(cdn), replacing: source).absoluteString, cdn)
+        XCTAssertTrue(CCTVDownloadSource.isProgramPage(URL(string: "https://tv.cctv.com/2018/02/15/VIDE3Al7NaY4n6lp33BlmUT4180215.shtml")))
+        XCTAssertFalse(CCTVDownloadSource.isProgramPage(URL(string: "https://cctv.com.example.org/2018/02/15/VIDE3Al7NaY4n6lp33BlmUT4180215.shtml")))
+        XCTAssertThrowsError(try CCTVDownloadSource.publicStream(in: metadata(plain, protected: "1"), replacing: source))
+        XCTAssertThrowsError(try CCTVDownloadSource.publicStream(in: metadata(plain, invalid: "1"), replacing: source))
+        XCTAssertThrowsError(try CCTVDownloadSource.publicStream(
+            in: metadata(plain.replacingOccurrences(of: id, with: String(repeating: "a", count: 32))), replacing: source))
+        XCTAssertThrowsError(try CCTVDownloadSource.publicStream(
+            in: metadata(plain.replacingOccurrences(of: "hls.cntv.lxdns.com", with: "example.com")), replacing: source))
+    }
+
+    func testLiveCCTVDownloadProducesDecodableFramesThroughoutTheProgram() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_CCTV_QA"] == "1", "Opt-in reported CCTV program")
+        let documentary = ProcessInfo.processInfo.environment["SOULO_CCTV_DOCUMENTARY_QA"] == "1"
+        let page = try XCTUnwrap(URL(string: documentary
+            ? "https://tv.cctv.com/2018/02/15/VIDE3Al7NaY4n6lp33BlmUT4180215.shtml"
+            : "https://tv.cctv.com/2025/02/23/VIDEf455H2PPYdxvc3Iy8tPC250223.shtml?spm=C31267.Ps4TvsHCiPx5.EFhA5EKLlcYD.35"))
+        let source: URL
+        if documentary {
+            let id = "ed5103b5cfc941458eeff5657583c1d8"
+            let request = try XCTUnwrap(CCTVDownloadSource.programRequest(id: id))
+            let (metadata, response) = try await URLSession.shared.data(from: request)
+            XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+            source = try CCTVDownloadSource.publicStream(in: metadata, programID: id)
+        } else {
+            source = try XCTUnwrap(URL(string: "https://dh5wx.cntv.kfcbest.com/asp/h5e/hls/main/0303000a/3/default/0ecab3b5755e4d8f8499ce2cf793eed4/main.m3u8"))
+        }
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        let web = WKWebView(frame: .zero, configuration: configuration)
+        let video = WebMediaResource(kind: .video, url: source, title: "CCTV download QA", posterURL: nil, delivery: .hls)
+        let file = try await WebResourceDownloadService.shared.download(video, preferredFilename: "CCTV download QA.mp4",
+                                                                       pageURL: page, webView: web)
+        let manager = DownloadManagerService.shared
+        defer {
+            if let item = manager.downloads.first(where: { $0.localURL == file }) { removeGeneratedDownload(item, manager: manager) }
+        }
+        XCTAssertEqual(file.pathExtension, "mp4")
+        let asset = AVURLAsset(url: file)
+        let duration = try await asset.load(.duration).seconds
+        if documentary { XCTAssertGreaterThan(duration, 260) }
+        else { XCTAssertEqual(duration, 1619.16, accuracy: 1) }
+        let audio = try await asset.loadTracks(withMediaType: .audio)
+        XCTAssertEqual(audio.count, 1)
+        let generator = AVAssetImageGenerator(asset: asset)
+        for time in [5.0, duration / 2, duration - 5] {
+            let frame = try await generator.image(at: CMTime(seconds: time, preferredTimescale: 600))
+            XCTAssertGreaterThan(frame.image.width, 0)
+        }
+        if documentary {
+            print("MOVIE_QA|18.2|saved|duration=\(duration)|video=1|audio=\(audio.count)|format=\(file.pathExtension)")
+        }
+        let attachment = XCTAttachment(contentsOfFile: file)
+        attachment.name = "CCTV download from the official public rendition"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     func testCachedHLSFallbackSavesMP4FromLocalSegments() async throws {
         let library = try XCTUnwrap(FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first)
         let root = library.appendingPathComponent("CachedHLS-\(UUID())")
@@ -37,46 +540,88 @@ final class DownloadPlaybackTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: rendition.appendingPathComponent("(0)_(0)_(2.00001).frag").path))
     }
 
+    func testHLSOfflineExportPreservesSectionsAcrossVideoFormatChanges() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let first = environment["SOULO_QA_HLS_MIXED_FIRST"].flatMap({ Data(base64Encoded: $0) }),
+              let second = environment["SOULO_QA_HLS_MIXED_SECOND"].flatMap({ Data(base64Encoded: $0) })
+        else { throw XCTSkip("Supply the two H.264/AAC transport-stream fixtures") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let bundle = root.appendingPathComponent("mixed.hls", isDirectory: true)
+        try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try first.write(to: bundle.appendingPathComponent("000000.ts"))
+        try second.write(to: bundle.appendingPathComponent("000001.ts"))
+        try """
+        #EXTM3U
+        #EXT-X-VERSION:3
+        #EXT-X-TARGETDURATION:2
+        #EXT-X-PLAYLIST-TYPE:VOD
+        #EXTINF:1.5,
+        000000.ts
+        #EXT-X-DISCONTINUITY
+        #EXTINF:1.5,
+        000001.ts
+        #EXT-X-ENDLIST
+        """.write(to: bundle.appendingPathComponent("index.m3u8"), atomically: true, encoding: .utf8)
+        do {
+            _ = try await OfflineVideoConversionService.exportMP4(from: bundle, into: root, allowTranscoding: false)
+            XCTFail("Automatic download finalization must keep this format-changing HLS bundle")
+        } catch {
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: root.path), ["mixed.hls"])
+            XCTAssertEqual(try Data(contentsOf: bundle.appendingPathComponent("000000.ts")), first)
+            XCTAssertEqual(try Data(contentsOf: bundle.appendingPathComponent("000001.ts")), second)
+        }
+        let output = try await OfflineVideoConversionService.exportMP4(from: bundle, into: root)
+        let asset = AVURLAsset(url: output)
+        let duration = try await asset.load(.duration).seconds
+        let audio = try await asset.loadTracks(withMediaType: .audio)
+        XCTAssertEqual(duration, 3, accuracy: 0.5)
+        XCTAssertEqual(audio.count, 1)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.requestedTimeToleranceBefore = .zero
+        generator.requestedTimeToleranceAfter = CMTime(seconds: 0.1, preferredTimescale: 600)
+        let lead = try await generator.image(at: CMTime(seconds: 0.3, preferredTimescale: 600)).image
+        let tail = try await generator.image(at: CMTime(seconds: 2.6, preferredTimescale: 600)).image
+        XCTAssertEqual(lead.height, 120)
+        XCTAssertEqual(tail.height, 120)
+        XCTAssertNotEqual(lead.dataProvider?.data as Data?, tail.dataProvider?.data as Data?)
+        XCTAssertEqual(try Data(contentsOf: bundle.appendingPathComponent("000000.ts")), first)
+        XCTAssertEqual(try Data(contentsOf: bundle.appendingPathComponent("000001.ts")), second)
+    }
+
     func testYouTubeDownloadSavesBothTracksAndReportsAnInterruptedPausedTransfer() async throws {
         let controller = WKUserContentController()
         controller.addScriptMessageHandler(StreamingMediaDownloadService.shared, contentWorld: .page,
                                            name: StreamingMediaDownloadService.messageHandlerName)
         let configuration = WKWebViewConfiguration()
         configuration.userContentController = controller
-        let web = WKWebView(frame: .zero, configuration: configuration)
+        let web = AccessibleWebView(frame: .zero, configuration: configuration)
+        let model = WebViewModel()
+        model.webView = web
         let page = try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=\(UUID().uuidString)"))
-        let resource = WebMediaResource(kind: .video, url: page, title: "SABR QA", posterURL: nil, delivery: .youtubeSABR)
+        let resultsPage = try XCTUnwrap(URL(string: "https://m.youtube.com/results?search_query=nature"))
+        let mediaURL = try XCTUnwrap(URL(string: "https://fixture.googlevideo.com/videoplayback?itag=18"))
+        let resource = WebMediaResource(kind: .video, url: mediaURL, title: "SABR QA", posterURL: nil, delivery: .youtubeSABR)
         let identity = WebResourceMediaService.downloadIdentityURL(for: resource, pageURL: page)
-        web.loadHTMLString("<title>Streaming fixture</title>", baseURL: page)
-        try await waitFor("Fixture page did not load") { web.url == page && !web.isLoading }
-        func encodedFixture(_ name: String, _ ext: String) throws -> String {
-            let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: name, withExtension: ext,
-                subdirectory: "ReadingFixtures/ExtensionMedia"))
-            return try Data(contentsOf: url).base64EncodedString()
-        }
-        _ = try await web.callAsyncJavaScript(#"""
-            window.ytInitialPlayerResponse = {
-                videoDetails: {videoId: new URL(location.href).searchParams.get('v')},
-                streamingData: {serverAbrStreamingUrl: 'https://fixture.googlevideo.com/?sabr=1', adaptiveFormats: [{}]}
-            };
-            window.__souloSABREngineVersion = 2;
-            window.__souloSABRDownload = async ({downloadID}) => {
-                const post = (type, payload) => window.webkit.messageHandlers.souloSABRDownload.postMessage({type, downloadID, ...payload});
-                await post('started', {videoExpectedBytes: atob(video).length, audioExpectedBytes: atob(audio).length});
-                const receivedVideo = window.verificationRequired ? btoa(atob(video).slice(0, -1024)) : video;
-                await post('chunk', {track: 'video', index: 0, base64: receivedVideo});
-                await post('chunk', {track: 'audio', index: 0, base64: audio});
-                await new Promise(resolve => { window.finishFixture = resolve; });
-                if (window.fixtureFailure) throw new Error(window.fixtureFailure);
-                return {durationSeconds: 2};
-            };
-            """#, arguments: ["video": try encodedFixture("video", "mp4"), "audio": try encodedFixture("audio", "m4a")],
-            in: nil, contentWorld: .page)
+        try await installYouTubeDownloadFixture(in: web, page: page)
         let manager = DownloadManagerService.shared
         let disconnected = "Fixture transport disconnected"
         let verificationRequired = "Cannot proceed with stream: attestation required"
-        let failures: [String?] = [nil, disconnected, verificationRequired]
-        for failure in failures {
+        let cases: [(failure: String?, inlineSearchPreview: Bool)] = [
+            (nil, false), (nil, true), (disconnected, false), (verificationRequired, false)
+        ]
+        for (failure, inlineSearchPreview) in cases {
+            _ = try await web.callAsyncJavaScript("history.replaceState(null, '', path);",
+                arguments: ["path": inlineSearchPreview ? resultsPage.absoluteString : page.absoluteString],
+                in: nil, contentWorld: .page)
+            let selectedResource: WebMediaResource
+            if inlineSearchPreview {
+                let snapshot = try await WebResourceInspectionService.inspect(webView: web)
+                selectedResource = try XCTUnwrap(snapshot.videos.first(where: { $0.delivery == .youtubeSABR }))
+                XCTAssertEqual(selectedResource.url, page)
+            } else {
+                selectedResource = resource
+            }
             _ = try await web.callAsyncJavaScript("""
                 window.finishFixture = null;
                 window.fixtureFailure = failure;
@@ -84,11 +629,19 @@ final class DownloadPlaybackTests: XCTestCase {
                 """, arguments: ["failure": (failure as Any?) ?? NSNull(),
                                   "verificationRequired": failure == verificationRequired],
                 in: nil, contentWorld: .page)
-            let task = Task { try await WebResourceDownloadService.shared.download(resource, pageURL: page, webView: web) }
+            let task = Task {
+                // The frame's request can still contain the search URL after selecting a result.
+                try await WebResourceDownloadService.shared.download(selectedResource, pageURL: resultsPage, webView: web)
+            }
             defer { task.cancel() }
             try await waitFor("The transfer did not receive media") { (manager.activeDownload(for: identity)?.receivedBytes ?? 0) > 0 }
             let item = try XCTUnwrap(manager.activeDownload(for: identity))
             defer { if let current = manager.downloads.first(where: { $0.id == item.id }) { removeGeneratedDownload(current, manager: manager) } }
+            XCTAssertTrue(model.hasActivePageDownload)
+            model.currentURL = page
+            model.invalidateExtensionRuntime()
+            model.refreshExtensionRuntimeIfNeeded()
+            XCTAssertTrue(model.webView === web, "A settings refresh must retain an active playback transfer")
             for _ in 0..<80 {
                 if (try? await web.evaluateJavaScript("typeof window.finishFixture === 'function'")) as? Bool == true { break }
                 try await Task.sleep(for: .milliseconds(25))
@@ -124,6 +677,307 @@ final class DownloadPlaybackTests: XCTestCase {
                 XCTAssertEqual(audio.count, 1)
                 XCTAssertEqual(video.count, 1)
                 XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .finished)
+            }
+            XCTAssertFalse(model.hasActivePageDownload)
+        }
+    }
+
+    private func installYouTubeDownloadFixture(in web: WKWebView, page: URL) async throws {
+        web.loadHTMLString("<title>Streaming fixture</title>", baseURL: page)
+        try await waitFor("Fixture page did not load") { web.url == page && !web.isLoading }
+        func encodedFixture(_ name: String, _ ext: String) throws -> String {
+            let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: name, withExtension: ext,
+                subdirectory: "ReadingFixtures/ExtensionMedia"))
+            return try Data(contentsOf: url).base64EncodedString()
+        }
+        _ = try await web.callAsyncJavaScript(#"""
+            window.ytInitialPlayerResponse = {
+                videoDetails: {videoId: new URL(location.href).searchParams.get('v')},
+                streamingData: {serverAbrStreamingUrl: 'https://fixture.googlevideo.com/?sabr=1', adaptiveFormats: [{}]}
+            };
+            window.__souloSABREngineVersion = 2;
+            window.__souloSABRDownload = async ({downloadID}) => {
+                const post = (type, payload) => window.webkit.messageHandlers.souloSABRDownload.postMessage({type, downloadID, ...payload});
+                await post('started', {videoExpectedBytes: atob(video).length, audioExpectedBytes: atob(audio).length});
+                const receivedVideo = window.verificationRequired ? btoa(atob(video).slice(0, -1024)) : video;
+                await post('chunk', {track: 'video', index: 0, base64: receivedVideo});
+                await post('chunk', {track: 'audio', index: 0, base64: audio});
+                await new Promise(resolve => { window.finishFixture = resolve; });
+                if (window.fixtureFailure) throw new Error(window.fixtureFailure);
+                return {durationSeconds: window.fixtureDuration ?? 2};
+            };
+            """#, arguments: ["video": try encodedFixture("video", "mp4"), "audio": try encodedFixture("audio", "m4a")],
+            in: nil, contentWorld: .page)
+    }
+
+    func testConcurrentYouTubeTransfersKeepPauseFilesAndPlaybackSourcesIndependent() async throws {
+        struct Source {
+            let web: AccessibleWebView
+            let page: URL
+            let resource: WebMediaResource
+            let identity: URL
+        }
+        let manager = DownloadManagerService.shared
+        let service = StreamingMediaDownloadService.shared
+        let title = "Concurrent fixture \(UUID().uuidString)"
+        var sources: [Source] = []
+        for _ in 0..<2 {
+            let page = try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=\(UUID().uuidString)"))
+            let resource = WebMediaResource(kind: .video, url: page, title: title, posterURL: nil, delivery: .youtubeSABR)
+            let configuration = WKWebViewConfiguration()
+            configuration.userContentController.addScriptMessageHandler(service, contentWorld: .page,
+                name: StreamingMediaDownloadService.messageHandlerName)
+            let web = AccessibleWebView(frame: .zero, configuration: configuration)
+            let identity = WebResourceMediaService.downloadIdentityURL(for: resource, pageURL: page)
+            try await installYouTubeDownloadFixture(in: web, page: page)
+            sources.append(Source(web: web, page: page, resource: resource, identity: identity))
+        }
+
+        let tasks = sources.map { source in Task {
+            try await WebResourceDownloadService.shared.download(source.resource,
+                preferredFilename: title + ".mp4", pageURL: source.page, webView: source.web)
+        } }
+        defer {
+            tasks.forEach { $0.cancel() }
+            for item in manager.downloads where sources.contains(where: { $0.identity.absoluteString == item.sourceURLString }) {
+                if [.inProgress, .paused].contains(item.status) { service.cancel(itemID: item.id) }
+                removeGeneratedDownload(item, manager: manager)
+            }
+        }
+        try await waitFor("Both tabs must receive media") {
+            sources.allSatisfy { (manager.activeDownload(for: $0.identity)?.receivedBytes ?? 0) > 0 }
+        }
+        let items = try sources.map { try XCTUnwrap(manager.activeDownload(for: $0.identity)) }
+        XCTAssertNotEqual(items[0].localURL, items[1].localURL)
+        service.pause(itemID: items[0].id)
+        for _ in 0..<80 {
+            if (try? await sources[1].web.evaluateJavaScript("typeof window.finishFixture === 'function'")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        _ = try await sources[1].web.evaluateJavaScript("window.fixtureDuration = 1; window.finishFixture(); true")
+        let second = try await tasks[1].value
+        XCTAssertTrue(sources[0].web.activePageDownloadIDs.contains(items[0].id))
+        XCTAssertTrue(sources[1].web.activePageDownloadIDs.isEmpty)
+        XCTAssertEqual(manager.downloads.first(where: { $0.id == items[0].id })?.status, .paused)
+        service.resume(itemID: items[0].id)
+        for _ in 0..<80 {
+            if (try? await sources[0].web.evaluateJavaScript("typeof window.finishFixture === 'function'")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        _ = try await sources[0].web.evaluateJavaScript("window.finishFixture(); true")
+        let first = try await tasks[0].value
+        for (file, duration) in [(first, 2.0), (second, 1.0)] {
+            let asset = AVURLAsset(url: file)
+            let actual = try await asset.load(.duration).seconds
+            XCTAssertEqual(actual, duration, accuracy: 0.15)
+            let audio = try await asset.loadTracks(withMediaType: .audio)
+            let video = try await asset.loadTracks(withMediaType: .video)
+            XCTAssertEqual(audio.count, 1)
+            XCTAssertEqual(video.count, 1)
+        }
+    }
+
+    func testLiveConcurrentYouTubeDownloads() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        try XCTSkipUnless(environment["SOULO_CONCURRENT_YOUTUBE_QA"] == "1",
+                          "Opt-in YouTube downloads using the simulator's browser session")
+        let searchTerm = environment["SOULO_QA_YOUTUBE_SEARCH_TERM"]
+        let startsAtHome = environment["SOULO_QA_YOUTUBE_HOME"] == "1"
+        let requestedIDs = environment["SOULO_QA_YOUTUBE_IDS"]?.split(separator: ",").map(String.init)
+        var videoIDs = requestedIDs ?? (startsAtHome ? ["", ""]
+            : searchTerm == nil ? ["jNQXAC9IVRw", "BaW_jenozKc", "dQw4w9WgXcQ"] : [""])
+        var pages = videoIDs.compactMap { URL(string: "https://m.youtube.com/watch?v=\($0)") }
+        let entryPage: URL?
+        if startsAtHome {
+            entryPage = URL(string: "https://m.youtube.com/")
+        } else if let searchTerm {
+            var address = URLComponents(string: "https://m.youtube.com/results")!
+            address.queryItems = [.init(name: "search_query", value: searchTerm), .init(name: "ra", value: "m")]
+            entryPage = address.url
+        } else { entryPage = nil }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController()
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+
+        let manager = DownloadManagerService.shared
+        let preexisting = Set(manager.downloads.map(\.id))
+        let webViews = pages.map { page in
+            let config = WKWebViewConfiguration()
+            config.allowsInlineMediaPlayback = true
+            config.mediaTypesRequiringUserActionForPlayback = []
+            config.userContentController.addUserScript(WKUserScript(source: WebViewScripts.mediaResourceTracking,
+                injectionTime: .atDocumentStart, forMainFrameOnly: true))
+            config.userContentController.addScriptMessageHandler(StreamingMediaDownloadService.shared, contentWorld: .page,
+                name: StreamingMediaDownloadService.messageHandlerName)
+            let web = AccessibleWebView(frame: host.view.bounds, configuration: config)
+            web.customUserAgent = AppConstants.mobileWebViewUserAgent
+            host.view.addSubview(web)
+            web.load(URLRequest(url: entryPage ?? page))
+            return web
+        }
+        if let entryPage {
+            let followVideoLink = #"""
+                const candidates = [...document.querySelectorAll('a[href*="/watch?"]')].filter(link => {
+                    const linkID = new URL(link.href).searchParams.get('v');
+                    const title = (link.closest('ytm-compact-video-renderer, ytm-video-with-context-renderer, ytm-lockup-view-model')
+                        ?.innerText || link.innerText || link.getAttribute('aria-label') || '').trim();
+                    return linkID && (!videoID || linkID === videoID) && (!titleContains || title.includes(titleContains))
+                        && !seenIDs.includes(linkID)
+                        && link.getBoundingClientRect().width > 0;
+                });
+                function duration(link) {
+                    const card = link.closest('ytm-compact-video-renderer, ytm-video-with-context-renderer, ytm-lockup-view-model');
+                    const time = card?.querySelector('ytm-thumbnail-overlay-time-status-renderer, .badge-shape-wiz__text')?.textContent?.trim() || '';
+                    return /^\d{1,2}(:\d{2}){1,2}$/.test(time)
+                        ? time.split(':').reduce((seconds, field) => seconds * 60 + Number(field), 0)
+                        : Number.MAX_SAFE_INTEGER;
+                }
+                if (preferShort && !videoID) candidates.sort((lhs, rhs) => duration(lhs) - duration(rhs));
+                const match = candidates[0];
+                if (!match) return null;
+                setTimeout(() => match.click(), 50);
+                return match.href;
+                """#
+            for index in webViews.indices {
+                let web = webViews[index]
+                let deadline = ContinuousClock.now + .seconds(35)
+                var resultURL: URL?
+                while resultURL == nil, .now < deadline {
+                    if web.url?.path == entryPage.path {
+                        let result = try? await web.callAsyncJavaScript(followVideoLink, arguments: [
+                            "videoID": videoIDs[index], "titleContains": environment["SOULO_QA_YOUTUBE_TITLE_CONTAINS"] ?? "",
+                            "seenIDs": Array(videoIDs.prefix(index)), "preferShort": startsAtHome
+                        ],
+                            in: nil, contentWorld: .page)
+                        if let result = result as? String { resultURL = URL(string: result) }
+                    }
+                    if resultURL == nil { try await Task.sleep(for: .milliseconds(300)) }
+                }
+                let selected = try XCTUnwrap(resultURL, "The entry page did not offer the requested video")
+                videoIDs[index] = try XCTUnwrap(WebResourceMediaService.youtubeVideoID(for: selected))
+                pages[index] = selected
+                print("YOUTUBE_QA|\(videoIDs[index])|\(startsAtHome ? "home" : "search-result")")
+            }
+        }
+
+        var resources: [Int: WebMediaResource] = [:]
+        for _ in 0..<75 {
+            for index in webViews.indices where resources[index] == nil
+                && webViews[index].url.flatMap(WebResourceMediaService.youtubeVideoID(for:)) == videoIDs[index] {
+                guard let snapshot = try? await WebResourceInspectionService.inspect(webView: webViews[index]),
+                      let resource = snapshot.videos.first(where: { $0.delivery == .youtubeSABR })
+                        ?? snapshot.videos.first(where: { $0.delivery != .dash }) else { continue }
+                resources[index] = resource
+            }
+            if resources.count == pages.count { break }
+            try await Task.sleep(for: .milliseconds(200))
+        }
+        var unavailableCount = 0
+        var expectedDurations: [Int: Double] = [:]
+        for index in webViews.indices {
+            let details = try? await webViews[index].callAsyncJavaScript(#"""
+                const player = document.getElementById('movie_player')?.getPlayerResponse?.() || window.ytInitialPlayerResponse;
+                return JSON.stringify({status:player?.playabilityStatus?.status || 'unknown',
+                    ready:document.querySelector('video')?.readyState ?? -1,
+                    duration:Number(player?.videoDetails?.lengthSeconds)
+                        || document.querySelector('video')?.duration || 0,
+                    direct:player?.streamingData?.formats?.length ?? 0,
+                    adaptive:player?.streamingData?.adaptiveFormats?.length ?? 0,
+                    sabr:!!player?.streamingData?.serverAbrStreamingUrl,
+                    hls:!!player?.streamingData?.hlsManifestUrl})
+                """#, arguments: [:], in: nil, contentWorld: .page)
+            let description = details as? String ?? ""
+            let player = (try? JSONSerialization.jsonObject(with: Data(description.utf8))) as? [String: Any]
+            let status = player?["status"] as? String ?? "unknown"
+            if let duration = player?["duration"] as? Double, duration.isFinite, duration > 0 {
+                expectedDurations[index] = duration
+            }
+            if ["ERROR", "UNPLAYABLE", "LOGIN_REQUIRED", "AGE_CHECK_REQUIRED", "LIVE_STREAM_OFFLINE"].contains(status),
+               (player?["ready"] as? Int ?? 0) == 0, player?["sabr"] as? Bool == false {
+                XCTAssertNil(resources[index], "A rejected player must not appear as a download")
+                resources[index] = nil
+                unavailableCount += 1
+            }
+            print("CONCURRENT_YT_PAGE \(videoIDs[index]) delivery=\(resources[index]?.delivery.rawValue ?? "none") \(description)")
+        }
+        XCTAssertEqual(resources.count + unavailableCount, pages.count, "Expected a resource for each playable video")
+
+        var pending = Set(resources.keys)
+        var jobs: Set<UUID> = []
+        var saved: [Int: URL] = [:]
+        let tasks = resources.keys.sorted().compactMap { index -> Task<Void, Never>? in
+            guard let resource = resources[index] else { return nil }
+            return Task { @MainActor in
+                defer { pending.remove(index) }
+                do {
+                    let file = try await WebResourceDownloadService.shared.download(resource,
+                        preferredFilename: "YouTube concurrent QA \(videoIDs[index]).mp4",
+                        pageURL: entryPage ?? pages[index], webView: webViews[index])
+                    let item = try XCTUnwrap(manager.downloads.first { $0.localURL == file })
+                    XCTAssertEqual(item.status, .finished)
+                    let asset = AVURLAsset(url: file)
+                    let duration = try await asset.load(.duration).seconds
+                    let video = try await asset.loadTracks(withMediaType: .video)
+                    let audio = try await asset.loadTracks(withMediaType: .audio)
+                    XCTAssertEqual(video.count, 1)
+                    XCTAssertEqual(audio.count, 1)
+                    XCTAssertGreaterThan(duration, 0)
+                    let generator = AVAssetImageGenerator(asset: asset)
+                    for fraction in [0.05, 0.5, 0.95] {
+                        let frame = try await generator.image(at: CMTime(seconds: fraction * duration, preferredTimescale: 600))
+                        XCTAssertGreaterThan(frame.image.width, 0)
+                    }
+                    print("CONCURRENT_YT_SAVED \(videoIDs[index]) duration=\(duration) video=\(video.count) audio=\(audio.count)")
+                    saved[index] = file
+                } catch {
+                    print("CONCURRENT_YT_FAILED \(videoIDs[index]) \(error.localizedDescription)")
+                    XCTFail("\(videoIDs[index]) failed: \(error)")
+                }
+            }
+        }
+        defer {
+            for task in tasks { task.cancel() }
+            for item in manager.downloads where !preexisting.contains(item.id) && item.fileName.hasPrefix("YouTube concurrent QA") {
+                if [.inProgress, .paused].contains(item.status) { StreamingMediaDownloadService.shared.cancel(itemID: item.id) }
+                removeGeneratedDownload(item, manager: manager)
+            }
+        }
+        var maximumActive = 0
+        var checkedPause = false
+        let deadline = ContinuousClock.now + .seconds(235)
+        while !pending.isEmpty, .now < deadline {
+            let active = manager.downloads.filter {
+                !preexisting.contains($0.id) && $0.fileName.hasPrefix("YouTube concurrent QA") && $0.status == .inProgress
+            }
+            jobs.formUnion(active.map(\.id))
+            maximumActive = max(maximumActive, active.count)
+            if !checkedPause, active.count >= 2, let first = active.first {
+                checkedPause = true
+                StreamingMediaDownloadService.shared.pause(itemID: first.id)
+                XCTAssertEqual(manager.downloads.first(where: { $0.id == first.id })?.status, .paused)
+                webViews.forEach { $0.removeFromSuperview() }
+                try await Task.sleep(for: .seconds(1))
+                StreamingMediaDownloadService.shared.resume(itemID: first.id)
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        print("CONCURRENT_YT_ACTIVE peak=\(maximumActive) started=\(jobs.count) paused=\(checkedPause)")
+        if videoIDs.count > 1 {
+            XCTAssertGreaterThanOrEqual(maximumActive, 2)
+            XCTAssertTrue(checkedPause)
+        }
+        XCTAssertFalse(saved.isEmpty)
+        XCTAssertTrue(pending.isEmpty, "Concurrent downloads did not finish within the test window")
+        if pending.isEmpty { for task in tasks { await task.value } }
+        if environment["SOULO_QA_OFFLINE_PLAYBACK"] == "1" {
+            webViews.forEach { $0.stopLoading(); $0.removeFromSuperview() }
+            for (index, file) in saved.sorted(by: { $0.key < $1.key }) {
+                let playback = try await verifyOfflinePlayback(file, expected: expectedDurations[index], in: host.view)
+                print("YOUTUBE_QA|\(videoIDs[index])|played-offline|\(playback)")
             }
         }
     }
@@ -1144,6 +1998,14 @@ final class DownloadPlaybackTests: XCTestCase {
     }
 
     func testAuthenticatedFMP4ByteRangesAndSeparateAudioPlayOffline() async throws {
+        try await checkAuthenticatedFragmentedHLS(export: false)
+    }
+
+    func testAuthenticatedFMP4ByteRangesAndSeparateAudioExportOffline() async throws {
+        try await checkAuthenticatedFragmentedHLS(export: true)
+    }
+
+    private func checkAuthenticatedFragmentedHLS(export: Bool) async throws {
         func media(_ name: String) throws -> Data {
             let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: name, withExtension: "m4s", subdirectory: "ReadingFixtures/ExtensionMedia/DASH"))
             return try Data(contentsOf: url)
@@ -1171,18 +2033,46 @@ final class DownloadPlaybackTests: XCTestCase {
         await config.websiteDataStore.httpCookieStore.setCookie(cookie)
         let resource = WebMediaResource(kind: .video, url: origin.appendingPathComponent("master.m3u8"), title: "Private fMP4", posterURL: nil, delivery: .hls)
         let manager = DownloadManagerService.shared
+        var completion: BrowserDownloadItem?
+        let finished = manager.didFinishDownload.sink { item in
+            if item.sourceURLString == resource.url.absoluteString { completion = item }
+        }
+        defer { finished.cancel() }
         defer { if let item = manager.downloads.first(where: { $0.sourceURLString == resource.url.absoluteString }) { removeGeneratedDownload(item, manager: manager) } }
         let file = try await StreamingMediaDownloadService.shared.downloadHLS(resource: resource, preferredFilename: "Private fMP4.mp4", pageURL: nil, webView: web)
         XCTAssertEqual(file.pathExtension, "hls")
         let saved = try XCTUnwrap(manager.finishedDownload(for: resource.url))
         XCTAssertEqual(saved.localURL.standardizedFileURL.path, file.standardizedFileURL.path)
+        XCTAssertEqual(completion?.localURL.standardizedFileURL.path, file.standardizedFileURL.path)
+        XCTAssertEqual(completion?.progress, 1)
+        XCTAssertFalse(manager.finalizingHLSDownloadIDs.contains(saved.id))
         let requests = server.receivedRequests
         XCTAssertEqual(requests.filter { $0.headers["range"] != nil }.count, 7)
         XCTAssertTrue(requests.allSatisfy { $0.headers["cookie"]?.contains("fmp4Download=allowed") == true && $0.headers["user-agent"] == web.customUserAgent })
         server.stop()
+        if export {
+            let original = try packageSnapshot(file)
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("FMP4-\(UUID())")
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let exported = try await OfflineVideoConversionService.exportMP4(from: file, into: directory)
+            let converted = AVURLAsset(url: exported)
+            let convertedVideo = try await converted.loadTracks(withMediaType: .video)
+            let convertedAudio = try await converted.loadTracks(withMediaType: .audio)
+            XCTAssertEqual(convertedVideo.count, 1)
+            XCTAssertEqual(convertedAudio.count, 1)
+            let convertedDuration = try await converted.load(.duration)
+            XCTAssertEqual(convertedDuration.seconds, 8.0, accuracy: 0.2)
+            let last = try await AVAssetImageGenerator(asset: converted).image(at: CMTime(seconds: 7.5, preferredTimescale: 600))
+            XCTAssertGreaterThan(last.image.width, 0)
+            XCTAssertEqual(try packageSnapshot(file), original)
+            return
+        }
         let localSource = DownloadPlaybackSource(asset: AVURLAsset(url: try LocalHLSMedia.playlistURL(for: file)), pageURL: nil, webView: nil)
         let prepared = try await SouloMediaPlaybackSource.prepare(native: localSource, originalURL: file)
+        async let concurrentAsset = prepared.systemAsset()
         let asset = try await prepared.systemAsset()
+        let otherAsset = try await concurrentAsset
+        XCTAssertEqual(asset.url, otherAsset.url, "Concurrent consumers must keep the same offline HLS listener")
         let item = AVPlayerItem(asset: asset), output = AVPlayerItemVideoOutput(pixelBufferAttributes: nil)
         item.add(output)
         let player = AVPlayer(playerItem: item); player.play()
@@ -1226,6 +2116,88 @@ final class DownloadPlaybackTests: XCTestCase {
             if failing { XCTAssertEqual(server.receivedRequests.filter { $0.path == "/last.ts" }.count, 3, "Error pages must be retried within the fixed bound") }
             server.stop()
         }
+    }
+
+    func testAuthenticatedHLSHonorsOriginRetryAfterForManifestAndSegments() async throws {
+        var manifest = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+        var files: [String: Data] = [:]
+        for index in 0..<4 {
+            let name = "segment\(index)"
+            let source = try XCTUnwrap(Bundle(for: Self.self).url(forResource: name,
+                withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
+            files["/\(name).ts"] = try Data(contentsOf: source)
+            manifest += "#EXTINF:2,\n\(name).ts\n"
+        }
+        files["/index.m3u8"] = Data((manifest + "#EXT-X-ENDLIST\n").utf8)
+        let server = try DownloadPlaybackHTTPFixture(files: files,
+            initialRateLimits: ["/index.m3u8": 2, "/segment0.ts": 2])
+        let origin = try await server.start()
+        defer { server.stop() }
+        let resource = WebMediaResource(kind: .video, url: origin.appendingPathComponent("index.m3u8"),
+            title: "HLS Retry-After", posterURL: nil, delivery: .hls)
+        let manager = DownloadManagerService.shared
+        defer {
+            if let item = manager.downloads.first(where: { $0.sourceURLString == resource.url.absoluteString }) {
+                removeGeneratedDownload(item, manager: manager)
+            }
+        }
+        let web = WKWebView(frame: .zero)
+        let file = try await AuthenticatedHLSDownloadService.shared.download(resource: resource,
+            preferredName: "HLS Retry-After.mp4", pageURL: nil, webView: web)
+        XCTAssertEqual(manager.downloads.first(where: { $0.localURL == file })?.status, .finished)
+        for path in ["/index.m3u8", "/segment0.ts"] {
+            let attempts = server.receivedRequests.filter { $0.path == path }
+            XCTAssertEqual(attempts.count, 2)
+            let first = try XCTUnwrap(attempts.first)
+            let last = try XCTUnwrap(attempts.last)
+            XCTAssertGreaterThanOrEqual(first.receivedAt.duration(to: last.receivedAt), .seconds(2))
+        }
+        let segments = server.receivedRequests.filter { $0.path.hasSuffix(".ts") }
+        for (first, second) in zip(segments, segments.dropFirst()) {
+            XCTAssertGreaterThanOrEqual(first.receivedAt.duration(to: second.receivedAt), .milliseconds(850))
+        }
+    }
+
+    func testHLSDownloadChoosesBestVariantWithMatchingProgramLength() async throws {
+        let master = """
+        #EXTM3U
+        #EXT-X-STREAM-INF:BANDWIDTH=200000
+        default.m3u8
+        #EXT-X-STREAM-INF:BANDWIDTH=1000000
+        matching.m3u8
+        #EXT-X-STREAM-INF:BANDWIDTH=8000000
+        unrelated.m3u8
+        """
+        var files = ["/master.m3u8": Data(master.utf8)]
+        for (variant, count) in [("default", 4), ("matching", 4), ("unrelated", 1)] {
+            var media = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+            for index in 0..<count {
+                let source = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment\(index)",
+                    withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
+                let filename = "\(variant)-\(index).ts"
+                files["/\(filename)"] = try Data(contentsOf: source)
+                media += "#EXTINF:2,\n\(filename)\n"
+            }
+            files["/\(variant).m3u8"] = Data((media + "#EXT-X-ENDLIST\n").utf8)
+        }
+        let server = try DownloadPlaybackHTTPFixture(files: files)
+        let origin = try await server.start()
+        defer { server.stop() }
+        let url = origin.appendingPathComponent("master.m3u8")
+        let resource = WebMediaResource(kind: .video, url: url, title: "HLS variant length", posterURL: nil, delivery: .hls)
+        let manager = DownloadManagerService.shared
+        defer {
+            if let item = manager.downloads.first(where: { $0.sourceURLString == url.absoluteString }) {
+                removeGeneratedDownload(item, manager: manager)
+            }
+        }
+        let web = WKWebView(frame: .zero)
+        WebMediaManifestCache.remember([url.absoluteString: master], webView: web)
+        let file = try await StreamingMediaDownloadService.shared.downloadHLS(resource: resource,
+            preferredFilename: "HLS variant length.mp4", pageURL: nil, webView: web)
+        XCTAssertEqual(manager.downloads.first(where: { $0.localURL == file })?.status, .finished)
+        let segments = server.receivedRequests.map(\.path).filter { $0.hasSuffix(".ts") }
+        XCTAssertEqual(Set(segments), Set((0..<4).map { "/matching-\($0).ts" }))
     }
 
     private func checkEncryptedHLSDownload(authenticated: Bool) async throws {
@@ -1344,6 +2316,7 @@ final class DownloadPlaybackTests: XCTestCase {
             service.hasPendingHLSFinalization && server.receivedRequests.contains(where: isOfflineRead)
         }
         let item = try XCTUnwrap(manager.activeDownload(for: resource.url))
+        XCTAssertTrue(manager.finalizingHLSDownloadIDs.contains(item.id))
         XCTAssertEqual(item.localURL.pathExtension, "mp4", "Publish the offline reference after its key is available")
         var completions = 0
         service.backgroundEventsCompletionHandler = { completions += 1 }
@@ -1363,11 +2336,21 @@ final class DownloadPlaybackTests: XCTestCase {
         } else {
             server.releaseDownloads()
             let file = try await download.value
-            XCTAssertNotNil(try OfflineHLSReference.encryptionMaterial(for: file))
+            if file.pathExtension == OfflineHLSReference.fileExtension {
+                XCTAssertNotNil(try OfflineHLSReference.encryptionMaterial(for: file))
+            } else {
+                XCTAssertEqual(file.pathExtension, "mp4")
+                let asset = AVURLAsset(url: file)
+                let audio = try await asset.loadTracks(withMediaType: .audio)
+                XCTAssertFalse(audio.isEmpty)
+                let frame = try await AVAssetImageGenerator(asset: asset).image(at: .zero)
+                XCTAssertGreaterThan(frame.image.width, 0)
+            }
             XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .finished)
         }
         try await waitFor("HLS finalization did not release its background completion") { completions == 1 }
         XCTAssertFalse(service.hasPendingHLSFinalization)
+        XCTAssertFalse(manager.finalizingHLSDownloadIDs.contains(item.id))
     }
 
     func testOfflineKeyRequestsRecheckCookiesOnRedirects() async throws {
@@ -1544,6 +2527,39 @@ final class DownloadPlaybackTests: XCTestCase {
         XCTAssertEqual(offline, bytes.subdata(in: range))
     }
 
+    func testMP4WithInconsistentRangeValidatorsRetriesAsOneBackgroundDownload() async throws {
+        let clip = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "torrent-stream-h264-aac",
+            withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let bytes = try Data(contentsOf: clip)
+        let path = "/inconsistent-ranges.mp4"
+        let lastModified = "Wed, 25 Nov 2026 04:33:34 GMT"
+        let server = try DownloadPlaybackHTTPFixture(files: [path: bytes],
+            responseHeaders: [path: ["Last-Modified": lastModified]],
+            rangeResponseHeaders: { offset in offset == 0 ? [:] : ["Last-Modified": "Wed, 25 Nov 2026 10:20:33 GMT"] })
+        let url = try await server.start().appendingPathComponent("inconsistent-ranges.mp4")
+        server.releaseDownloads()
+        let manager = DownloadManagerService.shared
+        defer {
+            server.stop()
+            if let item = manager.downloads.first(where: { $0.sourceURLString == url.absoluteString }) {
+                removeGeneratedDownload(item, manager: manager)
+            }
+        }
+
+        let resource = WebMediaResource(kind: .video, url: url, title: "Inconsistent ranges", posterURL: nil)
+        let file = try await WebResourceDownloadService.shared.download(resource, webView: nil)
+        XCTAssertEqual(try Data(contentsOf: file), bytes)
+        let items = manager.downloads.filter { $0.sourceURLString == url.absoluteString }
+        XCTAssertEqual(items.count, 1)
+        XCTAssertEqual(items.first?.status, .finished)
+        let requests = server.receivedRequests.filter { $0.path == path && $0.method == "GET" }
+        XCTAssertTrue(requests.contains { $0.headers["range"]?.hasPrefix("bytes=0-") == true })
+        XCTAssertTrue(requests.contains { $0.headers["range"] != nil && $0.headers["range"]?.hasPrefix("bytes=0-") == false })
+        let whole = requests.filter { $0.headers["range"] == nil }
+        XCTAssertEqual(whole.count, 1)
+        XCTAssertNil(whole.first?.headers["if-range"])
+    }
+
     func testAuthenticatedMP4PlaysAndDownloadContinuesToComplete() async throws {
         let bytes = try videoFixture()
         let server = try DownloadPlaybackHTTPFixture(files: ["/clip.mp4": bytes], requiredCookie: "downloadPlayback=allowed")
@@ -1555,12 +2571,16 @@ final class DownloadPlaybackTests: XCTestCase {
         await web.configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
         let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("clip.mp4"), title: "Concurrent download", posterURL: nil)
         let manager = DownloadManagerService.shared, session = MediaSession.shared
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        await VideoOrientation.waitForRestoration(in: scene)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
         let oldRate = session.rate; session.setRate(1)
         let download = Task { try await WebResourceDownloadService.shared.download(resource, webView: web) }
         defer {
             session.stop(); session.setRate(oldRate)
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
             if let item = manager.downloads.first(where: { $0.sourceURLString == resource.url.absoluteString }) {
-                manager.delete(item); try? FileManager.default.removeItem(at: item.localURL)
+                removeGeneratedDownload(item, manager: manager)
             }
             download.cancel()
         }
@@ -1569,34 +2589,115 @@ final class DownloadPlaybackTests: XCTestCase {
             return manager.playbackSource(for: item.id) != nil && item.receivedBytes > 0
         }
         let item = try XCTUnwrap(manager.activeDownload(for: resource.url))
-        let source = try XCTUnwrap(manager.playbackSource(for: item.id))
+        let pendingSource = try XCTUnwrap(manager.playbackSource(for: item.id))
+        let source = await pendingSource.preparedForPlayback()
+        XCTAssertNotEqual(source.asset.url, resource.url, "Playback must use scoped range requests")
         let received = server.downloadedBytes
         session.open(url: source.asset.url, asset: source.asset, webView: source.webView,
             persistPosition: source.persistsPosition, downloadSource: source)
-        try await waitFor("Native player did not advance during the download: \(session.error ?? "no player error")") {
-            session.player.currentTime().seconds > 0.6
+        // Use the same automatic decoder as the download list's fullscreen preview.
+        window.rootViewController = UIHostingController(rootView: FullscreenMediaPlaybackContent())
+        window.makeKeyAndVisible()
+        try await waitFor("The fullscreen player did not decode video during the download") {
+            guard let decoder = session.soulo?.player else { return false }
+            return decoder.currentTime > 0.6 && decoder.decodedFrameCount > 1
         }
-        XCTAssertNil(session.error)
-        XCTAssertTrue(session.hasVideo)
+        let playback = try XCTUnwrap(session.soulo)
+        XCTAssertNil(playback.error)
+        XCTAssertTrue(playback.hasVideo)
         XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .inProgress)
         XCTAssertGreaterThan(server.rangeRequests, 0)
         try await waitFor("Opening the player stopped the file transfer") { server.downloadedBytes > received }
-        let before = session.player.currentTime().seconds
+        let before = playback.elapsed
         server.releaseDownloads()
         let result = try await download.value
         XCTAssertEqual(try Data(contentsOf: result), bytes)
         XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .finished)
         XCTAssertNil(manager.playbackSource(for: item.id))
-        try await waitFor("Finishing the download stopped playback") { session.player.currentTime().seconds > before + 0.3 }
-        XCTAssertNil(session.error)
+        try await waitFor("Finishing the download stopped playback") { playback.elapsed > before + 0.3 }
+        XCTAssertNil(playback.error)
     }
 
     func testHLSPlaybackCompletesWithIndependentDownloadAsset() async throws {
         try await checkConcurrentHLS(authenticated: false)
     }
 
-    func testNativeBackgroundHLSCompletesWithIndependentDownloadAsset() async throws {
+    func testNativeBackgroundHLSPlaysFromDownloadedSegmentsAndCompletes() async throws {
         try await checkConcurrentHLS(authenticated: false, userAgent: AppConstants.mobileWebViewUserAgent)
+    }
+
+    func testLivePBKanStartsPlaybackDuringDownload() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_PBKAN_PLAYBACK_QA"] == "1", "Opt-in reported HLS stream")
+        let page = try XCTUnwrap(URL(string: "https://www.pbkan.com/yun/241110-3-14.html"))
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        let web = WKWebView(frame: .zero, configuration: configuration)
+        web.customUserAgent = AppConstants.mobileWebViewUserAgent
+        web.load(URLRequest(url: page))
+        var stream: URL?
+        for _ in 0..<100 {
+            if let raw = try? await web.evaluateJavaScript("window.player_data?.url ?? ''") as? String,
+               raw.hasPrefix("https://"), let url = URL(string: raw), url.pathExtension == "m3u8" {
+                stream = url
+                break
+            }
+            try await Task.sleep(for: .milliseconds(200))
+        }
+        let origin = try XCTUnwrap(stream)
+        var address = try XCTUnwrap(URLComponents(url: origin, resolvingAgainstBaseURL: false))
+        let isolatedID = UUID().uuidString
+        // The example's public master accepts a query without changing its
+        // relative media playlist. Keep this job apart from restored real tasks.
+        if address.host == "play.dyttzyv.com", address.query == nil {
+            address.queryItems = [.init(name: "soulo_qa", value: isolatedID)]
+        }
+        let url = try XCTUnwrap(address.url)
+        let name = "PBKan HLS QA \(isolatedID)"
+        let resource = WebMediaResource(kind: .video, url: url, title: name, posterURL: nil,
+                                        delivery: .hls, sourcePageURL: page)
+        let manager = DownloadManagerService.shared
+        let session = MediaSession.shared
+        let download = Task {
+            do { return try await WebResourceDownloadService.shared.download(resource,
+                preferredFilename: name + ".mp4", pageURL: page, webView: web) }
+            catch {
+                let failure = error as NSError
+                print("PBKAN_QA_DOWNLOAD_ERROR \(failure.domain) \(failure.code)")
+                throw error
+            }
+        }
+        defer {
+            session.stop()
+            download.cancel()
+            if let item = manager.downloads.first(where: { $0.sourceURLString == url.absoluteString && $0.fileName.hasPrefix(name) }) {
+                if [.inProgress, .paused].contains(item.status) { StreamingMediaDownloadService.shared.cancel(itemID: item.id) }
+                removeGeneratedDownload(item, manager: manager)
+            }
+        }
+        for _ in 0..<280 {
+            if let item = manager.downloads.first(where: { $0.sourceURLString == url.absoluteString && $0.fileName.hasPrefix(name) }) {
+                if item.status == .failed { throw URLError(.cannotLoadFromNetwork) }
+                if item.receivedBytes > 512 * 1024, item.progress > 0, manager.playbackSource(for: item.id) != nil { break }
+            }
+            try await Task.sleep(for: .milliseconds(250))
+        }
+        let item = try XCTUnwrap(manager.activeDownload(for: url))
+        XCTAssertTrue(item.fileName.hasPrefix(name))
+        let source = try XCTUnwrap(manager.playbackSource(for: item.id))
+        XCTAssertGreaterThan(item.receivedBytes, 512 * 1024)
+        XCTAssertGreaterThan(item.progress, 0)
+        let shared = source.asset === source.downloadAsset
+        print("PBKAN_QA_OPEN progress=\(item.progress) bytes=\(item.receivedBytes) shared=\(shared)")
+        XCTAssertTrue(shared, "The playback should use the in-progress native download asset")
+        let started = ContinuousClock.now
+        let prepared = await source.preparedForPlayback()
+        session.open(url: prepared.asset.url, asset: prepared.asset, persistPosition: false, downloadSource: prepared)
+        try await waitFor("The reported stream did not play from its downloaded beginning") {
+            session.player.currentTime().seconds > 0.6
+        }
+        print("PBKAN_QA_PLAY elapsed=\(started.duration(to: .now)) playhead=\(session.player.currentTime().seconds)")
+        XCTAssertNil(session.error)
+        XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .inProgress)
     }
 
     func testOnlineFullscreenKeepsPlayingThroughShortHLSDelay() async throws {
@@ -1713,7 +2814,9 @@ final class DownloadPlaybackTests: XCTestCase {
         let package = item.localURL.pathExtension == OfflineHLSReference.fileExtension
             ? try? OfflineHLSReference.packageURL(for: item.localURL) : nil
         manager.delete(item)
-        try? FileManager.default.removeItem(at: item.localURL)
+        if FileManager.default.fileExists(atPath: item.localPath) {
+            try? FileManager.default.removeItem(at: item.localURL)
+        }
         if let package { OfflineHLSReference.removeDownloadedPackage(at: package) }
     }
 
@@ -1722,9 +2825,15 @@ final class DownloadPlaybackTests: XCTestCase {
         var files: [String: Data] = [:]
         var playlist = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-PLAYLIST-TYPE:VOD\n"
         for index in 0..<4 {
-            let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment\(index)", withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
-            files["/segment\(index).ts"] = try Data(contentsOf: file)
-            playlist += "#EXTINF:2.022,\nsegment\(index).ts\n"
+            let key = "SOULO_QA_VIDEO_ONLY_TS_\(index)"
+            if let raw = ProcessInfo.processInfo.environment[key], let data = Data(base64Encoded: raw) {
+                files["/segment\(index).ts"] = data
+                playlist += "#EXTINF:2,\nsegment\(index).ts\n"
+            } else {
+                let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment\(index)", withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
+                files["/segment\(index).ts"] = try Data(contentsOf: file)
+                playlist += "#EXTINF:2.022,\nsegment\(index).ts\n"
+            }
         }
         files["/video.m3u8"] = Data((playlist + "#EXT-X-ENDLIST\n").utf8)
         let server = try DownloadPlaybackHTTPFixture(files: files, heldPaths: ["/segment3.ts"],
@@ -1740,7 +2849,9 @@ final class DownloadPlaybackTests: XCTestCase {
                                                              .name: "hlsPlayback", .value: "allowed"]))
             await config.websiteDataStore.httpCookieStore.setCookie(cookie)
         }
-        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("video.m3u8"), title: "Concurrent HLS", posterURL: nil, delivery: .hls)
+        let playerFrame = root.appendingPathComponent("embedded/player")
+        let resource = WebMediaResource(kind: .video, url: root.appendingPathComponent("video.m3u8"),
+            title: "Concurrent HLS", posterURL: nil, delivery: .hls, sourcePageURL: authenticated ? playerFrame : nil)
         let assetOptions = await WebResourceMediaService.networkAssetOptions(for: resource, webView: web)
         XCTAssertEqual(assetOptions[AVURLAssetHTTPUserAgentKey] as? String, web.customUserAgent,
                        "Verify the browser context before handing it to the system download task")
@@ -1779,10 +2890,15 @@ final class DownloadPlaybackTests: XCTestCase {
         let item = try XCTUnwrap(manager.activeDownload(for: resource.url))
         let source = try XCTUnwrap(manager.playbackSource(for: item.id))
         XCTAssertNotNil(source.downloadAsset)
-        XCTAssertFalse(source.asset === source.downloadAsset, "AVPlayer must not share the native download resource")
+        XCTAssertEqual(source.asset === source.downloadAsset, expectsNativeTask)
         if expectsNativeTask {
             XCTAssertFalse(AuthenticatedHLSDownloadService.shared.owns(item.id),
                            "This fixture must exercise AVAssetDownloadURLSession")
+            try await waitFor("The download must cache the opening segments before playback starts") {
+                let completed = server.completedResponsePaths
+                return completed.contains("/segment0.ts") && completed.contains("/segment1.ts")
+                    && (manager.activeDownload(for: resource.url)?.progress ?? 0) > 0
+            }
         }
         XCTAssertEqual(item.hlsUsesPersistentCookies, !authenticated)
         XCTAssertFalse(String(decoding: try JSONEncoder().encode(item), as: UTF8.self).contains("allowed"))
@@ -1792,17 +2908,30 @@ final class DownloadPlaybackTests: XCTestCase {
             StreamingMediaDownloadService.shared.resume(itemID: item.id)
             try await waitFor("HLS did not resume") { manager.playbackSource(for: item.id) != nil }
         }
-        session.open(url: source.asset.url, asset: source.asset, persistPosition: false, downloadSource: source)
+        let openingRequests = server.receivedRequests.filter { $0.path == "/segment0.ts" }.count
+        let prepared = await source.preparedForPlayback()
+        if expectsNativeTask { XCTAssertTrue(HLSPlaybackBridge.usesLocalBridge(prepared.asset)) }
+        session.open(url: prepared.asset.url, asset: prepared.asset, persistPosition: false, downloadSource: prepared)
         try await waitFor("HLS player did not advance before the last segment arrived") { session.player.currentTime().seconds > 0.5 }
-        XCTAssertTrue(session.player.currentItem?.asset === source.asset)
+        if expectsNativeTask {
+            XCTAssertEqual(server.receivedRequests.filter { $0.path == "/segment0.ts" }.count, openingRequests,
+                           "Playback must reuse the already downloaded first segment")
+        }
+        XCTAssertTrue(session.player.currentItem?.asset === prepared.asset)
         XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .inProgress)
         XCTAssertNil(session.error)
         let before = session.player.currentTime().seconds
+        var reachedEnd = false
+        let playbackItem = try XCTUnwrap(session.player.currentItem)
+        let ended = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime,
+            object: playbackItem, queue: .main) { _ in MainActor.assumeIsolated { reachedEnd = true } }
+        defer { NotificationCenter.default.removeObserver(ended) }
         server.releaseDownloads()
         let result = try await download.value
         XCTAssertTrue(FileManager.default.fileExists(atPath: result.path))
         XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .finished)
-        try await waitFor("HLS completion interrupted the active player") { session.player.currentTime().seconds > before + 0.3 }
+        print("HLS_QA_FINISHED native=\(expectsNativeTask) before=\(before) after=\(session.player.currentTime().seconds) reachedEnd=\(reachedEnd)")
+        try await waitFor("HLS completion interrupted the active player") { reachedEnd || session.player.currentTime().seconds > before + 0.3 }
         XCTAssertNil(session.error)
         let requests = server.receivedRequests
         XCTAssertGreaterThanOrEqual(requests.filter { $0.path == "/video.m3u8" }.count, 2)
@@ -1811,7 +2940,11 @@ final class DownloadPlaybackTests: XCTestCase {
         } else {
             XCTAssertTrue(requests.allSatisfy { $0.headers["user-agent"] == userAgent }, String(describing: requests))
         }
-        if authenticated { XCTAssertTrue(requests.allSatisfy { $0.headers["cookie"]?.contains("hlsPlayback=allowed") == true }) }
+        if authenticated {
+            XCTAssertTrue(requests.allSatisfy { $0.headers["cookie"]?.contains("hlsPlayback=allowed") == true })
+            XCTAssertTrue(requests.contains { $0.path == "/segment0.ts" && $0.headers["referer"] == playerFrame.absoluteString },
+                "The downloader must keep the embedded player's referrer")
+        }
         session.stop()
         server.stop()
         let offlineAsset = result.pathExtension == OfflineHLSReference.fileExtension

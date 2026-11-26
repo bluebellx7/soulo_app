@@ -150,7 +150,12 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificatio
     }
 
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
-        if let window, let supported = SharedVideoFullscreenHost.supportedOrientationMask(in: window) { return supported }
+        if let window {
+            if let supported = SharedVideoFullscreenHost.supportedOrientationMask(in: window) { return supported }
+            // During fullscreen dismissal, UIKit can reapply a late player
+            // rotation while the browser is already visible again.
+            if let restoring = VideoOrientation.restoringOrientationMask(in: window) { return restoring }
+        }
         return UIDevice.current.userInterfaceIdiom == .pad ? .all : .allButUpsideDown
     }
 

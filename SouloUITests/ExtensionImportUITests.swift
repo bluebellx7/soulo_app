@@ -115,6 +115,103 @@ final class ExtensionImportUITests: XCTestCase {
         checkPicker(app, label: "Choose File or Folder…")
     }
 
+    func testBrowserExtensionGridRunsInstalledActionFromConfiguredSlot() async throws {
+        guard #available(iOS 18.4, *),
+              ProcessInfo.processInfo.environment["SOULO_TOOLBAR_EXTENSION_GRID_QA"] == "1" else {
+            throw XCTSkip("Needs the Toolbar Grid Fixture installed in the simulator")
+        }
+        continueAfterFailure = false
+        let server = try DownloadPlaybackHTTPFixture(files: ["/page.html": Data("<h1>Toolbar browser page</h1>".utf8)])
+        let url = try await server.start().appendingPathComponent("page.html")
+        defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-restore_last_page_on_launch", "NO", "-icloud_sync_enabled", "NO",
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-is_incognito", "NO",
+            "-privacy_https_upgrade_enabled", "NO", "-browser_toolbar_actions", "(home,back,tabs,extensionGrid)"]
+        app.launch()
+        defer { app.terminate() }
+        var route = URLComponents(string: "soulo://open")!
+        route.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
+        app.open(try XCTUnwrap(route.url))
+        XCTAssertTrue(app.webViews.staticTexts["Toolbar browser page"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["browser.more"].exists)
+        let launcher = app.buttons["browser.action.extensionGrid"]
+        XCTAssertTrue(launcher.waitForExistence(timeout: 8))
+        launcher.tap()
+        let tile = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label == %@",
+            "browser.extensionGrid.item.", "Toolbar Grid Fixture")).firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(app.buttons["browser.extensionGrid.manage"].waitForExistence(timeout: 4), app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Browser toolbar extension grid"; screenshot.lifetime = .keepAlways; add(screenshot)
+        tile.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Toolbar extension popup opened"].waitForExistence(timeout: 10), app.debugDescription)
+    }
+
+    func testSimpleGestureSettingsOpenFromInstalledExtensionMenu() throws {
+        guard #available(iOS 18.4, *),
+              let filename = ProcessInfo.processInfo.environment["SOULO_SIMPLE_GESTURE_CRX"] else {
+            throw XCTSkip("Requires the Simple Gesture CRX in the simulator's Downloads")
+        }
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-wallpaper_source", "gradient",
+            "-icloud_sync_enabled", "NO", "-is_incognito", "NO", "-restore_last_page_on_launch", "NO",
+            "-review.requestedOnce", "YES", "-files.gridView", "NO", "-home_toolbar_actions", "(extensions)"]
+        app.launch()
+        defer { app.terminate() }
+
+        app.open(try XCTUnwrap(URL(string: "soulo://files")))
+        let fileSearch = app.textFields["library.search"]
+        XCTAssertTrue(fileSearch.waitForExistence(timeout: 8), app.debugDescription)
+        fileSearch.tap()
+        fileSearch.typeText(filename)
+        let file = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", filename + ",")).firstMatch
+        XCTAssertTrue(file.waitForExistence(timeout: 10), app.debugDescription)
+        file.tap()
+        let install = app.buttons["extensions.review-install"]
+        XCTAssertTrue(install.waitForExistence(timeout: 10), app.debugDescription)
+        install.tap()
+        XCTAssertTrue(install.waitForNonExistence(timeout: 30), app.debugDescription)
+        XCTAssertFalse(app.alerts["Extension Could Not Be Installed"].exists, app.debugDescription)
+
+        app.terminate()
+        app.launch()
+        let extensions = app.buttons["home.toolbar.0"]
+        XCTAssertTrue(extensions.waitForExistence(timeout: 10), app.debugDescription)
+        extensions.tap()
+        let row = app.staticTexts["Simple Gesture"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 12), app.debugDescription)
+        let toggle = app.switches.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label == %@",
+            "extensions.toggle-", "Simple Gesture")).firstMatch
+        XCTAssertTrue(toggle.exists, app.debugDescription)
+        let installedExtension = app.switches[toggle.identifier]
+        row.press(forDuration: 1)
+        let options = app.buttons["Settings"].firstMatch
+        XCTAssertTrue(options.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.buttons["Manage"].exists)
+        options.tap()
+        XCTAssertTrue(app.segmentedControls.buttons["Installed"].waitForNonExistence(timeout: 8), app.debugDescription)
+        let basics = app.webViews.staticTexts.matching(NSPredicate(format: "label IN %@", ["Basics", "Basic", "基本"])).firstMatch
+        XCTAssertTrue(basics.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.webViews.staticTexts["version 8.0"].firstMatch.exists, app.debugDescription)
+
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(extensions.waitForExistence(timeout: 10), app.debugDescription)
+        extensions.tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 12), app.debugDescription)
+        row.press(forDuration: 1)
+        let manage = app.buttons["Manage"].firstMatch
+        XCTAssertTrue(manage.waitForExistence(timeout: 5)); manage.tap()
+        let delete = app.buttons["extensions.management-delete"]
+        for _ in 0..<8 where !delete.isHittable { app.swipeUp() }
+        XCTAssertTrue(delete.isHittable, app.debugDescription); delete.tap()
+        let confirm = app.buttons["Delete"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5)); confirm.tap()
+        XCTAssertTrue(installedExtension.waitForNonExistence(timeout: 8), app.debugDescription)
+    }
+
     func testFilesWidgetURLColdLaunchAndAppIconRelaunch() throws {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)

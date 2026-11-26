@@ -369,6 +369,7 @@
 "torrent_select_all" = "Chọn tất cả";
 "torrent_select_none" = "Bỏ chọn tất cả";
 "torrent_peers" = "%d ngang hàng";
+"torrent_peer_counts" = "Đã kết nối %d/%d · Seed %d";
 "torrent_duplicate" = "Torrent này đã có trong phần Tải xuống.";
 "torrent_task_limit" = "Xóa một số bản ghi tải xuống trước khi thêm nhiều tác vụ hơn.";
 "torrent_save_error" = "Không thể lưu nhiệm vụ. Hãy kiểm tra bộ nhớ còn trống và thử lại.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Mức độ làm mờ";
 
 "home_quick_search_guide" = "Nhập từ khóa trên màn hình chính, chọn một nền tảng, rồi chạm Tìm kiếm trên bàn phím.";
-"auto_hide_platform_bar_hint" = "Khi bật, thanh chỉ ẩn sau khi bạn trực tiếp chạm vào nội dung trang và tên miền không khớp với nền tảng nào trên thanh hiện tại. Nếu khớp với bất kỳ nền tảng nào, thanh được giữ hoặc hiện lại. Cuộn và chuyển hướng tự động không làm ẩn thanh.";
+"auto_hide_platform_bar_hint" = "Ẩn thanh trên các trang web ngoài nhóm nền tảng hiện tại. Thanh sẽ xuất hiện lại khi bạn quay về một nền tảng trong nhóm.";
 
 "ad_subscription_add" = "Thêm danh sách lọc";
 "ad_subscription_name" = "Tên";

@@ -81,6 +81,10 @@ struct AdBlockService {
         rules.append(BuiltInAdRule(id: "pbpbw-click-ad-loader", kind: .network,
             pattern: #"^https?://(www\.)?pbpbw\.com/assets/chunks/site-config\.js([?]|$)"#,
             resourceTypes: ["script"]))
+        // PBKan paints the overlay with tiles whose tag names change on reload.
+        rules.append(BuiltInAdRule(id: "pbkan-tiled-overlay", kind: .cosmetic,
+            pattern: #"[style*="2147483646"][style*="position"][style*="fixed"][style*="background-position"][style*="background-size"]:not([id]):not([class]):is(body > *)"#,
+            domains: ["pbkan.com", "www.pbkan.com"]))
         rules.append(BuiltInAdRule(id: "mtyy-mobile-bottom-ad", kind: .network,
             pattern: #"^https://[0-9]+1244c\.hcxftcl\.com:902/d/1244([?]|$)"#,
             domains: ["mtyy5.com"], resourceTypes: ["script"]))

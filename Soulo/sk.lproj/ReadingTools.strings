@@ -369,6 +369,7 @@
 "torrent_select_all" = "Vyberte možnosť Všetky";
 "torrent_select_none" = "Zrušte výber všetkých";
 "torrent_peers" = "%d kolegovia";
+"torrent_peer_counts" = "Pripojení %d/%d · Seedy %d";
 "torrent_duplicate" = "Tento torrent sa už nachádza v časti Stiahnuté súbory.";
 "torrent_task_limit" = "Pred pridaním ďalších úloh odstráňte niektoré záznamy o sťahovaní.";
 "torrent_save_error" = "Úlohu nie je možné uložiť. Skontrolujte dostupné úložisko a skúste to znova.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Intenzita rozmazania";
 
 "home_quick_search_guide" = "Na domovskej obrazovke zadajte kľúčové slovo, vyberte platformu a ťuknite na Hľadať na klávesnici.";
-"auto_hide_platform_bar_hint" = "Po zapnutí sa lišta skryje iba po klepnutí na obsah stránky, ak jej doména nezodpovedá žiadnej platforme na aktuálnej lište. Zhoda s ľubovoľnou platformou lištu ponechá alebo znova zobrazí. Posúvanie a automatické presmerovania ju neskryjú.";
+"auto_hide_platform_bar_hint" = "Na weboch mimo aktuálnej skupiny platforiem sa panel skryje. Po návrate na platformu v skupine sa znova zobrazí.";
 
 "ad_subscription_add" = "Pridať zoznam filtrov";
 "ad_subscription_name" = "Názov";

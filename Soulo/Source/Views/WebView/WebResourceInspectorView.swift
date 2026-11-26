@@ -1497,24 +1497,18 @@ struct WebResourceMediaPlayerView: View {
     @ViewBuilder var body: some View {
         if embedded { playerContent }
         else if resource.kind == .video {
-            if let landscape = fullscreenLandscapeHint {
-                let window = sourceWebView?.window
-                let insets = window?.safeAreaInsets ?? .zero
-                VideoFullscreenCanvas(landscape: landscape ? nil : false,
-                    entryLandscapeDirection: landscape ? VideoOrientation.landscapePresentation(in: window?.windowScene) : nil,
-                    insets: EdgeInsets(top: insets.top, leading: insets.left, bottom: insets.bottom, trailing: insets.right),
-                    identifier: "media.web.preparation.canvas") { insets in
-                        playerContent.padding(insets)
-                    }
-                    .preferredColorScheme(.dark)
-                    .statusBarHidden()
-            } else {
-                playerContent
-                    .background(Color.black.ignoresSafeArea())
-                    .preferredColorScheme(.dark)
-            }
+            // Preparation stays over the source page. The shared player
+            // supplies the opaque canvas once its fullscreen layout is ready.
+            playerContent.compatiblePresentationBackground(.clear)
         }
         else { NavigationStack { playerContent } }
+    }
+
+    private func closeVideo() {
+        episodeTask?.cancel()
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { dismiss() }
     }
 
     private var playerContent: some View {
@@ -1544,16 +1538,18 @@ struct WebResourceMediaPlayerView: View {
                                              initialEpisodes: showsEpisodes,
                                              initialTitle: currentResource.title, audioOnly: currentResource.kind == .audio,
                                              ownsExplicitSource: true, externalPlaylist: videoPlaylist,
-                                             onFullscreenClose: { episodeTask?.cancel(); dismiss() },
+                                             onFullscreenClose: { closeVideo() },
                                              downloadAction: { downloadCurrentMedia() },
                                              downloadIsVideo: currentResource.kind == .video)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(.black)
-                    } else { Color.black }
+                            .background(currentResource.kind == .video ? Color.clear : Color.black)
+                    } else { currentResource.kind == .video ? Color.clear : Color.black }
 
                     if isPreparing || (resource.kind == .video && !useYouTubeWebPlayback && playbackError.isEmpty) {
                         ProgressView()
                             .tint(.white)
+                            .padding(14)
+                            .background(resource.kind == .video ? Color.black.opacity(0.72) : Color.clear, in: Circle())
                             .accessibilityIdentifier("media.web.preparing")
                     } else if !playbackError.isEmpty {
                         VStack(spacing: 12) {
@@ -1570,6 +1566,8 @@ struct WebResourceMediaPlayerView: View {
                         }
                         .foregroundStyle(.white)
                         .padding(24)
+                        .background(resource.kind == .video ? Color.black.opacity(0.8) : Color.clear,
+                                    in: RoundedRectangle(cornerRadius: 20))
                     }
                 }
 
@@ -1626,8 +1624,9 @@ struct WebResourceMediaPlayerView: View {
                 if resource.kind == .video, !embedded {
                     HStack(spacing: 12) {
                         VideoFullscreenBackTitle(title: currentResource.title, identifier: "media.web.close") {
-                            episodeTask?.cancel(); dismiss()
+                            closeVideo()
                         }
+                        .shadow(color: .black.opacity(0.8), radius: 3)
                         Spacer(minLength: 0)
                         if !playbackError.isEmpty || useYouTubeWebPlayback {
                             mediaActions

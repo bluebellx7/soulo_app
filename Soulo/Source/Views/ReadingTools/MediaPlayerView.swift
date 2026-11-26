@@ -66,6 +66,8 @@ struct VideoOrientationErrorAlert: ViewModifier {
         let task: Task<Void, Never>
         weak var window: UIWindow?
         weak var controller: UIViewController?
+        var onSourceLayout: (() -> Void)?
+        var isApplyingOrientation = false
     }
     private static var restorations: [ObjectIdentifier: Restoration] = [:]
 
@@ -91,6 +93,7 @@ struct VideoOrientationErrorAlert: ViewModifier {
         if let pending = restorations[key], let window, pending.window === window {
             restorations.removeValue(forKey: key)
             pending.task.cancel()
+            pending.onSourceLayout?()
             return (pending.orientation, pending.window, pending.controller, true)
         }
         let orientation = scene.interfaceOrientation == .unknown ? UIInterfaceOrientation.portrait : scene.interfaceOrientation
@@ -111,6 +114,12 @@ struct VideoOrientationErrorAlert: ViewModifier {
         await restorations[ObjectIdentifier(scene)]?.task.value
     }
 
+    static func restoringOrientationMask(in window: UIWindow) -> UIInterfaceOrientationMask? {
+        guard let scene = window.windowScene, let restoration = restorations[ObjectIdentifier(scene)],
+              restoration.window === window, restoration.isApplyingOrientation else { return nil }
+        return mask(for: restoration.orientation)
+    }
+
     static func topController(in window: UIWindow?) -> UIViewController? {
         var controller = window?.rootViewController
         while let presented = controller?.presentedViewController { controller = presented }
@@ -123,10 +132,26 @@ struct VideoOrientationErrorAlert: ViewModifier {
     }
 
     static func restore(_ orientation: UIInterfaceOrientation, in scene: UIWindowScene,
-                        sourceWindow: UIWindow?, sourceController: UIViewController?, handoff: Bool = false) {
+                        sourceWindow: UIWindow?, sourceController: UIViewController?, handoff: Bool = false,
+                        onSourceLayout: (() -> Void)? = nil) {
         let key = ObjectIdentifier(scene), id = UUID()
-        restorations.removeValue(forKey: key)?.task.cancel()
-        let task = Task { @MainActor [weak scene, weak sourceWindow, weak sourceController] in
+        var completion = onSourceLayout
+        if let previous = restorations.removeValue(forKey: key) {
+            previous.task.cancel()
+            if let sourceWindow, previous.window === sourceWindow, let previousCompletion = previous.onSourceLayout {
+                // A SwiftUI cover and its fullscreen player can both request
+                // restoration. Keep the exit snapshot until the browser is ready.
+                completion = { previousCompletion(); onSourceLayout?() }
+            } else {
+                previous.onSourceLayout?()
+            }
+        }
+        let task = Task { @MainActor [weak scene, weak sourceWindow] in
+            defer {
+                if restorations[key]?.id == id {
+                    restorations.removeValue(forKey: key)?.onSourceLayout?()
+                }
+            }
             // The replacement player consumes this restoration context. Give
             // its presentation a chance to mount before restoring the page.
             if handoff { do { try await Task.sleep(for: .milliseconds(500)) } catch { return } }
@@ -136,22 +161,26 @@ struct VideoOrientationErrorAlert: ViewModifier {
                 guard !Task.isCancelled, let scene, let sourceWindow else { break }
                 let controller = topController(in: sourceWindow)
                 // Never ask the dismissing AVKit/SwiftUI fullscreen controller
-                // to restore the underlying page's orientation.
+                // to rotate. SwiftUI can also remove the captured source cover
+                // before this task runs, leaving a different browser host.
                 let ready = isInForeground(scene)
-                    && scene.keyWindow === sourceWindow && controller != nil
-                    && controller === sourceController
+                    && scene.keyWindow === sourceWindow && controller?.viewIfLoaded?.window === sourceWindow
+                    && SharedVideoFullscreenHost.current(in: sourceWindow)?.screen == nil
                     && controller?.isBeingPresented == false
                     && controller?.isBeingDismissed == false
                     && controller?.transitionCoordinator == nil
                 let mask = mask(for: orientation)
-                if ready, controller?.supportedInterfaceOrientations.intersection(mask).isEmpty == false {
+                if ready {
                     if lastRequest < 0 {
                         // Supersede a landscape request still in flight even
-                        // when the scene currently reports the original geometry.
+                        // when UIKit still has the player's orientation mask cached.
+                        restorations[key]?.isApplyingOrientation = true
                         lastRequest = attempt
                         request(mask, in: scene) { _ in }
                     }
-                    if scene.interfaceOrientation == orientation {
+                    if scene.interfaceOrientation == orientation,
+                       (sourceWindow.bounds.width > sourceWindow.bounds.height) == orientation.isLandscape {
+                        finishSourceLayout(for: key, id: id)
                         settled += 1
                         if settled >= 20 { break }
                     } else {
@@ -164,11 +193,22 @@ struct VideoOrientationErrorAlert: ViewModifier {
                         }
                     }
                 } else { settled = 0 }
+                if attempt >= 18 {
+                    // A window that refuses rotation must remain usable.
+                    finishSourceLayout(for: key, id: id)
+                }
                 try? await Task.sleep(for: .milliseconds(50))
             }
-            if restorations[key]?.id == id { restorations.removeValue(forKey: key) }
         }
-        restorations[key] = Restoration(id: id, orientation: orientation, task: task, window: sourceWindow, controller: sourceController)
+        restorations[key] = Restoration(id: id, orientation: orientation, task: task, window: sourceWindow,
+                                        controller: sourceController, onSourceLayout: completion)
+    }
+
+    private static func finishSourceLayout(for key: ObjectIdentifier, id: UUID) {
+        guard let restoration = restorations[key], restoration.id == id,
+              let completion = restoration.onSourceLayout else { return }
+        restorations[key]?.onSourceLayout = nil
+        completion()
     }
 
     static func mask(for orientation: UIInterfaceOrientation) -> UIInterfaceOrientationMask {
@@ -487,15 +527,21 @@ struct LandscapeMotionDetector {
         if nativeWebKit, !handingOff { end() }
     }
 
-    func end(token: String? = nil, handoff: Bool = false) {
-        guard self.token != nil, token == nil || self.token == token else { return }
+    func isSourceOrientationRestored(in window: UIWindow) -> Bool {
+        window.windowScene?.interfaceOrientation == original
+            && (window.bounds.width > window.bounds.height) == original.isLandscape
+    }
+
+    func end(token: String? = nil, handoff: Bool = false, restorePreparedPresentation: Bool = false,
+             onSourceLayout: (() -> Void)? = nil) {
+        guard self.token != nil, token == nil || self.token == token else { onSourceLayout?(); return }
         stopTracking()
         orientationError = nil
         fullscreenController = nil; fullscreenWindow = nil; explicitFullscreenController = nil
         if tracksDeviceOrientation { UIDevice.current.endGeneratingDeviceOrientationNotifications() }
         tracksDeviceOrientation = false
         let scene = scene, source = sourceWindow, controller = sourceController, orientation = original,
-            restore = began || inheritedRestoration || handingOff
+            restore = began || inheritedRestoration || handingOff || restorePreparedPresentation
         self.token = nil
         self.scene = nil
         self.sourceWindow = nil
@@ -503,8 +549,9 @@ struct LandscapeMotionDetector {
         began = false
         inheritedRestoration = false
         handingOff = false
-        guard restore, let scene else { return }
-        VideoOrientation.restore(orientation, in: scene, sourceWindow: source, sourceController: controller, handoff: handoff)
+        guard restore, let scene else { onSourceLayout?(); return }
+        VideoOrientation.restore(orientation, in: scene, sourceWindow: source, sourceController: controller,
+                                 handoff: handoff, onSourceLayout: onSourceLayout)
     }
 
     deinit {
@@ -651,6 +698,11 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
             sharedHost = SharedVideoFullscreenHost.present(owner: ownerID, in: window, content: AnyView(content()),
                 identifier: "media.fullscreen.player",
                 landscape: landscape,
+                isFirstFrameReady: {
+                    let session = MediaSession.shared
+                    return session.pictureInPicture.surface?.playerLayer.isReadyForDisplay == true
+                        || session.error != nil
+                },
                 onClose: { [weak self] reason in self?.finish(reason: reason) })
             if sharedHost == nil {
                 if presentationRetry == nil {
@@ -1647,8 +1699,8 @@ struct MediaPlaybackContent: View {
                         playbackControls
                     }
                     else {
-                        Color.black.overlay {
-                            if fullscreenOnly && !showingFullScreen && !ownsExplicitSource { ProgressView().tint(.white) }
+                        Color.clear.overlay {
+                            if fullscreenOnly && !showingFullScreen && !ownsExplicitSource { ProgressView() }
                         }
                     }
                 }

@@ -369,6 +369,7 @@
 "torrent_select_all" = "Selecteer Alles";
 "torrent_select_none" = "Deselecteer Alles";
 "torrent_peers" = "%d collega's";
+"torrent_peer_counts" = "Verbonden %d/%d · Seeders %d";
 "torrent_duplicate" = "Deze torrent staat al in Downloads.";
 "torrent_task_limit" = "Verwijder enkele downloadrecords voordat u meer taken toevoegt.";
 "torrent_save_error" = "Kan de taak niet opslaan. Controleer de beschikbare opslagruimte en probeer het opnieuw.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Vervagingssterkte";
 
 "home_quick_search_guide" = "Typ een zoekterm op het beginscherm, kies een platform en tik op Zoek op het toetsenbord.";
-"auto_hide_platform_bar_hint" = "Als dit is ingeschakeld, verbergt de balk pas nadat je op webpagina-inhoud tikt en het domein met geen enkel platform in de huidige balk overeenkomt. Bij een overeenkomst blijft de balk zichtbaar of verschijnt deze opnieuw. Scrollen en automatische omleidingen verbergen de balk niet.";
+"auto_hide_platform_bar_hint" = "Verbergt de balk op websites buiten de huidige platformgroep. De balk verschijnt weer wanneer je terugkeert naar een platform in de groep.";
 
 "ad_subscription_add" = "Filterlijst toevoegen";
 "ad_subscription_name" = "Naam";

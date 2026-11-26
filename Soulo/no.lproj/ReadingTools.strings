@@ -369,6 +369,7 @@
 "torrent_select_all" = "Velg alle";
 "torrent_select_none" = "Fjern merket for Alle";
 "torrent_peers" = "%d jevnaldrende";
+"torrent_peer_counts" = "Tilkoblet %d/%d · Seeders %d";
 "torrent_duplicate" = "Denne torrenten er allerede i Nedlastinger.";
 "torrent_task_limit" = "Fjern noen nedlastingsposter før du legger til flere oppgaver.";
 "torrent_save_error" = "Kan ikke lagre oppgaven. Sjekk tilgjengelig lagring og prøv igjen.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Uskarphetsstyrke";
 
 "home_quick_search_guide" = "Skriv et søkeord på startsiden, velg en plattform og trykk på Søk på tastaturet.";
-"auto_hide_platform_bar_hint" = "Når dette er på, skjules linjen bare etter at du trykker på sideinnholdet og sidens domene ikke samsvarer med noen plattform i den gjeldende linjen. Ved treff på en plattform beholdes eller gjenopprettes linjen. Rulling og automatiske omdirigeringer skjuler den ikke.";
+"auto_hide_platform_bar_hint" = "Skjuler linjen på nettsteder utenfor den gjeldende plattformgruppen. Linjen vises igjen når du går tilbake til en plattform i gruppen.";
 
 "ad_subscription_add" = "Legg til filterliste";
 "ad_subscription_name" = "Navn";

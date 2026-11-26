@@ -131,16 +131,87 @@ final class IncrementalFeatureTests: XCTestCase {
         let probe = GeometryReader { geometry in
             Color.black.onAppear { if initialSize == nil { initialSize = geometry.size } }
         }
+        var dismissalDirection: UIInterfaceOrientation?
         let host = try XCTUnwrap(SharedVideoFullscreenHost.present(owner: owner, in: window,
-            content: AnyView(probe), identifier: "media.fullscreen.player", landscape: true, onClose: { _ in }))
+            content: AnyView(probe), identifier: "media.fullscreen.player", landscape: true,
+            onClose: { _ in dismissalDirection = scene.interfaceOrientation }))
         try await wait { initialSize != nil }
         let size = try XCTUnwrap(initialSize)
         XCTAssertGreaterThan(size.width, size.height)
         try await wait { scene.interfaceOrientation.isLandscape }
         host.dismiss(owner: owner)
+        XCTAssertTrue(window.subviews.contains { $0.accessibilityIdentifier == "media.fullscreen.source-cover" },
+                      "Cover the browser until portrait layout is restored")
         try await wait { root.presentedViewController == nil }
+        try await wait { dismissalDirection != nil }
+        XCTAssertEqual(dismissalDirection?.isLandscape, true, "Restore portrait after dismissing the video")
         await VideoOrientation.waitForRestoration(in: scene)
         XCTAssertEqual(scene.interfaceOrientation, .portrait)
+        XCTAssertFalse(window.subviews.contains { $0.accessibilityIdentifier == "media.fullscreen.source-cover" })
+    }
+
+    @MainActor func testFullscreenWaitsForVideoDimensionsBeforeFirstLayout() async throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "Exercises iPhone fullscreen entry")
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        let root = UIViewController(); window.rootViewController = root; window.makeKeyAndVisible()
+        let owner = UUID()
+        defer {
+            SharedVideoFullscreenHost.current(in: window)?.dismiss(owner: owner)
+            window.isHidden = true; previous?.makeKeyAndVisible()
+        }
+        VideoOrientation.request(.portrait, in: scene) { XCTFail($0.localizedDescription) }
+        try await wait { scene.interfaceOrientation == .portrait }
+        var initialSize: CGSize?
+        let content = GeometryReader { geometry in
+            Color.black.onAppear { if initialSize == nil { initialSize = geometry.size } }
+        }
+        var frameReady = false
+        let host = try XCTUnwrap(SharedVideoFullscreenHost.present(owner: owner, in: window, content: AnyView(content),
+            identifier: "media.fullscreen.player", landscape: nil, isFirstFrameReady: { frameReady }, onClose: { _ in }))
+        func hasSourceCover(_ view: UIView?) -> Bool {
+            guard let view else { return false }
+            return view.accessibilityIdentifier == "media.fullscreen.source-cover" || view.subviews.contains { hasSourceCover($0) }
+        }
+        try await wait { root.presentedViewController === host.screen }
+        XCTAssertNil(initialSize, "The waiting screen must not lay out video in portrait")
+        XCTAssertEqual(host.screen?.view.backgroundColor, .clear)
+        try await wait { hasSourceCover(host.screen?.view) }
+        host.resolveVideoOrientation(owner: owner, landscape: true)
+        try await wait { initialSize != nil }
+        let dimensions = try XCTUnwrap(initialSize)
+        XCTAssertGreaterThan(dimensions.width, dimensions.height)
+        XCTAssertTrue(hasSourceCover(host.screen?.view), "Keep showing the source while the player prepares the first frame")
+        frameReady = true
+        try await wait { !hasSourceCover(host.screen?.view) }
+        host.dismiss(owner: owner)
+        try await wait { root.presentedViewController == nil }
+        await VideoOrientation.waitForRestoration(in: scene)
+    }
+
+    @MainActor func testSoftwareDecoderOutputsFramesWithPortraitRotationMetadata() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac",
+            withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let asset = AVURLAsset(url: fixture)
+        let composition = AVMutableComposition()
+        try await composition.insertTimeRange(CMTimeRange(start: .zero, duration: asset.load(.duration)),
+                                              of: asset, at: .zero)
+        let videoTrack = try XCTUnwrap(composition.tracks(withMediaType: .video).first)
+        videoTrack.preferredTransform = CGAffineTransform(a: 0, b: 1, c: -1, d: 0,
+                                                          tx: videoTrack.naturalSize.height, ty: 0)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let exporter = try XCTUnwrap(AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetPassthrough))
+        exporter.outputURL = url
+        exporter.outputFileType = .mp4
+        await withCheckedContinuation { continuation in exporter.exportAsynchronously { continuation.resume() } }
+        XCTAssertEqual(exporter.status, .completed)
+
+        let decoder = ExtendedPlaybackDecoder(url: url, context: nil, hls: false)
+        defer { decoder.stop(retaining: nil) }
+        decoder.play()
+        try await wait { decoder.decodedFrameCount > 3 }
+        XCTAssertGreaterThan(decoder.videoSize.height, decoder.videoSize.width)
     }
 
     @MainActor func testDecoderSwitchKeepsOneFullscreenWindowAndSourceMounted() async throws {
@@ -674,6 +745,45 @@ final class IncrementalFeatureTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(200))
         XCTAssertEqual(scene.interfaceOrientation, .portrait)
         XCTAssertTrue(errors.isEmpty, errors.joined(separator: "\n"))
+    }
+
+    @MainActor func testFullscreenExitRestoresPortraitAfterSourceControllerIsRemoved() async throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "Exercises iPhone scene rotation")
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, original = scene.interfaceOrientation
+        let window = UIWindow(windowScene: scene), browser = OrientationTestController()
+        window.rootViewController = browser; window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+            VideoOrientation.request(VideoOrientation.mask(for: original), in: scene) { _ in }
+        }
+        VideoOrientation.request(.portrait, in: scene) { _ in }
+        try await wait { scene.interfaceOrientation == .portrait }
+        let source = OrientationTestController()
+        source.modalPresentationStyle = .overFullScreen
+        browser.present(source, animated: false)
+        try await wait { source.viewIfLoaded?.window === window }
+        VideoOrientation.request(.landscapeRight, in: scene) { _ in }
+        try await wait { scene.interfaceOrientation.isLandscape }
+
+        source.dismiss(animated: false)
+        try await wait { browser.presentedViewController == nil }
+        // The fullscreen SwiftUI cover can disappear before its player runs
+        // the restoration task. The browser underneath must still rotate back.
+        VideoOrientation.restore(.portrait, in: scene, sourceWindow: window, sourceController: source)
+        await VideoOrientation.waitForRestoration(in: scene)
+        XCTAssertEqual(scene.interfaceOrientation, .portrait)
+        XCTAssertLessThan(window.bounds.width, window.bounds.height)
+
+        VideoOrientation.request(.landscapeRight, in: scene) { _ in }
+        try await wait { scene.interfaceOrientation.isLandscape }
+        var uncoveredAt: UIInterfaceOrientation?
+        VideoOrientation.restore(.portrait, in: scene, sourceWindow: window, sourceController: source) {
+            uncoveredAt = scene.interfaceOrientation
+        }
+        VideoOrientation.restore(.portrait, in: scene, sourceWindow: window, sourceController: browser)
+        await VideoOrientation.waitForRestoration(in: scene)
+        XCTAssertEqual(uncoveredAt, .portrait, "The replacement restoration must keep the exit cover until portrait")
     }
 
     @MainActor func testFullscreenUsesStableMotionAndReversesWhenSceneRotationIsDeferred() async throws {

@@ -10,7 +10,6 @@ private enum PlatformManagementLayout: String {
 }
 
 struct PlatformManagementView: View {
-    @EnvironmentObject private var tabManager: TabManager
     @ObservedObject private var defaultSearch = GroupDefaultSearchService.shared
     @State private var searchGroup: GroupSection?
     @State private var draggedPlatform: UUID?
@@ -231,7 +230,6 @@ struct PlatformManagementView: View {
                 get: { showPlatformBar },
                 set: { enabled in
                     showPlatformBar = enabled
-                    for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
                     if !enabled { showPlatformBarGuide = true }
                 }
             ))
@@ -243,7 +241,6 @@ struct PlatformManagementView: View {
                     get: { autoHidePlatformBar },
                     set: { enabled in
                         autoHidePlatformBar = enabled
-                        for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
                         if enabled { platformGuide = .autoHide }
                     }
                 ))

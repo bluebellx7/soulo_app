@@ -369,6 +369,7 @@
 "torrent_select_all" = "Selectați Toate";
 "torrent_select_none" = "Deselectați Toate";
 "torrent_peers" = "%d colegi";
+"torrent_peer_counts" = "Conectați %d/%d · Seeders %d";
 "torrent_duplicate" = "Acest torrent este deja în Descărcări.";
 "torrent_task_limit" = "Eliminați unele înregistrări de descărcare înainte de a adăuga mai multe sarcini.";
 "torrent_save_error" = "Nu se poate salva sarcina. Verificați spațiul de stocare disponibil și încercați din nou.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Intensitatea estompării";
 
 "home_quick_search_guide" = "Introdu un cuvânt-cheie pe ecranul principal, alege o platformă, apoi atinge Caută pe tastatură.";
-"auto_hide_platform_bar_hint" = "Când este activată, bara se ascunde doar după ce atingi conținutul paginii și domeniul nu corespunde niciunei platforme din bara curentă. Dacă există o potrivire, bara rămâne vizibilă sau reapare. Derularea și redirecționările automate nu o ascund.";
+"auto_hide_platform_bar_hint" = "Ascunde bara pe site-urile din afara grupului curent de platforme. Bara reapare când revii la o platformă din grup.";
 
 "ad_subscription_add" = "Adaugă listă de filtre";
 "ad_subscription_name" = "Nume";

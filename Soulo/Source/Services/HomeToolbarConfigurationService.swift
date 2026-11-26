@@ -7,6 +7,7 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
     case newDownload, wifiTransfer, scanner, tabs, language, webAppearance, browserToolbar, homeToolbar
     case adBlock, privacy, backups, quickActions, urlSchemes, shake, feedback, version
     case search, newTab, privateBrowsing, shareApp, storage, more
+    case appearance, videoSettings, gestures, websiteZoom, browsingDisplay, feedbackPreferences, restoreTab
     var id: String { rawValue }
     var symbol: String {
         switch self {
@@ -42,6 +43,13 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .version: "info.circle"
         case .storage: "internaldrive"
         case .more: "ellipsis"
+        case .appearance: "circle.lefthalf.filled"
+        case .videoSettings: "play.rectangle"
+        case .gestures: "hand.draw"
+        case .websiteZoom: "text.magnifyingglass"
+        case .browsingDisplay: "rectangle.topthird.inset.filled"
+        case .feedbackPreferences: "speaker.wave.2"
+        case .restoreTab: "arrow.uturn.backward"
         }
     }
     var listSymbol: String {
@@ -90,6 +98,13 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .version: LanguageManager.shared.localizedString("settings_version")
         case .storage: FeatureText.text("Storage")
         case .more: LanguageManager.shared.localizedString("show_more")
+        case .appearance: LanguageManager.shared.localizedString("settings_appearance")
+        case .videoSettings: ToolText.text("video_settings")
+        case .gestures: ToolText.text("gesture_settings_title")
+        case .websiteZoom: ToolText.text("page_zoom")
+        case .browsingDisplay: ToolText.text("browsing_display_settings")
+        case .feedbackPreferences: ToolText.text("feedback_settings")
+        case .restoreTab: LanguageManager.shared.localizedString("tab_restore_last")
         }
     }
 }

@@ -56,110 +56,10 @@ final class WebViewModel: ObservableObject {
     @Published var pageEdgePalette: WebPageEdgePalette?
     var pageEdgesHaveScrolled = false
 
-    @Published private(set) var platformBarHiddenByPageTap = false
-    private var platformSearchHasLeftRoot = false
-    private var tracksPlatformSearch = false
-    private var platformSearchRootURL: URL?
-    private var platformBarMatchingHosts: Set<String> = []
-    private var platformBarHideRequestedByTap = false
-    private var platformBarHideRequestedByTabActivation = false
-    private var platformBarNeedsTabActivation = false
-
-    func setPlatformBarMatchingHosts(_ hosts: Set<String>) {
-        guard platformBarMatchingHosts != hosts else { return }
-        platformBarMatchingHosts = hosts
-        refreshPlatformBarAutoHide()
-    }
-
-    func beginPlatformSearchTracking() {
-        tracksPlatformSearch = true
-        platformSearchRootURL = nil
-        platformSearchHasLeftRoot = false
-        resetPlatformBarAutoHide()
-    }
-
-    func resetPlatformSearchTracking() {
-        tracksPlatformSearch = false
-        platformSearchRootURL = nil
-        platformSearchHasLeftRoot = false
-        resetPlatformBarAutoHide()
-    }
-
-    func resetPlatformBarAutoHide() {
-        platformBarHideRequestedByTap = false
-        platformBarHideRequestedByTabActivation = false
-        platformBarNeedsTabActivation = false
-        if platformBarHiddenByPageTap { platformBarHiddenByPageTap = false }
-    }
-
-    /// Queue this until the browser has supplied the current group's hosts.
-    /// Also survives opening the tab overview from Home, before this view exists.
-    func requestPlatformBarTabActivation() { platformBarNeedsTabActivation = true }
-
-    @discardableResult
-    func applyPendingPlatformBarTabActivation(autoHideEnabled: Bool) -> Bool {
-        guard platformBarNeedsTabActivation else { return false }
-        platformBarNeedsTabActivation = false
-        platformBarHideRequestedByTap = false
-        platformBarHideRequestedByTabActivation = autoHideEnabled
-            && currentURL.flatMap(PlatformBarDomainPolicy.host) != nil
-            && !PlatformBarDomainPolicy.matches(currentURL, hosts: platformBarMatchingHosts)
-        refreshPlatformBarAutoHide()
-        return true
-    }
-
-    /// Called only for a trusted click from our isolated content world. A
-    /// touchstart may become a scroll, and URL changes may be automatic.
-    func recordPlatformPageTap(autoHideEnabled: Bool) {
-        guard tracksPlatformSearch, autoHideEnabled, !platformBarHideRequestedByTap else { return }
-        // The site may have redirected itself since the search finished. Use
-        // the document the user actually tapped as the return-to-results root.
-        if let currentURL {
-            var parts = URLComponents(url: currentURL, resolvingAgainstBaseURL: false)
-            parts?.fragment = nil
-            platformSearchRootURL = parts?.url
-            platformSearchHasLeftRoot = false
-        }
-        platformBarHideRequestedByTap = true
-        refreshPlatformBarAutoHide()
-    }
-
-    private func refreshPlatformBarAutoHide() {
-        let matches = PlatformBarDomainPolicy.matches(currentURL, hosts: platformBarMatchingHosts)
-        // Arriving at any platform restores the bar, even before loading has
-        // finished. A later unrelated redirect then needs a fresh user tap.
-        if matches && platformBarHiddenByPageTap {
-            platformBarHideRequestedByTap = false
-            platformBarHideRequestedByTabActivation = false
-        }
-        let hasWebHost = currentURL.flatMap(PlatformBarDomainPolicy.host) != nil
-        let requested = (tracksPlatformSearch && platformBarHideRequestedByTap) || platformBarHideRequestedByTabActivation
-        let hidden = requested && hasWebHost && !matches
-        if platformBarHiddenByPageTap != hidden { platformBarHiddenByPageTap = hidden }
-    }
-
-    private func updatePlatformSearchNavigation(finished: Bool = false) {
-        guard tracksPlatformSearch, let currentURL else { return }
-        func documentURL(_ url: URL) -> URL? {
-            var parts = URLComponents(url: url, resolvingAgainstBaseURL: false)
-            parts?.fragment = nil
-            return parts?.url
-        }
-        if platformSearchRootURL == nil {
-            guard finished else { return }
-            platformSearchRootURL = documentURL(currentURL)
-        }
-        let leftRoot = documentURL(currentURL) != platformSearchRootURL
-        if platformSearchHasLeftRoot && !leftRoot {
-            platformBarHideRequestedByTap = false
-            refreshPlatformBarAutoHide()
-        }
-        platformSearchHasLeftRoot = leftRoot
-    }
-
-    @Published var currentURL: URL? {
-        didSet { if oldValue != currentURL { refreshPlatformBarAutoHide() } }
-    }
+    // The address bar can show a provisional request before WebKit commits a page.
+    // Platform visibility follows the document underneath the toolbar.
+    @Published private(set) var committedPageURL: URL?
+    @Published var currentURL: URL?
     @Published private(set) var userAgentOverride: String?
     @Published var pageTitle: String = ""
     var lastURLString: String = ""
@@ -290,6 +190,13 @@ final class WebViewModel: ObservableObject {
     var webView: WKWebView? {
         didSet {
             guard oldValue !== webView else { return }
+            (oldValue as? AccessibleWebView)?.onPageDownloadsFinished = nil
+            if let source = webView as? AccessibleWebView {
+                source.onPageDownloadsFinished = { [weak self, weak source] in
+                    guard let self, let source, self.webView === source, source.window != nil else { return }
+                    self.refreshExtensionRuntimeIfNeeded()
+                }
+            }
             if oldValue != nil { installedUserScriptStorageRevisions.removeAll() }
             historyTransition.reset()
             finishHistoryPreview()
@@ -506,6 +413,7 @@ final class WebViewModel: ObservableObject {
         loadURL(url, cachePolicy: .returnCacheDataElseLoad, keepSnapshotUntilLoaded: true)
         retainedInteractionState = state
         retainedInteractionURL = state == nil ? nil : url
+        if committedPageURL != url { committedPageURL = url }
     }
 
     /// WebKit's public state is an opaque Data object, including the current
@@ -700,8 +608,12 @@ final class WebViewModel: ObservableObject {
     }
 
     func refreshExtensionRuntimeIfNeeded() {
-        guard needsExtensionRuntimeRefresh else { return }
+        guard needsExtensionRuntimeRefresh, !hasActivePageDownload else { return }
         rebuildWebViewRuntime()
+    }
+
+    var hasActivePageDownload: Bool {
+        (webView as? AccessibleWebView)?.activePageDownloadIDs.isEmpty == false
     }
 
     func registerUserScriptMenuCommand(
@@ -880,8 +792,8 @@ final class WebViewModel: ObservableObject {
         if fromObservation, isLoading, let requestedNavigationURL, url != requestedNavigationURL { return }
         restorePageZoom(for: url)
         if currentURL != url { currentURL = url }
+        if (!fromObservation || !isLoading), committedPageURL != url { committedPageURL = url }
         lastURLString = url.absoluteString
-        if !isLoading { updatePlatformSearchNavigation() }
         if !isLoading, errorMessage == nil {
             requestedNavigationURL = url
             if failedNavigationURL != nil { failedNavigationURL = nil }
@@ -908,7 +820,6 @@ final class WebViewModel: ObservableObject {
     }
 
     func pageDidFinishLoading() {
-        updatePlatformSearchNavigation(finished: true)
         pageRevision += 1
     }
 

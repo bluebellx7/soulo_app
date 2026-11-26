@@ -40,7 +40,7 @@ struct SearchResultsView: View {
     @State private var showTopTabRecovery = false
     @State private var topTabRecoveryTask: Task<Void, Never>?
     @State private var showGroupPicker = false
-    @State private var platformBarHiddenByPageTap = false
+    @State private var platformBarPageURL: URL?
     @State private var platformBarMatchingHosts: Set<String> = []
     @State private var platformBarMatchingSources: [PlatformBarDomainPolicy.Source] = []
     @State private var platformBarMatchingEntries: [PlatformBarDomainPolicy.Entry] = []
@@ -101,35 +101,33 @@ struct SearchResultsView: View {
         platformStore.platforms.map { .init(id: $0.id, region: $0.region, isVisible: $0.isVisible) }
     }
 
-    private var platformBarAutoHidePublisher: AnyPublisher<Bool, Never> {
-        if let model = tabManager.activeWebViewModel {
-            return model.$platformBarHiddenByPageTap.removeDuplicates().eraseToAnyPublisher()
-        }
-        return Just(false).eraseToAnyPublisher()
+    private var platformBarURLPublisher: AnyPublisher<URL?, Never> {
+        tabManager.activeWebViewModel?.$committedPageURL.removeDuplicates().eraseToAnyPublisher()
+            ?? Just(nil).eraseToAnyPublisher()
     }
 
-    private var platformBarURLPublisher: AnyPublisher<URL?, Never> {
-        tabManager.activeWebViewModel?.$currentURL.removeDuplicates().eraseToAnyPublisher()
-            ?? Just(nil).eraseToAnyPublisher()
+    private var platformBarAutoHidden: Bool {
+        autoHidePlatformBar && PlatformBarDomainPolicy.shouldAutoHide(for: platformBarPageURL, hosts: platformBarMatchingHosts)
     }
 
     private var currentPlatformBarSources: [PlatformBarDomainPolicy.Source] {
         currentPlatforms.map(PlatformBarDomainPolicy.Source.init)
     }
 
-    @discardableResult private func synchronizePlatformBarMatchingHosts() -> Set<String> {
+    private func synchronizePlatformBarMatchingHosts() {
         let sources = currentPlatformBarSources
-        let hosts: Set<String>
         if sources != platformBarMatchingSources {
             let entries = PlatformBarDomainPolicy.entries(for: sources)
-            hosts = Set(entries.flatMap(\.hosts))
             platformBarMatchingSources = sources
-            platformBarMatchingHosts = hosts
+            platformBarMatchingHosts = Set(entries.flatMap(\.hosts))
             platformBarMatchingEntries = entries
-        } else { hosts = platformBarMatchingHosts }
-        tabManager.activeWebViewModel?.setPlatformBarMatchingHosts(hosts)
-        synchronizePlatformBarHighlight(for: tabManager.activeWebViewModel?.currentURL)
-        return hosts
+        }
+        updatePlatformBarPage(tabManager.activeWebViewModel?.committedPageURL)
+    }
+
+    private func updatePlatformBarPage(_ url: URL?) {
+        if platformBarPageURL != url { platformBarPageURL = url }
+        synchronizePlatformBarHighlight(for: url)
     }
 
     private func synchronizePlatformBarHighlight(for url: URL?) {
@@ -138,30 +136,17 @@ struct SearchResultsView: View {
         if highlightedPlatformID != id { highlightedPlatformID = id }
     }
 
-    @discardableResult private func applyPendingPlatformBarTabActivation() -> Bool {
-        guard let model = tabManager.activeWebViewModel else { return false }
-        let applied = model.applyPendingPlatformBarTabActivation(autoHideEnabled: showPlatformBar && autoHidePlatformBar)
-        platformBarHiddenByPageTap = model.platformBarHiddenByPageTap
-        return applied
-    }
-
     private var platformObservedSurface: some View {
         browserSurface
         .onReceive(pageEdgePublisher) { pageEdgePalette = $0 }
-        .onReceive(platformBarAutoHidePublisher) { platformBarHiddenByPageTap = $0 }
-        .onReceive(platformBarURLPublisher) { synchronizePlatformBarHighlight(for: $0) }
+        .onReceive(platformBarURLPublisher) { updatePlatformBarPage($0) }
         .onCompatibleChange(of: currentPlatformBarSources) { _, _ in synchronizePlatformBarMatchingHosts() }
         .onCompatibleChange(of: tabManager.activeTab?.id) { _, _ in
             synchronizePlatformBarMatchingHosts()
-            applyPendingPlatformBarTabActivation()
             cancelAIInteraction()
             if let vm = tabManager.activeWebViewModel {
                 pageReady = vm.hasVisibleContent || vm.estimatedProgress >= 0.98 || (!vm.isLoading && vm.currentURL != nil)
             }
-        }
-        .onCompatibleChange(of: tabManager.platformBarTabActivationRevision) { _, _ in
-            synchronizePlatformBarMatchingHosts()
-            applyPendingPlatformBarTabActivation()
         }
     }
 
@@ -183,7 +168,7 @@ struct SearchResultsView: View {
         .onReceive(NotificationCenter.default.publisher(for: .focusUserScriptCurrentTab)) { notification in
             guard let source = notification.object as? WebViewModel,
                   let index = tabManager.tabs.firstIndex(where: { $0.webViewModel === source }) else { return }
-            tabManager.switchToTab(at: index, userInitiated: false)
+            tabManager.switchToTab(at: index)
         }
         .sheet(isPresented: $showVoiceInput) {
             VoiceInputView(
@@ -215,9 +200,6 @@ struct SearchResultsView: View {
         }
         .onAppear {
             synchronizePlatformBarMatchingHosts()
-            if !applyPendingPlatformBarTabActivation() {
-                tabManager.activeWebViewModel?.resetPlatformBarAutoHide()
-            }
             if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
                !searchVM.isIncognito, #available(iOS 18.4, *) {
                 NativeWebExtensionRuntime.shared.attach(tabManager: tabManager)
@@ -260,18 +242,21 @@ struct SearchResultsView: View {
             }
 
             // Home quick search carries an explicit platform with its request.
-            // Restore the group default for the usual browser entry points.
-            if searchVM.externalSearchRequestID != searchVM.searchID {
+            // Only restore the saved group for a new search. Returning from the
+            // library must keep the selected engine and the current document.
+            let hasNewSearch = searchVM.searchID != lastSearchID && !searchVM.currentKeyword.isEmpty
+            if hasNewSearch, searchVM.externalSearchRequestID != searchVM.searchID {
                 if !lastGroupID.isEmpty,
                    let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }) {
                     if searchVM.selectedGroupID != group.id { searchVM.selectCustomGroup(group) }
                     else { synchronizeSelectedPlatformAfterStoreChange() }
                 } else if !lastRegion.isEmpty, let region = PlatformRegion(rawValue: lastRegion) {
-                    searchVM.selectRegion(region)
+                    if searchVM.selectedGroupID != nil || searchVM.selectedRegion != region { searchVM.selectRegion(region) }
+                    else { synchronizeSelectedPlatformAfterStoreChange() }
                 }
             }
 
-            if searchVM.searchID != lastSearchID && !searchVM.currentKeyword.isEmpty {
+            if hasNewSearch {
                 // New search or bookmark click — load in active tab
                 lastSearchID = searchVM.searchID
                 loadCurrentPlatformURL()
@@ -292,14 +277,6 @@ struct SearchResultsView: View {
                   !searchVM.currentKeyword.isEmpty else { return }
             lastSearchID = searchVM.searchID
             loadCurrentPlatformURL()
-        }
-        .onCompatibleChange(of: autoHidePlatformBar) { _, _ in
-            // Enabling waits for a fresh page tap, including when toggled from
-            // platform management or the home search menu.
-            for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
-        }
-        .onCompatibleChange(of: showPlatformBar) { _, _ in
-            for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
         }
         .onCompatibleChange(of: keepFullscreenBrowsing) { _, enabled in
             guard PersistentFullscreenBehavior.shouldEnter(
@@ -594,14 +571,14 @@ struct SearchResultsView: View {
     private var platformSwitcher: some View {
         Group {
             if showPlatformBar && hasVisiblePlatforms && (!searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch)
-                && (!autoHidePlatformBar || !platformBarHiddenByPageTap) {
+                && !platformBarAutoHidden {
                 platformBar
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: autoHidePlatformBar && platformBarHiddenByPageTap)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: platformBarAutoHidden)
         .onCompatibleChange(of: searchVM.selectedPlatform?.id) { _, _ in
-            synchronizePlatformBarHighlight(for: tabManager.activeWebViewModel?.currentURL)
+            synchronizePlatformBarHighlight(for: platformBarPageURL)
             guard !searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch else { return }
             guard tabManager.activeWebViewModel?.currentURL?.scheme?.lowercased() != "webkit-extension" else { return }
             loadCurrentPlatformURL()
@@ -753,7 +730,7 @@ struct SearchResultsView: View {
         let availablePlatforms = currentPlatforms
         guard let selectedID = searchVM.selectedPlatform?.id,
               availablePlatforms.contains(where: { $0.id == selectedID }) else {
-            searchVM.selectedPlatform = availablePlatforms[0]
+            searchVM.selectedPlatform = availablePlatforms.first
             return
         }
     }
@@ -820,7 +797,6 @@ struct SearchResultsView: View {
         let keyword = searchVM.currentKeyword
         guard let tab = tabManager.prepareTabForPlatformNavigation(keyword: keyword, platform: platform) else { return }
         let webVM = tab.webViewModel
-        webVM.setPlatformBarMatchingHosts(synchronizePlatformBarMatchingHosts())
         let tabID = tab.id
         let request = SearchNavigationRequest(searchID: searchVM.searchID, tabID: tabID,
             platformID: platform.id, scopeID: searchVM.selectedSearchScope.id, template: platform.searchURLTemplate, keyword: keyword)
@@ -834,9 +810,6 @@ struct SearchResultsView: View {
         } else {
             directURL = nil
         }
-
-        if directURL == nil { webVM.beginPlatformSearchTracking() }
-        else { webVM.resetPlatformSearchTracking() }
 
         // Apply the platform's required content mode before starting navigation,
         // so the very first request already carries the correct user agent.

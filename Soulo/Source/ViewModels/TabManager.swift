@@ -98,7 +98,6 @@ final class TabManager: ObservableObject {
     @Published var activeTabIndex: Int = 0
     @Published var showTabOverview: Bool = false
     @Published private(set) var lastTabClosedRevision = 0
-    @Published private(set) var platformBarTabActivationRevision = 0
     @Published var recentlyClosed: [RecentlyClosedTab] = []
     @Published private(set) var overviewGroupNames: [String: String] = [:]
     @Published private(set) var pinnedOverviewGroupIDs: Set<String> = []
@@ -362,8 +361,15 @@ final class TabManager: ObservableObject {
     /// chrome requests a platform search instead of loading the web in it.
     func prepareTabForPlatformNavigation(keyword: String, platform: SearchPlatform) -> BrowserTab? {
         guard let tab = activeTab else { return nil }
-        guard tab.webViewModel.currentURL?.scheme?.lowercased() == "webkit-extension" else { return tab }
+        guard Self.ownsExtensionDocument(tab.webViewModel) else { return tab }
         return createTab(keyword: keyword, platform: platform)
+    }
+
+    private static func ownsExtensionDocument(_ model: WebViewModel) -> Bool {
+        // The address can change during provisional navigation. Check the
+        // live view as well so an extension's download page stays mounted.
+        model.currentURL?.scheme?.lowercased() == "webkit-extension"
+            || model.webView?.url?.scheme?.lowercased() == "webkit-extension"
     }
 
     /// Extension pages use an origin-bound WebKit configuration. Links chosen
@@ -373,7 +379,7 @@ final class TabManager: ObservableObject {
     func openURLFromBrowserControls(_ url: URL, searchID: UUID? = nil, inNewTab: Bool = false) -> BrowserTab? {
         guard ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return nil }
         let tab: BrowserTab
-        if !inNewTab, let active = activeTab, active.webViewModel.currentURL?.scheme?.lowercased() != "webkit-extension" {
+        if !inNewTab, let active = activeTab, !Self.ownsExtensionDocument(active.webViewModel) {
             tab = active
         } else {
             tab = createTab()
@@ -587,10 +593,9 @@ final class TabManager: ObservableObject {
 
     // MARK: - Tab Switching
 
-    func switchToTab(at index: Int, userInitiated: Bool = true) {
+    func switchToTab(at index: Int) {
         guard tabs.indices.contains(index) else { return }
         guard index != activeTabIndex else {
-            if userInitiated { recordPlatformBarTabActivation() }
             showTabOverview = false
             return
         }
@@ -598,7 +603,6 @@ final class TabManager: ObservableObject {
         activeWebViewModel?.takeSnapshot()
         dismissFindInPage()
         activeTabIndex = index
-        if userInitiated { recordPlatformBarTabActivation() }
         showTabOverview = false
         manageTabLifecycles(recordAccess: true)
         scheduleSaveToDisk()
@@ -609,7 +613,6 @@ final class TabManager: ObservableObject {
         activeWebViewModel?.takeSnapshot()
         dismissFindInPage()
         activeTabIndex = index
-        recordPlatformBarTabActivation()
         manageTabLifecycles(recordAccess: true)
         scheduleSaveToDisk()
     }
@@ -617,11 +620,6 @@ final class TabManager: ObservableObject {
     func switchToTab(id: UUID) {
         guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }
         switchToTab(at: index)
-    }
-
-    private func recordPlatformBarTabActivation() {
-        activeWebViewModel?.requestPlatformBarTabActivation()
-        platformBarTabActivationRevision &+= 1
     }
 
     func switchToNextTab() {
@@ -713,6 +711,7 @@ final class TabManager: ObservableObject {
         guard tabs.indices.contains(index) else { return }
         let tabID = tabs[index].id
         let webViewModel = tabs[index].webViewModel
+        guard !webViewModel.hasActivePageDownload else { return }
         unregisterWebExtensionTab(tabs[index])
         tabs[index].suspendedURL = tabs[index].webViewModel.currentURL
         tabs[index].isAlive = false
@@ -724,6 +723,10 @@ final class TabManager: ObservableObject {
             }
             guard let self, let currentIndex = self.tabs.firstIndex(where: { $0.id == tabID }),
                   !self.tabs[currentIndex].isAlive else { return }
+            if webViewModel.hasActivePageDownload {
+                self.restoreTabMemory(at: currentIndex)
+                return
+            }
             webViewModel.releaseWebViewRuntime()
         }
     }

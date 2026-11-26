@@ -116,17 +116,6 @@ struct WallpaperSettingsView: View {
             } else {
                 appearanceSection
             }
-
-            // 3. Search & Tags
-            if wallpaperManager.source == .pexels || wallpaperManager.source == .pixabay {
-                Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        searchBarView
-                        vibeTagsCloud
-                    }.padding(.vertical, 4)
-                } header: { Label(LText("wallpaper_discover"), systemImage: "sparkles") }
-            }
-
             }
             // Storage management can reach favorites without changing the
             // currently selected wallpaper source or starting a remote search.
@@ -156,12 +145,21 @@ struct WallpaperSettingsView: View {
                 }
             }
 
-            // 4. Results
             if showsFavoritesOnly {
                 if wallpaperManager.favorites.isEmpty {
                     CompatibleUnavailableView(LText("wallpaper_favorites"), systemImage: "heart")
                 }
-            } else { sourceOptions }
+            } else {
+                if wallpaperManager.source == .pexels || wallpaperManager.source == .pixabay {
+                    Section {
+                        VStack(alignment: .leading, spacing: 12) {
+                            searchBarView
+                            vibeTagsCloud
+                        }.padding(.vertical, 4)
+                    } header: { Label(LText("wallpaper_discover"), systemImage: "sparkles") }
+                }
+                sourceOptions
+            }
         }
         .navigationTitle(LText(showsFavoritesOnly ? "wallpaper_favorites" : "settings_wallpaper"))
         .navigationBarTitleDisplayMode(.inline)

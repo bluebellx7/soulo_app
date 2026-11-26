@@ -369,6 +369,7 @@
 "torrent_select_all" = "Sélectionner tout";
 "torrent_select_none" = "Désélectionner tout";
 "torrent_peers" = "%d pairs";
+"torrent_peer_counts" = "Connectés %d/%d · Sources complètes %d";
 "torrent_duplicate" = "Ce torrent est déjà en téléchargements.";
 "torrent_task_limit" = "Supprimez certains enregistrements de téléchargement avant d'ajouter d'autres tâches.";
 "torrent_save_error" = "Impossible d'enregistrer la tâche. Vérifiez l'espace de stockage disponible et réessayez.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Intensité du flou";
 
 "home_quick_search_guide" = "Saisissez un mot-clé à l’accueil, choisissez une plateforme, puis touchez Rechercher sur le clavier.";
-"auto_hide_platform_bar_hint" = "Si l’option est activée, la barre se masque uniquement après un appui sur le contenu Web et si le domaine de la page ne correspond à aucune plateforme de la barre actuelle. Une correspondance maintient ou rétablit son affichage. Le défilement et les redirections automatiques ne la masquent pas.";
+"auto_hide_platform_bar_hint" = "La barre se masque sur les sites qui ne font pas partie du groupe de plateformes actuel. Elle réapparaît au retour sur une plateforme du groupe.";
 
 "ad_subscription_add" = "Ajouter une liste";
 "ad_subscription_name" = "Nom";

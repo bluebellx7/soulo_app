@@ -11,7 +11,7 @@ Source: https://github.com/fribidi/fribidi/tree/v1.0.16
 
 The SouloDecoder dynamic framework is built without GPL or nonfree features.
 The Soulo source distribution includes the iOS build recipe and the patches
-for the shared audio session and HTTP cookie scope.
+for the shared audio session, software video rotation, and HTTP cookie scope.
 
                   GNU LESSER GENERAL PUBLIC LICENSE
                        Version 2.1, February 1999

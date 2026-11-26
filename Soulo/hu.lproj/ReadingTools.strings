@@ -369,6 +369,7 @@
 "torrent_select_all" = "Válassza az Összes lehetőséget";
 "torrent_select_none" = "Törölje az Összes kijelölését";
 "torrent_peers" = "%d társ";
+"torrent_peer_counts" = "Kapcsolódva %d/%d · Seedek %d";
 "torrent_duplicate" = "This torrent is already in Downloads.";
 "torrent_task_limit" = "További feladatok hozzáadása előtt távolítson el néhány letöltési rekordot.";
 "torrent_save_error" = "Nem sikerült menteni a feladatot. Ellenőrizze a rendelkezésre álló tárhelyet, és próbálja újra.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Elmosás erőssége";
 
 "home_quick_search_guide" = "Írj be egy kulcsszót a kezdőképernyőn, válassz platformot, majd koppints a billentyűzet Keresés gombjára.";
-"auto_hide_platform_bar_hint" = "Bekapcsolva a sáv csak a weboldal tartalmának megérintése után rejtőzik el, és csak akkor, ha az oldal domainje a jelenlegi sáv egyik platformjával sem egyezik. Egyezéskor a sáv látható marad vagy újra megjelenik. Görgetés és automatikus átirányítás nem rejti el.";
+"auto_hide_platform_bar_hint" = "A sáv elrejtőzik az aktuális platformcsoporton kívüli webhelyeken, és újra megjelenik, amikor visszatérsz a csoport egyik platformjára.";
 
 "ad_subscription_add" = "Szűrőlista hozzáadása";
 "ad_subscription_name" = "Név";

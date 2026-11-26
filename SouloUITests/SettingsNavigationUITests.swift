@@ -280,15 +280,17 @@ final class SettingsNavigationUITests: XCTestCase {
         let picker = app.buttons["search.group-picker"]
         XCTAssertTrue(alpha.isSelected)
         XCTAssertFalse(beta.isSelected)
+        let initialSearchRequests = server.receivedRequests.filter { $0.path == "/alpha" && $0.method == "GET" }.count
         app.webViews.links["Go to Beta"].tap()
         XCTAssertTrue(app.webViews.staticTexts["Domain Beta page"].waitForExistence(timeout: 10), String(describing: server.receivedRequests.map { $0.path }))
         let highlighted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in beta.isSelected && !alpha.isSelected }, object: nil)
         await fulfillment(of: [highlighted], timeout: 5)
         XCTAssertTrue(picker.exists)
-        XCTAssertEqual(server.receivedRequests.filter { $0.path.hasPrefix("/alpha") && $0.method == "GET" }.count, 1,
+        XCTAssertEqual(server.receivedRequests.filter { $0.path == "/alpha" && $0.method == "GET" }.count, initialSearchRequests,
             "Domain highlighting must not trigger another search or replace the current document")
         app.webViews.links["Open unrelated tab"].tap()
         XCTAssertTrue(app.webViews.staticTexts["Unrelated domain page"].waitForExistence(timeout: 15), String(describing: server.receivedRequests.map { $0.path }) + "\n" + app.debugDescription)
+        XCTAssertTrue(picker.waitForNonExistence(timeout: 5), "A user-opened result tab outside the group must hide the bar on its first load")
         let betaTab = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Domain Beta, tab ")).firstMatch
         let outsideTab = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Domain Outside, tab ")).firstMatch
         XCTAssertTrue(betaTab.waitForExistence(timeout: 5), app.debugDescription)
@@ -305,6 +307,134 @@ final class SettingsNavigationUITests: XCTestCase {
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
         XCTAssertTrue(beta.isSelected)
         let restored = XCTAttachment(screenshot: app.screenshot()); restored.name = "matching-tab-domain-platform-highlight"; restored.lifetime = .keepAlways; add(restored)
+    }
+
+    func testReturningFromLibraryKeepsTheSelectedSearchPlatform() async throws {
+        continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
+        let server = try DownloadPlaybackHTTPFixture(files: ["/first": Data("<h1>First search engine</h1>".utf8),
+            "/second": Data("<h1>Second search engine</h1>".utf8)])
+        let root = try await server.start()
+        server.releaseDownloads()
+        defer { server.stop() }
+
+        let platforms: [[String: Any]] = ["first", "second"].enumerated().map { index, path in
+            let url = root.appendingPathComponent(path).absoluteString
+            return ["id": UUID().uuidString, "name": "QA \(path)", "iconName": "icon_google",
+                "searchURLTemplate": url + "?q=%@", "homeURL": url, "region": "international", "isBuiltIn": false,
+                "isVisible": true, "sortOrder": index, "usageCount": 0, "isCustom": true]
+        }
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO",
+            "-is_incognito", "YES", "-restore_last_page_on_launch", "NO", "-review.requestedOnce", "YES",
+            "-privacy_https_upgrade_enabled", "NO", "-ad_block_enabled", "NO", "-keep_fullscreen_browsing", "NO",
+            "-browser_toolbar_hidden", "NO", "-show_platform_bar", "YES", "-auto_hide_platform_bar", "NO",
+            "-last_selected_region", "international", "-last_selected_group_id", "", "-platform_config_version", "47",
+            "-platform_config", try platformArgumentData(platforms), "-browser_toolbar_actions", "(home,back,library,more)"]
+        app.launch()
+        defer { app.terminate() }
+
+        let query = app.textFields["search.query"].firstMatch
+        XCTAssertTrue(query.waitForExistence(timeout: 10))
+        query.tap(); query.typeText("library platform regression\n")
+        XCTAssertTrue(app.webViews.staticTexts["First search engine"].waitForExistence(timeout: 15), app.debugDescription)
+        let second = app.descendants(matching: .any).matching(identifier: "QA second").firstMatch
+        XCTAssertTrue(second.waitForExistence(timeout: 5), app.debugDescription)
+        second.tap()
+        let heading = app.webViews.staticTexts["Second search engine"]
+        XCTAssertTrue(heading.waitForExistence(timeout: 10), app.debugDescription)
+        let searchRequests = server.receivedRequests.filter { ["/first", "/second"].contains($0.path) && $0.method == "GET" }.count
+
+        let library = app.buttons["browser.action.library"]
+        XCTAssertTrue(library.waitForExistence(timeout: 5))
+        library.tap()
+        XCTAssertTrue(app.buttons["library.section.bookmarks"].waitForExistence(timeout: 10), app.debugDescription)
+        app.navigationBars.firstMatch.buttons.firstMatch.tap()
+        XCTAssertTrue(library.waitForExistence(timeout: 10))
+        XCTAssertTrue(heading.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(second.isSelected)
+        XCTAssertEqual(server.receivedRequests.filter { ["/first", "/second"].contains($0.path) && $0.method == "GET" }.count,
+                       searchRequests)
+    }
+
+    func testRecentSearchHidesPlatformBarForScriptOpenedResult() async throws {
+        continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
+        let results = """
+        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Dictionary results</title>
+        <h1>Dictionary results</h1>
+        <a href="javascript:void(0)" onclick="window.open('http://[::1]:'+location.port+'/dictionary')">Dictionary entry</a>
+        """
+        let dictionary = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Dictionary definition</h1>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/results": Data(results.utf8), "/dictionary": Data(dictionary.utf8)])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let platform = ["id": UUID().uuidString, "name": "QA Dictionary Search", "iconName": "icon_google",
+            "searchURLTemplate": root.appendingPathComponent("results").absoluteString + "?q=%@",
+            "homeURL": root.absoluteString, "region": "international", "isBuiltIn": false, "isVisible": true,
+            "sortOrder": 0, "usageCount": 0, "isCustom": true] as [String: Any]
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO", "-is_incognito", "NO",
+            "-restore_last_page_on_launch", "NO", "-show_recent_searches_on_home", "YES", "-show_bookmarks_on_home", "NO",
+            "-privacy_https_upgrade_enabled", "NO", "-ad_block_enabled", "NO", "-ad_block_confirm_cross_domain", "NO",
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-show_platform_bar", "YES", "-auto_hide_platform_bar", "YES",
+            "-show_top_tab_bar", "YES", "-last_selected_region", "international", "-last_selected_group_id", "", "-platform_config_version", "47",
+            "-platform_config", try platformArgumentData([platform]), "-browser_toolbar_actions", "(home,back,tabs,more)"]
+        app.launch(); defer { app.terminate() }
+        let term = "dictionary qa \(UUID().uuidString.prefix(6))"
+        let query = app.textFields["search.query"].firstMatch
+        XCTAssertTrue(query.waitForExistence(timeout: 10)); query.tap(); query.typeText(term + "\n")
+        let resultsPage = app.webViews.staticTexts["Dictionary results"].firstMatch
+        XCTAssertTrue(resultsPage.waitForExistence(timeout: 20), app.debugDescription)
+        let home = app.buttons["browser.action.home"]
+        home.tap()
+        let recent = app.buttons["Recent search, \(term)"]
+        XCTAssertTrue(recent.waitForExistence(timeout: 5)); recent.tap()
+        XCTAssertTrue(resultsPage.waitForExistence(timeout: 15))
+        let bar = app.buttons["search.group-picker"]
+        XCTAssertTrue(bar.exists)
+        app.webViews.links["Dictionary entry"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Dictionary definition"].firstMatch.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(bar.waitForNonExistence(timeout: 5), "A real tap that opens an off-platform result with JavaScript must hide the bar")
+        let resultsTab = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Dictionary results, tab ")).firstMatch
+        XCTAssertTrue(resultsTab.waitForExistence(timeout: 5)); XCTAssertTrue(resultsTab.isHittable)
+        resultsTab.coordinate(withNormalizedOffset: CGVector(dx: 0.35, dy: 0.5)).tap()
+        XCTAssertTrue(resultsPage.waitForExistence(timeout: 5))
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
+    }
+
+    func testLiveBaiduDictionaryResultFromRecentSearchHidesPlatformBar() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_BAIDU_HISTORY_QA"] == "1", "Requires the live Baidu dictionary card")
+        continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
+        let baidu = ["id": UUID().uuidString, "name": "Baidu QA", "iconName": "icon_baidu",
+            "searchURLTemplate": "https://www.baidu.com/s?wd=%@", "homeURL": "https://www.baidu.com",
+            "region": "china", "isBuiltIn": false, "isVisible": true, "sortOrder": 0,
+            "usageCount": 0, "isCustom": true] as [String: Any]
+        let app = XCUIApplication(bundleIdentifier: SouloUITestApplication.bundleIdentifier)
+        app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO", "-is_incognito", "NO",
+            "-restore_last_page_on_launch", "NO", "-show_recent_searches_on_home", "YES", "-show_bookmarks_on_home", "NO",
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-show_platform_bar", "YES", "-auto_hide_platform_bar", "YES",
+            "-last_selected_region", "china", "-last_selected_group_id", "", "-platform_config_version", "47",
+            "-platform_config", try platformArgumentData([baidu]), "-browser_toolbar_actions", "(home,back,address,tabs,more)"]
+        app.launch(); defer { app.terminate() }
+        app.open(try XCTUnwrap(URL(string: "soulo://search?q=%E4%BA%BA")))
+        let home = app.buttons["browser.action.home"]
+        XCTAssertTrue(home.waitForExistence(timeout: 15)); home.tap()
+        let recent = app.buttons["Recent search, 人"]
+        XCTAssertTrue(recent.waitForExistence(timeout: 8)); recent.tap()
+        let bar = app.buttons["search.group-picker"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 10))
+        let web = app.webViews.firstMatch
+        let result = web.staticTexts["zd.souf.com.cn"].firstMatch
+        XCTAssertTrue(web.waitForExistence(timeout: 10))
+        for _ in 0..<12 {
+            if result.exists && result.isHittable { break }
+            web.swipeUp()
+        }
+        guard result.isHittable else { throw XCTSkip("Baidu did not return the requested dictionary card in the simulator") }
+        result.tap()
+        XCTAssertTrue(app.webViews.staticTexts["基本解释"].firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(bar.waitForNonExistence(timeout: 5))
     }
 
     func testPlatformPanelSwitchesGroupsAndPlatformsWithHiddenBar() async throws {

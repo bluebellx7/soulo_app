@@ -86,9 +86,12 @@ enum WebExtensionPackagePreparer {
             manifest["action"] = action
             try Data().write(to: panelFallbackMarker, options: .atomic)
         }
+        let externalMessaging = publisherUsesAPI(
+            ["onMessageExternal", "sendMessage"], in: resourceDirectory
+        )
         let nativeBindings = nativeBindingsJavaScript(
             synthesizedPanelPopup: FileManager.default.fileExists(atPath: panelFallbackMarker.path)
-        )
+        ) + (externalMessaging ? WebExtensionExternalMessagingScript.source : "")
 
         // Chrome's explicit wildcard ports are not portable to WebKit.
         // Omitting the port already matches every port; fixed ports stay intact.
@@ -114,6 +117,7 @@ enum WebExtensionPackagePreparer {
         }
         try protectLocalExtensionResources(in: resourceDirectory, manifest: &manifest)
 
+        try WebExtensionSimpleGestureAdapter.prepare(in: resourceDirectory, manifest: manifest)
         _ = try WebExtensionTYTYAdapter.prepare(in: resourceDirectory, manifest: &manifest)
         if let background = manifest["background"] as? [String: Any],
            let worker = background["service_worker"] as? String,
@@ -129,6 +133,13 @@ enum WebExtensionPackagePreparer {
         }
         try WebExtensionGoFullPageAdapter.prepare(in: resourceDirectory, manifest: &manifest)
         try installNativeBindings(nativeBindings, in: resourceDirectory, manifest: &manifest)
+        if externalMessaging {
+            var permissions = manifest["permissions"] as? [String] ?? []
+            if !permissions.contains("nativeMessaging") {
+                permissions.append("nativeMessaging")
+                manifest["permissions"] = permissions
+            }
+        }
         let permissions = (manifest["permissions"] as? [String]) ?? []
         let declaredPermissions = permissions + (manifest["optional_permissions"] as? [String] ?? [])
         let needsNotifications = declaredPermissions.contains("notifications")
@@ -142,7 +153,7 @@ enum WebExtensionPackagePreparer {
         let needsNativeBridge = needsNotifications || needsOffscreen || needsDownloads || needsUserScripts
             || needsProxy || needsTabMetadata || manifest["commands"] != nil
         let needsBadgeColors = !needsNativeBridge && (manifest["action"] != nil || manifest["browser_action"] != nil)
-            && publisherUsesBadgeTextColor(in: resourceDirectory)
+            && publisherUsesAPI(["setBadgeTextColor", "getBadgeTextColor"], in: resourceDirectory)
         if needsDownloads || needsUserScripts || manifest["commands"] != nil || needsNotifications || needsOffscreen {
             try Data("<!doctype html><meta charset='utf-8'><title>Download</title>".utf8)
                 .write(to: resourceDirectory.appendingPathComponent(WebExtensionDownloadsScript.helperFilename), options: .atomic)
@@ -239,10 +250,10 @@ enum WebExtensionPackagePreparer {
         try updatedManifest.write(to: manifestURL, options: .atomic)
     }
 
-    private static func publisherUsesBadgeTextColor(in root: URL) -> Bool {
+    private static func publisherUsesAPI(_ apiNames: [String], in root: URL) -> Bool {
         guard let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey]) else { return false }
         let scriptExtensions: Set<String> = ["js", "mjs", "cjs", "html", "htm"]
-        let names = [Data("setBadgeTextColor".utf8), Data("getBadgeTextColor".utf8)]
+        let names = apiNames.map { Data($0.utf8) }
         for case let file as URL in files where scriptExtensions.contains(file.pathExtension.lowercased()) {
             guard !file.lastPathComponent.hasPrefix("__soulo_"),
                   (try? file.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true,
@@ -603,6 +614,36 @@ enum WebExtensionPackagePreparer {
           }
         }
         const windows=namespace.windows,tabs=namespace.tabs;
+        // Simple Gesture's batch-close confirmation still uses the legacy CSS API.
+        // https://microsoftedge.microsoft.com/addons/detail/simple-gesture/hfhdokhgdkcaebhjdblfgafnimchimkd
+        if(tabs&&typeof tabs.insertCSS!=='function'&&typeof namespace.scripting?.insertCSS==='function'){
+          const scripting=namespace.scripting;
+          const insertCSS=function(tabId,details,callback){
+            if(tabId&&typeof tabId==='object'){
+              callback=details;
+              details=tabId;
+              tabId=undefined;
+            }
+            if((tabId!==undefined&&!Number.isSafeInteger(tabId))||!details||typeof details!=='object'||
+               details.matchAboutBlank||details.runAt!==undefined||
+               (details.allFrames&&details.frameId!==undefined)||
+               (details.code!==undefined)===(details.file!==undefined)||
+               typeof (details.file??details.code)!=='string'||
+               (details.cssOrigin!==undefined&&!['author','user'].includes(details.cssOrigin)))
+              throw new TypeError('Invalid or unsupported tabs.insertCSS options.');
+            const inject=id=>{
+              const target={tabId:id};
+              if(details.allFrames!==undefined)target.allFrames=details.allFrames;
+              if(details.frameId!==undefined)target.frameIds=[details.frameId];
+              const request={target,...(details.file!==undefined?{files:[details.file]}:{css:details.code})};
+              if(details.cssOrigin!==undefined)request.origin=details.cssOrigin.toUpperCase();
+              return typeof callback==='function'?scripting.insertCSS(request,callback):scripting.insertCSS(request);
+            };
+            if(tabId!==undefined)return inject(tabId);
+            return tabs.query({active:true,currentWindow:true}).then(([tab])=>inject(tab?.id));
+          };
+          try{Object.defineProperty(tabs,'insertCSS',{configurable:true,writable:true,value:insertCSS});}catch(_){}
+        }
         if(windows&&typeof windows.create!=='function'&&typeof windows.getCurrent==='function'&&typeof tabs?.create==='function'){
           // Older iOS WebKit exposes one browser window and omits windows.create.
           // Match the native Soulo delegate by opening its URLs in that window.
@@ -1071,7 +1112,7 @@ enum WebExtensionPackagePreparer {
         try Data("globalThis.__souloFrameDocumentRequested=true;globalThis.__souloInstallExtensionFrameDocument?.();".utf8)
             .write(to: root.appendingPathComponent(ExtensionFrameMessagingScript.documentFilename), options: .atomic)
         let declaresDebugger = (manifest["permissions"] as? [String])?.contains("debugger") == true
-        let backgroundBootstrap = "globalThis.__souloInstallExtensionFrameBackground?.();"
+        let backgroundBootstrap = "globalThis.__souloInstallExtensionFrameBackground?.();globalThis.__souloInstallCrossExtensionRelay?.();"
             + (declaresDebugger ? unavailableDebuggerBackground : "")
             + (try WebExtensionQuickSnipAdapter.prepare(in: root, manifest: manifest))
         try Data(backgroundBootstrap.utf8)
@@ -1169,17 +1210,25 @@ enum WebExtensionPackagePreparer {
                 pages.insert(popup)
             }
         }
-        if let page = manifest["options_page"] as? String, !page.isEmpty {
-            pages.insert(page)
-        }
-        if let options = manifest["options_ui"] as? [String: Any],
-           let page = options["page"] as? String,
-           !page.isEmpty {
-            pages.insert(page)
-        }
+        pages.formUnion(optionPageReferences(in: manifest))
         if let background = manifest["background"] as? [String: Any],
            let page = background["page"] as? String, !page.isEmpty { pages.insert(page) }
         return pages
+    }
+
+    private static func optionPageReferences(in manifest: [String: Any]) -> [String] {
+        let options = manifest["options_ui"] as? [String: Any]
+        return [options?["page"] as? String, manifest["options_page"] as? String]
+            .compactMap { $0 }.filter { !$0.isEmpty }
+    }
+
+    static func hasPackagedOptionsPage(in root: URL) -> Bool {
+        guard let data = try? Data(contentsOf: root.appendingPathComponent("manifest.json")),
+              let manifest = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return false }
+        return optionPageReferences(in: manifest).contains { reference in
+            guard let url = try? resourceURL(reference, in: root) else { return false }
+            return (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
+        }
     }
 
     private static func injectCompatibilityScript(filename: String, into pageURL: URL) throws {
@@ -2396,6 +2445,352 @@ private enum ExtensionFrameMessagingScript {
     """#
 }
 
+/// Supplies one-time extension messages on WebKit releases that only route
+/// runtime.sendMessage to the caller's own extension.
+@MainActor
+@available(iOS 18.4, *)
+private final class WebExtensionExternalMessaging {
+    static let portIdentifier = WebExtensionCompatibilityHost.applicationIdentifier + ".externalMessaging"
+
+    private struct Receiver {
+        let context: WKWebExtensionContext
+        let port: WKWebExtension.MessagePort
+    }
+
+    private struct Request {
+        let source: WKWebExtensionContext
+        let destination: WKWebExtensionContext
+        let reply: (Any?, Error?) -> Void
+        let timeout: Task<Void, Never>
+        var receivers: Set<ObjectIdentifier> = []
+    }
+
+    private var receivers: [ObjectIdentifier: Receiver] = [:]
+    private var requests: [UUID: Request] = [:]
+    private var storeIDs: [ObjectIdentifier: String] = [:]
+
+    func setStoreIdentifier(_ identifier: String?, for context: WKWebExtensionContext) {
+        storeIDs[ObjectIdentifier(context)] = identifier
+    }
+
+    func connect(_ port: WKWebExtension.MessagePort, context: WKWebExtensionContext,
+                 completion: @escaping (Error?) -> Void) {
+        guard available(context), receivers.values.filter({ $0.context === context }).count < 32 else {
+            completion(Self.unavailable); return
+        }
+        let key = ObjectIdentifier(port)
+        receivers[key] = Receiver(context: context, port: port)
+        port.disconnectHandler = { [weak self] _ in self?.disconnect(key) }
+        port.messageHandler = { [weak self] message, _ in
+            guard let self, let packet = message as? [String: Any],
+                  let id = (packet["id"] as? String).flatMap(UUID.init(uuidString:)),
+                  let request = requests[id], request.receivers.contains(key) else { return }
+            guard available(request.source), available(request.destination), allows(request.source, to: request.destination) else {
+                finish(id, error: Self.unavailable); return
+            }
+            if let error = packet["error"] as? String {
+                finish(id, error: Self.failure(String(error.prefix(1_024))))
+            } else if packet["ignored"] as? Bool == true {
+                receiverEnded(key, for: id)
+            } else if Self.isBoundedJSON(packet) {
+                finish(id, value: packet["value"])
+            } else {
+                finish(id, error: Self.failure("Invalid extension message response."))
+            }
+        }
+        completion(nil)
+    }
+
+    func send(_ packet: [String: Any], from source: WKWebExtensionContext,
+              reply: @escaping (Any?, Error?) -> Void) {
+        guard available(source), let controller = source.webExtensionController,
+              let target = packet["target"] as? String, target.utf8.count <= 256,
+              let destination = resolve(target, in: controller), destination !== source,
+              available(destination), allows(source, to: destination) else {
+            reply(nil, Self.unavailable); return
+        }
+        guard let message = packet["message"], Self.isBoundedJSON([message]),
+              requests.values.filter({ $0.source === source || $0.destination === destination }).count < 32 else {
+            reply(nil, Self.failure("Extension message size or queue limit exceeded.")); return
+        }
+
+        let id = UUID()
+        let timeout = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(10))
+            guard !Task.isCancelled else { return }
+            self?.finish(id, error: Self.failure("The extension message response timed out."))
+        }
+        requests[id] = Request(source: source, destination: destination, reply: reply, timeout: timeout)
+        Task { [weak self] in
+            guard let self else { return }
+            if !receivers.values.contains(where: { $0.context === destination }), destination.webExtension.hasBackgroundContent {
+                _ = try? await WebExtensionBackgroundStartup.wait { destination.loadBackgroundContent(completionHandler: $0) }
+            }
+            // The port connection can arrive after WebKit's background-load completion.
+            for _ in 0..<15 {
+                guard requests[id] != nil, available(source), available(destination), allows(source, to: destination) else {
+                    finish(id, error: Self.unavailable); return
+                }
+                let ports = receivers.filter { $0.value.context === destination && !$0.value.port.isDisconnected }
+                if !ports.isEmpty {
+                    requests[id]?.receivers = Set(ports.keys)
+                    let delivery: [String: Any] = ["id": id.uuidString, "from": identifier(source), "message": message]
+                    for (key, receiver) in ports {
+                        Task { [weak self] in
+                            do { try await receiver.port.sendMessage(delivery) }
+                            catch { self?.receiverEnded(key, for: id, error: Self.unavailable) }
+                        }
+                    }
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(20))
+            }
+            finish(id, error: Self.unavailable)
+        }
+    }
+
+    func remove(_ context: WKWebExtensionContext) {
+        storeIDs[ObjectIdentifier(context)] = nil
+        for (id, request) in Array(requests) where request.source === context || request.destination === context {
+            finish(id, error: Self.unavailable)
+        }
+        for (key, receiver) in Array(receivers) where receiver.context === context {
+            disconnect(key)
+            receiver.port.disconnect(throwing: nil)
+        }
+    }
+
+    private func available(_ context: WKWebExtensionContext) -> Bool {
+        context.isLoaded && context.hasPermission(WKWebExtension.Permission(rawValue: "nativeMessaging"))
+            && !UserDefaults.standard.bool(forKey: "is_incognito")
+    }
+
+    private func allows(_ source: WKWebExtensionContext, to destination: WKWebExtensionContext) -> Bool {
+        guard let policy = destination.webExtension.manifest["externally_connectable"] else { return true }
+        guard let ids = (policy as? [String: Any])?["ids"] as? [String] else { return false }
+        let allowedIDs = [source.uniqueIdentifier, identifier(source)]
+        return ids.contains("*") || ids.contains { id in
+            allowedIDs.contains { $0.caseInsensitiveCompare(id) == .orderedSame }
+        }
+    }
+
+    private func resolve(_ target: String, in controller: WKWebExtensionController) -> WKWebExtensionContext? {
+        let matches = controller.extensionContexts.filter { context in
+            [context.uniqueIdentifier, storeIDs[ObjectIdentifier(context)]].compactMap { $0 }
+                .contains { $0.caseInsensitiveCompare(target) == .orderedSame }
+        }
+        return matches.count == 1 ? matches.first : nil
+    }
+
+    private func identifier(_ context: WKWebExtensionContext) -> String {
+        guard let storeID = storeIDs[ObjectIdentifier(context)], let controller = context.webExtensionController,
+              resolve(storeID, in: controller) === context else { return context.uniqueIdentifier }
+        return storeID
+    }
+
+    private func disconnect(_ key: ObjectIdentifier) {
+        receivers[key] = nil
+        for id in Array(requests.keys) { receiverEnded(key, for: id, error: Self.unavailable) }
+    }
+
+    private func receiverEnded(_ key: ObjectIdentifier, for id: UUID, error: Error? = nil) {
+        guard requests[id]?.receivers.remove(key) != nil else { return }
+        if requests[id]?.receivers.isEmpty == true { finish(id, error: error) }
+    }
+
+    private func finish(_ id: UUID, value: Any? = nil, error: Error? = nil) {
+        guard let request = requests.removeValue(forKey: id) else { return }
+        request.timeout.cancel()
+        request.reply(error == nil ? value.map { ["value": $0] } ?? [:] : nil, error)
+    }
+
+    private static func isBoundedJSON(_ object: Any) -> Bool {
+        guard let data = try? JSONSerialization.data(withJSONObject: object) else { return false }
+        return data.count <= 1_048_576
+    }
+
+    private static var unavailable: Error { failure("Could not establish connection. Receiving end does not exist.") }
+    private static func failure(_ message: String) -> Error {
+        NSError(domain: "Soulo.WebExtensionExternalMessaging", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+    }
+}
+
+private enum WebExtensionExternalMessagingScript {
+    static let source = #"""
+    ;(() => {
+      const api = globalThis.chrome || globalThis.browser, runtime = api?.runtime;
+      if (typeof runtime?.getURL !== 'function' || typeof runtime.sendMessage !== 'function' || globalThis.__souloCrossExtensionMessaging) return;
+      const extensionURL = new URL(runtime.getURL('/'));
+      if (extensionURL.protocol !== 'webkit-extension:') return;
+      const ownID = runtime.id || extensionURL.hostname;
+      Object.defineProperty(globalThis, '__souloCrossExtensionMessaging', { value: true });
+      const host = 'com.dkluge.Soulo.WebExtensionCompatibility';
+      const relay = '__souloCrossExtensionRequest';
+      const privileged = globalThis.location?.protocol === 'webkit-extension:';
+      const nativeSend = runtime.sendMessage.bind(runtime);
+      const hostRequest = (target, message, nativeCallback) =>
+        ({souloCompatibility: 1, api: 'extensionMessage', target, message, nativeCallback});
+      const callHost = (target, message) => new Promise((resolve, reject) => {
+        runtime.sendNativeMessage(host, hostRequest(target, message, false), response => {
+          const error = runtime.lastError?.message || response?.error;
+          if (error) reject(new Error(error));
+          else resolve(response?.value);
+        });
+      });
+      const replace = (object, key, value) => {
+        try { Object.defineProperty(object, key, { configurable: true, writable: true, value }); }
+        catch (_) { try { object[key] = value; } catch (_) {} }
+      };
+      let relayInstalled = false;
+      const installRelay = () => {
+        if (!privileged || relayInstalled) return;
+        relayInstalled = true;
+        runtime.onConnect.addListener(port => {
+          // WebKit supplies the internal port's sender. Publisher onMessage
+          // listeners continue to receive their own application messages.
+          if (port.name !== relay || port.sender?.id?.toLowerCase() !== ownID.toLowerCase() || !port.sender?.tab) return;
+          const receive = message => {
+            port.onMessage.removeListener(receive);
+            callHost(message.target, message.value).then(
+              value => port.postMessage(value === undefined ? {} : {value}),
+              error => port.postMessage({error: error.message})
+            ).catch(() => {});
+          };
+          port.onMessage.addListener(receive);
+        });
+      };
+      if (privileged) {
+        globalThis.__souloInstallCrossExtensionRelay = installRelay;
+        const page = runtime.getManifest?.().background?.page;
+        if (page && new URL(runtime.getURL(page)).pathname === location.pathname) installRelay();
+      }
+      const fallback = (target, message) => privileged ? callHost(target, message) : new Promise((resolve, reject) => {
+        const port = runtime.connect({name: relay});
+        const timeout = setTimeout(() => {
+          reject(new Error('The extension message response timed out.'));
+          port.disconnect();
+        }, 11000);
+        port.onDisconnect.addListener(() => {
+          clearTimeout(timeout);
+          reject(new Error(port.error?.message || runtime.lastError?.message || 'Could not establish connection. Receiving end does not exist.'));
+        });
+        port.onMessage.addListener(reply => {
+          clearTimeout(timeout);
+          if (reply?.error) reject(new Error(reply.error));
+          else resolve(reply?.value);
+          port.disconnect();
+        });
+        try { port.postMessage({target, value: message}); }
+        catch (error) { clearTimeout(timeout); port.disconnect(); reject(error); }
+      });
+      const targetID = /^(?:[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}|[a-z]{32}|[\w.+-]+@[\w.-]+)$/i;
+      const isUnsupported = error => /cross-extension messaging is not supported/i.test(String(error?.message ?? error));
+      const sendMessage = function(...args) {
+        const target = args[0];
+        if (args.length < 2 || typeof args[1] === 'function' || typeof target !== 'string' ||
+            target.toLowerCase() === ownID.toLowerCase() || !targetID.test(target)) return nativeSend(...args);
+        const callback = typeof args.at(-1) === 'function' ? args.pop() : null;
+        const options = args[2];
+        if (args.length > 3 || (options != null && typeof options !== 'object')) return nativeSend(...(callback ? [...args, callback] : args));
+        if (callback && privileged) {
+          const relayCallback = () => {
+            // The publisher's callback must run while WebKit exposes lastError.
+            runtime.sendNativeMessage(host, hostRequest(target, args[1], true), response => callback(response?.value));
+          };
+          try {
+            return nativeSend(...args, value => {
+              if (isUnsupported(runtime.lastError)) relayCallback();
+              else callback(value);
+            });
+          } catch (error) {
+            if (!isUnsupported(error)) throw error;
+            relayCallback();
+          }
+          return;
+        }
+        const send = async () => {
+          const message = args[1];
+          // An explicit content-script destination can use the internal
+          // relay directly. Leave the two-argument string/options overload
+          // with WebKit unless it explicitly rejects the destination.
+          const couldBeOptions = message == null || (typeof message === 'object' &&
+            Object.keys(message).every(key => key === 'includeTlsChannelId'));
+          if (!privileged && (args.length === 3 || !couldBeOptions)) return fallback(target, message);
+          try { return await nativeSend(...args); }
+          catch (error) {
+            if (!isUnsupported(error)) throw error;
+            return fallback(target, message);
+          }
+        };
+        if (!callback) return send();
+        send().then(callback, error => {
+          const original = Object.getOwnPropertyDescriptor(runtime, 'lastError');
+          replace(runtime, 'lastError', {message: error.message});
+          try { callback(); }
+          finally {
+            if (original) Object.defineProperty(runtime, 'lastError', original);
+            else delete runtime.lastError;
+          }
+        });
+      };
+      const namespaces = new Set([runtime, globalThis.browser?.runtime, globalThis.chrome?.runtime].filter(Boolean));
+      // WebKit can recreate isolated-world API objects after the bootstrap.
+      const retained = globalThis.__souloNativeBindingsObjects;
+      retained?.push(globalThis.chrome, globalThis.browser, ...namespaces);
+      for (const namespace of namespaces) replace(namespace, 'sendMessage', sendMessage);
+      if (!privileged || typeof runtime.connectNative !== 'function') return;
+
+      const listeners = new Set(), events = new Set([...namespaces].map(value => value.onMessageExternal).filter(Boolean));
+      let receiver;
+      const connect = () => {
+        if (receiver) return;
+        const port = runtime.connectNative(host + '.externalMessaging');
+        receiver = port;
+        port.onDisconnect.addListener(() => { if (receiver === port) receiver = undefined; });
+        port.onMessage.addListener(({id, from, message}) => {
+          let sent = false, pending = 0, dispatching = true;
+          const complete = packet => {
+            if (sent) return;
+            try { port.postMessage({id, ...packet}); }
+            catch (error) { try { port.postMessage({id, error: String(error.message)}); } catch (_) {} }
+            sent = true;
+          };
+          const options = {id: from};
+          const ignored = () => { if (!dispatching && pending === 0) complete({ignored: true}); };
+          for (const listener of [...listeners]) {
+            try {
+              const result = listener(message, options, value => complete(value === undefined ? {} : {value}));
+              if (result === true) pending++;
+              else if (typeof result?.then === 'function') {
+                pending++;
+                Promise.resolve(result).then(
+                  value => complete(value === undefined ? {} : {value}),
+                  error => complete({error: String(error?.message || error)})
+                ).finally(() => { pending--; ignored(); });
+              }
+            } catch (error) { complete({error: String(error?.message || error)}); }
+          }
+          dispatching = false;
+          ignored();
+        });
+      };
+      for (const event of events) {
+        const add = event.addListener.bind(event), remove = event.removeListener.bind(event);
+        replace(event, 'addListener', listener => {
+          add(listener);
+          listeners.add(listener);
+          try { connect(); } catch (_) {}
+        });
+        replace(event, 'removeListener', listener => {
+          remove(listener);
+          if (![...events].some(candidate => candidate.hasListener(listener))) listeners.delete(listener);
+          if (!listeners.size && receiver) { receiver.disconnect(); receiver = undefined; }
+        });
+      }
+    })();
+    """#
+}
+
 @MainActor
 @available(iOS 18.4, *)
 final class WebExtensionCompatibilityHost {
@@ -2405,6 +2800,7 @@ final class WebExtensionCompatibilityHost {
     private var offscreenDocuments: [ObjectIdentifier: WebExtensionOffscreenDocument] = [:]
     private let downloads = WebExtensionDownloads()
     private let blobs = WebExtensionBlobBridge()
+    private let externalMessaging = WebExtensionExternalMessaging()
     let userScripts = WebExtensionUserScripts()
     private final class BadgeTextColors {
         var defaultColor: [Int]?
@@ -2417,6 +2813,10 @@ final class WebExtensionCompatibilityHost {
         var delivered = false
     }
     private var installationEvents: [ObjectIdentifier: InstallationEvent] = [:]
+
+    func setStoreIdentifier(_ identifier: String?, context: WKWebExtensionContext) {
+        externalMessaging.setStoreIdentifier(identifier, for: context)
+    }
 
     func prepareInstallation(context: WKWebExtensionContext) {
         let identity = ObjectIdentifier(context)
@@ -2443,6 +2843,10 @@ final class WebExtensionCompatibilityHost {
 
     func connect(_ port: WKWebExtension.MessagePort, context: WKWebExtensionContext,
                  access: WebExtensionAccess?, completion: @escaping (Error?) -> Void) -> Bool {
+        if port.applicationIdentifier == WebExtensionExternalMessaging.portIdentifier {
+            externalMessaging.connect(port, context: context, completion: completion)
+            return true
+        }
         if port.applicationIdentifier == WebExtensionUserScripts.portIdentifier {
             guard hasPermission("userScripts", context: context, access: access) else {
                 let error = NativeWebExtensionCompatibilityError.missingPermission("userScripts")
@@ -2476,6 +2880,17 @@ final class WebExtensionCompatibilityHost {
               (values["souloCompatibility"] as? Int) == 1,
               let api = values["api"] as? String else { return false }
         switch api {
+        case "extensionMessage":
+            if values["nativeCallback"] as? Bool == true {
+                externalMessaging.send(values, from: context, reply: replyHandler)
+                return true
+            }
+            externalMessaging.send(values, from: context) { response, error in
+                // WebKit substitutes its own error text for a native NSError.
+                // Preserve extension API errors through the private response.
+                if let error { replyHandler(["error": error.localizedDescription], nil) }
+                else { replyHandler(response, nil) }
+            }
         case "actionBadgeTextColor":
             let manifest = context.webExtension.manifest
             guard manifest["action"] != nil || manifest["browser_action"] != nil,
@@ -2665,6 +3080,7 @@ final class WebExtensionCompatibilityHost {
     }
 
     func remove(context: WKWebExtensionContext) {
+        externalMessaging.remove(context)
         userScripts.remove(context: context)
         let key = ObjectIdentifier(context)
         badgeTextColors.removeValue(forKey: key)
@@ -3194,7 +3610,7 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
                 let main = injection["world"] as? String == "MAIN", worldID = injection["worldId"] as? String ?? ""
                 guard worldID.count <= 256, !worldID.hasPrefix("_"), !main || worldID.isEmpty else { throw Self.failure("Invalid user script world.") }
                 let code = try Self.sources(injection, entry: entry).joined(separator: "\n;\n")
-                let completion = try await WebExtensionUserScriptParser.completion(in: code)
+                let completions = try await WebExtensionUserScriptParser.completions(in: code)
                 let frames = try await self.locatedFrames(target: target, entry: entry)
                 var output: [[String: Any]] = []
                 for frame in frames {
@@ -3217,16 +3633,21 @@ final class WebExtensionUserScripts: NSObject, WKScriptMessageHandlerWithReply {
                             }
                             _ = try await web.evaluateCompatibleJavaScript(Self.worldBootstrap(owner: context.uniqueIdentifier, worldID: worldID, messaging: properties["messaging"] as? Bool == true) + Self.worldPolicy(csp: csp), in: frame.info, contentWorld: world)
                         }
-                        if let completion {
+                        if !completions.isEmpty {
                             // Parse real statement boundaries rather than eval or
                             // semicolon splitting. Native execution retains global
                             // lexical declarations and does not weaken world CSP.
-                            let text = code as NSString, slot = "__soulo_result_" + UUID().uuidString.replacingOccurrences(of: "-", with: "")
-                            let prefix = text.substring(to: completion.statementStart)
-                            let expression = text.substring(with: NSRange(location: completion.expressionStart, length: completion.expressionEnd - completion.expressionStart))
-                            let suffix = text.substring(from: completion.statementEnd)
-                            let captured = prefix + "\n;globalThis[" + (try Self.json(slot)) + "]=(" + expression + ");\n" + suffix + "\n;void 0;"
-                            _ = try await web.evaluateCompatibleJavaScript(captured, in: frame.info, contentWorld: world)
+                            // Simple Gesture returns a promise from a conditional block.
+                            // https://microsoftedge.microsoft.com/addons/detail/simple-gesture/hfhdokhgdkcaebhjdblfgafnimchimkd
+                            let slot = "__soulo_result_" + UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                            let key = try Self.json(slot)
+                            let captured = NSMutableString(string: code)
+                            for completion in completions.reversed() {
+                                let value = captured.substring(with: completion.expression)
+                                captured.replaceCharacters(in: completion.statement, with: "{globalThis[\(key)]=(\(value));}")
+                            }
+                            captured.append("\n;if(!Object.prototype.hasOwnProperty.call(globalThis,\(key)))globalThis[\(key)]=undefined;\n;null;")
+                            _ = try await web.evaluateCompatibleJavaScript(captured as String, in: frame.info, contentWorld: world)
                             result["result"] = try await web.callAsyncJavaScript("""
                             if(!Object.prototype.hasOwnProperty.call(globalThis,slot))throw Error('The target document changed.');
                             let timer;try{return await Promise.race([globalThis[slot],new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('User script execution timed out.')),15000);})]);}
@@ -4077,27 +4498,163 @@ private enum WebExtensionClassicImports {
 }
 
 private enum WebExtensionUserScriptParser {
-    struct Completion: Sendable { let statementStart: Int; let statementEnd: Int; let expressionStart: Int; let expressionEnd: Int }
-    private struct Result: Decodable { let ranges: [Int]?; let error: String? }
+    struct Completion: Sendable { let statement: NSRange; let expression: NSRange }
+    private struct Result: Decodable { let ranges: [[Int]]?; let error: String? }
 
-    static func completion(in source: String) async throws -> Completion? {
+    static func completions(in source: String) async throws -> [Completion] {
         let parser = try await WebExtensionSourceAnalyzer(function: #"""
         (function(source){
           try {
+            function completions(node){
+              if(!node||node.type==='EmptyStatement')return [];
+              if(node.type==='ExpressionStatement'&&!node.directive)
+                return [[node.start,node.end,node.expression.start,node.expression.end]];
+              if(node.type==='BlockStatement')return completions(node.body.findLast(child=>child.type!=='EmptyStatement'));
+              if(node.type==='IfStatement'){
+                const yes=completions(node.consequent),no=completions(node.alternate);
+                return yes&&no?[...yes,...no]:null;
+              }
+              return null;
+            }
             const last=acorn.parse(source,{ecmaVersion:'latest',sourceType:'script'}).body.at(-1);
-            return JSON.stringify(last?.type==='ExpressionStatement'
-              ? {ranges:[last.start,last.end,last.expression.start,last.expression.end]} : {});
+            return JSON.stringify({ranges:completions(last)});
           } catch(error) { return JSON.stringify({error:String(error)}); }
         })
         """#)
-        guard let value = try await parser.analyze(source, as: String.self) else { return nil }
+        guard let value = try await parser.analyze(source, as: String.self) else { return [] }
         let result = try JSONDecoder().decode(Result.self, from: Data(value.utf8))
         if let error = result.error {
             throw NSError(domain: "com.dkluge.Soulo.UserScripts", code: 1, userInfo: [NSLocalizedDescriptionKey: error])
         }
-        guard let ranges = result.ranges, ranges.count == 4 else { return nil }
-        return Completion(statementStart: ranges[0], statementEnd: ranges[1], expressionStart: ranges[2], expressionEnd: ranges[3])
+        return (result.ranges ?? []).map {
+            Completion(statement: NSRange(location: $0[0], length: $0[1] - $0[0]),
+                       expression: NSRange(location: $0[2], length: $0[3] - $0[2]))
+        }
     }
+}
+
+// Apply compatibility fixes only to the known Edge 8.0 resources. The archive
+// itself is untouched, and a changed publisher file is left to its own version.
+// https://microsoftedge.microsoft.com/addons/detail/simple-gesture/hfhdokhgdkcaebhjdblfgafnimchimkd
+private enum WebExtensionSimpleGestureAdapter {
+    static func prepare(in root: URL, manifest: [String: Any]) throws {
+        guard manifest["version"] as? String == "8.0",
+              manifest["update_url"] as? String == "https://edge.microsoft.com/extensionwebstorebase/v1/crx"
+        else { return }
+
+        let background = root.appendingPathComponent("background.js")
+        if var source = verifiedSource(at: background, hashes: [
+            "2b877af59e7e057c64d411a31dcbc4ec9a2e360f56be45dbbb49a1d63d0fdb84",
+            "5f77cd41b723d97cdbaf65befc261c88416680b60ea0b989fc13933eb5ab94fe"
+        ]) {
+            if let start = source.range(of: "\t\t\tif (matchType === 'domain') {"),
+               let end = source.range(of: "\t\t\texec.closeIf(arg, tab => tab.url === arg.tab.url);") {
+                // Parse URL boundaries before the publisher collects IDs for its existing confirmation.
+                source.replaceSubrange(start.lowerBound..<end.lowerBound, with: matchingModes + "\n")
+            }
+            // Keep bookmarklets on the publisher's existing, permission-checked script path.
+            source = source.replacingOccurrences(of: "exec.executeScript({ tabId: arg.tab.id, code: script });",
+                                                with: "await exec.executeScript({ tab: arg.tab, code: script });")
+            // Soulo already delays loading tabs created with active:false. The
+            // destination can load directly on selection, even before a
+            // publisher placeholder would receive its first visibility event.
+            source = source.replacingOccurrences(of: "const decorateUrl = arg => (arg.discarded ? 'modules/discarded.html?' : '') + arg.url;",
+                                                with: "const decorateUrl = arg => arg.url;")
+            // Commit the deletion before the publisher reloads the main document.
+            source = source.replacingOccurrences(of: "\t\t\t\tchrome.declarativeNetRequest.updateSessionRules(",
+                                                with: "\t\t\t\tawait chrome.declarativeNetRequest.updateSessionRules(")
+            source = source.replacingOccurrences(of: "const rules = {\n\t\t\t\t\taddRules:",
+                                                with: "const rules = {\n\t\t\t\t\tremoveRuleIds: [ID],\n\t\t\t\t\taddRules:")
+            // Deliver custom actions from the publisher's background context so
+            // they also work on a tab that has no injected gesture script.
+            source = source.replacingOccurrences(of: externalGestureDelivery,
+                                                with: "await browser.runtime.sendMessage(c.extensionId, msg);")
+            let originalHandler = "import(browser.runtime.getURL('/modules/externalMessageHandler.js'))"
+                + "\n\t\t\t.then(mod => mod.handler(msg, sender, callback));\n\t\treturn true;"
+            let handler = "return import(browser.runtime.getURL('/modules/externalMessageHandler.js'))"
+                + "\n\t\t\t.then(mod => mod.handler(msg, sender));"
+            source = source.replacingOccurrences(of: originalHandler, with: handler)
+            try Data(source.utf8).write(to: background, options: .atomic)
+        }
+
+        let external = root.appendingPathComponent("modules/externalMessageHandler.js")
+        if var source = verifiedSource(at: external, hashes: ["cb3dc43d7f9821843ee2a1dc3a7b85f1e6563ad22b969dd75d1a01db534f7990"]) {
+            source = source.replacingOccurrences(of: "handler = async (msg, sender, callback) => {",
+                                                with: "handler = async (msg, sender) => {")
+            source = source.replacingOccurrences(of: "const r = f && await f(arg);\n\tcallback(r);",
+                                                with: """
+                                                if (!f) return;
+                                                if (arg.command !== 'register' && arg.command !== 'delete') return f(arg);
+                                                const next = updates.then(() => f(arg));
+                                                updates = next.catch(() => {});
+                                                return next;
+                                                """)
+            source = source.replacingOccurrences(of: "export const handler =", with: "let updates = Promise.resolve();\n\nexport const handler =")
+            source = source.replacingOccurrences(of: "#${arg.excludeId}`", with: "#${arg.id}`")
+            source = source.replacingOccurrences(of: "SimpleGesture.doCommand(", with: "SimpleGesture.doCmd(")
+            source = source.replacingOccurrences(of: "\t\tbrowser.scripting.executeScript(",
+                                                with: "\t\treturn browser.scripting.executeScript(")
+            source = source.replacingOccurrences(of: "\tbrowser.storage.local.set({ simple_gesture_exdata });",
+                                                with: "\tawait browser.storage.local.set({ simple_gesture_exdata });")
+            // Publish the registered action and the index entry together.
+            source = source.replacingOccurrences(of: "await saveExData(exData);\n\t\tconst details = {};",
+                                                with: "const details = {simple_gesture_exdata: exData};")
+            try Data(source.utf8).write(to: external, options: .atomic)
+        }
+
+        let content = root.appendingPathComponent("content.js")
+        if let source = verifiedSource(at: content, hashes: ["f396557fc84f259afd482dbb421ed2d751dd339d69e1671f0b418262a2f1956a"]) {
+            // In quirks-mode documents WebKit scrolls the BODY, even when
+            // touch recognition succeeds and documentElement has a scrollTo.
+            let corrected = source.replacingOccurrences(
+                of: "t = t && t.tagName !== 'BODY' ? t : document.documentElement;",
+                with: "t = t && t.tagName !== 'BODY' ? t : (document.scrollingElement || document.documentElement);"
+            )
+            try Data(corrected.utf8).write(to: content, options: .atomic)
+        }
+    }
+
+    private static func verifiedSource(at file: URL, hashes: Set<String>) -> String? {
+        guard let values = try? file.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey]),
+              values.isRegularFile == true, let size = values.fileSize, size < 32_768,
+              let data = try? Data(contentsOf: file),
+              hashes.contains(SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined()) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private static let externalGestureDelivery = [
+        "browser.scripting.executeScript({",
+        "\t\t\t\t\ttarget: { tabId: arg.tab.id },",
+        "\t\t\t\t\targs: [c.extensionId, msg],",
+        "\t\t\t\t\tfunc: (id, msg) => {",
+        "\t\t\t\t\t\tbrowser.runtime.sendMessage(id, msg)",
+        "\t\t\t\t\t\t\t.catch(e => { alert(e.message); });",
+        "\t\t\t\t\t}",
+        "\t\t\t\t}).catch(e => { console.log(e.message); });"
+    ].joined(separator: "\n")
+
+    private static let matchingModes = #"""
+                if (matchType === 'domain' || matchType === 'contextRoot') {
+                    const parse = value => {
+                        try {
+                            const url = new URL(value);
+                            if (url.protocol === 'http:' || url.protocol === 'https:') return url;
+                        } catch (_) {}
+                        return null;
+                    };
+                    const current = parse(arg.tab.url);
+                    if (current) {
+                        const contextRoot = current.pathname.split('/')[1];
+                        exec.closeIf(arg, tab => {
+                            const candidate = parse(tab.url);
+                            return candidate?.origin === current.origin &&
+                                (matchType === 'domain' || candidate.pathname.split('/')[1] === contextRoot);
+                        });
+                        return;
+                    }
+                }
+    """#
+
 }
 
 /// Source lifecycle integration for the unmodified FastStream package. The

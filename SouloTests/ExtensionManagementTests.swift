@@ -127,7 +127,7 @@ final class ExtensionManagementTests: XCTestCase {
             let names = try await page.callAsyncJavaScript(seed, arguments: [:], in: nil, contentWorld: .page) as? [String]
             XCTAssertTrue(names?.contains("faststream-temp-123456789-1234") == true)
         }
-        let storageBefore=await WebsiteStorageService.entries()
+        let storageBefore=try await WebsiteStorageService.entries()
         let firstSize=try XCTUnwrap(storageBefore.first{$0.domain.lowercased()==first.id.uuidString.lowercased()}?.indexedDBBytes)
         XCTAssertGreaterThan(firstSize,0,"Real extension IndexedDB files must be attributed and measured")
         try await WebExtensionTemporaryCacheProbe.clear(identifiers: [first.id])
@@ -142,7 +142,7 @@ final class ExtensionManagementTests: XCTestCase {
         XCTAssertTrue((untouched?["names"] as? [String] ?? []).contains("faststream-temp-123456789-1234"))
         XCTAssertEqual(untouched?["setting"] as? String,"keep")
         XCTAssertEqual(service.webExtensions.first(where:{$0.id == first.id})?.version,"1.0")
-        let storageAfter=await WebsiteStorageService.entries()
+        let storageAfter=try await WebsiteStorageService.entries()
         let cleanedSize=try XCTUnwrap(storageAfter.first{$0.domain.lowercased()==first.id.uuidString.lowercased()}?.indexedDBBytes)
         XCTAssertLessThan(cleanedSize,firstSize,"Removing a disposable database must lower the displayed disk estimate")
     }

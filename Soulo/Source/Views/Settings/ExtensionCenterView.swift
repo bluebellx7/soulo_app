@@ -271,6 +271,7 @@ struct ExtensionCenterView: View {
 
     private func webExtensionRow(_ item: WebExtensionRecord) -> some View {
         let action = service.webExtensionAction(for: item.id)
+        let hasOptions = service.hasWebExtensionOptions(item.id)
         return HStack(spacing: 12) {
             if let action {
                 Button {
@@ -307,13 +308,24 @@ struct ExtensionCenterView: View {
         }
         .padding(.vertical, 3)
         .contextMenu {
+            if hasOptions {
+                Button { service.openWebExtensionOptions(item.id, in: tabManager) } label: {
+                    Label(LanguageManager.shared.localizedString("settings"), systemImage: "gearshape")
+                }
+                .accessibilityIdentifier("extensions.options-" + item.id.uuidString)
+            }
             manageExtensionButton(item)
             Button(role: .destructive) { extensionPendingDeletion = item } label: {
                 Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
             }
         }
-        .accessibilityAction(named: Text(AppLocalization.string("extension_manage"))) {
-            managedExtensionID = item.id
+        .accessibilityActions {
+            if hasOptions {
+                Button(LanguageManager.shared.localizedString("settings")) {
+                    service.openWebExtensionOptions(item.id, in: tabManager)
+                }
+            }
+            Button(AppLocalization.string("extension_manage")) { managedExtensionID = item.id }
         }
     }
 

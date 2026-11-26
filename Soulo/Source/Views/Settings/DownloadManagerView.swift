@@ -34,9 +34,12 @@ struct DownloadManagerContentView: View {
     var embeddedInLibrary = false
     @State private var newTask = false
     @State private var previewItem: BrowserDownloadItem?
+    @State private var videoPreviewItem: BrowserDownloadItem?
     @State private var extensionPackage: BrowserDownloadItem?
     @State private var extensionInstallNotice: String?
     @State private var playingDownload: BrowserDownloadItem?
+    @State private var playingVideoDownload: BrowserDownloadItem?
+    @State private var playbackPreparation: Task<Void, Never>?
     @State private var shareItem: BrowserDownloadItem?
     @State private var showDownloadsFolder = false
     @State private var showClearConfirmation = false
@@ -177,6 +180,12 @@ struct DownloadManagerContentView: View {
             }
         }
         .statusNotice($extensionInstallNotice, identifier: "downloads.extension-installed")
+        .fullScreenCover(item: $videoPreviewItem) { item in
+            LibraryVideoPreview { DownloadContentPreview(item: item) }
+        }
+        .fullScreenCover(item: $playingVideoDownload) { _ in
+            LibraryVideoPreview { FullscreenMediaPlaybackContent() }
+        }
         .modifier(DownloadMediaNavigation(preview: $previewItem, playing: $playingDownload, kinds: fileKinds))
         .fileImporter(isPresented: $showDownloadsFolder, allowedContentTypes: [.data]) { result in
             Task {
@@ -202,7 +211,9 @@ struct DownloadManagerContentView: View {
         }
         .onCompatibleChange(of: libraryPageIsActive) { _, active in
             if active { downloadManager.removeMissingFiles() }
+            else { playbackPreparation?.cancel(); playbackPreparation = nil }
         }
+        .onDisappear { playbackPreparation?.cancel(); playbackPreparation = nil }
         .task(id: sizeRequests) {
             let requests = sizeRequests
             let work = Task.detached(priority: .utility) {
@@ -221,12 +232,23 @@ struct DownloadManagerContentView: View {
         }
     }
 
+    private func openPreview(_ item: BrowserDownloadItem) {
+        if #available(iOS 16.4, *), (fileKinds[item.id] ?? FilePresentation.kind(forFileExtension: item.localURL.pathExtension)) == .video {
+            // Keep the list visible while the local video is preparing.
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { videoPreviewItem = item }
+        } else {
+            previewItem = item
+        }
+    }
+
     private func downloadRow(_ item: BrowserDownloadItem) -> some View {
         HStack(spacing: 12) {
             if canPreview(item) {
                 Button {
                     if item.localURL.pathExtension.lowercased() == "crx" { extensionPackage = item }
-                    else { previewItem = item }
+                    else { openPreview(item) }
                 } label: {
                     downloadSummary(item)
                         .frame(minHeight: 44)
@@ -274,7 +296,7 @@ struct DownloadManagerContentView: View {
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(LanguageManager.shared.localizedString("share"))
-            } else if item.status == .inProgress {
+            } else if item.status == .inProgress, !downloadManager.finalizingHLSDownloadIDs.contains(item.id) {
                 Button {
                     switch item.transport {
                     case .ed2k:
@@ -389,7 +411,8 @@ struct DownloadManagerContentView: View {
         }
     }
 
-    private func downloadSummary(_ item: BrowserDownloadItem) -> some View {
+    @ViewBuilder private func downloadSummary(_ item: BrowserDownloadItem) -> some View {
+        let isSaving = item.status == .inProgress && downloadManager.finalizingHLSDownloadIDs.contains(item.id)
         HStack(spacing: 12) {
             if item.status == .finished {
                 DownloadFileThumbnail(item: item)
@@ -412,8 +435,12 @@ struct DownloadManagerContentView: View {
                     .lineLimit(1)
                 HStack(spacing: 6) {
                     if item.transport == .ed2k { Text("ED2K ·") }
-                    Text(item.transport == .ed2k && item.status == .inProgress && ed2kDownloads.snapshots[item.id]?.state == "VERIFYING"
-                        ? ToolText.text("torrent_checking") : statusText(for: item.status))
+                    if isSaving {
+                        Text(LanguageManager.shared.localizedString("save") + "…")
+                    } else {
+                        Text(item.transport == .ed2k && item.status == .inProgress && ed2kDownloads.snapshots[item.id]?.state == "VERIFYING"
+                            ? ToolText.text("torrent_checking") : statusText(for: item.status))
+                    }
                     if item.status != .inProgress && item.status != .paused {
                         Text("·")
                         Text(sizeText(item))
@@ -428,11 +455,14 @@ struct DownloadManagerContentView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 if item.status == .inProgress || item.status == .paused {
-                    ProgressView(value: item.progress)
-                        .progressViewStyle(.linear)
-                    Text(progressText(item))
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.tertiary)
+                    if isSaving {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        ProgressView(value: item.progress).progressViewStyle(.linear)
+                        Text(progressText(item))
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.tertiary)
+                    }
                     if downloadManager.foregroundRequiredDownloadIDs.contains(item.id) {
                         Label(LanguageManager.shared.localizedString("downloads_keep_app_open"), systemImage: "iphone")
                             .font(.caption.weight(.medium))
@@ -449,12 +479,29 @@ struct DownloadManagerContentView: View {
                     if downloadManager.playbackSource(for: item.id) != nil {
                         Button {
                             guard let source = downloadManager.playbackSource(for: item.id) else { return }
-                            MediaSession.shared.open(
-                                url: source.asset.url, title: item.fileName, pageURL: source.pageURL,
-                                asset: source.asset, webView: source.webView, persistPosition: source.persistsPosition,
-                                downloadSource: source
-                            )
-                            playingDownload = item
+                            playbackPreparation?.cancel()
+                            playbackPreparation = Task { @MainActor in
+                                let prepared = await source.preparedForPlayback()
+                                guard !Task.isCancelled else { return }
+                                playbackPreparation = nil
+                                guard let current = downloadManager.downloads.first(where: { $0.id == item.id }) else { return }
+                                if current.status == .finished {
+                                    openPreview(current)
+                                } else if current.status == .inProgress {
+                                    MediaSession.shared.open(
+                                        url: prepared.asset.url, title: current.fileName, pageURL: prepared.pageURL,
+                                        asset: prepared.asset, webView: prepared.webView, persistPosition: prepared.persistsPosition,
+                                        downloadSource: prepared
+                                    )
+                                    if #available(iOS 16.4, *), FilePresentation.kind(forFileExtension: current.localURL.pathExtension) != .audio {
+                                        var transaction = Transaction()
+                                        transaction.disablesAnimations = true
+                                        withTransaction(transaction) { playingVideoDownload = current }
+                                    } else {
+                                        playingDownload = current
+                                    }
+                                }
+                            }
                         } label: {
                             Text(LanguageManager.shared.localizedString("downloads_play_while_downloading"))
                                 .font(.caption)
@@ -610,6 +657,33 @@ private struct DownloadMediaNavigation: ViewModifier {
 struct DownloadContentPreview: View {
     let item: BrowserDownloadItem
     var body: some View { LocalDocumentContent(url: item.localURL) }
+}
+
+/// Leave the library visible while the video resolves its source and fullscreen orientation.
+struct LibraryVideoPreview<Content: View>: View {
+    @Environment(\.dismiss) private var dismiss
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        content
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: .topLeading) {
+                Button {
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { dismiss() }
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .background(.regularMaterial, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(ToolText.text("close"))
+                .padding(.leading, 12)
+            }
+            .compatiblePresentationBackground(.clear)
+    }
 }
 
 struct LocalDocumentContent: View {

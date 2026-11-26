@@ -30,6 +30,18 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
     case downloads
     case wifiTransfer
     case adBlock
+    case extensionGrid
+    case findInPage
+    case pageZoom
+    case mediaSpeed
+    case episodes
+    case summarize
+    case safariCompatibility
+    case openDefaultBrowser
+    case history
+    case restoreTab
+    case privateBrowsing
+    case editAddress
 
     var id: String { rawValue }
 
@@ -64,6 +76,18 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .downloads: "downloads"
         case .wifiTransfer: "wifi_transfer"
         case .adBlock: "ad_block"
+        case .extensionGrid: "extensions"
+        case .findInPage: "find_in_page"
+        case .pageZoom: "web_zoom"
+        case .mediaSpeed: "web_media_speed"
+        case .episodes: "episodes"
+        case .summarize: "summarize"
+        case .safariCompatibility: "safari_compatibility_mode"
+        case .openDefaultBrowser: "open_in_default_browser"
+        case .history: "library_history_tab"
+        case .restoreTab: "tab_restore_last"
+        case .privateBrowsing: "privacy_incognito"
+        case .editAddress: "browser_edit_address"
         }
     }
 
@@ -85,7 +109,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .desktopMode: "display"
         case .darkMode: "moon.fill"
         case .settings: "gearshape"
-        case .extensions: "puzzlepiece.extension"
+        case .extensions: "curlybraces.square"
         case .library: "books.vertical"
         case .reload: "arrow.clockwise"
         case .hideToolbar: BrowserChromeSymbol.toolbarVisibility
@@ -98,19 +122,32 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .downloads: "arrow.down.circle"
         case .wifiTransfer: "wifi"
         case .adBlock: "shield.lefthalf.filled"
+        case .extensionGrid: "puzzlepiece.extension"
+        case .findInPage: "doc.text.magnifyingglass"
+        case .pageZoom: "plus.magnifyingglass"
+        case .mediaSpeed: "speedometer"
+        case .episodes: "list.number"
+        case .summarize: "text.alignleft"
+        case .safariCompatibility: "safari"
+        case .openDefaultBrowser: "arrow.up.right.square"
+        case .history: "clock.arrow.circlepath"
+        case .restoreTab: "arrow.uturn.backward"
+        case .privateBrowsing: "eye.slash"
+        case .editAddress: "pencil"
         }
     }
 
     @MainActor var localizedTitle: String {
         switch self {
-        case .readerMode, .files, .books, .wifiTransfer, .platforms: ToolText.text(titleKey)
+        case .readerMode, .files, .books, .wifiTransfer, .platforms, .mediaSpeed, .episodes: ToolText.text(titleKey)
         default: LanguageManager.shared.localizedString(titleKey)
         }
     }
 
     var requiresPage: Bool {
         switch self {
-        case .none, .home, .tabs, .newTab, .platforms, .more, .settings, .extensions, .library, .hideToolbar, .files, .books, .downloads, .wifiTransfer:
+        case .none, .home, .tabs, .newTab, .platforms, .more, .settings, .extensions, .library, .hideToolbar,
+             .files, .books, .downloads, .wifiTransfer, .extensionGrid, .history, .restoreTab, .privateBrowsing, .editAddress:
             false
         default:
             true

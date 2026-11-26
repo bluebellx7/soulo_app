@@ -51,6 +51,61 @@ final class BrowserGestureUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts[fixture.firstTitle].firstMatch.waitForNonExistence(timeout: 5))
     }
 
+    func testSimpleGestureEdgeHandlesTrustedTouchInBrowser() throws {
+        guard #available(iOS 18.4, *),
+              let filename = ProcessInfo.processInfo.environment["SOULO_SIMPLE_GESTURE_CRX"] else {
+            throw XCTSkip("Requires the official Simple Gesture CRX in the simulator's Downloads")
+        }
+        let fixture = try GestureHTTPFixture(traceTouch: true); defer { fixture.stop() }
+        let address = try fixture.start()
+        let app = launch(gestures: false)
+        app.launchArguments += ["-restore_last_page_on_launch", "NO", "-files.gridView", "NO", "-home_toolbar_actions", "(extensions)"]
+        app.terminate()
+        app.launch()
+        defer { app.terminate() }
+
+        app.open(try XCTUnwrap(URL(string: "soulo://files")))
+        let search = app.textFields["library.search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 8))
+        search.tap(); search.typeText(filename)
+        let installerFile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", filename + ",")).firstMatch
+        XCTAssertTrue(installerFile.waitForExistence(timeout: 10)); installerFile.tap()
+        let install = app.buttons["extensions.review-install"]
+        XCTAssertTrue(install.waitForExistence(timeout: 10)); install.tap()
+        XCTAssertTrue(install.waitForNonExistence(timeout: 30))
+        app.terminate()
+        app.launch()
+
+        var route = try XCTUnwrap(URLComponents(string: "soulo://open"))
+        route.queryItems = [URLQueryItem(name: "url", value: address.absoluteString)]
+        app.open(try XCTUnwrap(route.url))
+        let page = app.webViews.containing(.staticText, identifier: fixture.firstTitle).firstMatch
+        XCTAssertTrue(page.waitForExistence(timeout: 18), app.debugDescription)
+        let title = page.staticTexts[fixture.firstTitle]
+        XCTAssertTrue(title.isHittable, app.debugDescription)
+        title.tap()
+        page.swipeUp(velocity: .slow)
+        XCTAssertFalse(fixture.waitForBottom(after: .now() + 0.4), "Ordinary vertical scrolling must not jump to the bottom")
+        try swipe(app, right: true, fingers: 1, gestureRect: page.frame.intersection(app.frame))
+        continueAfterFailure = true
+        XCTAssertTrue(fixture.waitForBottom(after: .now() + 5), "Trusted gesture failed. \(fixture.touchTrace)")
+        app.terminate()
+        app.launch()
+        let extensions = app.buttons["home.toolbar.0"]
+        XCTAssertTrue(extensions.waitForExistence(timeout: 10)); extensions.tap()
+        let row = app.staticTexts["Simple Gesture"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10)); row.press(forDuration: 1)
+        let manage = app.buttons["Manage"].firstMatch
+        XCTAssertTrue(manage.waitForExistence(timeout: 5)); manage.tap()
+        let remove = app.buttons["extensions.management-delete"]
+        for _ in 0..<8 where !remove.isHittable { app.swipeUp() }
+        XCTAssertTrue(remove.isHittable); remove.tap()
+        let confirm = app.buttons.matching(NSPredicate(format: "label == %@ AND identifier != %@",
+                                                       "Delete", "extensions.management-delete")).firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5)); confirm.tap()
+        XCTAssertTrue(row.waitForNonExistence(timeout: 8))
+    }
+
     func testTapModeHintsRemainSmallAndWebTouchesCancelThem() throws {
         let fixture = try GestureHTTPFixture(); defer { fixture.stop() }
         let root = try fixture.start()
@@ -390,19 +445,20 @@ final class BrowserGestureUITests: XCTestCase {
     // XCTest's public swipe methods only expose one touch. The test runner's
     // event synthesizer sends two real simultaneous touch paths to the app.
     // These runtime calls are confined to the UI test bundle.
-    private func swipe(_ app: XCUIApplication, right: Bool, fingers: Int = 2, fromEdge: Bool = false, reverse: Bool = false, captureWhileHeld: Bool = false, uneven: Bool = false) throws {
+    private func swipe(_ app: XCUIApplication, right: Bool, fingers: Int = 2, fromEdge: Bool = false, reverse: Bool = false, captureWhileHeld: Bool = false, uneven: Bool = false, gestureRect: CGRect? = nil) throws {
         let record = try allocate("XCSynthesizedEventRecord")
         let initRecord = NSSelectorFromString("initWithName:interfaceOrientation:")
         let recordInit = unsafeBitCast(try XCTUnwrap(record.method(for: initRecord)),
             to: (@convention(c) (NSObject, Selector, NSString, Int) -> Unmanaged<NSObject>).self)
         let initializedRecord = recordInit(record, initRecord, "Soulo two-finger swipe", 1).takeUnretainedValue()
-        let width = app.frame.width
-        let heights = fingers == 1 ? [app.frame.height * 0.5] : captureWhileHeld
+        let width = gestureRect?.width ?? app.frame.width
+        let heights = fingers == 1 ? [gestureRect.map { $0.minY + $0.height * 0.64 } ?? app.frame.height * 0.5] : captureWhileHeld
             ? [app.frame.height * 0.28, app.frame.height * 0.36] : [app.frame.height * 0.42, app.frame.height * 0.50]
         for (index, y) in heights.enumerated() {
             let path = try allocate("XCPointerEventPath")
-            let start = CGPoint(x: fromEdge ? 2 : width * (right ? 0.27 : 0.73), y: y)
-            let end = CGPoint(x: width * (fromEdge ? 0.95 : right ? 0.73 : 0.27) + (uneven && index == 1 ? -22 : 0), y: y + (uneven ? index == 0 ? 6 : -8 : 0))
+            let xOffset = gestureRect?.minX ?? 0
+            let start = CGPoint(x: xOffset + (fromEdge ? 2 : width * (right ? 0.27 : 0.73)), y: y)
+            let end = CGPoint(x: xOffset + width * (fromEdge ? 0.95 : right ? 0.73 : 0.27) + (uneven && index == 1 ? -22 : 0), y: y + (uneven ? index == 0 ? 6 : -8 : 0))
             let selector = NSSelectorFromString("initForTouchAtPoint:offset:")
             let initialize = unsafeBitCast(try XCTUnwrap(path.method(for: selector)),
                 to: (@convention(c) (NSObject, Selector, CGPoint, Double) -> Unmanaged<NSObject>).self)
@@ -413,10 +469,14 @@ final class BrowserGestureUITests: XCTestCase {
             move(initialized, moveSelector, start, uneven ? 0.1 : 0.05)
             move(initialized, moveSelector, end, 0.4)
             if reverse { move(initialized, moveSelector, start, 0.75) }
+            if let gestureRect {
+                move(initialized, moveSelector, CGPoint(x: end.x, y: gestureRect.minY + gestureRect.height * 0.26), 0.67)
+            }
             let liftSelector = NSSelectorFromString("liftUpAtOffset:")
             let lift = unsafeBitCast(try XCTUnwrap(initialized.method(for: liftSelector)),
                 to: (@convention(c) (NSObject, Selector, Double) -> Void).self)
-            lift(initialized, liftSelector, uneven && index == 0 ? 1.2 : captureWhileHeld ? 5.0 : reverse ? 0.8 : 0.45)
+            let ordinaryLift = gestureRect == nil ? 0.45 : 0.73
+            lift(initialized, liftSelector, uneven && index == 0 ? 1.2 : captureWhileHeld ? 5.0 : reverse ? 0.8 : ordinaryLift)
             initializedRecord.perform(NSSelectorFromString("addPointerEventPath:"), with: initialized)
         }
         let synthesizer = try XCTUnwrap(XCUIDevice.shared.perform(NSSelectorFromString("eventSynthesizer"))?.takeUnretainedValue() as? NSObject)
@@ -450,17 +510,54 @@ private final class GestureHTTPFixture: @unchecked Sendable {
     var secondTitle: String { "Second " + token }
     private let listener: NWListener
     private let queue = DispatchQueue(label: "soulo.gesture-ui-fixture")
-    init() throws { listener = try NWListener(using: .tcp, on: .any) }
+    private let traceTouch: Bool
+    private let reachedBottom = DispatchSemaphore(value: 0)
+    private var touches: [String] = []
+    var touchTrace: String { queue.sync { touches.joined(separator: " ") } }
+    init(traceTouch: Bool = false) throws {
+        self.traceTouch = traceTouch
+        listener = try NWListener(using: .tcp, on: .any)
+    }
+    func waitForBottom(after deadline: DispatchTime) -> Bool {
+        reachedBottom.wait(timeout: deadline) == .success
+    }
     func start() throws -> URL {
         let ready = DispatchSemaphore(value: 0)
         listener.stateUpdateHandler = { if case .ready = $0 { ready.signal() } }
-        listener.newConnectionHandler = { [queue, firstTitle, secondTitle] connection in
+        listener.newConnectionHandler = { [weak self, queue, firstTitle, secondTitle, traceTouch] connection in
             connection.start(queue: queue)
             connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, _, _ in
                 let path = data.map { String(decoding: $0, as: UTF8.self) } ?? ""
                 if path.hasPrefix("GET /trace?") { print("GESTURE_TRACE|" + (path.components(separatedBy: "\r\n").first ?? "")) }
                 let title = path.hasPrefix("GET /second ") ? secondTitle : firstTitle
-                let html = Data("<html><head><title>\(title)</title><meta name='viewport' content='width=device-width,initial-scale=1'></head><body style='margin:30px;font:22px -apple-system;background:#f1f5fa'><h1>\(title)</h1><p>Use two fingers to reveal browser actions.</p><a href='/second'>Next page</a><div style='height:1600px'></div><script>addEventListener('pageshow',()=>{new Image().src='/trace?path='+encodeURIComponent(location.pathname)+'&history='+history.length+'&target='+document.querySelector('a').target+'&time='+Date.now()})</script></body></html>".utf8)
+                if path.hasPrefix("GET /touch?") {
+                    self?.touches.append(path.components(separatedBy: "\r\n").first ?? "")
+                    if path.hasPrefix("GET /touch?bottom") { self?.reachedBottom.signal() }
+                }
+                let probe = traceTouch ? """
+                const report=value=>{new Image().src='/touch?'+value+'&t='+performance.now();};
+                let path=[];
+                for(const type of ['touchstart','touchmove','touchend','touchcancel']){
+                    addEventListener(type,e=>{
+                        const point=e.changedTouches[0];
+                        if(type==='touchstart')path=[];
+                        if(type!=='touchmove'||path.length<2||performance.now()-path.at(-1)[2]>80){
+                            path.push([Math.round(point.clientX),Math.round(point.clientY),Math.round(performance.now())]);
+                        }
+                        if(type==='touchend'||type==='touchcancel'){
+                            setTimeout(()=>report(type+'='+e.isTrusted+'&path='+encodeURIComponent(JSON.stringify(path))+
+                              '&prevented='+e.defaultPrevented+'&scroll='+Math.round(scrollY)+
+                              '&root='+document.scrollingElement?.tagName),50);
+                        }
+                    },{capture:true,passive:true});
+                }
+                let reported=false;
+                addEventListener('scroll',()=>{
+                    if(!reported&&scrollY>2200){reported=true;report('bottom='+Math.round(scrollY));}
+                },{passive:true});
+                """ : ""
+                let pageHeight = traceTouch ? 3400 : 1600
+                let html = Data("<html><head><title>\(title)</title><meta name='viewport' content='width=device-width,initial-scale=1'></head><body style='margin:30px;font:22px -apple-system;background:#f1f5fa'><h1>\(title)</h1><p>Use two fingers to reveal browser actions.</p><a href='/second'>Next page</a><div style='height:\(pageHeight)px'></div><script>addEventListener('pageshow',()=>{new Image().src='/trace?path='+encodeURIComponent(location.pathname)+'&history='+history.length+'&target='+document.querySelector('a').target+'&time='+Date.now()});\(probe)</script></body></html>".utf8)
                 var response = Data("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(html.count)\r\nConnection: close\r\n\r\n".utf8)
                 response.append(html)
                 connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })

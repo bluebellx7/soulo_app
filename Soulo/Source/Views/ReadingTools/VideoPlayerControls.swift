@@ -210,11 +210,118 @@ private extension EnvironmentValues {
 }
 
 @MainActor final class SharedVideoFullscreenHost {
+    private final class SourceCover: UIView {
+        private let snapshot: UIView
+        private let sourceSize: CGSize
+        private let sourceOrientation: UIInterfaceOrientation
+        var targetOrientation: UIInterfaceOrientation?
+
+        init?(source: UIView, orientation: UIInterfaceOrientation) {
+            guard source.bounds.width > 0, source.bounds.height > 0,
+                  let snapshot = source.snapshotView(afterScreenUpdates: false)
+                    ?? source.snapshotView(afterScreenUpdates: true) else { return nil }
+            self.snapshot = snapshot
+            sourceSize = source.bounds.size
+            sourceOrientation = orientation
+            super.init(frame: source.bounds)
+            autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            isUserInteractionEnabled = false
+            accessibilityElementsHidden = true
+            accessibilityIdentifier = "media.fullscreen.source-cover"
+            clipsToBounds = true
+            backgroundColor = .black
+            addSubview(snapshot)
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) { fatalError() }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            let orientation = window?.windowScene?.interfaceOrientation ?? .unknown
+            let sourceIsLandscape = sourceSize.width > sourceSize.height
+            let rotates = UIDevice.current.userInterfaceIdiom == .phone
+                && sourceIsLandscape != (bounds.width > bounds.height)
+            let available = rotates ? CGSize(width: bounds.height, height: bounds.width) : bounds.size
+            let scale = min(available.width / sourceSize.width, available.height / sourceSize.height)
+            // A replicant view preserves its captured pixels. Resize via its
+            // transform so the bounds do not clip the captured content.
+            snapshot.bounds = CGRect(origin: .zero, size: sourceSize)
+            snapshot.center = CGPoint(x: bounds.midX, y: bounds.midY)
+            let scaled = CGAffineTransform(scaleX: scale, y: scale)
+            if rotates {
+                // Keep the captured screen upright as UIKit changes the window axes.
+                // Filling the new bounds directly magnifies a strip of the source page.
+                let landscape = sourceIsLandscape ? sourceOrientation
+                    : orientation.isLandscape ? orientation : targetOrientation
+                let quarterTurn: CGFloat = landscape == .landscapeLeft ? -.pi / 2 : .pi / 2
+                snapshot.transform = scaled.rotated(by: sourceIsLandscape ? quarterTurn : -quarterTurn)
+            } else {
+                snapshot.transform = scaled
+            }
+        }
+    }
+
+    private struct EntryCover: UIViewRepresentable {
+        let cover: SourceCover
+        func makeUIView(context: Context) -> UIView {
+            let container = UIView()
+            cover.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(cover)
+            NSLayoutConstraint.activate([
+                cover.topAnchor.constraint(equalTo: container.topAnchor),
+                cover.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                cover.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+                cover.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+            ])
+            return container
+        }
+        func updateUIView(_ view: UIView, context: Context) {}
+    }
+
+    private struct FirstFrameCover: ViewModifier {
+        let cover: AnyView?
+        let isReady: (() -> Bool)?
+        @State private var revealed = false
+
+        func body(content: Content) -> some View {
+            let waiting = isReady != nil && !revealed
+            content
+                .opacity(waiting && cover == nil ? 0.001 : 1)
+                .accessibilityHidden(waiting)
+                .overlay {
+                    if waiting {
+                        cover?.ignoresSafeArea().accessibilityHidden(true).allowsHitTesting(false)
+                    }
+                }
+                .task {
+                    guard let isReady, !revealed else { return }
+                    // A snapshot hides the drawable handoff. If decoding takes
+                    // longer, let the actual player report progress immediately.
+                    for _ in 0..<6 {
+                        if isReady() {
+                            // Give the newly attached video layer a display cycle.
+                            do { try await Task.sleep(for: .milliseconds(17)) } catch { return }
+                            break
+                        }
+                        do { try await Task.sleep(for: .milliseconds(50)) } catch { return }
+                    }
+                    revealed = true
+                }
+        }
+    }
+
     final class Screen: UIHostingController<AnyView> {
         private var playerContent = AnyView(EmptyView())
         private var playerInsets = EdgeInsets()
         private(set) var canvasLandscape: Bool?
-        private(set) var entryLandscapeDirection: UIInterfaceOrientation?
+        private var pendingEntryOrientation: UIInterfaceOrientation?
+        var entryLandscapeDirection: UIInterfaceOrientation? {
+            pendingEntryOrientation?.isLandscape == true ? pendingEntryOrientation : nil
+        }
+        var waitingForVideoDimensions = false { didSet { if oldValue != waitingForVideoDimensions { rebuildCanvas() } } }
+        fileprivate var entryCover: AnyView?
+        fileprivate var isFirstFrameReady: (() -> Bool)?
         private var reversedLandscape = false
         var closed: (() -> Void)?
         var rotate: ((Bool, @escaping (Error) -> Void) -> Void)?
@@ -227,15 +334,15 @@ private extension EnvironmentValues {
         override var prefersStatusBarHidden: Bool { true }
         func setContent(_ content: AnyView, initialInsets: UIEdgeInsets? = nil,
                         initialCanvasLandscape: Bool? = nil,
-                        entryLandscapeDirection: UIInterfaceOrientation? = nil) {
+                        entryOrientation: UIInterfaceOrientation? = nil) {
             playerContent = content
             if let initialInsets { playerInsets = Self.insets(initialInsets) }
             if let initialCanvasLandscape { canvasLandscape = initialCanvasLandscape }
-            if let entryLandscapeDirection { self.entryLandscapeDirection = entryLandscapeDirection }
+            if let entryOrientation { pendingEntryOrientation = entryOrientation }
             rebuildCanvas()
         }
-        func setCanvasLandscape(_ value: Bool?, entryLandscapeDirection: UIInterfaceOrientation? = nil) {
-            self.entryLandscapeDirection = entryLandscapeDirection
+        func setCanvasLandscape(_ value: Bool?, entryOrientation: UIInterfaceOrientation? = nil) {
+            pendingEntryOrientation = entryOrientation
             canvasLandscape = value
             rebuildCanvas()
         }
@@ -244,29 +351,36 @@ private extension EnvironmentValues {
             reversedLandscape = value
             rebuildCanvas()
         }
-        func useLandscapeCanvasIfGeometryIsUnavailable() {
-            guard entryLandscapeDirection != nil else { return }
-            setCanvasLandscape(true)
+        func useCanvasIfGeometryIsUnavailable() {
+            guard let pendingEntryOrientation else { return }
+            setCanvasLandscape(pendingEntryOrientation.isLandscape)
         }
         private func rebuildCanvas() {
             let content = playerContent
-            if entryLandscapeDirection != nil {
-                rootView = AnyView(Color.black.ignoresSafeArea().accessibilityHidden(true))
+            if pendingEntryOrientation != nil || waitingForVideoDimensions {
+                rootView = AnyView((entryCover ?? AnyView(Color.clear))
+                    .ignoresSafeArea().accessibilityHidden(true).allowsHitTesting(false))
                 return
+            }
+            let frameReady: (() -> Bool)? = isFirstFrameReady == nil ? nil : { [weak self] in
+                self?.isFirstFrameReady?() ?? true
             }
             rootView = AnyView(VideoFullscreenCanvas(landscape: canvasLandscape,
                                                      entryLandscapeDirection: canvasLandscape == true ? openingOrientation : nil,
                                                      reversedLandscape: reversedLandscape, insets: playerInsets) { _ in
                 content
             }
+                .modifier(FirstFrameCover(cover: entryCover, isReady: frameReady))
                 .environment(\.videoOrientationLock, toggleOrientationLock.map { .init(isLocked: directionLocked, toggle: $0) })
                 .environment(\.videoFullscreenRotation, rotate).preferredColorScheme(.dark))
         }
         override func viewDidLayoutSubviews() {
             super.viewDidLayoutSubviews()
-            guard entryLandscapeDirection != nil, view.window?.windowScene?.interfaceOrientation.isLandscape == true,
-                  view.bounds.width > view.bounds.height else { return }
-            entryLandscapeDirection = nil
+            guard let target = pendingEntryOrientation,
+                  let interfaceOrientation = view.window?.windowScene?.interfaceOrientation,
+                  interfaceOrientation != .unknown, interfaceOrientation.isLandscape == target.isLandscape,
+                  (view.bounds.width > view.bounds.height) == target.isLandscape else { return }
+            pendingEntryOrientation = nil
             rebuildCanvas()
         }
         override func viewSafeAreaInsetsDidChange() {
@@ -293,10 +407,13 @@ private extension EnvironmentValues {
     private var handingOff = false
     private var rotationTask: Task<Void, Never>?
     private var rotationID = UUID()
+    private var dismissalOrientation: UIInterfaceOrientationMask?
     private var awaitsVideoOrientation = false
+    private var videoOrientationTimeout: Task<Void, Never>?
     private var detectedVideoLandscape: Bool?
     private var sceneActivation: NSObjectProtocol?
     private weak var sourceWindow: UIWindow?
+    private var exitCover: SourceCover?
     private weak var accessibilitySource: UIView?
     private var sourceAccessibilityWasHidden = false
     private let orientation = WebVideoFullscreenOrientation(followsDeviceMotion: true)
@@ -306,9 +423,8 @@ private extension EnvironmentValues {
     }
     static var isPresenting: Bool { sessions.values.contains { $0.screen?.isBeingDismissed == false } }
     static func supportedOrientationMask(in window: UIWindow) -> UIInterfaceOrientationMask? {
-        guard let host = current(in: window), host.sourceWindow === window,
-              let screen = host.screen, !screen.isBeingDismissed else { return nil }
-        return screen.allowedOrientations
+        guard let host = current(in: window), host.sourceWindow === window, let screen = host.screen else { return nil }
+        return host.dismissalOrientation ?? (screen.isBeingDismissed ? nil : screen.allowedOrientations)
     }
     static func window(for source: UIViewController) -> UIWindow? {
         var controller: UIViewController? = source
@@ -319,12 +435,15 @@ private extension EnvironmentValues {
         return nil
     }
     static func present(owner: UUID, in window: UIWindow, content: AnyView, identifier: String,
-                        landscape: Bool?, onClose: @escaping (VideoFullscreenDismissal) -> Void) -> SharedVideoFullscreenHost? {
+                        landscape: Bool?, isFirstFrameReady: (() -> Bool)? = nil,
+                        onClose: @escaping (VideoFullscreenDismissal) -> Void) -> SharedVideoFullscreenHost? {
         guard let scene = window.windowScene else { return nil }
         if let current = current(in: window), let screen = current.screen {
+            guard current.dismissalOrientation == nil else { return nil }
             current.handoffTask?.cancel(); current.handoffTask = nil; current.handingOff = false
             if current.owner != owner { current.detectedVideoLandscape = nil }
             current.owner = owner; current.onClose = onClose
+            screen.isFirstFrameReady = isFirstFrameReady
             screen.view.accessibilityIdentifier = identifier; screen.setContent(content)
             current.resolveVideoOrientation(owner: owner, landscape: landscape)
             return current
@@ -334,6 +453,11 @@ private extension EnvironmentValues {
         let current = SharedVideoFullscreenHost(scene: scene, owner: owner)
         current.sourceWindow = window
         let screen = Screen(rootView: content)
+        screen.isFirstFrameReady = isFirstFrameReady
+        let cover = SourceCover(source: window, orientation: scene.interfaceOrientation)
+        if let cover {
+            screen.entryCover = AnyView(EntryCover(cover: cover))
+        }
         // UIKit menus and popovers must share the fullscreen canvas appearance.
         screen.overrideUserInterfaceStyle = .dark
         screen.rotate = { [weak current] landscape, failure in
@@ -346,19 +470,21 @@ private extension EnvironmentValues {
         let isPhone = UIDevice.current.userInterfaceIdiom == .phone
         let startsLandscape = VideoOrientation.fullscreenLandscape(video: landscape, scene: scene)
         current.awaitsVideoOrientation = isPhone && landscape == nil
+        screen.waitingForVideoDimensions = current.awaitsVideoOrientation
         let requestsPortrait = isPhone && !startsLandscape
         screen.openingOrientation = isPhone ? (startsLandscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait)
             : scene.interfaceOrientation
+        cover?.targetOrientation = screen.openingOrientation
         // Let UIKit settle the landscape window before revealing the video.
         // A provisional rotated canvas would animate again with the scene.
-        let entryLandscapeDirection = isPhone && startsLandscape && !scene.interfaceOrientation.isLandscape
+        let entryOrientation = isPhone && screen.openingOrientation.isLandscape != scene.interfaceOrientation.isLandscape
             ? screen.openingOrientation : nil
         screen.setContent(content, initialInsets: window.safeAreaInsets, initialCanvasLandscape: requestsPortrait ? false : nil,
-                          entryLandscapeDirection: entryLandscapeDirection)
+                          entryOrientation: entryOrientation)
         screen.allowedOrientations = startsLandscape ? .landscape : (requestsPortrait ? .portrait : .allButUpsideDown)
         // Keep the source mounted so the destination decoder can start while
         // this same fullscreen controller remains visible during a handoff.
-        screen.modalPresentationStyle = .overFullScreen; screen.view.backgroundColor = .black
+        screen.modalPresentationStyle = .overFullScreen; screen.view.backgroundColor = .clear
         screen.view.accessibilityIdentifier = identifier; screen.view.accessibilityViewIsModal = true
         screen.closed = { [weak current] in current?.finished(reason: .exitFullscreen) }
         current.screen = screen; current.onClose = onClose; sessions[current.key] = current
@@ -373,11 +499,20 @@ private extension EnvironmentValues {
         source.view.accessibilityElementsHidden = true
         current.orientation.prepare(token: "shared-video", scene: scene, prefersLandscape: startsLandscape, sourceView: source.view)
         source.present(screen, animated: false) {
+            guard current.screen === screen, current.dismissalOrientation == nil else { return }
             current.orientation.begin(token: "shared-video", controller: screen, requestPortrait: requestsPortrait,
-                                      initialLandscapeDirection: entryLandscapeDirection) { [weak screen] _ in
-                screen?.useLandscapeCanvasIfGeometryIsUnavailable()
+                                      initialLandscapeDirection: screen.entryLandscapeDirection) { [weak screen] _ in
+                screen?.useCanvasIfGeometryIsUnavailable()
             }
             current.resolveVideoOrientation(owner: current.owner, landscape: current.detectedVideoLandscape)
+            if current.awaitsVideoOrientation {
+                current.videoOrientationTimeout = Task { @MainActor [weak current, weak screen] in
+                    do { try await Task.sleep(for: .milliseconds(1500)) } catch { return }
+                    guard let current, let screen, current.screen === screen, current.awaitsVideoOrientation else { return }
+                    current.awaitsVideoOrientation = false
+                    screen.waitingForVideoDimensions = false
+                }
+            }
         }
         return current
     }
@@ -387,14 +522,17 @@ private extension EnvironmentValues {
         screen?.setContent(content)
     }
     func resolveVideoOrientation(owner: UUID, landscape: Bool?) {
-        guard self.owner == owner, awaitsVideoOrientation, let screen, let landscape else { return }
+        guard self.owner == owner, dismissalOrientation == nil, awaitsVideoOrientation,
+              let screen, let landscape else { return }
         detectedVideoLandscape = landscape
         guard screen.viewIfLoaded?.window != nil, !screen.isBeingPresented else { return }
         awaitsVideoOrientation = false
+        videoOrientationTimeout?.cancel(); videoOrientationTimeout = nil
         if landscape != screen.openingOrientation.isLandscape { setLandscape(landscape, resolvingVideo: true) }
+        screen.waitingForVideoDimensions = false
     }
     private func toggleOrientationLock() {
-        guard let screen, let scene = screen.viewIfLoaded?.window?.windowScene,
+        guard dismissalOrientation == nil, let screen, let scene = screen.viewIfLoaded?.window?.windowScene,
               !screen.isBeingDismissed, scene.interfaceOrientation != .unknown else { return }
         rotationTask?.cancel(); rotationID = UUID()
         awaitsVideoOrientation = false
@@ -419,7 +557,7 @@ private extension EnvironmentValues {
         if screen.directionLocked { restoreLockedDirection(in: scene) }
     }
     private func restoreLockedDirection(in scene: UIWindowScene) {
-        guard let screen, screen.directionLocked else { return }
+        guard let screen, dismissalOrientation == nil, screen.directionLocked else { return }
         rotationTask?.cancel()
         let request = UUID(), mask = screen.allowedOrientations
         BrowserStartupTrace.mark("video_orientation_restore_lock", detail: "\(mask.rawValue)")
@@ -439,7 +577,8 @@ private extension EnvironmentValues {
     }
     func setLandscape(_ landscape: Bool, resolvingVideo: Bool = false,
                       onError: @escaping (Error) -> Void = { _ in }) {
-        guard let screen, !screen.directionLocked, !screen.isBeingDismissed, let scene = screen.view.window?.windowScene else {
+        guard dismissalOrientation == nil, let screen, !screen.directionLocked,
+              !screen.isBeingDismissed, let scene = screen.view.window?.windowScene else {
             onError(CocoaError(.featureUnsupported)); return
         }
         rotationTask?.cancel(); rotationID = UUID()
@@ -448,7 +587,7 @@ private extension EnvironmentValues {
         screen.setReversedLandscape(false)
         screen.openingOrientation = landscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait
         screen.setCanvasLandscape(resolvingVideo && !landscape ? false : nil,
-            entryLandscapeDirection: resolvingVideo && landscape ? screen.openingOrientation : nil)
+            entryOrientation: resolvingVideo ? screen.openingOrientation : nil)
         screen.allowedOrientations = landscape ? .landscape : .portrait
         screen.setNeedsUpdateOfSupportedInterfaceOrientations()
         orientation.setFullscreenOrientation(landscape, in: scene, sourceView: nil,
@@ -476,13 +615,32 @@ private extension EnvironmentValues {
         dismiss(owner: owner)
     }
     func dismiss(owner: UUID, reason: VideoFullscreenDismissal = .exitFullscreen) {
-        guard self.owner == owner, let screen, !screen.isBeingDismissed else { return }
+        guard self.owner == owner, let screen, dismissalOrientation == nil, !screen.isBeingDismissed else { return }
+        // Keep the source visible through the first correctly laid-out frame
+        // after dismissal, including a return from landscape to portrait.
+        let current = sourceWindow?.windowScene?.interfaceOrientation
+        let mask = current.flatMap { $0 == .unknown ? nil : VideoOrientation.mask(for: $0) } ?? screen.allowedOrientations
+        dismissalOrientation = mask
+        screen.allowedOrientations = mask
+        rotationID = UUID(); rotationTask?.cancel(); rotationTask = nil
+        orientation.stopTracking()
+        awaitsVideoOrientation = false
+        videoOrientationTimeout?.cancel(); videoOrientationTimeout = nil
         handoffTask?.cancel(); handoffTask = nil
         screen.closed = nil
+        if let sourceWindow, !orientation.isSourceOrientationRestored(in: sourceWindow),
+           let cover = SourceCover(source: screen.view, orientation: current ?? .unknown) {
+            // Keep the player on screen while the browser or library returns.
+            // The entry snapshot can contain a preparation spinner or sheet.
+            exitCover = cover
+            cover.frame = sourceWindow.bounds
+            sourceWindow.addSubview(cover)
+        }
         screen.dismiss(animated: false) { [weak self] in self?.finished(reason: reason) }
     }
     private func finished(reason: VideoFullscreenDismissal) {
         guard screen != nil else { return }
+        videoOrientationTimeout?.cancel(); videoOrientationTimeout = nil
         rotationID = UUID(); rotationTask?.cancel(); rotationTask = nil
         if let sceneActivation { NotificationCenter.default.removeObserver(sceneActivation) }
         sceneActivation = nil
@@ -491,7 +649,11 @@ private extension EnvironmentValues {
         Self.sessions.removeValue(forKey: key)
         accessibilitySource?.accessibilityElementsHidden = sourceAccessibilityWasHidden
         accessibilitySource = nil
-        orientation.end()
+        let cover = exitCover
+        exitCover = nil
+        orientation.end(restorePreparedPresentation: dismissalOrientation != nil) {
+            cover?.removeFromSuperview()
+        }
         let callback = onClose; onClose = nil; callback?(reason)
     }
 }

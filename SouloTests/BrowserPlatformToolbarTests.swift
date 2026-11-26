@@ -59,115 +59,43 @@ final class BrowserPlatformToolbarTests: XCTestCase {
         XCTAssertEqual(PlatformBarDomainPolicy.highlightedPlatformID(for: url, entries: entries, preferredID: nil), docs.id)
     }
 
-    func testExplicitTabActivationHidesUnmatchedDirectPageAndRestoresMatchingDomain() {
+    func testPlatformBarFollowsCommittedDomainsWithoutAPageTap() throws {
         let model = WebViewModel()
-        model.resetPlatformSearchTracking()
-        model.updateCurrentURL(URL(string: "https://bpzhe5.com/"))
-        model.requestPlatformBarTabActivation()
-        model.setPlatformBarMatchingHosts(["baidu.com", "bilibili.com"])
-        XCTAssertTrue(model.applyPendingPlatformBarTabActivation(autoHideEnabled: true))
-        XCTAssertTrue(model.platformBarHiddenByPageTap, "An explicitly selected direct-address tab must also be checked")
-        XCTAssertFalse(model.applyPendingPlatformBarTabActivation(autoHideEnabled: true), "Activation is consumed once")
-        model.updateCurrentURL(URL(string: "https://m.bilibili.com/"))
-        XCTAssertFalse(model.platformBarHiddenByPageTap)
-        model.updateCurrentURL(URL(string: "https://automatic.test/"))
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "Restoration must disarm later automatic navigation")
-        model.requestPlatformBarTabActivation()
-        model.applyPendingPlatformBarTabActivation(autoHideEnabled: true)
-        XCTAssertTrue(model.platformBarHiddenByPageTap)
-        model.resetPlatformBarAutoHide()
-        XCTAssertFalse(model.platformBarHiddenByPageTap)
-    }
-
-    func testEmptyExtensionAndDisabledTabActivationDoNotArmFutureHiding() {
-        for url in [nil, URL(string: "webkit-extension://test/downloader.html")] {
-            let model = WebViewModel()
-            model.setPlatformBarMatchingHosts(["baidu.com"])
-            model.updateCurrentURL(url)
-            model.requestPlatformBarTabActivation()
-            model.applyPendingPlatformBarTabActivation(autoHideEnabled: true)
-            model.updateCurrentURL(URL(string: "https://outside.test/"))
-            XCTAssertFalse(model.platformBarHiddenByPageTap)
-            model.requestPlatformBarTabActivation()
-            model.applyPendingPlatformBarTabActivation(autoHideEnabled: false)
-            XCTAssertFalse(model.platformBarHiddenByPageTap)
+        let results = try XCTUnwrap(URL(string: "https://www.baidu.com/s?wd=%E4%BA%BA"))
+        let relay = try XCTUnwrap(URL(string: "https://m.baidu.com/tc"))
+        let definition = try XCTUnwrap(URL(string: "https://zd.souf.com.cn/zi/4eba/"))
+        let otherPlatform = try XCTUnwrap(URL(string: "https://m.bilibili.com/video/1"))
+        let hosts: Set<String> = ["baidu.com", "bilibili.com"]
+        func hidden() -> Bool {
+            PlatformBarDomainPolicy.shouldAutoHide(for: model.committedPageURL, hosts: hosts)
         }
-    }
 
-    func testSameTabAndDifferentTabSelectionQueueActivationButCreationDoesNot() throws {
-        let key = "platform-activation-" + UUID().uuidString
-        UserDefaults.standard.set(Data(#"{"tabs":[],"activeIndex":0}"#.utf8), forKey: key)
-        defer { UserDefaults.standard.removeObject(forKey: key) }
-        let manager = TabManager(storageKey: key)
-        let first = try XCTUnwrap(manager.activeWebViewModel)
-        first.updateCurrentURL(URL(string: "https://outside.test/"))
-        first.setPlatformBarMatchingHosts(["bilibili.com"])
-        XCTAssertFalse(first.applyPendingPlatformBarTabActivation(autoHideEnabled: true))
-        let revision = manager.platformBarTabActivationRevision
-        manager.switchToTab(at: manager.activeTabIndex)
-        XCTAssertEqual(manager.platformBarTabActivationRevision, revision + 1)
-        XCTAssertTrue(first.applyPendingPlatformBarTabActivation(autoHideEnabled: true))
-        XCTAssertTrue(first.platformBarHiddenByPageTap)
-        let second = manager.createTab(switchTo: false)
-        second.webViewModel.updateCurrentURL(URL(string: "https://m.bilibili.com/"))
-        XCTAssertFalse(second.webViewModel.applyPendingPlatformBarTabActivation(autoHideEnabled: true))
-        manager.switchToTab(id: second.id)
-        second.webViewModel.setPlatformBarMatchingHosts(["bilibili.com"])
-        XCTAssertTrue(second.webViewModel.applyPendingPlatformBarTabActivation(autoHideEnabled: true))
-        XCTAssertFalse(second.webViewModel.platformBarHiddenByPageTap)
-        XCTAssertEqual(manager.platformBarTabActivationRevision, revision + 2)
-        first.resetPlatformBarAutoHide()
-        manager.switchToTab(at: 0, userInitiated: false)
-        XCTAssertEqual(manager.platformBarTabActivationRevision, revision + 2, "Extension-driven focus is not a user activation")
-        XCTAssertFalse(first.applyPendingPlatformBarTabActivation(autoHideEnabled: true))
-        XCTAssertFalse(first.platformBarHiddenByPageTap)
-    }
-
-    func testMatchingPlatformPageStaysVisibleThenRestoresOnAnotherListedPlatformWhileLoading() {
-        let model = WebViewModel()
-        model.setPlatformBarMatchingHosts(PlatformBarDomainPolicy.hosts(for: [
-            platform("https://www.baidu.com/"), platform("https://www.bilibili.com/")
-        ]))
-        model.beginPlatformSearchTracking()
-        model.updateCurrentURL(URL(string: "https://m.baidu.com/s?wd=test"))
-        model.pageDidFinishLoading()
-        model.recordPlatformPageTap(autoHideEnabled: true)
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "A click on any listed platform must keep the bar visible")
+        model.updateCurrentURL(results)
+        XCTAssertFalse(hidden())
         model.isLoading = true
-        model.updateCurrentURL(URL(string: "https://outside.test/article"))
-        XCTAssertTrue(model.platformBarHiddenByPageTap, "Following that user click off all platform domains hides the bar")
-        model.updateCurrentURL(URL(string: "https://m.bilibili.com/video/1"))
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "Another listed platform restores the bar without waiting for load completion")
-        model.updateCurrentURL(URL(string: "https://automatic-redirect.test/"))
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "After restoration an unrelated automatic redirect needs a fresh click")
-        model.recordPlatformPageTap(autoHideEnabled: true)
-        XCTAssertTrue(model.platformBarHiddenByPageTap)
-        model.updateCurrentURL(URL(string: "https://www.baidu.com/another-page"))
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "A different document under a matching domain also restores the bar")
+        model.recordNavigationRequest(definition)
+        model.updateCurrentURL(definition, fromObservation: true)
+        XCTAssertEqual(model.currentURL, definition)
+        XCTAssertFalse(hidden(), "A provisional address must not change the bar")
+        model.updateCurrentURL(relay)
+        XCTAssertFalse(hidden())
+        model.updateCurrentURL(definition)
+        XCTAssertTrue(hidden(), "An off-platform document hides the bar regardless of how it opened")
+        model.updateCurrentURL(otherPlatform)
+        XCTAssertFalse(hidden())
+        model.updateCurrentURL(definition)
+        XCTAssertTrue(hidden())
+        XCTAssertFalse(PlatformBarDomainPolicy.shouldAutoHide(for: model.committedPageURL, hosts: ["zd.souf.com.cn"]))
     }
 
-    func testPlatformAutoHideStillRequiresAnEnabledTrustedTapAndUsesTheCurrentGroup() {
+    func testInitialAndNonWebDocumentsKeepPlatformBar() throws {
+        for url in [nil, URL(string: "about:blank"), URL(string: "webkit-extension://test/downloader.html")] {
+            XCTAssertFalse(PlatformBarDomainPolicy.shouldAutoHide(for: url, hosts: ["baidu.com"]))
+        }
         let model = WebViewModel()
-        model.setPlatformBarMatchingHosts(["current-group.test"])
-        model.beginPlatformSearchTracking()
-        model.updateCurrentURL(URL(string: "https://different-group.test/search"))
-        model.pageDidFinishLoading()
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "Automatic navigation alone must not hide the bar")
-        model.recordPlatformPageTap(autoHideEnabled: false)
-        XCTAssertFalse(model.platformBarHiddenByPageTap)
-        model.recordPlatformPageTap(autoHideEnabled: true)
-        XCTAssertTrue(model.platformBarHiddenByPageTap, "A platform belonging only to another group is not a match")
-        model.setPlatformBarMatchingHosts(["different-group.test"])
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "Updating the visible platform group can restore the bar")
-        model.updateCurrentURL(URL(string: "https://outside.test/"))
-        XCTAssertFalse(model.platformBarHiddenByPageTap)
-        model.recordPlatformPageTap(autoHideEnabled: true)
-        XCTAssertTrue(model.platformBarHiddenByPageTap)
-        model.beginPlatformSearchTracking()
-        XCTAssertFalse(model.platformBarHiddenByPageTap)
-        model.resetPlatformSearchTracking()
-        model.recordPlatformPageTap(autoHideEnabled: true)
-        XCTAssertFalse(model.platformBarHiddenByPageTap)
+        let saved = try XCTUnwrap(URL(string: "https://outside.test/"))
+        model.loadCachedURL(saved)
+        XCTAssertTrue(PlatformBarDomainPolicy.shouldAutoHide(for: model.committedPageURL, hosts: ["baidu.com"]))
     }
 
     private func defaults() throws -> UserDefaults {

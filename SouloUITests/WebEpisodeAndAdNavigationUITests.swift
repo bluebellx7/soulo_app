@@ -115,21 +115,31 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor func testWebToolsKeepPortraitVideoFullscreenInPortrait() async throws {
+        try await checkWebToolsFullscreenAndReturn(portrait: true)
+    }
+
+    @MainActor func testWebToolsLandscapeVideoReturnsToPortraitBrowser() async throws {
+        try await checkWebToolsFullscreenAndReturn(portrait: false)
+    }
+
+    @MainActor private func checkWebToolsFullscreenAndReturn(portrait: Bool) async throws {
         try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "Tests iPhone video orientation")
-        let media = try await longVideoFixtureData(portrait: true)
+        let media = try await longVideoFixtureData(portrait: portrait)
+        let comparison = portrait ? ">" : "<"
         let html = """
         <meta name='viewport' content='width=device-width,initial-scale=1'>
-        <video src='/portrait.mp4' preload='metadata' playsinline muted style='width:100%;height:300px'
-          onloadedmetadata="if (this.videoHeight > this.videoWidth) document.querySelector('p').textContent = 'Portrait video ready'"></video>
+        <video src='/clip.mp4' preload='metadata' playsinline muted style='width:100%;height:300px'
+          onloadedmetadata="if (this.videoHeight \(comparison) this.videoWidth) document.querySelector('p').textContent = 'Video ready'"></video>
         <p>Loading video</p>
         """
-        let server = try DownloadPlaybackHTTPFixture(files: ["/page.html": Data(html.utf8), "/portrait.mp4": media])
+        let server = try DownloadPlaybackHTTPFixture(files: ["/page.html": Data(html.utf8), "/clip.mp4": media])
         let root = try await server.start(); server.releaseDownloads()
-        let app = launch(player: "soulo", tools: true)
+        let app = launch(player: "soulo", filtering: false, tools: true)
         defer { app.terminate(); server.stop(); XCUIDevice.shared.orientation = .portrait }
 
         try open(root.appendingPathComponent("page.html"), app: app)
-        XCTAssertTrue(app.webViews.staticTexts["Portrait video ready"].firstMatch.waitForExistence(timeout: 10))
+        let inline = app.webViews.staticTexts["Video ready"].firstMatch
+        XCTAssertTrue(inline.waitForExistence(timeout: 20))
         let tools = app.webViews.buttons["Video tools"].firstMatch
         XCTAssertTrue(tools.waitForExistence(timeout: 8)); tools.tap()
         let fullscreen = app.webViews.buttons["Fullscreen"].firstMatch
@@ -137,21 +147,32 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         try requireWebFullscreen(app)
 
         let canvas = app.otherElements["media.fullscreen.canvas"].firstMatch
-        XCTAssertEqual(canvas.value as? String, "portrait")
-        XCTAssertGreaterThan(app.frame.height, app.frame.width)
+        XCTAssertEqual(canvas.value as? String, portrait ? "portrait" : "landscape")
+        XCTAssertEqual(app.frame.height > app.frame.width, portrait)
         let play = app.buttons["media.mkv.play"]
         let started = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in play.exists && play.label == "Pause" }, object: nil)
         await fulfillment(of: [started], timeout: 10)
-        play.tap()
-        XCUIDevice.shared.orientation = .landscapeRight
-        XCTAssertEqual(canvas.value as? String, "portrait")
-        XCTAssertGreaterThan(app.frame.height, app.frame.width)
-        XCUIDevice.shared.orientation = .portrait
+        if portrait {
+            play.tap()
+            XCUIDevice.shared.orientation = .landscapeRight
+            XCTAssertEqual(canvas.value as? String, "portrait")
+            XCTAssertGreaterThan(app.frame.height, app.frame.width)
+            XCUIDevice.shared.orientation = .portrait
+        }
         let back = app.buttons["media.mkv.fullscreen.close"]
-        if !back.exists { canvas.tap() }
-        XCTAssertTrue(back.waitForExistence(timeout: 4)); back.tap()
-        XCTAssertTrue(canvas.waitForNonExistence(timeout: 6))
-        XCTAssertTrue(app.webViews.staticTexts["Portrait video ready"].firstMatch.waitForExistence(timeout: 6))
+        for _ in 0..<3 where canvas.exists {
+            if !back.isHittable { canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.3)).tap() }
+            let frame = back.frame
+            if !frame.isEmpty {
+                let appFrame = app.frame
+                app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: frame.midX - appFrame.minX, dy: frame.midY - appFrame.minY)).tap()
+            }
+            if canvas.waitForNonExistence(timeout: 1) { break }
+        }
+        await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            !canvas.exists && app.frame.height > app.frame.width && inline.isHittable
+        }, object: nil)], timeout: 8)
     }
 
     @MainActor func testWebToolsFullscreenOpensSouloWithThePagePositionAndRate() async throws {
@@ -540,12 +561,14 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         <div id="plain">Open ordinary container</div>
         <custom-action id="shadow"></custom-action>
         <div id="card" style="height:200px;cursor:pointer;background:#eee;margin:12px">Open larger card</div>
+        <p><a id="scriptLink" href="javascript:void(0);" rel="nofollow noopener"><span>Open result link</span></a></p>
         <script>
         const next=location.origin.replace('127.0.0.1','localhost')+'/chosen.html';
         function openChosen(){location.href=next;}
         document.getElementById('focus').addEventListener('click',openChosen);
         document.getElementById('plain').addEventListener('click',openChosen);
         document.getElementById('card').addEventListener('click',openChosen);
+        document.getElementById('scriptLink').addEventListener('click',()=>window.open(next,'_blank'));
         const root=document.getElementById('shadow').attachShadow({mode:'open'});
         root.innerHTML='<div tabindex="0" class="r73" style="padding:16px"><span>Open shadow action</span></div>';
         root.firstElementChild.addEventListener('click',()=>window.open(next));
@@ -555,7 +578,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
             "/chosen.html": Data("<body>Semantic action reached</body>".utf8)])
         let root = try await server.start(); defer { server.stop() }
         let app = launch(incognito: true, confirmCrossDomain: false); defer { app.terminate() }
-        for label in ["Open ordinary container", "Open keyboard action", "Open inline action", "Open shadow action", "Open larger card"] {
+        for label in ["Open ordinary container", "Open keyboard action", "Open inline action", "Open shadow action", "Open larger card", "Open result link"] {
             try open(root.appendingPathComponent("entry.html"), app: app)
             let control = app.webViews.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
             XCTAssertTrue(control.waitForExistence(timeout: 15), app.debugDescription)
@@ -1884,6 +1907,30 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
+    func testLiveMovieCardsOpenWithAdFiltering() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_AD_CLICK_QA"] == "1",
+                          "Requires live Mtime and Cupfox results")
+        let app = launch(incognito: true, confirmCrossDomain: true, filtering: true)
+        defer { app.terminate() }
+
+        let cases = [
+            ("https://live.mtime.com/home", "乐呵到底"),
+            ("https://www.cupfox.lol/movie/1795.html", "厂长资源")
+        ]
+        for (address, cardLabel) in cases {
+            try open(try XCTUnwrap(URL(string: address)), app: app)
+            let card = app.webViews.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", cardLabel)).firstMatch
+            XCTAssertTrue(card.waitForExistence(timeout: 25), app.debugDescription)
+            for _ in 0..<5 where !card.isHittable { app.webViews.firstMatch.swipeUp() }
+            card.tap()
+            let confirmation = app.buttons["browser.domain-confirmation.cancel"]
+            XCTAssertTrue(confirmation.waitForExistence(timeout: 8),
+                          "The card should reach the standard cross-domain confirmation")
+            confirmation.tap()
+        }
+    }
+
+    @MainActor
     func testLiveYoukuPlaysFromFirstPageWithAdFiltering() throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_YOUKU_QA"] == "1", "Requires the live Youku player")
         let url = try XCTUnwrap(URL(string: "https://m.youku.com/alipay_video/id_XNjU1MDAxMDYzMg==.html?spm=a2hww.8166708.drawer3.2"))
@@ -2402,6 +2449,21 @@ extension WebEpisodeAndAdNavigationUITests {
                 XCTAssertGreaterThan(frame.width, frame.height, "iPhone should enter landscape playback")
             }
             let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = engine + "-web-play-orientation"; shot.lifetime = .keepAlways; add(shot)
+            let back = app.buttons["media.mkv.fullscreen.close"].firstMatch
+            for _ in 0..<4 where fullscreen.exists {
+                if back.exists {
+                    let rect = back.frame
+                    app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: rect.midX, dy: rect.midY)).tap()
+                    if fullscreen.waitForNonExistence(timeout: 1) { break }
+                } else {
+                    app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
+                }
+            }
+            XCTAssertTrue(fullscreen.waitForNonExistence(timeout: 6))
+            XCTAssertTrue(app.webViews.buttons["Video tools"].firstMatch.waitForExistence(timeout: 6))
+            let returnedToPortrait = NSPredicate { _, _ in app.frame.height > app.frame.width }
+            XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: returnedToPortrait, object: nil)],
+                                          timeout: 5), .completed)
             app.terminate()
         }
     }

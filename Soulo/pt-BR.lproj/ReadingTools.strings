@@ -369,6 +369,7 @@
 "torrent_select_all" = "Selecionar tudo";
 "torrent_select_none" = "Desmarcar tudo";
 "torrent_peers" = "%d pares";
+"torrent_peer_counts" = "Conectados %d/%d · Sementes %d";
 "torrent_duplicate" = "Este torrent já está em Downloads.";
 "torrent_task_limit" = "Remova alguns registros de download antes de adicionar mais tarefas.";
 "torrent_save_error" = "Não foi possível salvar a tarefa. Verifique o armazenamento disponível e tente novamente.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Intensidade do desfoque";
 
 "home_quick_search_guide" = "Digite uma palavra-chave na tela inicial, escolha uma plataforma e toque em Buscar no teclado.";
-"auto_hide_platform_bar_hint" = "Quando ativado, só oculta a barra após você tocar no conteúdo da página e se o domínio não corresponder a nenhuma plataforma na barra atual. Se corresponder a alguma, a barra permanece ou volta a aparecer. Rolagem e redirecionamentos automáticos não a ocultam.";
+"auto_hide_platform_bar_hint" = "Oculta a barra em sites fora do grupo de plataformas atual. A barra reaparece quando você volta a uma plataforma do grupo.";
 
 "ad_subscription_add" = "Adicionar lista de filtros";
 "ad_subscription_name" = "Nome";

@@ -62,7 +62,7 @@ if [[ ! -f "$prefix/lib/libavcodec.a" ]]; then
     --disable-autodetect --enable-static --disable-shared --disable-programs --disable-doc \
     --enable-debug=1 --disable-avdevice --enable-small \
     --disable-encoders --disable-muxers --enable-muxer=mp4 --disable-devices \
-    --disable-filters --enable-filter=abuffer,abuffersink,aformat,anull,aresample,atempo,buffer,buffersink,format,null,scale,transpose,hflip,vflip,yadif,bwdif,overlay,volume,setpts,asetpts,hwdownload,hwupload \
+    --disable-filters --enable-filter=abuffer,abuffersink,aformat,anull,aresample,atempo,buffer,buffersink,format,null,scale,transpose,rotate,hflip,vflip,yadif,bwdif,overlay,volume,setpts,asetpts,hwdownload,hwupload \
     --disable-protocols --enable-protocol=file,pipe,crypto,data,http,https,tcp,tls,httpproxy,udp,rtp \
     --enable-securetransport --enable-zlib --enable-bzlib --enable-iconv --enable-videotoolbox \
     ${extra[@]+"${extra[@]}"}

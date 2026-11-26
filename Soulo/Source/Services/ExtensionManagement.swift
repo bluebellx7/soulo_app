@@ -53,11 +53,13 @@ struct WebExtensionVersionSnapshot: Codable, Equatable {
     let permissionCount: Int
     let siteCount: Int
     let warningCount: Int?
+    let verifiedStoreIdentifier: String?
 
     init(_ record: WebExtensionRecord) {
         name = record.name; version = record.version; storedResourceName = record.storedResourceName
         permissionCount = record.requestedPermissionCount; siteCount = record.requestedSiteCount
         warningCount = record.compatibilityWarningCount
+        verifiedStoreIdentifier = record.verifiedStoreIdentifier
     }
 }
 
@@ -94,6 +96,7 @@ struct WebExtensionInstallPreview: Identifiable {
     let sourceURL: String?
     let replacingID: UUID?
     let replacingResourceName: String?
+    var verifiedStoreIdentifier: String? = nil
     var access: WebExtensionAccess
 }
 

@@ -369,6 +369,7 @@
 "torrent_select_all" = "Vælg alle";
 "torrent_select_none" = "Fravælg Alle";
 "torrent_peers" = "%d jævnaldrende";
+"torrent_peer_counts" = "Forbundet %d/%d · Seeders %d";
 "torrent_duplicate" = "This torrent is already in Downloads.";
 "torrent_task_limit" = "Fjern nogle downloadposter, før du tilføjer flere opgaver.";
 "torrent_save_error" = "Opgaven kunne ikke gemmes. Tjek tilgængelig lagerplads, og prøv igen.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Sløringsstyrke";
 
 "home_quick_search_guide" = "Indtast et søgeord på startsiden, vælg en platform, og tryk på Søg på tastaturet.";
-"auto_hide_platform_bar_hint" = "Når funktionen er slået til, skjules linjen først, når du trykker på websidens indhold, og kun hvis sidens domæne ikke matcher nogen platform på den aktuelle linje. Et match holder linjen synlig eller viser den igen. Rulning og automatiske omdirigeringer skjuler den ikke.";
+"auto_hide_platform_bar_hint" = "Skjuler linjen på websteder uden for den aktuelle platformgruppe. Linjen vises igen, når du vender tilbage til en platform i gruppen.";
 
 "ad_subscription_add" = "Tilføj filterliste";
 "ad_subscription_name" = "Navn";

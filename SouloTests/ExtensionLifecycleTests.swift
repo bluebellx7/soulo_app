@@ -7,6 +7,74 @@ import SwiftUI
 @testable import Soulo
 
 @MainActor final class ExtensionLifecycleTests: XCTestCase {
+    func testInstalledExtensionOptionsOpenInForegroundWithoutAnActionPopup() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let key = "extension-options-" + UUID().uuidString
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(key)
+        let service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let manager = TabManager(storageKey: key)
+        let defaults = UserDefaults.standard
+        let oldPrivacy = defaults.object(forKey: "is_incognito")
+        defaults.set(false, forKey: "is_incognito")
+        defer {
+            for tab in manager.tabs { tab.webViewModel.releaseWebViewRuntime() }
+            for extensionRecord in service.webExtensions { service.deleteWebExtension(extensionRecord.id) }
+            defaults.removeObject(forKey: key)
+            defaults.set(oldPrivacy, forKey: "is_incognito")
+            try? FileManager.default.removeItem(at: root)
+        }
+
+        let scenarios: [(String, [String: Any], Bool)] = [
+            ("Options UI", ["options_ui": ["page": "settings/options.html", "open_in_tab": false]], true),
+            ("Options page", ["options_page": "settings/options.html"], true),
+            ("No options page", [:], false)
+        ]
+        _ = manager.createTab()
+        for (name, options, hasOptions) in scenarios {
+            let package = root.appendingPathComponent(name)
+            let settings = package.appendingPathComponent("settings")
+            try FileManager.default.createDirectory(at: settings, withIntermediateDirectories: true)
+            var manifest: [String: Any] = ["manifest_version": 3, "name": name, "version": "1.0"]
+            manifest.merge(options) { _, new in new }
+            try JSONSerialization.data(withJSONObject: manifest).write(to: package.appendingPathComponent("manifest.json"))
+            try Data("<!doctype html><title>Fixture options</title><h1>Options content</h1>".utf8)
+                .write(to: settings.appendingPathComponent("options.html"))
+            let record = try await service.installWebExtension(from: package)
+            XCTAssertEqual(service.hasWebExtensionOptions(record.id), hasOptions)
+            guard hasOptions else {
+                let tabCount = manager.tabs.count
+                service.openWebExtensionOptions(record.id, in: manager)
+                XCTAssertEqual(manager.tabs.count, tabCount)
+                continue
+            }
+
+            let previousTab = try XCTUnwrap(manager.activeTab)
+            let foreground = expectation(description: "\(name) settings tab is revealed")
+            let subscription = manager.extensionForegroundNavigation.sink { foreground.fulfill() }
+            service.openWebExtensionOptions(record.id, in: manager)
+            await fulfillment(of: [foreground], timeout: 4)
+            subscription.cancel()
+            let opened = try XCTUnwrap(manager.activeTab)
+            let url = try XCTUnwrap(opened.webViewModel.currentURL)
+            XCTAssertEqual(url.scheme, "webkit-extension")
+            XCTAssertEqual(url.path, "/settings/options.html")
+            XCTAssertNotEqual(opened.id, previousTab.id)
+            XCTAssertNotNil(NativeWebExtensionRuntime.shared.webViewConfiguration(for: url))
+            XCTAssertTrue(opened.webViewModel.returnToSourceTab?() == true)
+            XCTAssertEqual(manager.activeTab?.id, previousTab.id)
+
+            let tabCount = manager.tabs.count
+            defaults.set(true, forKey: "is_incognito")
+            XCTAssertFalse(service.hasWebExtensionOptions(record.id))
+            service.openWebExtensionOptions(record.id, in: manager)
+            defaults.set(false, forKey: "is_incognito")
+            service.setWebExtensionEnabled(record.id, enabled: false)
+            XCTAssertFalse(service.hasWebExtensionOptions(record.id))
+            service.openWebExtensionOptions(record.id, in: manager)
+            XCTAssertEqual(manager.tabs.count, tabCount)
+        }
+    }
+
     func testNewTabOverrideUsesExplicitSelectionAndFallsBackWhenUnavailable() async throws {
         guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
         let key = "extension-new-tab-" + UUID().uuidString
@@ -922,6 +990,9 @@ import SwiftUI
         XCTAssertTrue(server.receivedRequests.contains { $0.path == "/store" })
         XCTAssertEqual(manager.openURLFromBrowserControls(address.appendingPathComponent("search"))?.id, storeTab.id,
                        "Further browser links reuse the normal tab")
+        // Set the sentinel on the committed search document. Otherwise this
+        // assertion can race the store page's in-flight navigation.
+        try await waitForPage("platform-results", in: storeTab.webViewModel)
         let ordinaryWeb = try XCTUnwrap(storeTab.webViewModel.webView)
         _ = try await ordinaryWeb.evaluateJavaScript("window.originalStoreSentinel=484")
         let newStore = try XCTUnwrap(manager.openURLFromBrowserControls(address.appendingPathComponent("store"), inNewTab: true))
@@ -1406,6 +1477,9 @@ import SwiftUI
         const selectedDocument=await chrome.userScripts.execute({target:{tabId:tab.id,documentIds:[child.documentId]},js:[{code:'window!==top'}]});
         const lexical=await chrome.userScripts.execute({target:{tabId:tab.id},js:[{code:'let sharedLexicalForExecute=39;Promise.resolve(sharedLexicalForExecute+3)'}]});
         const lexicalAgain=await chrome.userScripts.execute({target:{tabId:tab.id},js:[{code:'sharedLexicalForExecute+4'}]});
+        const conditional=await chrome.userScripts.execute({target:{tabId:tab.id},js:[{code:'if (true) { let value = sharedLexicalForExecute + 5\\nPromise.resolve(value); } else { Promise.resolve(-1); }'}]});
+        const alternate=await chrome.userScripts.execute({target:{tabId:tab.id},js:[{code:'if (false) Promise.resolve(-1); else Promise.resolve(45);'}]});
+        const skipped=await chrome.userScripts.execute({target:{tabId:tab.id},js:[{code:'if (false) { Promise.resolve(-1); }'}]});
         await chrome.userScripts.configureWorld({worldId:'network-denied',csp:"default-src 'none'; script-src 'self' https:; connect-src 'none'; object-src 'none'"});
         const deniedFetch=await chrome.userScripts.execute({target:{tabId:tab.id},worldId:'network-denied',js:[{code:'fetch("/forbidden-network-probe").then(()=>"allowed",e=>e.name)'}]});
         await chrome.userScripts.configureWorld({worldId:'network-allowed',csp:"script-src 'self'; connect-src http://127.0.0.1:*"});
@@ -1415,7 +1489,7 @@ import SwiftUI
         chrome.runtime.onUserScriptMessage.removeListener(globalThis.userScriptReceiver);
         const noReceiver=await chrome.userScripts.execute({target:{tabId:tab.id},worldId:'messages',js:[{code:'chrome.runtime.sendMessage({value:46}).then(()=>false,e=>e.message.includes("Receiving end"))'}]});
         chrome.runtime.onUserScriptMessage.addListener(globalThis.userScriptReceiver);
-        return {tab:tab.id,first,shared,frames,message,port,failure,nativeFrames,selectedChild,selectedDocument,lexical,lexicalAgain,deniedFetch,allowedFetch,main,heldPort,noReceiver};
+        return {tab:tab.id,first,shared,frames,message,port,failure,nativeFrames,selectedChild,selectedDocument,lexical,lexicalAgain,conditional,alternate,skipped,deniedFetch,allowedFetch,main,heldPort,noReceiver};
         """, arguments: ["pageURL": base.appendingPathComponent("page").absoluteString], in: nil, contentWorld: .page) as? [String: Any]
         let executionAttachment = XCTAttachment(data: try JSONSerialization.data(withJSONObject: execution ?? [:], options: [.prettyPrinted, .sortedKeys]), uniformTypeIdentifier: "public.json")
         executionAttachment.name = "generic-userscript-execution-and-messaging"; executionAttachment.lifetime = .keepAlways; add(executionAttachment)
@@ -1447,6 +1521,9 @@ import SwiftUI
         XCTAssertEqual(injected("selectedDocument").first?["result"] as? Bool, true)
         XCTAssertEqual(injected("lexical").first?["result"] as? Int, 42)
         XCTAssertEqual(injected("lexicalAgain").first?["result"] as? Int, 43)
+        XCTAssertEqual(injected("conditional").first?["result"] as? Int, 44)
+        XCTAssertEqual(injected("alternate").first?["result"] as? Int, 45)
+        XCTAssertTrue(injected("skipped").first?["result"] is NSNull)
         XCTAssertEqual(injected("deniedFetch").first?["result"] as? String, "TypeError")
         XCTAssertFalse(server.receivedRequests.contains { $0.path == "/forbidden-network-probe" })
         XCTAssertEqual(injected("allowedFetch").first?["result"] as? Int, 200)

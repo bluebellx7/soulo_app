@@ -38,14 +38,15 @@ enum PeerDownloadLink: Equatable {
             guard sources.count <= 32, sources.allSatisfy({ $0.utf8.count <= 256 }) else { throw TorrentTaskError.invalid }
             return .ed2k(ED2KFileLink(name: name, size: size, hash: parts[4].uppercased(), sources: sources))
         }
-        guard let url = URL(string: value), let scheme = url.scheme?.lowercased() else { throw TorrentTaskError.invalid }
-        if scheme == "magnet" {
-            // libtorrent expects the lowercase spelling. Preserve the encoded
-            // query because tracker credentials and display names can contain escapes.
-            let address = "magnet" + url.absoluteString.dropFirst("magnet".count)
+        if value.lowercased().hasPrefix("magnet:") {
+            // Web pages can copy escaped query separators into the clipboard.
+            // Leave percent-encoded tracker credentials and display names intact.
+            let query = value.dropFirst("magnet".count).replacingOccurrences(of: "&amp;", with: "&")
+            let address = "magnet" + query
             guard let normalized = URL(string: address) else { throw TorrentTaskError.invalid }
             return .magnet(normalized)
         }
+        guard let url = URL(string: value), let scheme = url.scheme?.lowercased() else { throw TorrentTaskError.invalid }
         guard ["http", "https"].contains(scheme), url.host?.isEmpty == false, url.user == nil, url.password == nil else {
             throw TorrentTaskError.invalid
         }

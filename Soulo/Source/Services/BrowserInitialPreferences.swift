@@ -66,6 +66,11 @@ enum PlatformBarDomainPolicy {
         return hosts.contains { matches(current, candidate: $0) }
     }
 
+    static func shouldAutoHide(for url: URL?, hosts: Set<String>) -> Bool {
+        guard let url, let current = host(url) else { return false }
+        return !hosts.contains { matches(current, candidate: $0) }
+    }
+
     /// A display-only match must never change the selected search engine or load a URL.
     /// Prefer the most specific host, then the user's selection, then bar order.
     static func highlightedPlatformID(for url: URL?, entries: [Entry], preferredID: UUID?) -> UUID? {

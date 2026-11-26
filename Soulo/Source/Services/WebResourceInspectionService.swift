@@ -23,6 +23,18 @@ enum WebResourceInspectionService {
         let hasInlineVideo: Bool
     }
 
+    @MainActor private final class CCTVLookup {
+        let page: URL
+        let started = ContinuousClock.now
+        let task: Task<WebMediaResource?, Never>
+
+        init(page: URL, task: Task<WebMediaResource?, Never>) {
+            self.page = page
+            self.task = task
+        }
+    }
+    @MainActor private static let cctvLookups = NSMapTable<WKWebView, CCTVLookup>.weakToStrongObjects()
+
     static func delivery(for url: URL) -> WebMediaResource.Delivery {
         let fileExtension = url.pathExtension.lowercased()
         let format = URLComponents(url: url, resolvingAgainstBaseURL: false)?
@@ -54,7 +66,64 @@ enum WebResourceInspectionService {
 
     @MainActor
     static func inspectVideoFallback(webView: WKWebView, frame: WKFrameInfo?) async -> VideoFallbackInspection {
-        await inspectVideoTarget(webView: webView, frame: frame, token: "__soulo_fallback")
+        let inspection = await inspectVideoTarget(webView: webView, frame: frame, token: "__soulo_fallback")
+        if frame == nil, inspection.target == nil, !inspection.hasInlineVideo,
+           let program = await cctvProgram(in: webView) {
+            return .init(target: (program, "__soulo_fallback"), hasInlineVideo: false)
+        }
+        return inspection
+    }
+
+    @MainActor
+    private static func cctvProgram(in webView: WKWebView) async -> WebMediaResource? {
+        guard let page = webView.url, CCTVDownloadSource.isProgramPage(page) else { return nil }
+        if let lookup = cctvLookups.object(forKey: webView), lookup.page == page,
+           lookup.started.duration(to: .now) < .seconds(30) {
+            return await lookup.task.value
+        }
+        let task = Task { @MainActor [weak webView] in
+            guard let webView else { return nil as WebMediaResource? }
+            return await readCCTVProgram(page: page, in: webView)
+        }
+        cctvLookups.setObject(CCTVLookup(page: page, task: task), forKey: webView)
+        let result = await task.value
+        if result == nil, cctvLookups.object(forKey: webView)?.page == page, webView.isLoading {
+            cctvLookups.removeObject(forKey: webView)
+        }
+        return result
+    }
+
+    @MainActor
+    private static func readCCTVProgram(page: URL, in webView: WKWebView) async -> WebMediaResource? {
+        guard let id = try? await webView.evaluateCompatibleJavaScript(#"""
+                  (() => {
+                      if (typeof guid === 'string' && /^[a-f0-9]{32}$/i.test(guid)) return guid;
+                      for (const script of Array.from(document.scripts).slice(0, 256)) {
+                          if (script.src) continue;
+                          const match = script.textContent.slice(0, 65536).match(/(?:^|[\n;])\s*var\s+guid\s*=\s*["']([a-f0-9]{32})["']/i);
+                          if (match) return match[1];
+                      }
+                      return '';
+                  })()
+                  """#) as? String,
+              let url = CCTVDownloadSource.programRequest(id: id) else { return nil }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 6
+        request.httpShouldHandleCookies = false
+        guard let (bytes, response) = try? await URLSession.shared.bytes(for: request),
+              let http = response as? HTTPURLResponse, http.statusCode == 200, http.url?.host == url.host
+        else { return nil }
+        defer { bytes.task.cancel() }
+        var data = Data()
+        do {
+            for try await byte in bytes {
+                guard data.count < 256 * 1024 else { return nil }
+                data.append(byte)
+            }
+        } catch { return nil }
+        guard webView.url == page, let stream = try? CCTVDownloadSource.publicStream(in: data, programID: id) else { return nil }
+        return WebMediaResource(kind: .video, url: stream, title: webView.title ?? "", posterURL: nil,
+                                delivery: .hls, sourcePageURL: page)
     }
 
     @MainActor
@@ -312,6 +381,11 @@ enum WebResourceInspectionService {
             let frameSnapshot = WebResourceSnapshot(dictionary: dictionary)
             WebMediaManifestCache.rememberPolicy(dictionary["referrerPolicy"] as? String, urls: frameSnapshot.videos.map(\.url), webView: webView)
             snapshot = snapshot.mergingMedia(from: frameSnapshot)
+        }
+        if snapshot.videos.isEmpty, let program = await cctvProgram(in: webView) {
+            let video = WebResourceSnapshot(pageTitle: snapshot.pageTitle, pageURL: snapshot.pageURL, images: [],
+                videos: [program], audio: [], links: [], textFragments: [], colors: [], documents: [])
+            snapshot = snapshot.mergingMedia(from: video)
         }
         return snapshot
     }
@@ -689,6 +763,21 @@ enum WebResourceInspectionService {
 
             var combinedFormats = Array.from(streamingData.formats || []);
             var adaptiveFormats = Array.from(streamingData.adaptiveFormats || []);
+            // A result preview can play without changing the document URL.
+            // Keep its watch page identity instead of offering its CDN track as the video.
+            if (!currentVideoID && youtubeDelivery === 'youtubeSABR'
+                && /^https:\/\/(?:www\.|m\.)?youtube\.com$/.test(location.origin)
+                && ['/', '/results'].includes(location.pathname)
+                && /^[A-Za-z0-9_-]+$/.test(responseVideoID)) {
+                var watchURL = new URL('/watch', location.origin);
+                watchURL.searchParams.set('v', responseVideoID);
+                combinedFormats.concat(adaptiveFormats).forEach(function(format) {
+                    var mediaURL = resolvedURL(format);
+                    if (isGoogleVideoURL(mediaURL)) videoMap.delete(mediaURL);
+                });
+                addMedia('video', watchURL.href, title, poster, 'youtubeSABR');
+                return true;
+            }
             var selectedVideos = combinedFormats;
             if (!selectedVideos.length) {
                 var compatibleVideo = adaptiveFormats
@@ -790,6 +879,18 @@ enum WebResourceInspectionService {
 
             var videoElement = document.querySelector('video');
             if (!sabrURL && !videoElement) return false;
+            if (!sabrURL && videoElement.readyState === 0) {
+                // An unavailable watch page still renders an empty video element.
+                // Keep fallback discovery for playable pages and unknown player states.
+                try {
+                    var response = window.ytInitialPlayerResponse;
+                    if (typeof response === 'string') response = JSON.parse(response);
+                    var responseID = response?.videoDetails?.videoId;
+                    var status = response?.playabilityStatus?.status;
+                    if ((!responseID || responseID === currentVideoID)
+                        && ['ERROR', 'UNPLAYABLE', 'LOGIN_REQUIRED', 'AGE_CHECK_REQUIRED', 'LIVE_STREAM_OFFLINE'].includes(status)) return false;
+                } catch (_) {}
+            }
 
             var title = cleanText(
                 document.querySelector('h1 yt-formatted-string, h1, meta[name="title"]')?.content
@@ -1106,6 +1207,12 @@ enum WebResourceMediaService {
 
     static func isYouTubePageURL(_ url: URL) -> Bool {
         youtubeVideoID(for: url) != nil
+    }
+
+    static func isYouTubeCollectionPage(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "https", let host = url.host?.lowercased(),
+              ["youtube.com", "www.youtube.com", "m.youtube.com"].contains(host) else { return false }
+        return url.path.isEmpty || url.path == "/" || url.path == "/results"
     }
 
     static func youtubeEmbedURL(for url: URL) -> URL? {

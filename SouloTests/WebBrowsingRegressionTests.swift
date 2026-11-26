@@ -17,6 +17,36 @@ import Combine
                 .environmentObject(SearchViewModel())
         }
     }
+
+    func testWebContentTerminationReloadsOnceAndAllowsAnotherPage() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/first": Data("<title>First page</title><p id='ready'>First</p>".utf8),
+            "/second": Data("<title>Second page</title><p id='next'>Second</p>".utf8)
+        ])
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel(), (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        let first = root.appendingPathComponent("first")
+        model.loadURL(first)
+        try await wait(model, for: "!!document.getElementById('ready') && document.readyState === 'complete'")
+        let web = try XCTUnwrap(model.webView)
+        let initial = server.receivedRequests.filter { $0.path == "/first" }.count
+        let navigation = try XCTUnwrap(web.navigationDelegate)
+        navigation.webViewWebContentProcessDidTerminate?(web)
+        for _ in 0..<150 {
+            if server.receivedRequests.filter({ $0.path == "/first" }).count > initial, !model.isLoading { break }
+            try await Task.sleep(for: .milliseconds(40))
+        }
+        XCTAssertGreaterThan(server.receivedRequests.filter { $0.path == "/first" }.count, initial)
+        XCTAssertNil(model.errorMessage)
+        navigation.webViewWebContentProcessDidTerminate?(web)
+        XCTAssertEqual(model.errorPageURL, first)
+        XCTAssertNotNil(model.errorMessage)
+        model.loadURL(root.appendingPathComponent("second"))
+        try await wait(model, for: "!!document.getElementById('next') && document.readyState === 'complete'")
+        XCTAssertNil(model.errorMessage)
+    }
     func testLiveNestedPlayerResolvesItsActualMediaSource() async throws {
         guard let raw = ProcessInfo.processInfo.environment["SOULO_LIVE_PLAYER_QA_URL"], let page = URL(string: raw) else { throw XCTSkip("Opt-in page handoff audit") }
         let model = WebViewModel(), (window, previous) = try host(model)
@@ -2528,10 +2558,12 @@ import Combine
         XCTAssertFalse(challenge, "Ordinary login URLs must retain native filtering")
     }
 
-    func testPageRedirectsRemainAvailableAndAdPopupsStayBlocked() async throws {
+    func testPageRedirectsAndUnmatchedScriptWindowsRemainAvailableWithAdFiltering() async throws {
         let server = try BrowsingHTTPFixture()
         let root = try await server.start()
         defer { server.stop() }
+        let rules = AdBlockRuleParser.parse("/rule-matched-popup$popup")
+        UserDefaults.standard.set(try JSONEncoder().encode(rules), forKey: "soulo_ad_block_subscription_rules")
         let model = WebViewModel()
         let (window, previous) = try host(model)
         defer { close(model, window, previous) }
@@ -2541,15 +2573,14 @@ import Combine
         }
         model.loadURL(root.appendingPathComponent("automatic-popup"))
         try await wait(model, for: "!!document.getElementById('automatic')")
-        try await Task.sleep(for: .milliseconds(500))
-        XCTAssertFalse(server.requests.contains { $0.path == "/login-popup" }, "Ad protection still blocks unsolicited popups")
-        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
-        model.loadURL(root.appendingPathComponent("automatic-popup"))
         for _ in 0..<100 {
             if server.requests.contains(where: { $0.path == "/login-popup" }) { break }
             try await Task.sleep(for: .milliseconds(30))
         }
-        XCTAssertTrue(server.requests.contains { $0.path == "/login-popup" })
+        XCTAssertTrue(server.requests.contains { $0.path == "/login-popup" },
+                      "A script-opened page with no matching filter must still reach navigation policy")
+        XCTAssertFalse(server.requests.contains { $0.path == "/rule-matched-popup" },
+                       "A script-opened page matching a popup filter must still be blocked")
         model.loadURL(root.appendingPathComponent("submit"))
         try await wait(model, for: "!!document.getElementById('receipt')")
     }
@@ -2655,6 +2686,50 @@ import Combine
         XCTAssertNil(model.errorMessage)
         XCTAssertEqual(web.url?.path, "/form")
     }
+
+    func testConnectionRefusedKeepsExactAddressForRetry() async throws {
+        let initialServer = try BrowsingHTTPFixture()
+        let root = try await initialServer.start()
+        initialServer.stop()
+        let url = try XCTUnwrap(URL(string: "/collection?keyword=&page=3", relativeTo: root)?.absoluteURL)
+        let port = try XCTUnwrap(root.port.flatMap { NWEndpoint.Port(rawValue: UInt16($0)) })
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+
+        model.loadURL(url)
+        for _ in 0..<160 where model.errorMessage == nil { try await Task.sleep(for: .milliseconds(50)) }
+        XCTAssertNotNil(model.errorMessage)
+        XCTAssertEqual(model.errorPageURL, url)
+        XCTAssertFalse(model.isLoading)
+
+        let recoveredServer = try BrowsingHTTPFixture(port: port)
+        _ = try await recoveredServer.start()
+        defer { recoveredServer.stop() }
+        model.retryCurrentPage()
+        try await wait(model, for: "!!document.getElementById('destination')")
+        XCTAssertNil(model.errorMessage)
+        XCTAssertEqual(model.currentURL, url)
+        XCTAssertTrue(recoveredServer.requests.contains { $0.path == "/collection?keyword=&page=3" })
+    }
+
+    func testHTTPErrorAndInterruptedSubframeDoNotReplaceMainPage() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+
+        model.loadURL(root.appendingPathComponent("forbidden"))
+        try await wait(model, for: "!!document.getElementById('http-status')")
+        XCTAssertNil(model.errorMessage)
+
+        model.loadURL(root.appendingPathComponent("disconnected-subframe"))
+        try await wait(model, for: "document.readyState === 'complete' && !!document.getElementById('parent')")
+        XCTAssertTrue(server.requests.contains { $0.path == "/disconnect" })
+        XCTAssertNil(model.errorMessage)
+    }
 }
 
 private final class SourceReadCountingUserScript: WKUserScript {
@@ -2727,7 +2802,11 @@ private final class BrowsingHTTPFixture: @unchecked Sendable {
     private var startupCompleted = false
     var requests: [Request] { queue.sync { recorded } }
 
-    init() throws { listener = try NWListener(using: .tcp, on: .any) }
+    init(port: NWEndpoint.Port = .any) throws {
+        let parameters = NWParameters.tcp
+        parameters.allowLocalEndpointReuse = true
+        listener = try NWListener(using: parameters, on: port)
+    }
 
     func start() async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
@@ -2828,7 +2907,16 @@ private final class BrowsingHTTPFixture: @unchecked Sendable {
         case "/automatic-immediate": body = "<p id='automatic'>Stay here</p><script>location.href='/destination'</script>"
         case "/automatic-location": body = "<p id='automatic'>Stay here</p><script>setTimeout(() => location.href='/destination', 200)</script>"
         case "/automatic-meta": body = "<p id='automatic'>Stay here</p><meta http-equiv='refresh' content='1;url=/destination'>"
-        case "/automatic-popup": body = "<p id='automatic'>Stay here</p><script>setTimeout(() => window.open('/login-popup'), 200)</script>"
+        case "/automatic-popup": body = """
+            <p id='automatic'>Stay here</p>
+            <script>
+            setTimeout(() => {
+                window.open('/rule-matched-popup');
+                window.open('/login-popup');
+            }, 200);
+            </script>
+            """
+        case "/rule-matched-popup": body = "<p>Ad rule fixture</p>"
         case "/automatic-link": body = "<p id='automatic'>Stay here</p><a id='go' href='/destination'>Next</a><script>setTimeout(() => document.getElementById('go').click(), 200)</script>"
         case "/automatic-form": body = "<p id='automatic'>Stay here</p><form id='go' action='/destination'></form><script>setTimeout(() => document.getElementById('go').submit(), 200)</script>"
         case "/automatic-frame": body = "<p id='automatic'>Stay here</p><iframe src='/automatic-child'></iframe>"
@@ -2843,6 +2931,11 @@ private final class BrowsingHTTPFixture: @unchecked Sendable {
         case "/auth-parent": body = "<button id='open-login' onclick=\"window.open('/login-popup','fixture-auth')\">Sign in</button><script>addEventListener('message', e => { if (e.origin === location.origin) window.authResult = e.data; });</script>"
         case "/login-popup": body = "<script>const shared = document.cookie.includes('fixture_session=parent'); document.cookie='fixture_login=complete; path=/'; window.opener.postMessage(shared ? 'session-shared' : 'missing-session', location.origin); window.close();</script>"
         case "/disconnect": connection.cancel(); return
+        case "/forbidden":
+            status = "403 Forbidden"
+            body = "<p id='http-status'>A response from the server</p>"
+        case "/disconnected-subframe":
+            body = "<h1 id='parent'>Parent page</h1><iframe src='/disconnect'></iframe>"
         case "/redirect-hop":
             if recorded.filter({ $0.path == request.path }).count > 1 { connection.cancel(); return }
             body = "<p>Continuing</p><script>setTimeout(()=>location.assign('/destination'),200)</script>"

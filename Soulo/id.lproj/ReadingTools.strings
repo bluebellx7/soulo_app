@@ -369,6 +369,7 @@
 "torrent_select_all" = "Pilih Semua";
 "torrent_select_none" = "Batalkan pilihan Semua";
 "torrent_peers" = "%d rekan";
+"torrent_peer_counts" = "Terhubung %d/%d · Seeder %d";
 "torrent_duplicate" = "Torrent ini sudah ada di Unduhan.";
 "torrent_task_limit" = "Hapus beberapa catatan unduhan sebelum menambahkan lebih banyak tugas.";
 "torrent_save_error" = "Tidak dapat menyimpan tugas. Periksa penyimpanan yang tersedia dan coba lagi.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Kekuatan Buram";
 
 "home_quick_search_guide" = "Masukkan kata kunci di beranda, pilih platform, lalu ketuk Cari di papan ketik.";
-"auto_hide_platform_bar_hint" = "Saat diaktifkan, bilah hanya disembunyikan setelah Anda mengetuk konten halaman web dan domain halaman tidak cocok dengan platform mana pun di bilah saat ini. Jika cocok, bilah tetap atau kembali ditampilkan. Menggulir dan pengalihan otomatis tidak menyembunyikannya.";
+"auto_hide_platform_bar_hint" = "Bilah disembunyikan di situs di luar grup platform saat ini. Bilah muncul kembali saat Anda kembali ke platform dalam grup.";
 
 "ad_subscription_add" = "Tambah daftar filter";
 "ad_subscription_name" = "Nama";

@@ -1178,6 +1178,7 @@ private struct TabSwitcherCardItem: View {
                     TabOverviewCard(
                         webViewModel: tab.webViewModel,
                         keyword: tab.keyword,
+                        suspendedURL: tab.suspendedURL,
                         isActive: isActive,
                         isExpanding: isThisExpanding,
                         position: index + 1,
@@ -1354,6 +1355,7 @@ private struct TabOverviewTapSurface: UIViewRepresentable {
 private struct TabOverviewCard: View {
     @ObservedObject var webViewModel: WebViewModel
     let keyword: String?
+    var suspendedURL: URL? = nil
     let isActive: Bool
     let isExpanding: Bool
     let position: Int
@@ -1362,6 +1364,7 @@ private struct TabOverviewCard: View {
     let onTap: () -> Void
     let onClose: () -> Void
     var compactPreviewHeight: CGFloat? = nil
+    @AppStorage("is_incognito") private var isIncognito = false
     @ScaledMetric(relativeTo: .caption) private var compactTitleHeight: CGFloat = 30
 
     private var displayTitle: String {
@@ -1472,16 +1475,22 @@ private struct TabOverviewCard: View {
     }
 
     private var cardHeader: some View {
-        HStack(spacing: 10) {
+        let url = webViewModel.currentURL ?? suspendedURL
+        return HStack(spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(.regularMaterial)
                     .frame(width: 32, height: 32)
 
-                Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.primary.opacity(0.82))
+                if !isIncognito, let url, WebsiteFaviconService.iconURL(for: url.absoluteString) != nil {
+                    BookmarkFaviconView(urlString: url.absoluteString, size: 20)
+                } else {
+                    Image(systemName: overviewIcon(for: url))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.primary.opacity(0.82))
+                }
             }
+            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(displayTitle)
@@ -1499,6 +1508,15 @@ private struct TabOverviewCard: View {
             }
 
             Spacer(minLength: 6)
+        }
+    }
+
+    private func overviewIcon(for url: URL?) -> String {
+        switch url?.scheme?.lowercased() {
+        case "webkit-extension": return "puzzlepiece.extension"
+        case "file": return "doc"
+        case nil, "about": return "square.on.square"
+        default: return "globe"
         }
     }
 

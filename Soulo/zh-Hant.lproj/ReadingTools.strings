@@ -421,6 +421,7 @@
 "torrent_select_all" = "全選";
 "torrent_select_none" = "取消全選";
 "torrent_peers" = "%d 個連線";
+"torrent_peer_counts" = "已連線 %d/%d · 做種 %d";
 "torrent_duplicate" = "此種子已在下載列表中。";
 "torrent_task_limit" = "請先清理部分下載記錄，再新增任務。";
 "torrent_save_error" = "無法儲存任務，請檢查剩餘空間後重試。";
@@ -590,7 +591,7 @@
 "wallpaper_blur_amount" = "模糊強度";
 
 "home_quick_search_guide" = "在首頁輸入關鍵字，選擇一個平台，再點一下鍵盤上的「搜尋」。";
-"auto_hide_platform_bar_hint" = "開啟後，只有手動點選網頁內容，且網頁網域不符合目前平台列中的任何平台時才隱藏；符合任一平台則保持或恢復顯示。捲動和自動重新導向不會主動隱藏平台列。";
+"auto_hide_platform_bar_hint" = "開啟目前群組以外的網站時隱藏平台列，回到群組內的平台時重新顯示。";
 
 "ad_subscription_add" = "新增規則";
 "ad_subscription_name" = "名稱";

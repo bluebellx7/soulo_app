@@ -106,6 +106,76 @@ enum WebResourceDownloadError: LocalizedError {
     }
 }
 
+/// Some CCTV page players use renditions that require site-specific decoding.
+/// The same official metadata also advertises a standard HLS stream for
+/// public programs. Use that stream rather than saving the player rendition.
+enum CCTVDownloadSource {
+    private static let siteRenditions = ["enc", "enc2", "h5e"]
+
+    static func manifestRequest(for media: URL, page: URL?) -> URL? {
+        guard isCCTVPage(page), isCCTVMediaHost(media.host), media.scheme?.lowercased() == "https",
+              media.pathExtension.lowercased() == "m3u8" else { return nil }
+        let path = media.path.split(separator: "/")
+        guard path.count >= 5, path[0] == "asp", siteRenditions.contains(String(path[1])), path[2] == "hls",
+              let id = programID(in: media) else { return nil }
+        return programRequest(id: id)
+    }
+
+    static func isProgramPage(_ url: URL?) -> Bool {
+        guard let url, isCCTVPage(url) else { return false }
+        return url.path.range(of: #"^/[0-9]{4}/[0-9]{2}/[0-9]{2}/VIDE[A-Za-z0-9]+\.shtml$"#,
+                              options: .regularExpression) != nil
+    }
+
+    static func programRequest(id: String) -> URL? {
+        guard id.range(of: #"^[a-fA-F0-9]{32}$"#, options: .regularExpression) != nil else { return nil }
+        var url = URLComponents()
+        url.scheme = "https"
+        url.host = "vdn.apps.cntv.cn"
+        url.path = "/api/getHttpVideoInfo.do"
+        url.queryItems = [URLQueryItem(name: "pid", value: id)]
+        return url.url
+    }
+
+    static func publicStream(in data: Data, replacing media: URL) throws -> URL {
+        guard let id = programID(in: media) else { throw StreamingMediaDownloadError.unsupportedManifest }
+        return try publicStream(in: data, programID: id)
+    }
+
+    static func publicStream(in data: Data, programID id: String) throws -> URL {
+        struct Program: Decodable {
+            let hls_url: URL?
+            let is_protected: String
+            let is_invalid_copyright: String
+            let play: String
+        }
+        let program = try? JSONDecoder().decode(Program.self, from: data)
+        guard let program, program.is_protected == "0", program.is_invalid_copyright == "0", program.play == "1",
+              let url = program.hls_url, url.scheme?.lowercased() == "https", url.user == nil, url.password == nil,
+              isCCTVMediaHost(url.host), url.pathExtension.lowercased() == "m3u8",
+              url.path.hasPrefix("/asp/hls/"), programID(in: url) == id.lowercased() else {
+            throw StreamingMediaDownloadError.unsupportedManifest
+        }
+        return url
+    }
+
+    private static func isCCTVPage(_ url: URL?) -> Bool {
+        guard let host = url?.host?.lowercased(), url?.scheme == "https" else { return false }
+        return host == "cctv.com" || host.hasSuffix(".cctv.com") || host == "cntv.cn" || host.hasSuffix(".cntv.cn")
+    }
+
+    private static func programID(in url: URL) -> String? {
+        url.path.split(separator: "/").first { $0.range(of: #"^[a-fA-F0-9]{32}$"#, options: .regularExpression) != nil }
+            .map { $0.lowercased() }
+    }
+
+    private static func isCCTVMediaHost(_ host: String?) -> Bool {
+        guard let host = host?.lowercased() else { return false }
+        return host == "hls.cntv.lxdns.com" || host == "newcntv.qcloudcdn.com" || host.hasSuffix(".v.cntv.cn")
+            || host.hasSuffix(".cntv.cdn20.com") || host.hasSuffix(".cntv.kfcbest.com")
+    }
+}
+
 @MainActor
 final class WebResourceDownloadService {
     static let shared = WebResourceDownloadService()
@@ -136,7 +206,6 @@ final class WebResourceDownloadService {
             return try await StreamingMediaDownloadService.shared.downloadYouTubeVideo(
                 resource: resource,
                 preferredFilename: filename,
-                pageURL: pageURL,
                 webView: webView
             )
         case .separateTracks:
@@ -152,11 +221,22 @@ final class WebResourceDownloadService {
             )
         case .hls:
             guard let webView else { throw StreamingMediaDownloadError.unavailable }
+            let transferURL: URL?
+            if let metadataURL = CCTVDownloadSource.manifestRequest(for: resource.url, page: pageURL)
+                ?? CCTVDownloadSource.manifestRequest(for: resource.url, page: webView.url) {
+                let (data, response) = try await session.data(from: metadataURL)
+                guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode),
+                      response.url?.host == metadataURL.host else { throw StreamingMediaDownloadError.unsupportedManifest }
+                transferURL = try CCTVDownloadSource.publicStream(in: data, replacing: resource.url)
+            } else {
+                transferURL = nil
+            }
             return try await StreamingMediaDownloadService.shared.downloadHLS(
                 resource: resource,
                 preferredFilename: filename,
                 pageURL: pageURL,
-                webView: webView
+                webView: webView,
+                transferURL: transferURL
             )
         case .dash:
             throw StreamingMediaDownloadError.unsupportedManifest
@@ -242,7 +322,20 @@ final class WebResourceDownloadService {
             options[AVURLAssetHTTPUserAgentKey] = userAgent
         }
         let asset = AVURLAsset(url: video.url, options: options)
-        DownloadManagerService.shared.registerPlaybackSource(id: item.id, asset: asset, pageURL: pageURL, webView: webView)
+        let manager = DownloadManagerService.shared
+        manager.registerPlaybackSource(id: item.id, asset: asset, pageURL: pageURL, webView: webView)
+        let cookies = options[AVURLAssetHTTPCookiesKey] as? [HTTPCookie] ?? []
+        let referrer = request.value(forHTTPHeaderField: "Referer").flatMap(URL.init(string:))
+        guard !cookies.isEmpty || referrer != nil else { return }
+        let context = VideoPlaybackRequestContext(url: url, referrer: referrer,
+            userAgent: options[AVURLAssetHTTPUserAgentKey] as? String ?? AppConstants.mobileWebViewUserAgent,
+            cookies: cookies, omitsReferrer: referrer == nil)
+        // Servers without a range validator keep using a single background
+        // download. When playback opens, use the same scoped web credentials
+        // for its own range requests. Verified download ranges take precedence.
+        manager.setCachedPlaybackPreparation(for: item.id) {
+            await ProgressiveVideoPlaybackBridge.asset(for: video, context: context)
+        }
     }
 
     func saveImageToPhotos(

@@ -369,6 +369,7 @@
 "torrent_select_all" = "Wählen Sie „Alle“ aus";
 "torrent_select_none" = "Alle abwählen";
 "torrent_peers" = "%d Peers";
+"torrent_peer_counts" = "Verbunden %d/%d · Seeder %d";
 "torrent_duplicate" = "Dieser Torrent ist bereits in den Downloads verfügbar.";
 "torrent_task_limit" = "Entfernen Sie einige Download-Datensätze, bevor Sie weitere Aufgaben hinzufügen.";
 "torrent_save_error" = "Die Aufgabe kann nicht gespeichert werden. Überprüfen Sie den verfügbaren Speicherplatz und versuchen Sie es erneut.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Unschärfestärke";
 
 "home_quick_search_guide" = "Gib auf der Startseite einen Suchbegriff ein, wähle eine Plattform und tippe auf der Tastatur auf Suchen.";
-"auto_hide_platform_bar_hint" = "Wenn aktiviert, wird die Leiste erst ausgeblendet, nachdem du auf Webseiteninhalt tippst, und nur, wenn die Domain keiner Plattform der aktuellen Leiste entspricht. Bei einer Übereinstimmung bleibt die Leiste sichtbar oder wird wieder eingeblendet. Scrollen und automatische Weiterleitungen blenden sie nicht aus.";
+"auto_hide_platform_bar_hint" = "Blendet die Leiste auf Websites außerhalb der aktuellen Plattformgruppe aus. Sobald du zu einer Plattform der Gruppe zurückkehrst, erscheint sie wieder.";
 
 "ad_subscription_add" = "Filterliste hinzufügen";
 "ad_subscription_name" = "Name";

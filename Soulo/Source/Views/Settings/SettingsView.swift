@@ -374,7 +374,7 @@ private struct AppAppearanceSettingsRow: View {
     }
 }
 
-private struct AppAppearanceSettingsView: View {
+struct AppAppearanceSettingsView: View {
     @ObservedObject private var themeManager = ThemeManager.shared
     var body: some View {
         List {

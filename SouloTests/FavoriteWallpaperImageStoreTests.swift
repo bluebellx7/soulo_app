@@ -419,39 +419,6 @@ final class FavoriteWallpaperImageStoreTests: XCTestCase {
         }
     }
 
-    func testPlatformBarRequiresEnabledPageTapAndRestoresOnBackAndNewSearch() {
-        let model = WebViewModel()
-        let root = URL(string: "https://search.test/results?q=one")!
-        let redirected = URL(string: "https://search.test/results?q=one&automatic=1")!
-        model.beginPlatformSearchTracking()
-        model.updateCurrentURL(URL(string: "https://search.test/s?q=one"))
-        model.updateCurrentURL(root)
-        model.pageDidFinishLoading()
-        model.updateCurrentURL(redirected)
-        model.pageDidFinishLoading()
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "Even late automatic redirects must not hide the bar")
-        model.recordPlatformPageTap(autoHideEnabled: false)
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "A disabled option ignores real taps")
-        model.recordPlatformPageTap(autoHideEnabled: true)
-        XCTAssertTrue(model.platformBarHiddenByPageTap, "A tap can hide the bar without navigating")
-        model.updateCurrentURL(URL(string: redirected.absoluteString + "#anchor"))
-        XCTAssertTrue(model.platformBarHiddenByPageTap, "An anchor jump must not immediately restore the bar")
-        model.updateCurrentURL(URL(string: "https://search.test/detail/42"))
-        model.pageDidFinishLoading()
-        model.recordPlatformPageTap(autoHideEnabled: true)
-        model.updateCurrentURL(redirected)
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "Return to the tapped document, including automatic redirects, restores the bar")
-        model.recordPlatformPageTap(autoHideEnabled: true)
-        model.beginPlatformSearchTracking()
-        XCTAssertFalse(model.platformBarHiddenByPageTap)
-        model.recordPlatformPageTap(autoHideEnabled: true)
-        model.resetPlatformBarAutoHide()
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "Changing the preference waits for a fresh tap")
-        model.resetPlatformSearchTracking()
-        model.recordPlatformPageTap(autoHideEnabled: true)
-        XCTAssertFalse(model.platformBarHiddenByPageTap, "Direct URL pages are not platform searches")
-    }
-
     func testLightImageOverlayHasFullSurfaceTintAndSamplesTheTintedContrast() async throws {
         try await withLocalManager { manager in
             manager.source = .photo

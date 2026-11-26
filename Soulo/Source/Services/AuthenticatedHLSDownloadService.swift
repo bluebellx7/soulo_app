@@ -24,6 +24,19 @@ final class AuthenticatedHLSDownloadService {
         var convertible = true
         var keyCount = 0
         var visiting = Set<URL>()
+
+        var primaryDuration: Double? {
+            guard let playlist = playlists[primaryMedia] else { return nil }
+            return HLSDownloadTimeline.duration(of: String(decoding: playlist, as: UTF8.self))
+        }
+    }
+    private typealias Variant = (bandwidth: Int, url: URL, audioGroup: String?)
+    private struct OriginThrottle {
+        var nextRequest: ContinuousClock.Instant
+        let expires: ContinuousClock.Instant
+    }
+    private struct OriginRateLimit: LocalizedError {
+        var errorDescription: String? { HTTPURLResponse.localizedString(forStatusCode: 429) }
     }
     private final class Job {
         let id: UUID
@@ -48,6 +61,7 @@ final class AuthenticatedHLSDownloadService {
         }
     }
     private var jobs: [UUID: Job] = [:]
+    private var originThrottles: [String: OriginThrottle] = [:]
     var activeIDs: Set<UUID> { Set(jobs.keys) }
     private let startup: Task<Void, Never>
     private let root: URL
@@ -74,11 +88,13 @@ final class AuthenticatedHLSDownloadService {
         }
     }
     func owns(_ id: UUID) -> Bool { jobs[id] != nil }
-    func download(resource: WebMediaResource, preferredName: String, pageURL: URL?, webView: WKWebView) async throws -> URL {
+    func download(resource: WebMediaResource, preferredName: String, pageURL: URL?, webView: WKWebView, sourceURL: URL? = nil) async throws -> URL {
         let manager = DownloadManagerService.shared
-        guard manager.activeDownload(for: resource.url) == nil else { throw StreamingMediaDownloadError.alreadyInProgress }
-        let context = await VideoPlaybackRequestContext.load(url: resource.url, pageURL: pageURL, webView: webView)
-        let (item, _) = manager.beginDownload(suggestedFilename: preferredName, sourceURL: resource.url, transport: .hls,
+        let sourceURL = sourceURL ?? resource.url
+        let context = await VideoPlaybackRequestContext.load(url: resource.url,
+            pageURL: resource.sourcePageURL ?? pageURL, webView: webView)
+        guard manager.activeDownload(for: sourceURL) == nil else { throw StreamingMediaDownloadError.alreadyInProgress }
+        let (item, _) = manager.beginDownload(suggestedFilename: preferredName, sourceURL: sourceURL, transport: .hls,
             hlsUsesPersistentCookies: webView.configuration.websiteDataStore.isPersistent)
         let options = await WebResourceMediaService.networkAssetOptions(for: resource, webView: webView)
         let playback = AVURLAsset(url: resource.url, options: options), descriptor = AVURLAsset(url: resource.url, options: options)
@@ -96,7 +112,8 @@ final class AuthenticatedHLSDownloadService {
         jobs[id] = job; start(job)
     }
     func pause(_ id: UUID) {
-        guard let job = jobs[id], !job.paused else { return }
+        guard let job = jobs[id], !job.paused,
+              !DownloadManagerService.shared.finalizingHLSDownloadIDs.contains(id) else { return }
         job.paused = true; job.operation?.cancel()
         job.resumeOnActivation = false
         DownloadManagerService.shared.markPaused(id: id)
@@ -160,6 +177,7 @@ final class AuthenticatedHLSDownloadService {
         let resources = plan.resources.filter { !job.completed.contains($0.filename) }
         try await withThrowingTaskGroup(of: (String, Int64).self) { group in
             var next = 0
+            var nextProgressUpdate = ContinuousClock.now
             func enqueue() {
                 guard next < resources.count else { return }
                 let resource = resources[next]; next += 1
@@ -172,37 +190,43 @@ final class AuthenticatedHLSDownloadService {
             while let (name, bytes) = try await group.next() {
                 try Task.checkCancellation()
                 if job.completed.insert(name).inserted { job.received += bytes }
-                job.progress.completedUnitCount = Int64(900 * job.completed.count / max(1, plan.resources.count))
-                DownloadManagerService.shared.updateHLSProgress(id: job.id,
-                    fraction: Double(job.completed.count) / Double(max(1, plan.resources.count)), receivedBytes: job.received)
+                let now = ContinuousClock.now
+                // A long VOD can finish several fragments between UI updates.
+                // Dami Star sample (3,357 fragments): https://www.dm154.top/vodplay/418822-1-1.html
+                if now >= nextProgressUpdate || job.completed.count == plan.resources.count {
+                    let fraction = Double(job.completed.count) / Double(max(1, plan.resources.count))
+                    job.progress.completedUnitCount = Int64(900 * fraction)
+                    DownloadManagerService.shared.updateHLSProgress(id: job.id, fraction: fraction, receivedBytes: job.received)
+                    nextProgressUpdate = now + .milliseconds(200)
+                }
                 enqueue()
             }
         }
         try Task.checkCancellation()
+        let manager = DownloadManagerService.shared
+        manager.setHLSFinalizing(true, for: job.id)
+        defer { manager.setHLSFinalizing(false, for: job.id) }
         let result: URL
         if plan.convertible {
             let index = job.directory.appendingPathComponent("index.m3u8")
             if let primary = plan.playlists[plan.primaryMedia] { try primary.write(to: index, options: .atomic) }
             do { result = try await OfflineVideoConversionService.exportMP4(from: job.directory, into: DownloadManagerService.downloadsDirectory,
-                preferredFilename: job.preferredName) }
+                preferredFilename: job.preferredName, allowTranscoding: false) }
             catch is CancellationError { throw CancellationError() }
             catch {
+                try Task.checkCancellation()
                 if let original = plan.playlists["index.m3u8"] { try original.write(to: index, options: .atomic) }
                 result = try await commitBundle(job)
             }
         } else { result = try await commitBundle(job) }
-        if job.canceled {
+        let bytes = await Task.detached(priority: .utility, operation: { FileStorageSize.bytes(at: result) }).value
+        if Task.isCancelled || job.canceled {
             try? FileManager.default.removeItem(at: result)
             throw CancellationError()
         }
-        let manager = DownloadManagerService.shared
-        if let item = manager.downloads.first(where: { $0.id == job.id }) { manager.updateFileReference(from: item.localURL, to: result) }
-        if let bytes = await Task.detached(priority: .utility, operation: { FileStorageSize.bytes(at: result) }).value {
-            manager.updateProgress(id: job.id, completed: bytes, total: bytes)
-        }
         job.progress.completedUnitCount = 1000
         job.progress.cancellationHandler = nil
-        manager.markFinished(id: job.id)
+        manager.markFinished(id: job.id, savedURL: result, savedBytes: bytes)
         endAssertion(job)
         job.progress.cancellationHandler = nil
         jobs.removeValue(forKey: job.id); job.continuation.resume(returning: result)
@@ -237,14 +261,21 @@ final class AuthenticatedHLSDownloadService {
             try Task.checkCancellation()
             do {
                 if resource.key {
-                    let (data, response) = try await job.context.boundedData(for: resource.url, referrer: job.context.url, maximumBytes: 16, session: session)
+                    let (data, response) = try await requestWithRateLimit(for: resource.url) {
+                        try await job.context.boundedData(for: resource.url,
+                            referrer: job.context.referrer ?? job.context.url, maximumBytes: 16, session: session)
+                    }
                     guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode), data.count == 16 else { throw StreamingMediaDownloadError.invalidChunk }
                     let destination = job.directory.appendingPathComponent(resource.filename)
                     try await Task.detached(priority: .utility) { try data.write(to: destination, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) }.value
                     return Int64(data.count)
                 }
-                let (temporary, response) = try await job.context.download(for: resource.url, referrer: job.context.url,
-                    range: resource.range, session: session)
+                let (temporary, response) = try await requestWithRateLimit(for: resource.url, discard: { file in
+                    try? FileManager.default.removeItem(at: file)
+                }) {
+                    try await job.context.download(for: resource.url, referrer: job.context.referrer ?? job.context.url,
+                        range: resource.range, session: session)
+                }
                 defer { try? FileManager.default.removeItem(at: temporary) }
                 guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else { throw WebResourceDownloadError.invalidResponse }
                 guard !["text/html", "application/json"].contains(http.mimeType?.lowercased() ?? "") else { throw StreamingMediaDownloadError.invalidChunk }
@@ -264,14 +295,71 @@ final class AuthenticatedHLSDownloadService {
                 }.value
                 return bytes
             } catch is CancellationError { throw CancellationError() }
+            catch let error as OriginRateLimit { throw error }
             catch { last = error; try await Task.sleep(for: .milliseconds(350 * (attempt + 1))) }
         }
         throw last
     }
+
+    // Xigua Cartoon serves the playlist but can throttle its fragments with HTTP 429 and Retry-After.
+    // Reproduce at https://www.cnxgct.com/video/doupocangqiongnianfanguoyu-tiancantudou/hJAQn8npav.html
+    private func requestWithRateLimit<Body>(for url: URL, discard: (Body) -> Void = { _ in },
+                                            request: () async throws -> (Body, URLResponse)) async throws -> (Body, URLResponse) {
+        let scheme = url.scheme?.lowercased() ?? "https"
+        let host = url.host?.lowercased() ?? ""
+        let origin = "\(scheme)://\(host):\(url.port ?? (scheme == "http" ? 80 : 443))"
+        var retries = 0
+        while true {
+            try await waitForOrigin(origin)
+            let result = try await request()
+            guard let response = result.1 as? HTTPURLResponse, response.statusCode == 429 else { return result }
+            discard(result.0)
+            let now = ContinuousClock.now
+            let retry = now + .seconds(Self.retryDelay(response.value(forHTTPHeaderField: "Retry-After")))
+            originThrottles = originThrottles.filter { $0.value.expires > now }
+            let next = max(originThrottles[origin]?.nextRequest ?? now, retry)
+            originThrottles[origin] = OriginThrottle(nextRequest: next, expires: next + .seconds(10 * 60))
+            guard retries < 3 else { throw OriginRateLimit() }
+            retries += 1
+        }
+    }
+
+    private func waitForOrigin(_ origin: String) async throws {
+        while let throttle = originThrottles[origin] {
+            let now = ContinuousClock.now
+            if throttle.expires <= now {
+                originThrottles[origin] = nil
+                break
+            }
+            if throttle.nextRequest <= now {
+                // Avoid releasing every waiting fragment into the same burst.
+                originThrottles[origin]?.nextRequest = now + .seconds(1)
+                break
+            }
+            guard now.duration(to: throttle.nextRequest) <= .seconds(120) else { throw OriginRateLimit() }
+            try await Task.sleep(until: throttle.nextRequest, clock: .continuous)
+        }
+        try Task.checkCancellation()
+    }
+
+    private static func retryDelay(_ header: String?) -> Double {
+        guard let value = header?.trimmingCharacters(in: .whitespacesAndNewlines) else { return 2 }
+        if let seconds = Double(value), seconds.isFinite { return max(1, min(seconds, 86_400)) }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss 'GMT'"
+        guard let date = formatter.date(from: value) else { return 2 }
+        return max(1, min(date.timeIntervalSinceNow, 86_400))
+    }
+
     private func loadPlaylist(_ url: URL, name: String, context: VideoPlaybackRequestContext, depth: Int, plan: inout Plan) async throws -> String {
         guard depth <= 4, plan.visiting.insert(url).inserted, plan.playlists.count < 8 else { throw StreamingMediaDownloadError.unsupportedManifest }
         defer { plan.visiting.remove(url) }
-        let (data, response) = try await context.boundedData(for: url, referrer: context.url, maximumBytes: 4 * 1_024 * 1_024, session: session)
+        let (data, response) = try await requestWithRateLimit(for: url) {
+            try await context.boundedData(for: url,
+                referrer: context.referrer ?? context.url, maximumBytes: 4 * 1_024 * 1_024, session: session)
+        }
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode), data.count <= 4 * 1_024 * 1_024,
               let text = String(data: data, encoding: .utf8), text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("#EXTM3U") else { throw StreamingMediaDownloadError.unsupportedManifest }
         let base = response.url ?? url
@@ -282,24 +370,27 @@ final class AuthenticatedHLSDownloadService {
                   target.user == nil, target.password == nil else { throw StreamingMediaDownloadError.unsupportedManifest }
             return target
         }
-        var variants: [(Int, String, String?)] = []
+        var variants: [Variant] = []
         for index in lines.indices where lines[index].hasPrefix("#EXT-X-STREAM-INF:") {
             guard index+1 < lines.count else { throw StreamingMediaDownloadError.unsupportedManifest }
+            guard let target = try? resolved(lines[index+1]) else { continue }
             let attrs = Self.attributes(lines[index])
-            variants.append((Int(attrs["BANDWIDTH"] ?? "") ?? 0, lines[index+1], attrs["AUDIO"]))
+            variants.append((Int(attrs["BANDWIDTH"] ?? "") ?? 0, target, attrs["AUDIO"]))
         }
-        if let chosen = variants.max(by: { $0.0 < $1.0 }) {
+        if let defaultVariant = variants.first {
             let child = "playlist-\(UUID().uuidString).m3u8"
-            _ = try await loadPlaylist(resolved(chosen.1), name: child, context: context, depth: depth+1, plan: &plan)
+            let chosen = try await loadVideoVariant(defaultVariant, alternatives: variants, name: child,
+                context: context, depth: depth + 1, plan: &plan)
             var master = "#EXTM3U\n"
-            if let audio = chosen.2, let line = lines.first(where: { $0.hasPrefix("#EXT-X-MEDIA:") && Self.attributes($0)["GROUP-ID"] == audio && Self.attributes($0)["TYPE"] == "AUDIO" }),
+            if let audio = chosen.audioGroup, let line = lines.first(where: { $0.hasPrefix("#EXT-X-MEDIA:") && Self.attributes($0)["GROUP-ID"] == audio && Self.attributes($0)["TYPE"] == "AUDIO" }),
                let uri = Self.attributes(line)["URI"] {
                 plan.convertible = false
                 let audioName = "audio\(depth).m3u8"
                 _ = try await loadPlaylist(resolved(uri), name: audioName, context: context, depth: depth+1, plan: &plan)
                 master += Self.replaceURI(in: line, with: audioName) + "\n"
             }
-            master += "#EXT-X-STREAM-INF:BANDWIDTH=\(chosen.0)" + (chosen.2 == nil ? "" : ",AUDIO=\"\(chosen.2!)\"") + "\n\(child)\n"
+            let audioAttribute = chosen.audioGroup.map { ",AUDIO=\"\($0)\"" } ?? ""
+            master += "#EXT-X-STREAM-INF:BANDWIDTH=\(chosen.bandwidth)\(audioAttribute)\n\(child)\n"
             plan.playlists[name] = Data(master.utf8); return name
         }
         guard lines.contains("#EXT-X-ENDLIST") else { throw StreamingMediaDownloadError.unsupportedManifest }
@@ -348,6 +439,44 @@ final class AuthenticatedHLSDownloadService {
         plan.playlists[name] = Data(rewritten.joined(separator: "\n").utf8)
         return name
     }
+
+    // Xigua Cartoon advertised a 112-minute highest rendition alongside the 24-minute episode.
+    // Reproduce at https://www.cnxgct.com/video/doupocangqiongnianfanguoyu-tiancantudou/hJAQn8npav.html
+    private func loadVideoVariant(_ defaultVariant: Variant, alternatives: [Variant], name: String,
+                                  context: VideoPlaybackRequestContext, depth: Int, plan: inout Plan) async throws -> Variant {
+        let ranked = alternatives.sorted { $0.bandwidth > $1.bandwidth }
+        let highest = ranked.first ?? defaultVariant
+        guard depth == 1, highest.url != defaultVariant.url else {
+            _ = try await loadPlaylist(highest.url, name: name, context: context, depth: depth, plan: &plan)
+            return highest
+        }
+
+        var reference = plan
+        do {
+            _ = try await loadPlaylist(defaultVariant.url, name: name, context: context, depth: depth, plan: &reference)
+        } catch {
+            try Task.checkCancellation()
+            if error is OriginRateLimit { throw error }
+            _ = try await loadPlaylist(highest.url, name: name, context: context, depth: depth, plan: &plan)
+            return highest
+        }
+
+        for variant in ranked.prefix(8) where variant.url != defaultVariant.url {
+            var candidate = plan
+            do {
+                _ = try await loadPlaylist(variant.url, name: name, context: context, depth: depth, plan: &candidate)
+                if HLSDownloadTimeline.match(reference.primaryDuration, candidate.primaryDuration) {
+                    plan = candidate
+                    return variant
+                }
+            } catch {
+                try Task.checkCancellation()
+                if error is OriginRateLimit { break }
+            }
+        }
+        plan = reference
+        return defaultVariant
+    }
     private func addResource(_ url: URL, range: String?, key: Bool, segment: Bool, plan: inout Plan) -> String {
         let identity = url.absoluteString + "|" + (range ?? "")
         if let existing = plan.resourceNames[identity] { return existing }
@@ -356,7 +485,7 @@ final class AuthenticatedHLSDownloadService {
         plan.resources.append(.init(url: url, filename: file, range: range, key: key, segment: segment)); plan.resourceNames[identity] = file
         return file
     }
-    private static func attributes(_ line: String) -> [String: String] {
+    nonisolated static func attributes(_ line: String) -> [String: String] {
         guard let expression = try? NSRegularExpression(pattern: #"([A-Z0-9-]+)=(?:"([^"]*)"|([^,]*))"#) else { return [:] }
         let range = NSRange(line.startIndex..., in: line)
         return Dictionary(expression.matches(in: line, range: range).compactMap { match in
@@ -367,5 +496,23 @@ final class AuthenticatedHLSDownloadService {
     }
     private static func replaceURI(in line: String, with filename: String) -> String {
         line.replacingOccurrences(of: #"URI="[^"]*""#, with: "URI=\"\(filename)\"", options: .regularExpression)
+    }
+}
+
+enum HLSDownloadTimeline {
+    static func duration(of playlist: String) -> Double? {
+        var seconds = 0.0
+        for line in playlist.split(whereSeparator: \.isNewline) {
+            let tag = line.trimmingCharacters(in: .whitespaces)
+            guard tag.hasPrefix("#EXTINF:") else { continue }
+            guard let duration = Double(tag.dropFirst(8).prefix { $0 != "," }), duration.isFinite, duration > 0 else { return nil }
+            seconds += duration
+        }
+        return seconds.isFinite && seconds > 0 ? seconds : nil
+    }
+
+    static func match(_ first: Double?, _ second: Double?) -> Bool {
+        guard let first, let second else { return true }
+        return abs(first - second) <= max(2, first * 0.01)
     }
 }

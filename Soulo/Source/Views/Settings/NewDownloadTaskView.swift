@@ -225,7 +225,7 @@ struct TorrentTaskDetailView: View {
                                 HStack {
                                     Text(ByteCountFormatter.string(fromByteCount: s.speed, countStyle: .file) + "/s")
                                     Spacer()
-                                    Text(String(format: ToolText.text("torrent_peers"), s.peers))
+                                    Text(String(format: ToolText.text("torrent_peer_counts"), s.peers, s.knownPeers, s.seeders))
                                 }.font(.caption).foregroundStyle(.secondary).monospacedDigit()
                             }
                             if !job.error.isEmpty { Text(job.error).font(.footnote).foregroundStyle(.red).textSelection(.enabled) }

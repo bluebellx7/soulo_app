@@ -105,13 +105,13 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
             }
             return try await startTask(in: foregroundFallbackSession, request: request, item: item)
         }
-        if let file = await prepareVideoDownload(request: request, item: item) {
-            return try await startVideoDownload(file, request: request, id: item.id)
-        }
-        guard await MainActor.run(body: {
-            DownloadManagerService.shared.downloads.contains { $0.id == item.id && $0.status == .inProgress }
-        }) else { throw CancellationError() }
         do {
+            if let file = await prepareVideoDownload(request: request, item: item) {
+                return try await startVideoDownload(file, request: request, id: item.id)
+            }
+            guard await MainActor.run(body: {
+                DownloadManagerService.shared.downloads.contains { $0.id == item.id && $0.status == .inProgress }
+            }) else { throw CancellationError() }
             return try await startTask(in: session, request: request, item: item)
         } catch {
             guard Self.shouldUseForegroundFallback(for: error) else { throw error }
@@ -160,7 +160,7 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
                 manager.markPaused(id: id)
                 let (background, foreground) = await (session.allTasks, foregroundFallbackSession.allTasks)
                 guard manager.downloads.contains(where: { $0.id == id && $0.status == .paused }) else { return }
-                let tasks = (background + foreground).filter { VideoDownloadPart($0)?.id == id && $0.state != .completed }
+                let tasks = (background + foreground).filter { Self.downloadID($0) == id && $0.state != .completed }
                 for task in tasks where task.state == .running { task.suspend() }
             }
             return
@@ -200,8 +200,15 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
                 await resumeVideoDownload(file, item: item, tasks: tasks)
                 return
             }
-            guard let data = DownloadManagerService.shared.resumeData(id: id) else { return }
-            if let policy = DownloadManagerService.shared.downloads.first(where: { $0.id == id })?.userScriptPolicy {
+            let manager = DownloadManagerService.shared
+            guard let data = manager.resumeData(id: id) else {
+                guard let task = await session.allTasks.first(where: { $0.taskDescription == id.uuidString && $0.state == .suspended }),
+                      manager.downloads.contains(where: { $0.id == id && $0.status == .paused }) else { return }
+                manager.markResumed(id: id)
+                task.resume()
+                return
+            }
+            if let policy = manager.downloads.first(where: { $0.id == id })?.userScriptPolicy {
                 lock.withLock {
                     userScriptPolicies[id] = policy
                     _ = foregroundFallbackIDs.insert(id)
@@ -213,8 +220,8 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
             let task = (usesFallback ? foregroundFallbackSession : session)
                 .downloadTask(withResumeData: data)
             task.taskDescription = id.uuidString
-            DownloadManagerService.shared.removeResumeData(id: id)
-            DownloadManagerService.shared.markResumed(id: id)
+            manager.removeResumeData(id: id)
+            manager.markResumed(id: id)
             task.resume()
         }
     }
@@ -538,8 +545,38 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
                 }
                 if file.isComplete { self.finishVideoDownload(file, id: part.id) }
             }
+        } catch let error as URLError where error.code == .badServerResponse {
+            let request = task.originalRequest
+            DispatchQueue.main.async {
+                if let request { self.restartWholeVideoDownload(id: part.id, file: file, request: request) }
+                else { self.failVideoDownload(id: part.id, error: error) }
+            }
         } catch {
             DispatchQueue.main.async { self.failVideoDownload(id: part.id, error: error) }
+        }
+    }
+
+    @MainActor
+    private func restartWholeVideoDownload(id: UUID, file: BackgroundVideoFile, request: URLRequest) {
+        let manager = DownloadManagerService.shared
+        guard let item = manager.downloads.first(where: { $0.id == id && [.inProgress, .paused].contains($0.status) }),
+              videoFile(id: id) === file, discardVideoFile(id: id) else { return }
+        // A changed entity validator makes the staged ranges unsafe to combine.
+        // Keep the same download and continuation, and transfer the whole entity.
+        cancelVideoParts(id: id)
+        var whole = request
+        whole.setValue(nil, forHTTPHeaderField: "Range")
+        whole.setValue(nil, forHTTPHeaderField: "If-Range")
+        let task = session.downloadTask(with: whole)
+        task.taskDescription = id.uuidString
+        let playback = manager.playbackSource(for: id)
+        if item.status == .inProgress {
+            manager.updateProgress(id: id, completed: 0, total: 0)
+            task.resume()
+        }
+        Task { @MainActor in
+            await WebResourceDownloadService.shared.registerDirectVideoPlayback(for: item, request: whole,
+                pageURL: playback?.pageURL, webView: playback?.webView)
         }
     }
 
@@ -635,15 +672,18 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
     @MainActor
     private func failVideoDownload(id: UUID, error: Error) {
         guard discardVideoFile(id: id) else { return }
+        cancelVideoParts(id: id)
+        let manager = DownloadManagerService.shared
+        manager.markFailed(id: id, error: error, includingPaused: true)
+        complete(id: id, result: .failure(error))
+    }
+
+    private func cancelVideoParts(id: UUID) {
         for source in [session, foregroundFallbackSession] {
             source.getAllTasks { tasks in
                 for task in tasks where VideoDownloadPart(task)?.id == id { task.cancel() }
             }
         }
-        let manager = DownloadManagerService.shared
-        if manager.downloads.first(where: { $0.id == id })?.status == .paused { manager.markResumed(id: id) }
-        manager.markFailed(id: id, error: error)
-        complete(id: id, result: .failure(error))
     }
 }
 

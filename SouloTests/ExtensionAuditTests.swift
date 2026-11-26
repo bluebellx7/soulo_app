@@ -46,6 +46,100 @@ final class ExtensionAuditTests: XCTestCase {
         XCTAssertGreaterThan(data.count, 100_000)
     }
 
+    func testCurrentEdgeSimpleGestureInstallsAndStartsFromTheOfficialLink() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Native WebExtensions") }
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_SIMPLE_GESTURE_QA"] == "1", "Opt-in official Edge package")
+        let source = "https://microsoftedge.microsoft.com/addons/detail/simple-gesture/hfhdokhgdkcaebhjdblfgafnimchimkd"
+        let service = BrowserExtensionService.shared
+        let preview = try await WebExtensionStoreInstallService.shared.preview(from: source)
+        defer { service.discardWebExtensionPreview(preview) }
+        try XCTSkipIf(preview.replacingID != nil, "Requires a simulator without an existing installation")
+        XCTAssertEqual(preview.version, "8.0")
+        let record = try await service.installWebExtension(preview, access: preview.access)
+        defer { service.deleteWebExtension(record.id) }
+        XCTAssertEqual(record.sourceURL, source)
+        XCTAssertTrue(service.hasWebExtensionOptions(record.id))
+        let context = try XCTUnwrap(NativeWebExtensionRuntime.shared.controller.extensionContexts.first { $0.uniqueIdentifier == record.id.uuidString })
+        let address = try XCTUnwrap(context.optionsPageURL)
+        let key = "official-simple-gesture-" + UUID().uuidString
+        let manager = TabManager(storageKey: key)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIHostingController(rootView: StorePackageAuditBrowser(manager: manager))
+        window.makeKeyAndVisible()
+        defer {
+            window.rootViewController = nil
+            window.isHidden = true
+            previous?.makeKeyAndVisible()
+            for tab in manager.tabs { tab.webViewModel.releaseWebViewRuntime() }
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        service.openWebExtensionOptions(record.id, in: manager)
+        for _ in 0..<100 where manager.activeTab?.webViewModel.webView == nil {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let page = try XCTUnwrap(manager.activeTab?.webViewModel.webView)
+        try await waitForAuditPage(page, at: address, mainDocumentOnly: true)
+        let result = try await runAuditJavaScript("""
+            const browserAPI = globalThis.browser ?? globalThis.chrome;
+            return [document.title, await browserAPI.runtime.sendMessage('isUserAgentSwitched')];
+            """, on: page) as? [Any]
+        XCTAssertEqual(result?.first as? String, "Settings - Simple Gesture")
+        XCTAssertEqual(result?.last as? Bool, false)
+
+        let initialDownloads = Set(DownloadManagerService.shared.downloads.map(\.id))
+        let directory = DownloadManagerService.downloadsDirectory
+        let initialFiles = Set(try FileManager.default.contentsOfDirectory(atPath: directory.path))
+        defer {
+            DownloadManagerService.shared.downloads.filter {
+                !initialDownloads.contains($0.id) && $0.fileName.hasPrefix("simple-gesture")
+            }.forEach { download in
+                DownloadManagerService.shared.delete(download)
+                if download.localURL.deletingLastPathComponent().standardizedFileURL.path == directory.standardizedFileURL.path,
+                   !initialFiles.contains(download.localURL.lastPathComponent) {
+                    try? FileManager.default.removeItem(at: download.localURL)
+                }
+            }
+        }
+        _ = try await runAuditJavaScript("document.getElementById('exportSetting').click(); return true;", on: page)
+        for _ in 0..<50 {
+            if DownloadManagerService.shared.downloads.contains(where: {
+                !initialDownloads.contains($0.id) && $0.fileName.hasPrefix("simple-gesture") && $0.status == .finished
+            }) { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let exported = try XCTUnwrap(DownloadManagerService.shared.downloads.first {
+            !initialDownloads.contains($0.id) && $0.fileName.hasPrefix("simple-gesture") && $0.status == .finished
+        }, "The extension's own export button must save its JSON in Soulo")
+        let document = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: exported.localURL)) as? [String: Any])
+        var restored = document
+        var settings = try XCTUnwrap(document["ini"] as? [String: Any])
+        settings["timeout"] = 1173
+        restored["ini"] = settings
+        let json = String(decoding: try JSONSerialization.data(withJSONObject: restored), as: UTF8.self)
+        _ = try await runAuditJavaScript("""
+            setTimeout(() => {
+              const input = document.getElementById('importSetting');
+              const transfer = new DataTransfer();
+              transfer.items.add(new File([json], 'simple-gesture.json', {type:'application/json'}));
+              input.files = transfer.files;
+              input.dispatchEvent(new Event('change', {bubbles:true}));
+            }, 50);
+            return true;
+            """, on: page, arguments: ["json": json])
+        var imported = false
+        for _ in 0..<60 {
+            if (try? await runAuditJavaScript("""
+                const browserAPI = globalThis.browser ?? globalThis.chrome;
+                const state = await browserAPI.storage.local.get('simple_gesture');
+                return Number(state?.simple_gesture?.timeout) === 1173 && document.getElementById('timeout')?.value === '1173';
+                """, on: page)) as? Bool == true { imported = true; break }
+            try await Task.sleep(for: .milliseconds(120))
+        }
+        XCTAssertTrue(imported, "Imported JSON must restore both saved preferences and the options screen")
+    }
+
     func testUserScriptDetectionHandlesStoreFilenamesAndRejectsErrorResponses() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -1975,6 +2069,385 @@ extension ExtensionAuditTests {
 }
 
 extension ExtensionAuditTests {
+    func testCurrentEdgeSimpleGestureInterExtensionMessaging() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_SIMPLE_GESTURE_QA"] == "1", "Opt-in official Edge package")
+        let storeID = "hfhdokhgdkcaebhjdblfgafnimchimkd"
+        let source = "https://microsoftedge.microsoft.com/addons/detail/simple-gesture/" + storeID
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let runtime = NativeWebExtensionRuntime.shared
+        let preview = try await WebExtensionStoreInstallService.shared.preview(from: source, service: service)
+        let gesture = try await service.installWebExtension(preview, access: preview.access)
+        defer { service.deleteWebExtension(gesture.id) }
+        XCTAssertEqual(gesture.verifiedStoreIdentifier, storeID)
+        let gestureContext = try XCTUnwrap(runtime.controller.extensionContexts.first { $0.uniqueIdentifier == gesture.id.uuidString })
+
+        let companionRoot = root.appendingPathComponent("companion")
+        try FileManager.default.createDirectory(at: companionRoot, withIntermediateDirectories: true)
+        let manifest: [String: Any] = [
+            "name": "Gesture messaging acceptance companion", "version": "1.0", "manifest_version": 3,
+            "permissions": ["storage"], "options_ui": ["page": "options.html"],
+            "background": ["scripts": ["message.js"], "persistent": false],
+            "externally_connectable": ["ids": [storeID]],
+            "content_scripts": [["matches": ["http://127.0.0.1/*"], "js": ["content.js"]]]
+        ]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: companionRoot.appendingPathComponent("manifest.json"))
+        try Data("<!doctype html><title>Companion</title><body></body>".utf8).write(to: companionRoot.appendingPathComponent("options.html"))
+        try Data("""
+        chrome.runtime.onMessageExternal.addListener((message, sender, reply) => {
+            chrome.storage.local.set({received:{message, sender:sender.id}})
+                .then(() => reply('delivered'));
+            return true;
+        });
+        """.utf8).write(to: companionRoot.appendingPathComponent("message.js"))
+        try Data("""
+        document.addEventListener('gesture-probe', async () => {
+            try {
+                await chrome.runtime.sendMessage('\(storeID)', {command:'register', id:'content', title:'From content script'});
+                document.body.dataset.contentReply = 'delivered';
+            } catch (error) { document.body.dataset.contentReply = error.message; }
+        });
+        """.utf8).write(to: companionRoot.appendingPathComponent("content.js"))
+        let companion = try await service.installWebExtension(from: companionRoot)
+        defer { service.deleteWebExtension(companion.id) }
+        let companionContext = try XCTUnwrap(runtime.controller.extensionContexts.first { $0.uniqueIdentifier == companion.id.uuidString })
+
+        let html = Data("<!doctype html><meta name='viewport' content='width=device-width, initial-scale=1'><body style='min-height:4000px'>Gesture</body>".utf8)
+        let server = try DownloadPlaybackHTTPFixture(files: ["/gesture.html": html])
+        let address = try await server.start().appendingPathComponent("gesture.html")
+        server.releaseDownloads()
+        defer { server.stop() }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        let controller = UIViewController()
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let configuration = WKWebViewConfiguration()
+        runtime.apply(to: configuration)
+        let browser = WKWebView(frame: window.bounds, configuration: configuration)
+        let companionOptions = WKWebView(frame: window.bounds, configuration: try XCTUnwrap(companionContext.webViewConfiguration))
+        let gestureOptions = WKWebView(frame: window.bounds, configuration: try XCTUnwrap(gestureContext.webViewConfiguration))
+        [companionOptions, gestureOptions, browser].forEach { controller.view.addSubview($0) }
+        runtime.register(browser)
+        defer { [browser, gestureOptions, companionOptions].forEach { $0.stopLoading() }; runtime.unregister(browser) }
+        let companionURL = try XCTUnwrap(companionContext.optionsPageURL)
+        let gestureURL = try XCTUnwrap(gestureContext.optionsPageURL)
+        browser.load(URLRequest(url: address))
+        companionOptions.load(URLRequest(url: companionURL))
+        gestureOptions.load(URLRequest(url: gestureURL))
+        try await waitForAuditPage(browser, at: address, mainDocumentOnly: true)
+        try await waitForAuditPage(companionOptions, at: companionURL, mainDocumentOnly: true)
+        try await waitForAuditPage(gestureOptions, at: gestureURL, mainDocumentOnly: true)
+
+        let arguments = ["destination": storeID, "companion": companion.id.uuidString]
+        let fromContent = try await runAuditJavaScript("""
+        for (let retry=0; retry<40 && !document.body.dataset.contentReply; retry++) {
+            if (retry%8===0) document.dispatchEvent(new Event('gesture-probe'));
+            await new Promise(resolve=>setTimeout(resolve,100));
+        }
+        return document.body.dataset.contentReply;
+        """, on: browser, timeout: 5)
+        XCTAssertEqual(fromContent as? String, "delivered")
+        let contentRegistered = try await runAuditJavaScript("""
+        const key='simple_gesture_$'+companion+'#content';
+        return (await browser.storage.local.get(key))[key]?.extensionId;
+        """, on: gestureOptions, arguments: arguments)
+        XCTAssertEqual(contentRegistered as? String, companion.id.uuidString)
+        let registered = try await runAuditJavaScript("""
+        await Promise.all([
+            browser.runtime.sendMessage(destination, {command:'register', id:'acceptance', title:'Acceptance gesture', message:'gesture result'}),
+            browser.runtime.sendMessage(destination, {command:'register', id:'parallel', title:'Parallel gesture'})
+        ]);
+        return true;
+        """, on: companionOptions, arguments: arguments, timeout: 12)
+        XCTAssertEqual(registered as? Bool, true)
+        let action = try await runAuditJavaScript("""
+        const id='$'+companion+'#acceptance';
+        const {simple_gesture_exdata:data}=await browser.storage.local.get('simple_gesture_exdata');
+        if (data?.customGestureList?.find(action=>action.id===id)?.title!=='Acceptance gesture') throw Error('Registration missing from options: '+JSON.stringify(data));
+        await chrome.runtime.sendMessage({command:id});
+        return true;
+        """, on: gestureOptions, arguments: arguments, timeout: 12)
+        XCTAssertEqual(action as? Bool, true)
+        let registeredTogether = try await runAuditJavaScript("""
+        const {simple_gesture_exdata:data}=await browser.storage.local.get('simple_gesture_exdata');
+        return ['content','parallel','acceptance'].every(id=>data?.customGestureList?.some(action=>action.id==='$'+companion+'#'+id));
+        """, on: gestureOptions, arguments: arguments)
+        XCTAssertEqual(registeredTogether as? Bool, true)
+        let received = try await runAuditJavaScript("""
+        const {received}=await chrome.storage.local.get('received');
+        return received?.message==='gesture result' && received?.sender===destination;
+        """, on: companionOptions, arguments: arguments)
+        XCTAssertEqual(received as? Bool, true)
+
+        for (command, expected) in [("disable", false), ("enable", true)] {
+            _ = try await runAuditJavaScript("""
+            await new Promise((resolve, reject) => chrome.runtime.sendMessage(destination, {command}, () => {
+                if (chrome.runtime.lastError) reject(Error(chrome.runtime.lastError.message)); else resolve();
+            }));
+            return true;
+            """, on: companionOptions, arguments: ["destination": storeID, "command": command], timeout: 12)
+            let recognized = try await runAuditJavaScript("""
+            const [tab] = await chrome.tabs.query({active:true,currentWindow:true});
+            return (await chrome.scripting.executeScript({target:{tabId:tab.id},func:async()=>{
+                await new Promise(resolve=>setTimeout(resolve,250));
+                const target=document.body, original=SimpleGesture.doCmd, commands=[];
+                SimpleGesture.doCmd=command=>commands.push(command);
+                try {
+                    for(const [type,x,y] of [['start',.25,.7],['move',.72,.7],['move',.72,.25],['end',.72,.25]]){
+                        const touch=new Touch({identifier:1,target,clientX:x*visualViewport.width,clientY:y*visualViewport.height});
+                        target.dispatchEvent(new TouchEvent('touch'+type,{bubbles:true,cancelable:true,touches:type==='end'?[]:[touch],changedTouches:[touch]}));
+                    }
+                } finally { SimpleGesture.doCmd=original; }
+                return commands.includes('bottom');
+            }}))[0]?.result;
+            """, on: gestureOptions)
+            XCTAssertEqual(recognized as? Bool, expected, "The remote command must change actual gesture recognition")
+        }
+        _ = try await runAuditJavaScript("""
+        await chrome.runtime.sendMessage(destination, {command:'delete',id:'acceptance'});
+        return true;
+        """, on: companionOptions, arguments: arguments, timeout: 12)
+        let deleted = try await runAuditJavaScript("""
+        const id='$'+companion+'#acceptance', key='simple_gesture_'+id;
+        const data=await chrome.storage.local.get(['simple_gesture_exdata',key]);
+        return !data[key] && !data.simple_gesture_exdata?.customGestureList?.some(action=>action.id===id);
+        """, on: gestureOptions, arguments: arguments)
+        XCTAssertEqual(deleted as? Bool, true)
+
+        let absent = try await runAuditJavaScript("""
+        return await new Promise(resolve => chrome.runtime.sendMessage(destination, {shouldNeverReach:true}, () => {
+            resolve(chrome.runtime.lastError?.message ?? '');
+        }));
+        """, on: companionOptions, arguments: ["destination": UUID().uuidString], timeout: 12)
+        XCTAssertTrue((absent as? String)?.contains("Receiving end does not exist.") == true, String(describing: absent))
+
+        let outsideRoot = root.appendingPathComponent("outside")
+        try FileManager.default.copyItem(at: companionRoot, to: outsideRoot)
+        let outside = try await service.installWebExtension(from: outsideRoot)
+        defer { service.deleteWebExtension(outside.id) }
+        let outsideContext = try XCTUnwrap(runtime.controller.extensionContexts.first { $0.uniqueIdentifier == outside.id.uuidString })
+        let outsideOptions = WKWebView(frame: window.bounds, configuration: try XCTUnwrap(outsideContext.webViewConfiguration))
+        controller.view.insertSubview(outsideOptions, belowSubview: browser)
+        defer { outsideOptions.stopLoading() }
+        let outsideURL = try XCTUnwrap(outsideContext.optionsPageURL)
+        outsideOptions.load(URLRequest(url: outsideURL))
+        try await waitForAuditPage(outsideOptions, at: outsideURL, mainDocumentOnly: true)
+        let refused = try await runAuditJavaScript("""
+        try { await browser.runtime.sendMessage(destination, {id:storeID, shouldNeverReach:true}); return 'delivered'; }
+        catch (error) { return error.message; }
+        """, on: outsideOptions, arguments: ["destination": companion.id.uuidString, "storeID": storeID])
+        XCTAssertEqual(refused as? String, "Could not establish connection. Receiving end does not exist.")
+    }
+
+    func testCurrentEdgeSimpleGestureViewportControls() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_SIMPLE_GESTURE_QA"] == "1", "Opt-in official Edge package")
+        let source = "https://microsoftedge.microsoft.com/addons/detail/simple-gesture/hfhdokhgdkcaebhjdblfgafnimchimkd"
+        let package = try await WebExtensionStoreInstallService.shared.downloadPackage(from: source)
+        defer { try? FileManager.default.removeItem(at: package) }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let gesture = try await service.installWebExtension(from: package)
+        defer { service.deleteWebExtension(gesture.id) }
+        let runtime = NativeWebExtensionRuntime.shared
+        let gestureContext = try XCTUnwrap(runtime.controller.extensionContexts.first { $0.uniqueIdentifier == gesture.id.uuidString })
+
+        let pagePath = "/gesture.html"
+        let fixture = try DownloadPlaybackHTTPFixture(files: [pagePath: Data("""
+        <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="min-height:4500px">Gesture page</body>
+        """.utf8)])
+        let address = try await fixture.start().appendingPathComponent("gesture.html")
+        fixture.releaseDownloads()
+        defer { fixture.stop() }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        let controller = UIViewController()
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let browserConfiguration = WKWebViewConfiguration()
+        runtime.apply(to: browserConfiguration)
+        let browser = WKWebView(frame: window.bounds, configuration: browserConfiguration)
+        let options = WKWebView(frame: window.bounds, configuration: try XCTUnwrap(gestureContext.webViewConfiguration))
+        [options, browser].forEach { controller.view.addSubview($0) }
+        defer { [options, browser].forEach { $0.stopLoading() }; runtime.unregister(browser) }
+        runtime.register(browser)
+        browser.load(URLRequest(url: address))
+        let optionsURL = try XCTUnwrap(gestureContext.optionsPageURL)
+        options.load(URLRequest(url: optionsURL))
+        try await waitForAuditPage(browser, at: address, mainDocumentOnly: true)
+        try await waitForAuditPage(options, at: optionsURL, mainDocumentOnly: true)
+
+        func stroke() async throws -> Bool {
+            let ran = try await runAuditJavaScript("""
+            const [tab]=await chrome.tabs.query({active:true,currentWindow:true});
+            return (await chrome.scripting.executeScript({target:{tabId:tab.id},func:async()=>{
+                await new Promise(resolve=>setTimeout(resolve,250));
+                const target=document.body;
+                const run=SimpleGesture.doCmd, commands=[];
+                SimpleGesture.doCmd=command=>commands.push(command);
+                try {
+                    for(const [type,x,y] of [['start',.25,.7],['move',.72,.7],['move',.72,.25],['end',.72,.25]]){
+                        const touch=new Touch({identifier:1,target,clientX:x*visualViewport.width,clientY:y*visualViewport.height});
+                        target.dispatchEvent(new TouchEvent('touch'+type,{bubbles:true,cancelable:true,touches:type==='end'?[]:[touch],changedTouches:[touch]}));
+                    }
+                } finally {
+                    SimpleGesture.doCmd=run;
+                }
+                return commands.includes('bottom');
+            }}))[0]?.result;
+            """, on: options)
+            return try XCTUnwrap(ran as? Bool)
+        }
+        let startsEnabled = try await stroke()
+        XCTAssertTrue(startsEnabled, "The fixture must recognize the default stroke")
+        _ = try await runAuditJavaScript("""
+        const [tab]=await chrome.tabs.query({active:true,currentWindow:true});
+        const settings=(await chrome.storage.local.get('simple_gesture')).simple_gesture;
+        await chrome.storage.local.set({simple_gesture:{...settings,disableInLandscape:true,disableWhileZoomedIn:true}});
+        await chrome.scripting.executeScript({target:{tabId:tab.id},func:async()=>{
+            await SimpleGesture.loadIni();
+            return true;
+        }});
+        return true;
+        """, on: options)
+        browser.frame.size = CGSize(width: 700, height: 390)
+        try await Task.sleep(for: .milliseconds(250))
+        let landscape = try await browser.evaluateJavaScript("matchMedia('(orientation: landscape)').matches") as? Bool
+        XCTAssertEqual(landscape, true)
+        let landscapeStroke = try await stroke()
+        XCTAssertFalse(landscapeStroke)
+        browser.frame = window.bounds
+        try await Task.sleep(for: .milliseconds(250))
+        let portraitStroke = try await stroke()
+        XCTAssertTrue(portraitStroke)
+
+        browser.scrollView.setZoomScale(1.6, animated: false)
+        var scale = 1.0
+        for _ in 0..<12 {
+            try await Task.sleep(for: .milliseconds(150))
+            scale = try await browser.evaluateJavaScript("visualViewport.scale") as? Double ?? 0
+            if scale > 1.1 { break }
+        }
+        XCTAssertGreaterThan(scale, 1.1)
+        let zoomedStroke = try await stroke()
+        XCTAssertFalse(zoomedStroke)
+        browser.scrollView.setZoomScale(1, animated: false)
+        try await Task.sleep(for: .milliseconds(250))
+        let unzoomedStroke = try await stroke()
+        XCTAssertTrue(unzoomedStroke)
+    }
+
+    func testCurrentEdgeSimpleGestureRepairsTabActions() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_LIVE_SIMPLE_GESTURE_QA"] == "1", "Opt-in official Edge package")
+        let source = "https://microsoftedge.microsoft.com/addons/detail/simple-gesture/hfhdokhgdkcaebhjdblfgafnimchimkd"
+        let package = try await WebExtensionStoreInstallService.shared.downloadPackage(from: source)
+        defer { try? FileManager.default.removeItem(at: package) }
+        let html = Data("<!doctype html><title>Gesture QA</title><body id='gesture-qa'>Test page</body>".utf8)
+        let paths = ["/library/start", "/library/deferred", "/activation-marker"]
+        let server = try DownloadPlaybackHTTPFixture(
+            files: Dictionary(uniqueKeysWithValues: paths.map { ($0, html) }),
+            responseHeaders: ["/activation-marker": ["Access-Control-Allow-Origin": "*"]]
+        )
+        let page = try await server.start().appendingPathComponent("library/start")
+        server.releaseDownloads()
+        defer { server.stop() }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        window.makeKeyAndVisible()
+        defer { window.rootViewController = nil; window.isHidden = true; previous?.makeKeyAndVisible() }
+
+        let assertion = #"""
+        const api=globalThis.browser ?? globalThis.chrome;
+        const tabs=()=>api.tabs.query({});
+        const active=() => api.tabs.query({active:true,currentWindow:true}).then(tabs=>tabs[0]);
+        const send=(command,options={})=>api.runtime.sendMessage({command,...options});
+        const check=(value,message)=>{if(!value)throw Error(message);};
+        const wait=async (predicate,message)=>{
+            for(let i=0;i<80;i++){
+                try{if(await predicate())return;}catch(_){}
+                await new Promise(resolve=>setTimeout(resolve,50));
+            }
+            throw Error(message);
+        };
+        const source=await active(), origin=new URL(source.url);
+        const address=path=>new URL(path,origin).href;
+        const inject=async (tab,func)=>(await api.scripting.executeScript({target:{tabId:tab},func}))[0]?.result;
+        const background=url=>api.tabs.create({url,active:false});
+        const markBeforeReload=()=>inject(source.id,()=>{document.body.dataset.beforeReload='1';return true;});
+        const reloaded=()=>inject(source.id,()=>!!document.getElementById('gesture-qa')&&!document.body.dataset.beforeReload);
+        await markBeforeReload();
+        await send('toggleUserAgent',{userAgent:'Soulo Simple Gesture Network Probe',force:true});
+        await wait(reloaded,'Setting User-Agent must reload the page.');
+        await markBeforeReload();
+        await send('toggleUserAgent',{userAgent:'Soulo Simple Gesture Revised Probe',force:true});
+        await wait(reloaded,'Replacing an active User-Agent must reload the page.');
+        await markBeforeReload();
+        await send('toggleUserAgent',{userAgent:null,force:true});
+        await wait(reloaded,'Restoring User-Agent must reload the page again.');
+        const settings=(await api.storage.local.get('simple_gesture')).simple_gesture;
+        await api.storage.local.set({
+            simple_gesture:{...settings,openLinkInBackgroundDiscarded:true,confirmCloseTabs:false,toastForNewTabPosition:'none'},
+            'simple_gesture_$test':{type:'url',currentTab:true,url:'javascript:'+encodeURIComponent("document.body.dataset.bookmarklet='ran';")}
+        });
+        await send('$test');
+        await wait(()=>inject(source.id,()=>document.body.dataset.bookmarklet==='ran'),'Bookmarklet must run in the original tab.');
+
+        const destination=address('/library/deferred');
+        await send('openLinkInBackground',{url:destination});
+        let deferred;
+        await wait(async()=>deferred=(await tabs()).find(tab=>tab.url===destination),'Deferred tab was not created.');
+        await new Promise(resolve=>setTimeout(resolve,250));
+        check((await active()).id===source.id&&!deferred.active,'Deferred tab must remain inactive.');
+        await fetch(address('/activation-marker'));
+        await send('showTab',{tabId:deferred.id});
+        await wait(async()=>(await active()).url===destination&&await inject(deferred.id,()=>!!document.getElementById('gesture-qa')),
+            'The original deferred tab must navigate after selection.');
+
+        const otherRoot=await background(address('/library-archive/read'));
+        const otherOrigin=new URL(address('/library/other'));otherOrigin.hostname='localhost';
+        const different=await background(otherOrigin.href);
+        await send('closeSameUrl',{matchType:'contextRoot'});
+        await wait(async()=>!(await tabs()).some(tab=>tab.id===source.id||tab.id===deferred.id),'Both tabs under the same root must close.');
+        check((await tabs()).some(tab=>tab.id===otherRoot.id),'A similar path must stay open.');
+        const current=await api.tabs.create({url:source.url,active:true});
+        await wait(async()=>(await active()).id===current.id,'Domain source was not selected.');
+        await send('closeSameUrl',{matchType:'domain'});
+        await wait(async()=>!(await tabs()).some(tab=>tab.id===current.id||tab.id===otherRoot.id),'Tabs under the same origin must close.');
+        check((await tabs()).some(tab=>tab.id===different.id),'A different origin must stay open.');
+        return {passed:true};
+        """#
+        let entry = try JSONDecoder().decode(StorePackageAuditEntry.self, from: JSONSerialization.data(withJSONObject: [
+            "id": "simple-gesture-tab-actions", "filename": package.lastPathComponent, "expected": "Simple Gesture",
+            "surface": "options", "mainDocumentOnly": true, "assertion": assertion,
+            "assertionTimeout": 25, "grantedOptionalPermissions": ["userScripts"]
+        ]))
+        let report = await auditStorePackage(entry, fixtureDirectory: package.deletingLastPathComponent(), pageURL: page, window: window)
+        XCTAssertEqual(report["version"] as? String, "8.0")
+        XCTAssertEqual(report["featurePassed"] as? Bool, true,
+                       "\(report["stage"] ?? "") \(report["javascriptError"] ?? report["error"] ?? "")")
+        let requests = server.receivedRequests.map(\.path)
+        let activation = try XCTUnwrap(requests.firstIndex(of: "/activation-marker"))
+        let navigation = try XCTUnwrap(requests.firstIndex(of: "/library/deferred"))
+        XCTAssertLessThan(activation, navigation, "A background tab must not contact the destination before activation")
+        let agents = server.receivedRequests.filter { $0.path == "/library/start" }.map { $0.headers["user-agent"] }
+        let changed = try XCTUnwrap(agents.firstIndex(of: "Soulo Simple Gesture Network Probe"))
+        let replaced = try XCTUnwrap(agents.dropFirst(changed + 1).firstIndex(of: "Soulo Simple Gesture Revised Probe"))
+        let original = try XCTUnwrap(agents.first ?? nil)
+        XCTAssertNotEqual(original, "Soulo Simple Gesture Network Probe")
+        XCTAssertEqual(agents.dropFirst(replaced + 1).first ?? nil, original,
+                       "The first main document request after disabling the rule must use the original header")
+    }
+
     func testOptInStorePackageCompatibilityMatrix() async throws {
         guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]

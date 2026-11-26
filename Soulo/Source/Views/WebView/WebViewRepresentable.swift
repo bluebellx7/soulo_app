@@ -87,6 +87,7 @@ enum BaiduSearchVideoNavigation {
 enum BrowserNavigationGesture {
     static let world = WKContentWorld.world(name: "SouloNavigationGesture")
     static let handler = "souloNavigationGesture"
+
     static let script = """
     (() => {
       if (window.__souloNavigationGestureInstalled) return;
@@ -125,12 +126,7 @@ enum BrowserNavigationGesture {
         const target = (anchor?.getAttribute('target') || document.querySelector('base[target]')?.getAttribute('target') || '').toLowerCase();
         const newTab = !!anchor && target === '_blank' && !(anchor.getAttribute('rel') || '').toLowerCase().split(/\\s+/).includes('opener') && !anchor.hasAttribute('download');
         const activation = event.type === 'click' || (event.type === 'keydown' && !event.repeat);
-        const activatedControl = activation
-          && path.some(node => node instanceof HTMLElement && node !== document.body && node !== document.documentElement
-            && !node.matches(':disabled, [aria-disabled=true]')
-            && (node.matches('button, input[type=button], input[type=submit], [role=button]')
-              || (node.hasAttribute('tabindex') && node.tabIndex >= 0)));
-        window.webkit.messageHandlers.souloNavigationGesture.postMessage({destinations: destinations.slice(0, 16), form: !!form, newTab, activation, activatedControl, event:event.type});
+        window.webkit.messageHandlers.souloNavigationGesture.postMessage({destinations: destinations.slice(0, 16), form: !!form, newTab, activation, event:event.type});
       }
       window.addEventListener('pointerdown', interacted, {capture:true,passive:true});
       window.addEventListener('touchstart', interacted, {capture:true,passive:true});
@@ -314,6 +310,12 @@ final class UserScriptTabStore {
 /// deterministic page scrolling and horizontal platform paging when a site or
 /// custom browser gesture does not respond to VoiceOver's three-finger swipe.
 final class AccessibleWebView: WKWebView {
+    var activePageDownloadIDs = Set<UUID>() {
+        didSet {
+            if activePageDownloadIDs.isEmpty, !oldValue.isEmpty { onPageDownloadsFinished?() }
+        }
+    }
+    var onPageDownloadsFinished: (() -> Void)?
     private var nativeNavigationRequests: [URL: TimeInterval] = [:]
     private var initialRevealMask: CALayer?
     private var isRevealingInitialContent = false
@@ -1189,6 +1191,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         // is actually closed or suspended so extensions can still enumerate all tabs.
         coordinator.invalidateObservations()
         coordinator.cancelDomainConfirmation()
+        coordinator.cancelJavaScriptDialog()
         coordinator.removeManualAdTap()
         coordinator.removeImageLongPress()
         coordinator.removeTwoFingerSwipe()
@@ -1262,10 +1265,13 @@ struct WebViewRepresentable: UIViewRepresentable {
         private let screenAwakeOwner = UUID()
         private var playingVideoFrames: [String: TimeInterval] = [:]
         private var videoAwakeTimer: Timer?
+        private var dismissJavaScriptDialog: (() -> Void)?
         deinit {
             let pendingModels = Array(pendingChildWindows.values)
             let model = viewModel, confirmationID = domainConfirmationID
+            let dismissDialog = dismissJavaScriptDialog
             Task { @MainActor in
+                dismissDialog?()
                 if let confirmationID { model.resolveDomainNavigationConfirmation(id: confirmationID, allowed: false) }
                 for child in pendingModels {
                     child.pendingScriptWindowCoordinator = nil
@@ -1278,7 +1284,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             Task { @MainActor in VideoScreenAwakeService.shared.setActive(false, owner: owner) }
         }
         private var navigationGesture: (webView: ObjectIdentifier, frameURL: URL, mainFrame: Bool, time: TimeInterval,
-                                        destinations: [URL], isForm: Bool, activation: Bool, activatedControl: Bool)?
+                                        destinations: [URL], isForm: Bool, activation: Bool)?
         private var newTabGesture: (webView: ObjectIdentifier, frameURL: URL, target: URL, time: TimeInterval)?
         private var provisionalNavigation: WKNavigation?
         private var latestNavigation: WKNavigation?
@@ -1830,9 +1836,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                       webView === parent || webView.isDescendant(of: parent),
                       let url = message.frameInfo.requestURL else { return }
                 viewModel.recordDocumentInteraction(in: parent)
-                if body["event"] as? String == "click" {
-                    viewModel.recordPlatformPageTap(autoHideEnabled: PlatformBarPreferences.autoHides())
-                }
                 viewModel.mediaSession.allowUserNavigation()
                 viewModel.cancelBackwardTraversal()
                 let destinations = (body["destinations"] as? [String] ?? []).prefix(16).compactMap { raw -> URL? in
@@ -1841,8 +1844,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     return target
                 }
                 navigationGesture = (ObjectIdentifier(webView), url, message.frameInfo.isMainFrame, ProcessInfo.processInfo.systemUptime,
-                    destinations, body["form"] as? Bool ?? false,
-                    body["activation"] as? Bool ?? false, body["activatedControl"] as? Bool ?? false)
+                    destinations, body["form"] as? Bool ?? false, body["activation"] as? Bool ?? false)
                 if body["newTab"] as? Bool == true, let target = destinations.first {
                     newTabGesture = (ObjectIdentifier(webView), url, target, ProcessInfo.processInfo.systemUptime)
                 } else { newTabGesture = nil }
@@ -2953,6 +2955,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             guard webView === viewModel.webView else { return }
+            cancelJavaScriptDialog()
             pendingHistoryNavigation = nil
             cancelPendingChildWindows()
             configuredVideoProbe?.cancel(); configuredVideoProbe = nil; configuredVideoFrame = nil; configuredVideoToken = "__soulo_configured"
@@ -3314,8 +3317,13 @@ struct WebViewRepresentable: UIViewRepresentable {
                 guard !Task.isCancelled, self.navigationGeneration == generation else { return }
                 if automatic {
                     guard VideoPlaybackPreferences.takesOverWebPlayers(), self.nativeVideoFullscreenToken == token else { return }
-                    self.videoFullscreenOrientation.handOff()
                 }
+                // Capture the browser before WebKit moves or releases its player window.
+                if let scene = webView.window?.windowScene {
+                    self.videoFullscreenOrientation.prepare(token: token, scene: scene,
+                        prefersLandscape: VideoOrientation.fullscreenLandscape(video: initialLandscape, scene: scene), sourceView: webView)
+                }
+                self.videoFullscreenOrientation.handOff()
                 let state = try? await webView.callAsyncJavaScript("return window.__souloVideoOrientation?.exitForPlayer(token);",
                     arguments: ["token": token], in: frame, contentWorld: WebVideoOrientationRuntime.world) as? [String: Any]
                 let landscape = (state?["landscape"] as? Bool) ?? initialLandscape
@@ -3323,11 +3331,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 #if SOULO_ACCEPTANCE
                 NSLog("[SouloVideoTakeover] exit state:%@", String(describing: state))
                 #endif
-                if let scene = webView.window?.windowScene {
-                    self.videoFullscreenOrientation.prepare(token: token, scene: scene,
-                        prefersLandscape: VideoOrientation.fullscreenLandscape(video: landscape, scene: scene), sourceView: webView)
-                }
-                self.videoFullscreenOrientation.handOff()
                 var settled = 0
                 for attempt in 0..<160 {
                     guard !Task.isCancelled, self.navigationGeneration == generation else { return }
@@ -4229,16 +4232,8 @@ struct WebViewRepresentable: UIViewRepresentable {
             guard nativeRequest || viewModel.manualAdSelection == nil else { return nil }
             if handlePeerDownloadNavigation(navigationAction, in: webView) { return nil }
             let explicit = isExplicitNavigation(navigationAction, in: webView, nativeRequest: nativeRequest)
-            let sourceURL = navigationAction.sourceFrame.requestURL ?? webView.url
-            if !explicit,
-               sourceURL?.scheme?.lowercased() != "webkit-extension",
-               webView.url?.scheme?.lowercased() != "webkit-extension",
-               AdBlockSettingsService.filteringEnabled(),
-               !AdBlockSettingsService.isHostAllowlisted(sourceURL?.host,
-                    allowlistedHosts: AdBlockSettingsService.shared.allowlistedHosts),
-               !consumeControlPopup(navigationAction, in: webView) {
-                return nil
-            }
+            // Leave ad filtering to matching rules. Script-opened windows use
+            // the normal navigation policies, including cross-domain confirmation.
             if navigationAction.targetFrame == nil || !(navigationAction.targetFrame?.isMainFrame ?? false) {
                 if let url = navigationAction.request.url {
                     switch WebNavigationPolicyService.shared.decision(for: url) {
@@ -4261,28 +4256,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 }
             }
             return nil
-        }
-
-        private func consumeControlPopup(_ action: WKNavigationAction, in webView: WKWebView) -> Bool {
-            // A trusted click can open one same-origin window. Other origins
-            // also need an activated control and still run navigation policy.
-            guard [.other, .formSubmitted].contains(action.navigationType),
-                  action.targetFrame == nil, action.sourceFrame.isMainFrame,
-                  let gesture = navigationGesture, gesture.mainFrame, gesture.activation,
-                  let sourceScheme = gesture.frameURL.scheme?.lowercased(),
-                  ["http", "https"].contains(sourceScheme),
-                  hasRecentInteraction(action, in: webView), ProcessInfo.processInfo.systemUptime - gesture.time <= 1,
-                  let destination = action.request.url, let destinationScheme = destination.scheme?.lowercased(),
-                  ["http", "https"].contains(destinationScheme),
-                  let sourceHost = gesture.frameURL.host?.lowercased(),
-                  let destinationHost = destination.host?.lowercased() else { return false }
-            let sourcePort = gesture.frameURL.port ?? (sourceScheme == "https" ? 443 : 80)
-            let destinationPort = destination.port ?? (destinationScheme == "https" ? 443 : 80)
-            let sameOrigin = sourceScheme == destinationScheme && sourceHost == destinationHost
-                && sourcePort == destinationPort
-            guard sameOrigin || gesture.activatedControl else { return false }
-            navigationGesture = nil
-            return true
         }
 
         private func makeBrowserWindow(
@@ -4396,23 +4369,55 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
             let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler() })
-            topViewController(for: webView)?.present(alert, animated: true) ?? completionHandler()
+            presentJavaScriptDialog(alert, from: webView, cancelValue: (), reply: { _ in completionHandler() }) { resolve in
+                alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in resolve(()) })
+            }
         }
 
         func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
             let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler(true) })
-            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in completionHandler(false) })
-            topViewController(for: webView)?.present(alert, animated: true) ?? completionHandler(false)
+            presentJavaScriptDialog(alert, from: webView, cancelValue: false, reply: completionHandler) { resolve in
+                alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in resolve(true) })
+                alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in resolve(false) })
+            }
         }
 
         func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
             let alert = UIAlertController(title: nil, message: prompt, preferredStyle: .alert)
             alert.addTextField { $0.text = defaultText }
-            alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak alert] _ in completionHandler(alert?.textFields?.first?.text) })
-            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in completionHandler(nil) })
-            topViewController(for: webView)?.present(alert, animated: true) ?? completionHandler(nil)
+            presentJavaScriptDialog(alert, from: webView, cancelValue: nil, reply: completionHandler) { resolve in
+                alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak alert] _ in resolve(alert?.textFields?.first?.text) })
+                alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in resolve(nil) })
+            }
+        }
+
+        func cancelJavaScriptDialog() {
+            dismissJavaScriptDialog?()
+        }
+
+        private func presentJavaScriptDialog<Value>(_ alert: UIAlertController, from webView: WKWebView,
+                                                    cancelValue: Value, reply: @escaping (Value) -> Void,
+                                                    configure: (_ resolve: @escaping (Value) -> Void) -> Void) {
+            guard dismissJavaScriptDialog == nil, let window = webView.window, !window.isHidden,
+                  let presenter = topViewController(for: webView), presenter.viewIfLoaded?.window === window,
+                  !presenter.isBeingDismissed, !presenter.isBeingPresented, !(presenter is UIAlertController) else {
+                reply(cancelValue)
+                return
+            }
+            var pending: ((Value) -> Void)? = reply
+            let resolve: (Value) -> Void = { [weak self] value in
+                guard let reply = pending else { return }
+                pending = nil
+                self?.dismissJavaScriptDialog = nil
+                reply(value)
+            }
+            dismissJavaScriptDialog = { [weak alert] in
+                alert?.dismiss(animated: false)
+                resolve(cancelValue)
+            }
+            configure(resolve)
+            presenter.present(alert, animated: true)
+            if alert.presentingViewController == nil { cancelJavaScriptDialog() }
         }
 
         private func topViewController(for sourceView: UIView? = nil) -> UIViewController? {

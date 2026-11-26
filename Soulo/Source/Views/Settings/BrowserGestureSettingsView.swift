@@ -239,12 +239,13 @@ struct AppFeedbackSettingsView: View {
             } footer: {
                 Text(ToolText.text("feedback_settings_hint"))
             }
-            Section {
-                Button { BrowserSwipeFeedback.executed() } label: {
-                    SettingsRowLabel(icon: "play", color: .themePrimary, title: ToolText.text("gesture_feedback_preview"))
+            if haptics || sound {
+                Section {
+                    Button { BrowserSwipeFeedback.executed() } label: {
+                        SettingsRowLabel(icon: "play", color: .themePrimary, title: ToolText.text("gesture_feedback_preview"))
+                    }
+                    .accessibilityIdentifier("settings.feedback.preview")
                 }
-                .disabled(!haptics && !sound)
-                .accessibilityIdentifier("settings.feedback.preview")
             }
         }
         .listStyle(.insetGrouped).compatibleListSectionSpacing(24).tint(.themePrimary)

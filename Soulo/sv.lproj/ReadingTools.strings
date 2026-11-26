@@ -369,6 +369,7 @@
 "torrent_select_all" = "Välj Alla";
 "torrent_select_none" = "Avmarkera alla";
 "torrent_peers" = "%d jämnåriga";
+"torrent_peer_counts" = "Anslutna %d/%d · Seedare %d";
 "torrent_duplicate" = "Denna torrent finns redan i nedladdningar.";
 "torrent_task_limit" = "Ta bort några nedladdningsposter innan du lägger till fler uppgifter.";
 "torrent_save_error" = "Det gick inte att spara uppgiften. Kontrollera tillgängligt lagringsutrymme och försök igen.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Oskärpans styrka";
 
 "home_quick_search_guide" = "Skriv ett sökord på startsidan, välj en plattform och tryck på Sök på tangentbordet.";
-"auto_hide_platform_bar_hint" = "När detta är på döljs fältet bara efter att du trycker på sidans innehåll och sidans domän inte matchar någon plattform i det aktuella fältet. Om någon plattform matchar förblir fältet synligt eller visas igen. Rullning och automatiska omdirigeringar döljer det inte.";
+"auto_hide_platform_bar_hint" = "Döljer fältet på webbplatser utanför den aktuella plattformsgruppen. Fältet visas igen när du återvänder till en plattform i gruppen.";
 
 "ad_subscription_add" = "Lägg till filterlista";
 "ad_subscription_name" = "Namn";

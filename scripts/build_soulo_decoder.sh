@@ -45,6 +45,7 @@ if [[ ! -f .soulo-sources-ready ]]; then
     mv Vulkan-Headers-1.4.321 libplacebo-7.351.0/3rdparty/Vulkan-Headers
     mv fast_float-8.0.2 libplacebo-7.351.0/3rdparty/fast_float
     patch -d mpv-0.41.0 -p1 < "$package/Patches/mpv-audio-session.patch"
+    patch -d mpv-0.41.0 -p1 < "$package/Patches/mpv-software-rotation.patch"
     patch -d ffmpeg-8.0.3 -p1 < "$package/Patches/ffmpeg-http-cookie-scope.patch"
     touch .soulo-sources-ready
 fi

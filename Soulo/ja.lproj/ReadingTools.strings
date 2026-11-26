@@ -369,6 +369,7 @@
 "torrent_select_all" = "すべて選択";
 "torrent_select_none" = "すべての選択を解除";
 "torrent_peers" = "%d ピア";
+"torrent_peer_counts" = "接続済み %d/%d · シード %d";
 "torrent_duplicate" = "この torrent はすでにダウンロードにあります。";
 "torrent_task_limit" = "タスクを追加する前に、いくつかのダウンロード レコードを削除してください。";
 "torrent_save_error" = "タスクを保存できません。利用可能なストレージを確認して、再試行してください。";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "ぼかしの強さ";
 
 "home_quick_search_guide" = "ホーム画面でキーワードを入力し、プラットフォームを選んでから、キーボードの「検索」をタップします。";
-"auto_hide_platform_bar_hint" = "オンにすると、ウェブページの内容を手動でタップし、そのページのドメインが現在のバー内のどのプラットフォームにも一致しない場合にのみバーを隠します。一致するものがあれば、表示を維持または復元します。スクロールや自動リダイレクトでは隠れません。";
+"auto_hide_platform_bar_hint" = "現在のプラットフォームグループに含まれないサイトではバーを非表示にします。グループ内のプラットフォームに戻ると再表示します。";
 
 "ad_subscription_add" = "フィルタを追加";
 "ad_subscription_name" = "名前";

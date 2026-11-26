@@ -7,21 +7,30 @@ import WebKit
 @MainActor
 final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMessageHandlerWithReply {
     private static let handlerName = "souloYouTubePlaybackDownload"
+    private static let maximumSourceRestarts = 2
+    private static let maximumRestartPlayhead = 1.5
+    nonisolated private static let maximumTailGap = 0.35
+    nonisolated private static let maximumTailGapFraction = 0.01
     private let webView: WKWebView
     private let pageURL: URL
     private let videoID: String
     private let advertisedDuration: Double
     private let write: (String, Int, Data) async throws -> Void
+    private let restart: () async throws -> Void
     private let progress: (Double) -> Void
     private var result: CheckedContinuation<Double, Error>?
     private var watchdog: Task<Void, Never>?
     private var lastActivity = ContinuousClock.now
     private var lastCoverage = 0.0
+    private var lastPlayhead = 0.0
+    private var sourceRestarts = 0
     private var paused = false
+    private var appIsActive = true
     private var canceled = false
 
     init(source: WKWebView, pageURL: URL, duration: Double,
          write: @escaping (String, Int, Data) async throws -> Void,
+         restart: @escaping () async throws -> Void,
          progress: @escaping (Double) -> Void) throws {
         guard let videoID = WebResourceMediaService.youtubeVideoID(for: pageURL),
               var url = WebResourceMediaService.youtubeCanonicalURL(for: pageURL)
@@ -33,6 +42,7 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
         self.videoID = videoID
         self.advertisedDuration = duration
         self.write = write
+        self.restart = restart
         self.progress = progress
 
         let configuration = WKWebViewConfiguration()
@@ -47,17 +57,18 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
         webView.isUserInteractionEnabled = false
         webView.accessibilityElementsHidden = true
         configuration.userContentController.addScriptMessageHandler(self, contentWorld: .page, name: Self.handlerName)
-        let script = Self.captureScript + "(\(duration));"
         configuration.userContentController.addUserScript(WKUserScript(
-            source: script, injectionTime: .atDocumentStart, forMainFrameOnly: true
+            source: Self.captureScript(duration: duration), injectionTime: .atDocumentStart, forMainFrameOnly: true
         ))
     }
 
-    func collect(behind source: WKWebView) async throws -> Double {
+    static func captureScript(duration: Double) -> String {
+        captureScript + "(\(duration), \(maximumTailGap), \(maximumTailGapFraction), \(maximumSourceRestarts), \(maximumRestartPlayhead));"
+    }
+
+    func collect(in window: UIWindow) async throws -> Double {
         defer { cleanUp() }
-        let host = source.superview ?? source.window?.rootViewController?.view
-            ?? UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController?.view }.first
-        guard let host else { throw StreamingMediaDownloadError.unavailable }
+        guard window.windowScene != nil else { throw StreamingMediaDownloadError.unavailable }
         if AdBlockSettingsService.filteringEnabled() {
             let allowlist = AdBlockSettingsService.shared.allowlistedHosts
             let rules: [WKContentRuleList]?
@@ -67,24 +78,33 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
         }
         try Task.checkCancellation()
         guard !canceled else { throw CancellationError() }
-        webView.frame = host.bounds
+        let notifications = NotificationCenter.default
+        notifications.addObserver(self, selector: #selector(appWillResignActive),
+                                  name: UIApplication.willResignActiveNotification, object: nil)
+        notifications.addObserver(self, selector: #selector(appDidBecomeActive),
+                                  name: UIApplication.didBecomeActiveNotification, object: nil)
+        appIsActive = UIApplication.shared.applicationState == .active
+        webView.frame = window.bounds
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        host.insertSubview(webView, at: 0)
+        // The browser's own view can detach while a download is still active.
+        webView.alpha = 0.02
+        window.insertSubview(webView, at: 0)
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 result = continuation
                 lastActivity = .now
+                BrowserStartupTrace.mark("youtube_playback_download_started", detail: "duration=\(advertisedDuration)")
                 webView.load(URLRequest(url: pageURL))
                 watchdog = Task { [weak self] in
                     while !Task.isCancelled {
                         try? await Task.sleep(for: .seconds(1))
                         guard let self, !Task.isCancelled, result != nil else { return }
-                        if paused { lastActivity = .now }
+                        if paused || !appIsActive { lastActivity = .now }
                         if lastActivity.duration(to: .now) > .seconds(45) {
-                            finish(.failure(StreamingMediaDownloadError.unavailable))
+                            failCapture("watchdog")
                             return
                         }
-                        webView.evaluateJavaScript("window.__souloPlaybackDownloadPump?.(\(paused));", completionHandler: nil)
+                        pumpPlayback()
                     }
                 }
             }
@@ -95,12 +115,35 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
 
     func setPaused(_ value: Bool) {
         paused = value
-        webView.evaluateJavaScript("window.__souloPlaybackDownloadPump?.(\(value));", completionHandler: nil)
+        lastActivity = .now
+        pumpPlayback()
+    }
+
+    @objc private func appWillResignActive() {
+        appIsActive = false
+        pumpPlayback()
+    }
+
+    @objc private func appDidBecomeActive() {
+        appIsActive = true
+        lastActivity = .now
+        pumpPlayback()
+    }
+
+    private func pumpPlayback() {
+        let shouldPause = paused || !appIsActive
+        webView.evaluateJavaScript("window.__souloPlaybackDownloadPump?.(\(shouldPause));", completionHandler: nil)
     }
 
     func cancel() {
         canceled = true
         finish(.failure(CancellationError()))
+    }
+
+    nonisolated static func hasCompleteCoverage(duration: Double, covered: Double) -> Bool {
+        guard duration.isFinite, duration > 0, covered.isFinite, covered > 0 else { return false }
+        // Audio and video can end on different sample boundaries.
+        return covered >= duration - min(maximumTailGap, duration * maximumTailGapFraction)
     }
 
     private func finish(_ outcome: Result<Double, Error>) {
@@ -109,7 +152,16 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
         result.resume(with: outcome)
     }
 
+    private func failCapture(_ reason: String) {
+        guard result != nil else { return }
+        BrowserStartupTrace.mark("youtube_playback_download_failed",
+            detail: "\(reason) covered=\(lastCoverage) playhead=\(lastPlayhead) duration=\(advertisedDuration)")
+        finish(.failure(StreamingMediaDownloadError.unavailable))
+    }
+
     private func cleanUp() {
+        NotificationCenter.default.removeObserver(self, name: UIApplication.willResignActiveNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIApplication.didBecomeActiveNotification, object: nil)
         watchdog?.cancel()
         webView.stopLoading()
         webView.configuration.userContentController.removeScriptMessageHandler(forName: Self.handlerName, contentWorld: .page)
@@ -127,14 +179,14 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
               ["m.youtube.com", "www.youtube.com"].contains(url.host ?? ""),
               WebResourceMediaService.youtubeVideoID(for: url) == videoID else {
             decisionHandler(.cancel)
-            finish(.failure(StreamingMediaDownloadError.unavailable))
+            failCapture("navigation")
             return
         }
         decisionHandler(.allow)
     }
 
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        finish(.failure(StreamingMediaDownloadError.unavailable))
+        failCapture("web_process_terminated")
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage,
@@ -148,6 +200,26 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
             return
         }
         switch kind {
+        case "restart":
+            guard sourceRestarts < Self.maximumSourceRestarts, lastPlayhead <= Self.maximumRestartPlayhead else {
+                replyHandler(nil, "Cannot restart this playback download")
+                failCapture("source_changed")
+                return
+            }
+            sourceRestarts += 1
+            Task {
+                do {
+                    try await restart()
+                    lastCoverage = 0
+                    lastPlayhead = 0
+                    lastActivity = .now
+                    BrowserStartupTrace.mark("youtube_playback_download_restarted")
+                    replyHandler(true, nil)
+                } catch {
+                    replyHandler(nil, "Could not restart playback download")
+                    finish(.failure(error))
+                }
+            }
         case "progress", "complete":
             guard let duration = (body["duration"] as? NSNumber)?.doubleValue, duration.isFinite, duration > 0,
                   abs(duration - advertisedDuration) <= 1.05,
@@ -160,8 +232,17 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
                 lastActivity = .now
                 progress(min(covered / duration, 1))
             }
+            // A full buffer can feed playback for longer than the fragment
+            // timeout before the player requests anything from the server.
+            if !paused, let playhead = (body["playhead"] as? NSNumber)?.doubleValue,
+               playhead.isFinite, playhead > lastPlayhead + 0.1, playhead <= min(duration, covered + 0.15) {
+                lastPlayhead = playhead
+                lastActivity = .now
+            }
             replyHandler(true, nil)
-            if kind == "complete", covered >= duration - 0.12 { finish(.success(duration)) }
+            if kind == "complete", Self.hasCompleteCoverage(duration: duration, covered: covered) {
+                finish(.success(duration))
+            }
         case "chunk":
             guard let track = body["track"] as? String, track == "video" || track == "audio",
                   let index = SafeNumericValue.nonnegativeInt(body["index"]),
@@ -182,7 +263,9 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
             }
         case "failed":
             replyHandler(true, nil)
-            finish(.failure(StreamingMediaDownloadError.unavailable))
+            let reasons = ["encrypted", "buffer_error", "queue_limit", "source_changed", "track_changed", "format_changed", "write_rejected"]
+            let reason = body["reason"] as? String ?? ""
+            failCapture(reasons.contains(reason) ? reason : "capture_failure")
         default:
             replyHandler(nil, "Unknown playback download event")
         }
@@ -191,7 +274,7 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
     // Installed only in the replay view. Its format profile describes what the
     // native MP4 exporter can save, while the site's player fetches the data.
     private static let captureScript = #"""
-    (advertisedDuration => {
+    ((advertisedDuration, maximumTailGap, maximumTailGapFraction, maximumSourceRestarts, maximumRestartPlayhead) => {
         const mediaSourceType = window.ManagedMediaSource || window.MediaSource;
         if (!mediaSourceType) return;
         const send = (type, payload = {}) => window.webkit.messageHandlers.souloYouTubePlaybackDownload.postMessage({ type, ...payload });
@@ -207,6 +290,18 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
 
         const mainVideo = () => document.querySelector('#movie_player video.html5-main-video');
         const isAd = () => document.querySelector('#movie_player')?.classList.contains('ad-showing');
+        const mediaSources = new Map();
+        const createObjectURL = URL.createObjectURL;
+        URL.createObjectURL = function (object) {
+            const url = Reflect.apply(createObjectURL, this, arguments);
+            if (object instanceof mediaSourceType) {
+                mediaSources.set(url, object);
+                object.addEventListener('sourceclose', () => mediaSources.delete(url), { once: true });
+            }
+            return url;
+        };
+        const attachedSource = video => video.srcObject instanceof mediaSourceType
+            ? video.srcObject : mediaSources.get(video.currentSrc || video.src);
         const play = HTMLMediaElement.prototype.play;
         HTMLMediaElement.prototype.play = function () {
             this.muted = true;
@@ -214,28 +309,57 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
             return Reflect.apply(play, this, arguments);
         };
         let source, stopped = false, paused = false, queuedBytes = 0;
+        let sourceRestarts = 0, restartPending = false, playhead = 0, lastAdvance = 0;
         let queue = Promise.resolve();
         const tracks = new Map();
-        const fail = () => {
+        const fail = reason => {
             if (stopped) return;
             stopped = true;
-            void send('failed').catch(() => {});
+            void send('failed', { reason }).catch(() => {});
         };
-        document.addEventListener('encrypted', fail, true);
+        document.addEventListener('encrypted', event => {
+            if (event.target === mainVideo()) fail('encrypted');
+        }, true);
 
         function report() {
-            if (stopped || isAd() || tracks.size !== 2) return;
+            if (stopped || restartPending || isAd() || tracks.size !== 2) return;
             const video = mainVideo();
             const duration = video?.duration;
             if (!Number.isFinite(duration) || Math.abs(duration - advertisedDuration) > 1.05 || video.mediaKeys) return;
+            const attached = attachedSource(video);
+            if (attached && attached !== source) return;
+            playhead = Math.max(playhead, video.currentTime);
+            // WebKit can extend buffered ranges when the media source ends,
+            // without dispatching another SourceBuffer updateend.
+            for (const track of tracks.values()) {
+                let ranges;
+                try { ranges = track.buffer.buffered; } catch { return; }
+                for (let i = 0; i < ranges.length; i += 1) {
+                    if (ranges.start(i) <= track.covered + 0.06) {
+                        track.covered = Math.max(track.covered, ranges.end(i));
+                    }
+                }
+            }
             const covered = Math.min(...Array.from(tracks.values(), track => track.covered));
             if (covered <= 0) return;
-            if (covered >= duration - 0.09) {
+            if (covered >= duration - Math.min(maximumTailGap, duration * maximumTailGapFraction)) {
                 stopped = true;
                 video.pause();
                 void queue.then(() => send('complete', { duration, covered })).catch(() => {});
             } else {
-                void send('progress', { duration, covered }).catch(fail);
+                void send('progress', { duration, covered, playhead: video.currentTime }).catch(() => fail('write_rejected'));
+                // The replay can advance inside the data it has already saved.
+                // Keep three seconds before the edge and require contiguous audio and video from zero.
+                const target = covered - 3;
+                if (!paused && !video.paused && !video.seeking && video.currentTime > maximumRestartPlayhead
+                    && target - video.currentTime >= 8 && target - lastAdvance >= 5) {
+                    lastAdvance = target;
+                    const advancingSource = source;
+                    void queue.then(() => {
+                        if (!stopped && !paused && !video.paused && !video.seeking
+                            && source === advancingSource && target > video.currentTime) video.currentTime = target;
+                    }).catch(() => fail('write_rejected'));
+                }
             }
         }
 
@@ -265,7 +389,7 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
                 queuedBytes -= bytes.byteLength;
             });
             // A closed or canceled view rejects pending writes.
-            void queue.catch(fail);
+            void queue.catch(() => fail('write_rejected'));
         }
 
         const addBuffer = mediaSourceType.prototype.addSourceBuffer;
@@ -274,36 +398,52 @@ final class YouTubePlaybackDownload: NSObject, WKNavigationDelegate, WKScriptMes
             if (!compatible(mime)) return buffer;
             const owner = this;
             const kind = /^video\//i.test(mime) ? 'video' : 'audio';
-            const track = { kind, index: 0, covered: 0 };
+            const track = { kind, buffer, index: 0, covered: 0 };
             const append = buffer.appendBuffer;
-            buffer.addEventListener('error', () => { if (source === owner) fail(); });
+            buffer.addEventListener('error', () => { if (source === owner) fail('buffer_error'); });
             buffer.appendBuffer = function (data) {
                 const result = Reflect.apply(append, this, arguments);
-                if (stopped || isAd() || mainVideo()?.mediaKeys) return result;
-                if (queuedBytes + data.byteLength > 16 * 1024 * 1024
-                    || (source && source !== owner) || (tracks.has(kind) && tracks.get(kind) !== track)) {
-                    fail();
+                const video = mainVideo();
+                if (stopped || !video || isAd() || video.mediaKeys) return result;
+                const attached = attachedSource(video);
+                if (attached && attached !== owner) return result;
+                if (source && source !== owner) {
+                    if (attached !== owner) return result;
+                    if (restartPending || sourceRestarts >= maximumSourceRestarts
+                        || Math.max(playhead, video.currentTime) > maximumRestartPlayhead) {
+                        fail('source_changed');
+                        return result;
+                    }
+                    // YouTube can replace its startup source before playback settles.
+                    // Drain the old writes, then truncate both tracks before index zero of the new source.
+                    sourceRestarts++;
+                    restartPending = true;
+                    playhead = 0;
+                    lastAdvance = 0;
+                    tracks.clear();
+                    queue = queue.then(async () => {
+                        await send('restart');
+                        restartPending = false;
+                    });
+                }
+                const reason = queuedBytes + data.byteLength > 16 * 1024 * 1024 ? 'queue_limit'
+                    : (tracks.has(kind) && tracks.get(kind) !== track) ? 'track_changed' : '';
+                if (reason) {
+                    fail(reason);
                     return result;
                 }
                 source = owner;
                 tracks.set(kind, track);
                 const bytes = new Uint8Array(data.buffer || data, data.byteOffset || 0, data.byteLength).slice();
                 enqueue(bytes, track);
-                this.addEventListener('updateend', () => {
-                    for (let i = 0; i < this.buffered.length; i += 1) {
-                        if (this.buffered.start(i) <= track.covered + 0.06) {
-                            track.covered = Math.max(track.covered, this.buffered.end(i));
-                        }
-                    }
-                    report();
-                }, { once: true });
+                this.addEventListener('updateend', report, { once: true });
                 return result;
             };
             const changeType = buffer.changeType;
             if (typeof changeType === 'function') {
                 buffer.changeType = function () {
                     const result = Reflect.apply(changeType, this, arguments);
-                    if (tracks.get(kind) === track) fail();
+                    if (tracks.get(kind) === track) fail('format_changed');
                     return result;
                 };
             }

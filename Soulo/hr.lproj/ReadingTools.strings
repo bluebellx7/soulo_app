@@ -369,6 +369,7 @@
 "torrent_select_all" = "Odaberite sve";
 "torrent_select_none" = "Poništi odabir svih";
 "torrent_peers" = "%d vršnjaka";
+"torrent_peer_counts" = "Povezano %d/%d · Seedovi %d";
 "torrent_duplicate" = "Ovaj torrent je već u preuzimanjima.";
 "torrent_task_limit" = "Uklonite neke zapise preuzimanja prije dodavanja dodatnih zadataka.";
 "torrent_save_error" = "Nije moguće spremiti zadatak. Provjerite dostupnu pohranu i pokušajte ponovno.";
@@ -523,7 +524,7 @@
 "wallpaper_blur_amount" = "Jačina zamućenja";
 
 "home_quick_search_guide" = "Unesite ključnu riječ na početnom zaslonu, odaberite platformu i dodirnite Pretraži na tipkovnici.";
-"auto_hide_platform_bar_hint" = "Kad je uključeno, traka se skriva tek nakon dodira sadržaja stranice i samo ako domena stranice ne odgovara nijednoj platformi na trenutačnoj traci. Ako odgovara, traka ostaje vidljiva ili se ponovno prikazuje. Pomicanje i automatska preusmjeravanja ne skrivaju traku.";
+"auto_hide_platform_bar_hint" = "Traka se skriva na web-mjestima izvan trenutačne grupe platformi i ponovno se prikazuje kad se vratite na platformu u grupi.";
 
 "ad_subscription_add" = "Dodaj popis filtara";
 "ad_subscription_name" = "Naziv";

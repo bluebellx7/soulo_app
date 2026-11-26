@@ -11,6 +11,7 @@ struct WebExtensionRemotePackage: Equatable {
     let store: Store
     let downloadURL: URL
     let fileExtension: String
+    var identifier: String? = nil
 }
 
 enum WebExtensionStoreInstallError: LocalizedError {
@@ -167,7 +168,7 @@ enum WebExtensionStoreLinkResolver {
             URLQueryItem(name: "acceptformat", value: "crx2,crx3"),
             URLQueryItem(name: "x", value: "id=\(identifier)&uc")
         ]
-        return WebExtensionRemotePackage(store: .chrome, downloadURL: components.url!, fileExtension: "crx")
+        return WebExtensionRemotePackage(store: .chrome, downloadURL: components.url!, fileExtension: "crx", identifier: identifier)
     }
 
     private static func edgePackage(identifier: String) -> WebExtensionRemotePackage {
@@ -179,7 +180,7 @@ enum WebExtensionStoreLinkResolver {
             URLQueryItem(name: "response", value: "redirect"),
             URLQueryItem(name: "x", value: "id=\(identifier)&installsource=ondemand&uc")
         ]
-        return WebExtensionRemotePackage(store: .edge, downloadURL: components.url!, fileExtension: "crx")
+        return WebExtensionRemotePackage(store: .edge, downloadURL: components.url!, fileExtension: "crx", identifier: identifier)
     }
 
     private static func identifier(in url: URL, pattern: String) -> String? {
@@ -207,8 +208,36 @@ enum WebExtensionStoreLinkResolver {
 final class WebExtensionStoreInstallService {
     static let shared = WebExtensionStoreInstallService()
     nonisolated static let maximumPackageSize: Int64 = 100 * 1_024 * 1_024
+    nonisolated private static let officialUpdateSources: Set<String> = [
+        "https://soulo.dkluge.com/downloads/soulo-search-platform.zip"
+    ]
 
     private init() {}
+
+    nonisolated static func officialUpdateSource(for source: String?) -> String? {
+        guard let source, officialUpdateSources.contains(source) else { return nil }
+        return source
+    }
+
+    func previewOfficialUpdate(for record: WebExtensionRecord) async throws -> WebExtensionInstallPreview? {
+        guard let source = Self.officialUpdateSource(for: record.sourceURL) else { return nil }
+        let update = try await preview(from: source, replacing: record.id)
+        var keepPreview = false
+        defer {
+            if !keepPreview { BrowserExtensionService.shared.discardWebExtensionPreview(update) }
+        }
+        try Task.checkCancellation()
+        guard let version = update.version, update.identity == "url:" + source,
+              record.packageIdentity == update.identity,
+              update.replacingResourceName == record.storedResourceName else {
+            throw WebExtensionStoreInstallError.invalidResponse
+        }
+        if let currentVersion = record.version, !UserScriptUpdateLoader.isNewer(version, than: currentVersion) {
+            return nil
+        }
+        keepPreview = true
+        return update
+    }
 
     private func makeSession(for store: WebExtensionRemotePackage.Store) -> URLSession {
         let configuration = URLSessionConfiguration.ephemeral
@@ -228,9 +257,10 @@ final class WebExtensionStoreInstallService {
         return try await BrowserExtensionService.shared.installWebExtension(preview, access: preview.access)
     }
 
-    func preview(from rawValue: String, replacing id: UUID? = nil) async throws -> WebExtensionInstallPreview {
+    func preview(from rawValue: String, replacing id: UUID? = nil,
+                 service: BrowserExtensionService? = nil) async throws -> WebExtensionInstallPreview {
         let package = try WebExtensionStoreLinkResolver.resolve(rawValue)
-        let localURL = try await downloadPackage(from: rawValue)
+        let localURL = try await downloadPackage(package)
         defer { try? FileManager.default.removeItem(at: localURL) }
         try Task.checkCancellation()
         let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -238,7 +268,8 @@ final class WebExtensionStoreInstallService {
         if value.range(of: #"^[a-p]{32}$"#, options: .regularExpression) != nil {
             source = URL(string: "https://chromewebstore.google.com/detail/" + value)!
         } else { source = URL(string: value) ?? package.downloadURL }
-        return try await BrowserExtensionService.shared.previewWebExtension(from: localURL, sourceURL: source, replacing: id)
+        return try await (service ?? .shared).previewWebExtension(from: localURL, sourceURL: source, replacing: id,
+                                                                  verifiedStoreIdentifier: package.identifier)
     }
 
     func downloadPackage(from rawValue: String) async throws -> URL {

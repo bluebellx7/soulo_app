@@ -162,9 +162,11 @@ struct WebViewToolbar: View {
     @State private var isChangingMediaRate = false
     @State private var showMoreMenu = false
     @State private var showPlatformMenu = false
-    @State private var pendingPlatformAction: (() -> Void)?
+    @State private var showExtensionGrid = false
+    @State private var pendingAuxiliaryAction: (() -> Void)?
     @State private var presentPlatformsAfterKeyboard = false
     @State private var presentSiteInformationAfterKeyboard = false
+    @State private var presentExtensionsAfterKeyboard = false
     @State private var moreMenuPage: MoreMenuPage = .main
     @State private var pendingMoreMenuAction: (() -> Void)?
     @State private var menuKeyboardVisible = false
@@ -209,20 +211,54 @@ struct WebViewToolbar: View {
     var onFloatingMoreDragEnded: ((CGSize) -> Void)?
 
     var body: some View {
+        toolbarWithPopovers
+            // These sheets belong to the whole toolbar. A configured shortcut
+            // must keep working after the More button is removed from its slots.
+            .sheet(isPresented: $showZoomControls) {
+                persistentZoomPanel
+                    .appPresentationAppearance()
+                    .presentationDetents([.height(190)])
+                    .presentationDragIndicator(.visible)
+                    .compatiblePresentationBackground(.ultraThinMaterial)
+            }
+            .sheet(isPresented: $showMediaRateControls) {
+                mediaRatePanel
+                    .appPresentationAppearance()
+                    .presentationDetents([.height(250)])
+                    .presentationDragIndicator(.visible)
+                    .compatiblePresentationBackground(.ultraThinMaterial)
+            }
+            .task(id: showMoreMenu || showMediaRateControls) { await updateVisiblePageTools() }
+            .onCompatibleChange(of: viewModel.currentURL) { _, _ in
+                pageAvailability = .init(); webMediaRate = 1; showMediaRateControls = false
+            }
+            .onCompatibleChange(of: showMoreMenu) { _, _ in reportMoreMenuPresentationState() }
+            .onCompatibleChange(of: showZoomControls) { _, _ in reportMoreMenuPresentationState() }
+            .onCompatibleChange(of: showMediaRateControls) { _, _ in reportMoreMenuPresentationState() }
+    }
+
+    private var toolbarWithPopovers: some View {
         toolbarSurface
             .compatiblePopover(isPresented: Binding(
-                get: { showPlatformMenu || showSiteInformation },
-                set: { if !$0 { showPlatformMenu = false; showSiteInformation = false } }
+                get: { showPlatformMenu || showSiteInformation || showExtensionGrid },
+                set: {
+                    if !$0 { showPlatformMenu = false; showSiteInformation = false; showExtensionGrid = false }
+                }
             ), attachmentAnchor: .rect(.bounds), arrowEdge: .bottom, usesAppAppearance: true) {
                 auxiliaryPopoverContent
             }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-                menuKeyboardVisible = true; showMoreMenu = false; showPlatformMenu = false; showSiteInformation = false
+                menuKeyboardVisible = true; showMoreMenu = false; showPlatformMenu = false
+                showSiteInformation = false; showExtensionGrid = false
             }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
-                guard menuKeyboardVisible || presentMenuAfterKeyboard || presentPlatformsAfterKeyboard || presentSiteInformationAfterKeyboard else { return }
+                guard menuKeyboardVisible || presentMenuAfterKeyboard || presentPlatformsAfterKeyboard
+                        || presentSiteInformationAfterKeyboard || presentExtensionsAfterKeyboard else { return }
                 menuKeyboardVisible = false; showMoreMenu = false; showPlatformMenu = false
-                if presentSiteInformationAfterKeyboard {
+                if presentExtensionsAfterKeyboard {
+                    presentExtensionsAfterKeyboard = false
+                    DispatchQueue.main.async { showExtensionGrid = true }
+                } else if presentSiteInformationAfterKeyboard {
                     presentSiteInformationAfterKeyboard = false
                     DispatchQueue.main.async { showSiteInformation = true }
                 } else if presentPlatformsAfterKeyboard {
@@ -235,6 +271,7 @@ struct WebViewToolbar: View {
             }
             .onCompatibleChange(of: showPlatformMenu) { _, _ in reportMoreMenuPresentationState() }
             .onCompatibleChange(of: showSiteInformation) { _, _ in reportMoreMenuPresentationState() }
+            .onCompatibleChange(of: showExtensionGrid) { _, _ in reportMoreMenuPresentationState() }
     }
 
     private var toolbarSurface: AnyView {
@@ -246,6 +283,13 @@ struct WebViewToolbar: View {
     }
 
     private var auxiliaryPopoverContent: AnyView {
+        if showExtensionGrid {
+            return AnyView(extensionGridPanel
+                .background(MoreMenuDismissalObserver(onDismiss: completeAuxiliaryAction))
+                .compatiblePopoverAdaptation()
+                .compatiblePresentationBackground(.ultraThinMaterial)
+                .compatiblePresentationCornerRadius(26))
+        }
         if showSiteInformation { return AnyView(siteInformationPanel) }
         return platformPopoverContent
     }
@@ -253,25 +297,26 @@ struct WebViewToolbar: View {
     private var platformPopoverContent: AnyView {
         guard let context = platformPicker else { return AnyView(EmptyView()) }
         return AnyView(BrowserPlatformPanel(context: context, onSelect: { scope, platform in
-            pendingPlatformAction = { context.onSelect(scope, platform) }
+            pendingAuxiliaryAction = { context.onSelect(scope, platform) }
             showPlatformMenu = false
         }, onManage: {
-            pendingPlatformAction = context.onManage
+            pendingAuxiliaryAction = context.onManage
             showPlatformMenu = false
         }, onClose: { showPlatformMenu = false })
-            .background(MoreMenuDismissalObserver(onDismiss: completePlatformAction))
+            .background(MoreMenuDismissalObserver(onDismiss: completeAuxiliaryAction))
             .compatiblePopoverAdaptation()
             .compatiblePresentationBackground(.ultraThinMaterial)
             .compatiblePresentationCornerRadius(26))
     }
 
-    private func completePlatformAction() {
-        guard let action = pendingPlatformAction else { return }
-        pendingPlatformAction = nil
+    private func completeAuxiliaryAction() {
+        guard let action = pendingAuxiliaryAction else { return }
+        pendingAuxiliaryAction = nil
         DispatchQueue.main.async(execute: action)
     }
 
     private func presentSiteInformation() {
+        presentExtensionsAfterKeyboard = false
         presentMenuAfterKeyboard = false; presentPlatformsAfterKeyboard = false
         if menuKeyboardVisible {
             presentSiteInformationAfterKeyboard = true
@@ -280,12 +325,21 @@ struct WebViewToolbar: View {
     }
 
     private func presentPlatforms() {
+        presentExtensionsAfterKeyboard = false
         presentSiteInformationAfterKeyboard = false
         presentMenuAfterKeyboard = false
         if menuKeyboardVisible {
             presentPlatformsAfterKeyboard = true
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         } else { showPlatformMenu = true }
+    }
+
+    private func presentExtensions() {
+        presentSiteInformationAfterKeyboard = false; presentPlatformsAfterKeyboard = false; presentMenuAfterKeyboard = false
+        if menuKeyboardVisible {
+            presentExtensionsAfterKeyboard = true
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        } else { showExtensionGrid = true }
     }
 
     private var toolbarContent: some View {
@@ -641,7 +695,7 @@ struct WebViewToolbar: View {
         .accessibilityHint(LanguageManager.shared.localizedString("fullscreen_exit_hint"))
     }
 
-    private var moreMenuPresentation: AnyView {
+    private var moreMenu: AnyView {
         AnyView(moreMenuLauncher
             .compatiblePopover(isPresented: $showMoreMenu, attachmentAnchor: .rect(.bounds),
                 arrowEdge: .bottom,
@@ -668,56 +722,20 @@ struct WebViewToolbar: View {
             .background(MoreMenuDismissalObserver(onDismiss: completeMoreMenuAction)))
     }
 
-    private var moreMenuSheets: AnyView {
-        AnyView(moreMenuPresentation
-            .sheet(isPresented: $showZoomControls) {
-                AnyView(persistentZoomPanel
-                    .appPresentationAppearance()
-                    .presentationDetents([.height(190)])
-                    .presentationDragIndicator(.visible)
-                    .compatiblePresentationBackground(.ultraThinMaterial))
-            }
-            .sheet(isPresented: $showMediaRateControls) {
-                AnyView(mediaRatePanel
-                    .appPresentationAppearance()
-                    .presentationDetents([.height(250)])
-                    .presentationDragIndicator(.visible)
-                    .compatiblePresentationBackground(.ultraThinMaterial))
-            })
-    }
-
-    // Do not let the modifier chain become part of toolbarAction's generic
-    // return type. These are fixed menu boundaries, not per-row type erasure.
-    private var moreMenu: AnyView {
-        AnyView(moreMenuSheets
-            .task(id: showMoreMenu) {
-                guard showMoreMenu else { return }
-                // Poll only while the panel is visible, so late SPA/video content appears.
-                while !Task.isCancelled {
-                    if let web = viewModel.webView {
-                        let url = web.url
-                        let result = await WebPageToolsAvailability.inspect(web)
-                        if !Task.isCancelled && viewModel.webView === web && web.url == url {
-                            if pageAvailability != result { pageAvailability = result }
-                            if webMediaRate != result.mediaRate { webMediaRate = result.mediaRate }
-                        }
-                    }
-                    do { try await Task.sleep(for: .seconds(1)) } catch { break }
+    private func updateVisiblePageTools() async {
+        guard showMoreMenu || showMediaRateControls else { return }
+        // Poll only while a tool panel is visible, so late SPA/video content appears.
+        while !Task.isCancelled {
+            if let web = viewModel.webView {
+                let url = web.url
+                let result = await WebPageToolsAvailability.inspect(web)
+                if !Task.isCancelled && viewModel.webView === web && web.url == url {
+                    if pageAvailability != result { pageAvailability = result }
+                    if webMediaRate != result.mediaRate { webMediaRate = result.mediaRate }
                 }
             }
-            .onCompatibleChange(of: viewModel.currentURL) { _, _ in
-                pageAvailability = .init(); webMediaRate = 1; showMediaRateControls = false
-            }
-            .onCompatibleChange(of: showMoreMenu) { _, _ in
-                reportMoreMenuPresentationState()
-            }
-            .onCompatibleChange(of: showZoomControls) { _, _ in
-                reportMoreMenuPresentationState()
-            }
-            .onCompatibleChange(of: showMediaRateControls) { _, _ in
-                reportMoreMenuPresentationState()
-            }
-        )
+            do { try await Task.sleep(for: .seconds(1)) } catch { return }
+        }
     }
 
     private var moreMenuLauncherLabel: some View {
@@ -949,6 +967,112 @@ struct WebViewToolbar: View {
         }
     }
 
+    private var extensionGridPanel: some View {
+        let enabled = isIncognito ? [] : extensionService.webExtensions.filter(\.isEnabled)
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(LanguageManager.shared.localizedString("extensions"))
+                    .font(.headline)
+                Spacer()
+                if let onShowExtensions {
+                    Button(AppLocalization.string("extension_manage")) { dismissExtensionGrid(perform: onShowExtensions) }
+                        .font(.subheadline.weight(.semibold))
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("browser.extensionGrid.manage")
+                }
+            }
+            if enabled.isEmpty {
+                Text(LanguageManager.shared.localizedString(isIncognito ? "privacy_incognito" : "extensions_empty"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 56)
+            } else {
+                ViewThatFits(in: .vertical) {
+                    extensionGrid(enabled).fixedSize(horizontal: false, vertical: true)
+                    ScrollView { extensionGrid(enabled) }.frame(maxHeight: 248)
+                }
+                .padding(.vertical, 5)
+                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 8)
+        .padding(.bottom, 14)
+        .frame(width: 304)
+        .onReceive(NotificationCenter.default.publisher(for: .browserExtensionActionsChanged)) { _ in
+            DispatchQueue.main.async { extensionActionRevision &+= 1 }
+        }
+    }
+
+    private func extensionGrid(_ records: [WebExtensionRecord]) -> some View {
+        _ = extensionActionRevision
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 4)
+        return LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(records) { record in
+                let action = extensionService.webExtensionAction(for: record.id)
+                Button {
+                    dismissExtensionGrid {
+                        if let action, action.isEnabled {
+                            extensionService.performWebExtensionAction(record.id, in: tabManager)
+                        } else if let tabManager, extensionService.hasWebExtensionOptions(record.id) {
+                            extensionService.openWebExtensionOptions(record.id, in: tabManager)
+                        } else {
+                            onShowExtensions?()
+                        }
+                    }
+                } label: {
+                    extensionActionIcon(action, size: 30, showsPlaceholderBackground: false)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(action?.isEnabled == false)
+                .opacity(action?.isEnabled == false ? 0.38 : 1)
+                .accessibilityLabel(action?.label ?? record.name)
+                .accessibilityValue(action?.badgeText ?? "")
+                .accessibilityIdentifier("browser.extensionGrid.item." + record.id.uuidString)
+            }
+        }
+    }
+
+    private func dismissExtensionGrid(perform action: @escaping () -> Void) {
+        pendingAuxiliaryAction = action
+        showExtensionGrid = false
+    }
+
+    private func extensionActionIcon(_ action: WebExtensionActionPresentation?, size: CGFloat,
+                                     showsPlaceholderBackground: Bool = true) -> some View {
+        ZStack(alignment: .topTrailing) {
+            if let icon = action?.icon {
+                Image(uiImage: icon).resizable().scaledToFit()
+                    .frame(width: size, height: size)
+                    .clipShape(RoundedRectangle(cornerRadius: size / 4.5))
+            } else {
+                Image(systemName: "puzzlepiece.extension")
+                    .font(.system(size: size * 0.65, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: size, height: size)
+                    .background {
+                        if showsPlaceholderBackground {
+                            RoundedRectangle(cornerRadius: size / 4.5).fill(.quaternary)
+                        }
+                    }
+            }
+            if let action, !action.badgeText.isEmpty {
+                Text(action.badgeText)
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundStyle(action.badgeTextColor.map(Color.init(uiColor:)) ?? .white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .padding(.horizontal, 3)
+                    .frame(minWidth: 11, minHeight: 11)
+                    .background(.red, in: Capsule())
+                    .offset(x: 5, y: -5)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
     private var webExtensionActionStrip: some View {
         HStack(spacing: 4) {
             ScrollView(.horizontal) {
@@ -957,35 +1081,9 @@ struct WebViewToolbar: View {
                         Button {
                             performWebExtensionAction(item.record.id)
                         } label: {
-                            ZStack(alignment: .topTrailing) {
-                                if let icon = item.action.icon {
-                                    Image(uiImage: icon)
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 18, height: 18)
-                                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-                                } else {
-                                    Image(systemName: "puzzlepiece.extension")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(.secondary)
-                                        .frame(width: 18, height: 18)
-                                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
-                                }
-
-                                if !item.action.badgeText.isEmpty {
-                                    Text(item.action.badgeText)
-                                        .font(.system(size: 7, weight: .bold))
-                                        .foregroundStyle(item.action.badgeTextColor.map(Color.init(uiColor:)) ?? .white)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.6)
-                                        .padding(.horizontal, 3)
-                                        .frame(minWidth: 11, minHeight: 11)
-                                        .background(.red, in: Capsule())
-                                        .offset(x: 5, y: -5)
-                                }
-                            }
-                            .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
-                            .contentShape(Rectangle())
+                            extensionActionIcon(item.action, size: 18)
+                                .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .disabled(!item.action.isEnabled)
@@ -1113,6 +1211,7 @@ struct WebViewToolbar: View {
         case .fullscreen: isFullscreen
         case .desktopMode: tabManager?.isDesktopMode == true
         case .darkMode: webAppearance.forceDarkPages
+        case .privateBrowsing: isIncognito
         default: false
         }
     }
@@ -1214,6 +1313,7 @@ struct WebViewToolbar: View {
     private func presentMoreMenu() {
         presentSiteInformationAfterKeyboard = false
         presentPlatformsAfterKeyboard = false
+        presentExtensionsAfterKeyboard = false
         HapticsManager.light()
         if menuKeyboardVisible {
             presentMenuAfterKeyboard = true
@@ -1251,7 +1351,8 @@ struct WebViewToolbar: View {
     }
 
     private func reportMoreMenuPresentationState() {
-        onMoreMenuPresentationChange?(showMoreMenu || showPlatformMenu || showSiteInformation || showZoomControls || showMediaRateControls)
+        onMoreMenuPresentationChange?(showMoreMenu || showPlatformMenu || showSiteInformation
+            || showExtensionGrid || showZoomControls || showMediaRateControls)
     }
 
     private var mediaRatePanel: some View {
@@ -1437,6 +1538,7 @@ struct WebViewToolbar: View {
         case .bookmark where isBookmarked: .orange
         case .darkMode where webAppearance.forceDarkPages: Color.themePrimary
         case .desktopMode where tabManager?.isDesktopMode == true: Color.themePrimary
+        case .privateBrowsing where isIncognito: .teal
         default: nil
         }
     }
@@ -1467,6 +1569,18 @@ struct WebViewToolbar: View {
         case .files, .books, .downloads: onOpenLibrarySection != nil
         case .wifiTransfer: onWiFiTransfer != nil
         case .adBlock: onManageAdBlock != nil
+        case .extensionGrid: BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled
+        case .findInPage: tabManager != nil && viewModel.webView != nil
+        case .pageZoom, .mediaSpeed: viewModel.webView != nil
+        case .episodes: viewModel.episodeList != nil
+        case .summarize: onSummarizePage != nil && ["http", "https"].contains(viewModel.currentURL?.scheme?.lowercased() ?? "")
+        case .safariCompatibility:
+            onOpenSafariCompatibility != nil && WebNavigationPolicyService.shared.canUseSafariCompatibilityMode(for: viewModel.currentURL)
+        case .openDefaultBrowser: onOpenDefaultBrowser != nil
+        case .history: onOpenLibrarySection != nil
+        case .restoreTab: tabManager?.recentlyClosed.isEmpty == false
+        case .privateBrowsing: onSetPrivateMode != nil
+        case .editAddress: onEditAddress != nil
         default: true
         }
     }
@@ -1538,6 +1652,30 @@ struct WebViewToolbar: View {
             onWiFiTransfer?()
         case .adBlock:
             onManageAdBlock?()
+        case .extensionGrid:
+            presentExtensions()
+        case .findInPage:
+            tabManager?.startFindInPage()
+        case .pageZoom:
+            showZoomControls = true
+        case .mediaSpeed:
+            showMediaRateControls = true
+        case .episodes:
+            viewModel.showEpisodes = true
+        case .summarize:
+            onSummarizePage?()
+        case .safariCompatibility:
+            onOpenSafariCompatibility?()
+        case .openDefaultBrowser:
+            onOpenDefaultBrowser?()
+        case .history:
+            onOpenLibrarySection?(.history)
+        case .restoreTab:
+            tabManager?.restoreLastClosedTab()
+        case .privateBrowsing:
+            onSetPrivateMode?(!isIncognito)
+        case .editAddress:
+            onEditAddress?()
         }
     }
 

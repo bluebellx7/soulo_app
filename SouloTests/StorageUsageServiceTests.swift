@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 import WebKit
 @testable import Soulo
 
@@ -119,7 +120,7 @@ final class StorageUsageServiceTests: XCTestCase {
         return (await cache.keys()).length;
         """#, arguments: [:], in: nil, contentWorld: .page) as? Int
         XCTAssertEqual(count, 128)
-        let snapshot = await WebsiteStorageService.snapshot()
+        let snapshot = try await WebsiteStorageService.snapshot()
         XCTAssertGreaterThanOrEqual(snapshot.totalBytes, 512 * 1024 * 1024)
         XCTAssertEqual(snapshot.entries.reduce(snapshot.unattributedBytes) { $0 + ($1.bytes?.total ?? 0) }, snapshot.totalBytes)
         let report = XCTAttachment(string: "total=\(snapshot.totalBytes);shared=\(snapshot.unattributedBytes);sites=\(snapshot.entries.map { ($0.domain,$0.bytes?.total) })")
@@ -133,7 +134,23 @@ final class StorageUsageServiceTests: XCTestCase {
         let base=try await server.start();server.releaseDownloads();defer{server.stop()}
         var localhost=URLComponents(url:base,resolvingAgainstBaseURL:false)!;localhost.host="localhost"
         let first=WKWebView(),second=WKWebView()
-        defer{first.stopLoading();second.stopLoading()}
+        // Keep real origins attached, like browser tabs during cleanup. A
+        // detached WebKit process can freeze while the simulator is idle.
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        let controller = UIViewController()
+        window.rootViewController = controller
+        let views = UIStackView(arrangedSubviews: [first, second])
+        views.axis = .vertical
+        views.distribution = .fillEqually
+        views.frame = controller.view.bounds
+        views.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        controller.view.addSubview(views)
+        window.makeKeyAndVisible()
+        defer {
+            first.stopLoading(); second.stopLoading()
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+        }
         first.load(URLRequest(url:base.appendingPathComponent("index.html")))
         second.load(URLRequest(url:try XCTUnwrap(localhost.url).appendingPathComponent("index.html")))
         let database = "website-storage-fixture-" + UUID().uuidString
@@ -173,7 +190,7 @@ final class StorageUsageServiceTests: XCTestCase {
             _ = try await evaluate(seed, in: web, stage: "Write website data for \(host)")
         }
         print("Website storage regression: enumerate website records")
-        let entries=await WebsiteStorageService.entries()
+        let entries=try await WebsiteStorageService.entries()
         let firstEntry=try XCTUnwrap(entries.first{$0.domain=="127.0.0.1"}),secondEntry=try XCTUnwrap(entries.first{$0.domain=="localhost"})
         XCTAssertGreaterThanOrEqual(firstEntry.indexedDBBytes ?? -1,700000)
         XCTAssertGreaterThanOrEqual(secondEntry.indexedDBBytes ?? -1,700000)
@@ -186,6 +203,13 @@ final class StorageUsageServiceTests: XCTestCase {
         XCTAssertTrue((kept?["names"] as? [String] ?? []).contains(database))
         XCTAssertEqual(cleared?["local"] as? String,"keep")
         XCTAssertTrue((cleared?["cookie"] as? String ?? "").contains("storage_fixture=keep"))
+        try await WebsiteStorageService.clearCurrentSite(host: "127.0.0.1", in: first.configuration.websiteDataStore)
+        let panelCleared = try await evaluate(check, in: first, stage: "Read the site after clearing through the site panel") as? [String: Any]
+        let panelKept = try await evaluate(check, in: second, stage: "Verify the panel left the second site alone") as? [String: Any]
+        XCTAssertTrue(panelCleared?["local"] is NSNull)
+        XCTAssertFalse((panelCleared?["cookie"] as? String ?? "").contains("storage_fixture=keep"))
+        XCTAssertEqual(panelKept?["local"] as? String, "keep")
+        XCTAssertTrue((panelKept?["names"] as? [String] ?? []).contains(database))
         let report = await StorageUsageService.clearWebsiteData()
         XCTAssertTrue(report.failures.isEmpty, "\(report.failures)")
         for web in [first, second] {

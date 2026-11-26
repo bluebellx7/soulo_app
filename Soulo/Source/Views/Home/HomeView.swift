@@ -1150,6 +1150,10 @@ struct HomeView: View {
         case .newDownload: downloadCreation = DownloadCreationRequest()
         case .scanner: showScanner = true
         case .tabs: openHomeTabSwitcher()
+        case .restoreTab:
+            guard !tabManager.recentlyClosed.isEmpty else { return }
+            tabManager.restoreLastClosedTab()
+            searchVM.isSearching = true
         default: homeToolbarDestination = action
         }
     }

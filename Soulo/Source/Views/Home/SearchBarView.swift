@@ -271,7 +271,6 @@ struct SearchBarView: View {
                     get: { autoHidePlatformBar },
                     set: { enabled in
                         autoHidePlatformBar = enabled
-                        for tab in tabManager.tabs { tab.webViewModel.resetPlatformBarAutoHide() }
                         autoHidePlatformHintTask?.cancel()
                         guard enabled else { return }
                         showSearchActions = false

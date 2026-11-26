@@ -15,6 +15,7 @@
 #include <chrono>
 #include <algorithm>
 namespace lt = libtorrent;
+static constexpr NSUInteger maximumDHTStateBytes = 256 * 1024;
 static NSString *str(std::string const& value) { return [[NSString alloc] initWithBytes:value.data() length:value.size() encoding:NSUTF8StringEncoding] ?: @""; }
 static void failure(NSError **error, std::exception const& e) {
     if (error) *error = [NSError errorWithDomain:@"SouloTorrent" code:1 userInfo:@{NSLocalizedDescriptionKey:str(e.what())}];
@@ -49,9 +50,14 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
     std::map<std::string, std::map<lt::piece_index_t, std::chrono::steady_clock::time_point>> _streamPieces;
 }
 - (instancetype)initWithCertificateFile:(NSString *)certificateFile discoveryEnabled:(BOOL)discoveryEnabled {
+    return [self initWithCertificateFile:certificateFile discoveryEnabled:discoveryEnabled dhtState:nil];
+}
+- (instancetype)initWithCertificateFile:(NSString *)certificateFile discoveryEnabled:(BOOL)discoveryEnabled
+                               dhtState:(NSData *)dhtState {
     if ((self = [super init])) {
         _discoveryEnabled = discoveryEnabled;
         _publicTrackers = {"udp://tracker.opentrackr.org:1337/announce",
+            "http://tracker.opentrackr.org:1337/announce",
             "udp://open.stealth.si:80/announce", "udp://tracker.torrent.eu.org:451/announce",
             "udp://open.demonii.com:1337/announce"};
         if (certificateFile.length) setenv("SSL_CERT_FILE", certificateFile.fileSystemRepresentation, 1);
@@ -74,9 +80,28 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
         settings.set_int(lt::settings_pack::active_downloads, 3);
         settings.set_int(lt::settings_pack::active_limit, 3);
         settings.set_int(lt::settings_pack::alert_mask, static_cast<int>(static_cast<std::uint32_t>(lt::alert_category::error)));
-        _session = std::make_unique<lt::session>(settings);
+        lt::session_params params(std::move(settings));
+        if (discoveryEnabled && dhtState.length && dhtState.length <= maximumDHTStateBytes) {
+            try {
+                auto restored = lt::read_session_params(bytes(dhtState), lt::session::save_dht_state);
+                params.dht_state = std::move(restored.dht_state);
+            } catch (std::exception const&) {
+                // A corrupt cache must never prevent tracker or DHT startup.
+            }
+        }
+        _session = std::make_unique<lt::session>(std::move(params));
     }
     return self;
+}
+- (NSData *)dhtState {
+    if (!_discoveryEnabled) return nil;
+    try {
+        auto params = _session->session_state(lt::session::save_dht_state);
+        if (params.dht_state.nodes.empty() && params.dht_state.nodes6.empty()) return nil;
+        auto buffer = lt::write_session_params_buf(params, lt::session::save_dht_state);
+        if (buffer.empty() || buffer.size() > maximumDHTStateBytes) return nil;
+        return [NSData dataWithBytes:buffer.data() length:buffer.size()];
+    } catch (std::exception const&) { return nil; }
 }
 + (NSDictionary *)inspectData:(NSData *)data error:(NSError **)error {
     try {
@@ -113,6 +138,25 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
             p.ti = std::make_shared<lt::torrent_info>(bytes(data), lt::from_span);
         } else if (magnet.length) p = lt::parse_magnet_uri(magnet.UTF8String);
         else throw std::runtime_error("Missing torrent metadata");
+        if (resumeData.length && magnet.length) {
+            lt::error_code hintError;
+            auto hints = lt::parse_magnet_uri(magnet.UTF8String, hintError);
+            auto const hashes = p.ti ? p.ti->info_hashes() : p.info_hashes;
+            bool sameTorrent = !hintError && (hints.info_hashes.has_v1() || hints.info_hashes.has_v2())
+                && (!hints.info_hashes.has_v1() || hints.info_hashes.v1 == hashes.v1)
+                && (!hints.info_hashes.has_v2() || hints.info_hashes.v2 == hashes.v2);
+            if (sameTorrent && !hints.trackers.empty()) {
+                // A previous build may have saved this task before recognizing
+                // HTML-escaped tracker separators. Restore the original hints.
+                p.tracker_tiers.resize(p.trackers.size(), 0);
+                int tier = p.tracker_tiers.empty() ? 0 : *std::max_element(p.tracker_tiers.begin(), p.tracker_tiers.end()) + 1;
+                for (auto const& tracker : hints.trackers) {
+                    if (std::find(p.trackers.begin(), p.trackers.end(), tracker) != p.trackers.end()) continue;
+                    p.trackers.push_back(tracker);
+                    p.tracker_tiers.push_back(std::min(tier++, 255));
+                }
+            }
+        }
         if (p.ti) describe(p.ti);
         p.save_path = directory.fileSystemRepresentation;
         p.flags &= ~(lt::torrent_flags::paused | lt::torrent_flags::auto_managed | lt::torrent_flags::stop_when_ready);
@@ -136,10 +180,18 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
     bool privateTorrent = ti && ti->priv();
     auto entries = handle.trackers();
     auto &owned = _automaticTrackers[identifier];
-    entries.erase(std::remove_if(entries.begin(), entries.end(), [&](auto const& value) {
-        return owned.count(value.url) != 0;
-    }), entries.end());
-    owned.clear();
+    if (ti) {
+        for (auto const& tracker : ti->trackers()) owned.erase(tracker.url);
+    }
+    auto retained = std::remove_if(entries.begin(), entries.end(), [&](auto const& value) {
+        if (!owned.count(value.url)) return false;
+        if (!privateTorrent && std::find(_publicTrackers.begin(), _publicTrackers.end(), value.url) != _publicTrackers.end()) return false;
+        owned.erase(value.url);
+        return true;
+    });
+    bool removed = retained != entries.end();
+    entries.erase(retained, entries.end());
+    auto existingCount = entries.size();
     if (!privateTorrent) {
         int tier = 0;
         for (auto const& value : entries) tier = std::max(tier, int(value.tier) + 1);
@@ -149,7 +201,10 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
             entries.push_back(entry); owned.insert(url);
         }
     }
-    handle.replace_trackers(entries);
+    // Do not reset working trackers when metadata arrives or a subscription
+    // refresh only adds addresses. Replacement is only needed for removals.
+    if (removed) handle.replace_trackers(entries);
+    else for (auto i = existingCount; i < entries.size(); ++i) handle.add_tracker(entries[i]);
     if (ti) _metadataTrackerPolicyApplied.insert(identifier);
 }
 - (void)updatePublicTrackers:(NSArray<NSString *> *)trackers {
@@ -199,7 +254,8 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
                 _peerRefresh.erase(refresh);
             }
             NSMutableDictionary *d = [@{@"id":str(identifier), @"done":@(s.total_wanted_done), @"total":@(s.total_wanted),
-              @"speed":@(s.download_payload_rate), @"peers":@(s.num_peers), @"finished":@(s.is_finished && s.has_metadata),
+              @"speed":@(s.download_payload_rate), @"peers":@(s.num_peers), @"knownPeers":@(s.list_peers),
+              @"seeders":@(s.num_seeds), @"finished":@(s.is_finished && s.has_metadata),
               @"checking":@(s.state == lt::torrent_status::checking_files || s.state == lt::torrent_status::checking_resume_data),
               @"error":str(s.errc ? s.errc.message() : "")} mutableCopy];
             if (s.has_metadata) {

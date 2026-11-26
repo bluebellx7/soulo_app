@@ -569,13 +569,19 @@ private struct WebsiteStorageView: View {
     private func refresh() async {
         guard !clearingExtensions else { return }
         let id = UUID(); refreshID = id
-        let updated = await WebsiteStorageService.snapshot { list in
-            guard refreshID == id, !list.isEmpty else { return }
-            entries = list; loading = false
+        do {
+            let updated = try await WebsiteStorageService.snapshot { list in
+                guard refreshID == id, !list.isEmpty else { return }
+                entries = list; loading = false
+            }
+            guard refreshID == id, !Task.isCancelled else { return }
+            entries = updated.entries; totalBytes = updated.totalBytes
+            unattributedBytes = updated.unattributedBytes; loading = false
+        } catch {
+            guard refreshID == id, !Task.isCancelled else { return }
+            loading = false
+            self.error = error.localizedDescription
         }
-        guard refreshID == id, !Task.isCancelled else { return }
-        entries = updated.entries; totalBytes = updated.totalBytes
-        unattributedBytes = updated.unattributedBytes; loading = false
     }
 }
 
@@ -613,7 +619,7 @@ private struct WebsiteStorageDetail: View {
                         defer { clearing = false }
                         do {
                             try await WebsiteStorageService.clear(entry, types: types)
-                            let updated = await WebsiteStorageService.entries()
+                            let updated = try await WebsiteStorageService.entries()
                             entry = updated.first { $0.id == entry.id } ?? .init(domain: entry.domain, dataTypes: [], bytes: .init())
                         }
                         catch { self.error = error.localizedDescription }

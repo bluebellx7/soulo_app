@@ -10,7 +10,7 @@ import CoreData
     private var waiters: [CheckedContinuation<Void, Never>] = []
     private enum Scope: Hashable {
         case all, cache
-        case site(String, Set<String>)
+        case site(String, Set<String>, ObjectIdentifier?)
 
         var category: StorageUsageCategory { self == .cache ? .webData : .websiteStorage }
     }
@@ -40,8 +40,9 @@ import CoreData
     }
 
     func clearSite(domain: String, types: Set<String>, timeoutNanoseconds: UInt64 = 20_000_000_000,
+                   storeID: ObjectIdentifier? = nil,
                    _ operation: @escaping @MainActor () async -> StorageCleanupReport) async -> StorageCleanupReport {
-        await report(scope: .site(domain, types), timeoutNanoseconds: timeoutNanoseconds, operation)
+        await report(scope: .site(domain, types, storeID), timeoutNanoseconds: timeoutNanoseconds, operation)
     }
 
     private func report(scope: Scope, timeoutNanoseconds: UInt64,
@@ -547,8 +548,8 @@ enum WebsiteStorageService {
         WKWebsiteDataTypeOfflineWebApplicationCache, WKWebsiteDataTypeFetchCache, WKWebsiteDataTypeServiceWorkerRegistrations
     ])
 
-    @MainActor static func snapshot(onList: (([WebsiteStorageEntry]) -> Void)? = nil) async -> WebsiteStorageSnapshot {
-        let sites = await entries(onList: onList)
+    @MainActor static func snapshot(onList: (([WebsiteStorageEntry]) -> Void)? = nil) async throws -> WebsiteStorageSnapshot {
+        let sites = try await entries(onList: onList)
         guard !Task.isCancelled else { return .init(entries: [], totalBytes: 0) }
         let inventory = await StorageUsageService.inventory(forceRefresh: true)
         let total = inventory.records.filter { $0.category == .webData || $0.category == .websiteStorage }
@@ -556,8 +557,8 @@ enum WebsiteStorageService {
         return .init(entries: sites, totalBytes: total)
     }
 
-    @MainActor static func entries(onList: (([WebsiteStorageEntry]) -> Void)? = nil) async -> [WebsiteStorageEntry] {
-        let records = await records()
+    @MainActor static func entries(onList: (([WebsiteStorageEntry]) -> Void)? = nil) async throws -> [WebsiteStorageEntry] {
+        let records = try await records()
         var types = records.reduce(into: [String: Set<String>]()) { $0[$1.displayName, default: []].formUnion($1.dataTypes) }
         onList?(types.map { .init(domain: $0.key, dataTypes: $0.value, bytes: nil) }
             .sorted { $0.domain.localizedStandardCompare($1.domain) == .orderedAscending })
@@ -578,23 +579,66 @@ enum WebsiteStorageService {
                 ? $0.domain.localizedStandardCompare($1.domain) == .orderedAscending : ($0.bytes?.total ?? -1) > ($1.bytes?.total ?? -1) }
     }
 
-    @MainActor private static func records(ofTypes types: Set<String> = WKWebsiteDataStore.allWebsiteDataTypes()) async -> [WKWebsiteDataRecord] {
-        await withCheckedContinuation { continuation in
-            WKWebsiteDataStore.default().fetchDataRecords(ofTypes: types) { continuation.resume(returning: $0) }
+    @MainActor private final class RecordsReply {
+        var continuation: CheckedContinuation<[WKWebsiteDataRecord], Error>?
+        var deadline: Task<Void, Never>?
+
+        func finish(_ result: Result<[WKWebsiteDataRecord], Error>) {
+            guard let continuation else { return }
+            self.continuation = nil
+            deadline?.cancel(); deadline = nil
+            continuation.resume(with: result)
+        }
+    }
+
+    @MainActor private static func records(ofTypes types: Set<String> = WKWebsiteDataStore.allWebsiteDataTypes(),
+                                           in store: WKWebsiteDataStore = .default()) async throws -> [WKWebsiteDataRecord] {
+        try await withCheckedThrowingContinuation { continuation in
+            let reply = RecordsReply()
+            reply.continuation = continuation
+            // A WebKit process may leave a read without a reply. End the
+            // read before a cleanup's deadline so it never queues deletion later.
+            reply.deadline = Task { @MainActor in
+                do { try await Task.sleep(for: .seconds(8)) } catch { return }
+                reply.finish(.failure(URLError(.timedOut)))
+            }
+            store.fetchDataRecords(ofTypes: types) { reply.finish(.success($0)) }
         }
     }
 
     @MainActor static func clear(_ entry: WebsiteStorageEntry, types: Set<String>) async throws {
-        let report = await cleanup.clearSite(domain: entry.domain, types: types) {
+        try await clearSite(domain: entry.domain, types: types, in: .default(), exactRecord: true)
+    }
+
+    @MainActor static func clearCurrentSite(host: String, in store: WKWebsiteDataStore) async throws {
+        guard !host.isEmpty else { return }
+        try await clearSite(domain: host, types: WKWebsiteDataStore.allWebsiteDataTypes(), in: store, exactRecord: false)
+    }
+
+    @MainActor private static func clearSite(domain: String, types: Set<String>, in store: WKWebsiteDataStore,
+                                            exactRecord: Bool) async throws {
+        // The storage list and the live site panel share the WebKit mutation
+        // queue. Private stores keep an independent identity for deduplication.
+        let scope = exactRecord ? domain : "host:\(domain)"
+        let report = await cleanup.clearSite(domain: scope, types: types, storeID: ObjectIdentifier(store)) {
             StorageUsageService.invalidateInventory()
             defer { StorageUsageService.invalidateInventory() }
-            if types == cacheTypes, let id = UUID(uuidString: entry.domain), #available(iOS 18.4, *) {
+            if exactRecord, types == cacheTypes, let id = UUID(uuidString: domain), #available(iOS 18.4, *) {
                 do { try await NativeWebExtensionRuntime.shared.clearTemporaryCaches(identifiers: [id]) }
                 catch { return .init(retainedCategories: [.extensions], failures: [error.localizedDescription]) }
                 return .init()
             }
-            let matching = await records(ofTypes: types).filter { $0.displayName == entry.domain }
-            await clearOrdinaryRecords(matching, types: types)
+            let listed: [WKWebsiteDataRecord]
+            do { listed = try await records(ofTypes: types, in: store) }
+            catch { return .init(retainedCategories: [.websiteStorage], failures: [error.localizedDescription]) }
+            let matching = listed.filter { record in
+                if exactRecord { return record.displayName == domain }
+                let host = PrivacyProtectionService.normalizedHost(record.displayName)
+                return host == domain || host.hasSuffix(".\(domain)") || domain.hasSuffix(".\(host)")
+            }
+            BrowserStartupTrace.mark("website_cleanup_site_records_fetched", detail: "\(matching.count)")
+            await clearOrdinaryRecords(matching, types: types, in: store)
+            BrowserStartupTrace.mark("website_cleanup_site_finished")
             return .init()
         }
         if let message = report.failures.first { throw CleanupError(message: message) }
@@ -605,7 +649,9 @@ enum WebsiteStorageService {
             defer { StorageUsageService.invalidateInventory() }
             await clearFoundationCache(cookies: false)
             let types = cacheTypes.subtracting(sharedNetworkCacheTypes)
-            let listed = await records(ofTypes: types)
+            let listed: [WKWebsiteDataRecord]
+            do { listed = try await records(ofTypes: types) }
+            catch { return .init(retainedCategories: [.webData], failures: [error.localizedDescription]) }
             let matching = listed.filter { UUID(uuidString: $0.displayName) == nil }
             await clearOrdinaryRecords(matching, types: types)
             await clearSharedNetworkCache()
@@ -623,7 +669,9 @@ enum WebsiteStorageService {
             await clearFoundationCache(cookies: true)
             BrowserStartupTrace.mark("website_cleanup_foundation_finished")
             let types = WKWebsiteDataStore.allWebsiteDataTypes().subtracting(sharedNetworkCacheTypes)
-            let listed = await records(ofTypes: types)
+            let listed: [WKWebsiteDataRecord]
+            do { listed = try await records(ofTypes: types) }
+            catch { return .init(retainedCategories: [.websiteStorage], failures: [error.localizedDescription]) }
             BrowserStartupTrace.mark("website_cleanup_records_fetched", detail: "\(listed.count)")
             let report = retainedExtensionReport(listed)
             let sites = listed.filter { UUID(uuidString: $0.displayName) == nil }
@@ -635,8 +683,8 @@ enum WebsiteStorageService {
         }
     }
 
-    @MainActor private static func clearOrdinaryRecords(_ records: [WKWebsiteDataRecord], types: Set<String>) async {
-        let store = WKWebsiteDataStore.default()
+    @MainActor private static func clearOrdinaryRecords(_ records: [WKWebsiteDataRecord], types: Set<String>,
+                                                       in store: WKWebsiteDataStore = .default()) async {
         // Group only the selected website records that have the same data types.
         // WebKit can then clear those sites in one pass without repeatedly
         // visiting the same web processes or opening another extension context.

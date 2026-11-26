@@ -171,6 +171,14 @@ import UniformTypeIdentifiers
             source: nativeSource, pageURL: requestContext?.referrer, systemAvailable: systemAvailable,
             systemAvailabilityPending: systemAvailabilityPending)
         preparation = Task { [weak self] in
+            // Use the verified local resources with a single decoder from the start.
+            if let prepared, url.isFileURL, url.pathExtension.lowercased() == "m3u8" {
+                let asset = try? await prepared.systemAsset()
+                guard let self, !Task.isCancelled else { return }
+                self.preparation = nil
+                self.installDecoder(ExtendedPlaybackDecoder(url: asset?.url ?? url, context: nil, hls: true))
+                return
+            }
             var options: [String: Any] = [:]
             if let requestContext {
                 options[AVURLAssetHTTPUserAgentKey] = requestContext.userAgent
@@ -765,7 +773,7 @@ struct MatroskaPlayerView: View {
     }
     private var videoContent: some View {
         VStack(spacing: 0) {
-            if expanded || options?.fullscreenOnly == true { Color.black }
+            if expanded || options?.fullscreenOnly == true { Color.clear }
             else {
                 MatroskaVideoContent(playback: playback, url: url, resourceLease: resourceLease, onTap: controls.toggle)
                     .modifier(VideoTransportOverlay(visibility: controls, playing: playback.playing, buffering: playback.buffering,
@@ -1036,6 +1044,11 @@ private struct MatroskaFullscreenPresenter: UIViewControllerRepresentable {
             handingOff = false
             sharedHost = SharedVideoFullscreenHost.present(owner: ownerID, in: window, content: AnyView(content(url: url)),
                 identifier: "media.mkv.fullscreen.player", landscape: landscape,
+                isFirstFrameReady: { [weak playback] in
+                    guard let playback else { return true }
+                    return (playback.player?.decodedFrameCount ?? 0) > 0
+                        || playback.error != nil || !playback.hasVideo
+                },
                 onClose: { [weak self] reason in self?.finish(reason: reason) })
             if sharedHost == nil {
                 if presentationRetry == nil {
@@ -1192,7 +1205,7 @@ struct FileMediaPlaybackView: View {
         result.shareURL = currentURL
         result.closePlayback = { reason in
             if reason == .closePlayback, native.url == currentURL { native.pause() }
-            dismiss()
+            closePlayer()
         }
         result.fullscreenOnly = true
         return result
@@ -1206,7 +1219,7 @@ struct FileMediaPlaybackView: View {
                 MediaPlaybackContent(videoOptions: options, showEpisodes: { episodesVisible = true }, airPlayRequested: $airPlayRequested,
                                      initialFullscreen: !isAudio, fullscreenOnly: !isAudio, initialSystemPlayer: true,
                                      initialTitle: (currentPath as NSString).lastPathComponent, audioOnly: isAudio,
-                                     onFullscreenClose: { dismiss() })
+                                     onFullscreenClose: closePlayer)
                     .task(id: resolvedURL) {
                         guard resolvedURL == currentURL else { return }
                         guard native.soulo != nil || native.url != currentURL || native.player.currentItem == nil else { return }
@@ -1269,6 +1282,12 @@ struct FileMediaPlaybackView: View {
             guard FileVideoEpisodes.isAudio(currentPath), let next, siblings.contains(next), next != currentURL else { return }
             handoff = (0, true); resolvedURL = nil; preparedSource = nil; selectedURL = next
         }
+    }
+
+    private func closePlayer() {
+        var transaction = Transaction()
+        transaction.disablesAnimations = isVideo
+        withTransaction(transaction) { dismiss() }
     }
 
     private func shouldReadVideoOrientation(for url: URL) -> Bool {

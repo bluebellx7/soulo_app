@@ -758,8 +758,10 @@ final class WebViewScriptsTests: XCTestCase {
         }
         let youTubeURL = ProcessInfo.processInfo.environment["SOULO_QA_YOUTUBE_URL"]
             ?? "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        let bilibiliURL = ProcessInfo.processInfo.environment["SOULO_QA_BILIBILI_URL"]
+            ?? "https://www.bilibili.com/video/BV1cf4y1h7Q6/"
         let sites: [(String, String)] = [
-            ("Bilibili", "https://www.bilibili.com/video/BV1cf4y1h7Q6/"),
+            ("Bilibili", bilibiliURL),
             ("YouTube", youTubeURL),
             ("Douyin", "https://www.douyin.com/video/7631522953741602074"),
             ("Youku", "https://v.youku.com/v_show/id_XNjU1ODU5NTQ5Ng%3D%3D.html"),
@@ -898,6 +900,17 @@ final class WebViewScriptsTests: XCTestCase {
                                 XCTAssertGreaterThan(bytes, 0)
                                 XCTAssertFalse(tracks.isEmpty)
                                 XCTAssertFalse(audioTracks.isEmpty)
+                                if name == "Bilibili" {
+                                    let duration = try await asset.load(.duration).seconds
+                                    XCTAssertTrue(duration.isFinite && duration > 0)
+                                    let generator = AVAssetImageGenerator(asset: asset)
+                                    for fraction in [0.05, 0.5, 0.95] {
+                                        let time = CMTime(seconds: duration * fraction, preferredTimescale: 600)
+                                        let (frame, _) = try await generator.image(at: time)
+                                        XCTAssertGreaterThan(frame.width, 0)
+                                    }
+                                    print("SITE_QA_DECODE \(name) duration=\(duration) sampledFrames=3")
+                                }
                                 completedDownload = true
                             } catch {
                                 print("SITE_QA_DOWNLOAD \(name) error=\(error.localizedDescription)")
@@ -930,6 +943,15 @@ final class WebViewScriptsTests: XCTestCase {
                         XCTAssertGreaterThan(bytes, 0)
                         XCTAssertFalse(videoTracks.isEmpty)
                         XCTAssertFalse(audioTracks.isEmpty)
+                        let duration = try await asset.load(.duration).seconds
+                        XCTAssertTrue(duration.isFinite && duration > 0)
+                        let generator = AVAssetImageGenerator(asset: asset)
+                        for fraction in [0.05, 0.5, 0.95] {
+                            let time = CMTime(seconds: duration * fraction, preferredTimescale: 600)
+                            let (frame, _) = try await generator.image(at: time)
+                            XCTAssertGreaterThan(frame.width, 0)
+                        }
+                        print("SITE_QA_DECODE \(name) duration=\(duration) sampledFrames=3")
                         completedDownload = true
                     } catch {
                         print("SITE_QA_DOWNLOAD \(name) error=\(error.localizedDescription)")
@@ -1809,6 +1831,22 @@ final class WebViewScriptsTests: XCTestCase {
     }
 
     @MainActor
+    func testResourceInspectorDoesNotOfferYouTubeDownloadForAnUnavailablePlayer() async throws {
+        let webView = WKWebView(frame: .zero)
+        let url = try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=unavailable"))
+        webView.loadHTMLString("""
+            <title>Unavailable video</title><video></video>
+            <script>window.ytInitialPlayerResponse = {playabilityStatus: {status: 'ERROR'}};</script>
+            """, baseURL: url)
+        for _ in 0..<100 {
+            if (try? await webView.evaluateJavaScript("window.ytInitialPlayerResponse?.playabilityStatus?.status==='ERROR'")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(30))
+        }
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+        XCTAssertTrue(snapshot.videos.isEmpty)
+    }
+
+    @MainActor
     func testResourceInspectorCreatesYouTubeSABRVideoFromObservedPlayback() async throws {
         let webView = WKWebView(frame: .zero)
         webView.loadHTMLString(
@@ -2212,6 +2250,91 @@ final class WebViewScriptsTests: XCTestCase {
         let surfaced = StreamingMediaDownloadService.surfacedStreamingError(source)
 
         XCTAssertEqual(surfaced.localizedDescription, "YouTube player response unavailable")
+    }
+
+    func testYouTubePlaybackRetryRecoversFromSABRConfigAndTransportFailures() {
+        func javaScriptError(_ message: String) -> NSError {
+            NSError(domain: "WKErrorDomain", code: 4, userInfo: ["WKJavaScriptExceptionMessage": message])
+        }
+
+        XCTAssertTrue(StreamingMediaDownloadService.canRetryUsingYouTubePlayback(
+            javaScriptError("Error: SABR Error: sabr.malformed_config - 2")
+        ))
+        XCTAssertTrue(StreamingMediaDownloadService.canRetryUsingYouTubePlayback(javaScriptError("TypeError: Load failed")))
+        XCTAssertTrue(StreamingMediaDownloadService.canRetryUsingYouTubePlayback(
+            javaScriptError("Error: No suitable formats found for download")
+        ))
+        XCTAssertTrue(StreamingMediaDownloadService.canRetryUsingYouTubePlayback(
+            javaScriptError("Error: Cannot proceed with stream: attestation required")
+        ))
+        XCTAssertFalse(StreamingMediaDownloadService.canRetryUsingYouTubePlayback(javaScriptError("YouTube player response unavailable")))
+        XCTAssertFalse(StreamingMediaDownloadService.canRetryUsingYouTubePlayback(CancellationError()))
+    }
+
+    func testYouTubePlaybackCompletionAllowsSampleAlignmentButRejectsMissingMedia() {
+        XCTAssertTrue(YouTubePlaybackDownload.hasCompleteCoverage(duration: 100, covered: 99.85))
+        XCTAssertTrue(YouTubePlaybackDownload.hasCompleteCoverage(duration: 19.064, covered: 18.933))
+        XCTAssertFalse(YouTubePlaybackDownload.hasCompleteCoverage(duration: 19.064, covered: 17.867))
+        XCTAssertFalse(YouTubePlaybackDownload.hasCompleteCoverage(duration: 100, covered: 99.60))
+        XCTAssertFalse(YouTubePlaybackDownload.hasCompleteCoverage(duration: 2, covered: 1.85))
+        XCTAssertFalse(YouTubePlaybackDownload.hasCompleteCoverage(duration: 100, covered: .infinity))
+    }
+
+    @MainActor
+    func testYouTubePlaybackCaptureResetsBeforeWritingAReplacementStartupSource() throws {
+        let context = try XCTUnwrap(JSContext())
+        context.evaluateScript(#"""
+            const window = globalThis;
+            const messages = [];
+            let unblockFirstWrite;
+            let coverage = 0;
+            const webkit = {messageHandlers: {souloYouTubePlaybackDownload: {postMessage(message) {
+                messages.push(message);
+                if (messages.length === 1) return new Promise(resolve => { unblockFirstWrite = resolve; });
+                return Promise.resolve(true);
+            }}}};
+            const btoa = value => value;
+            class FixtureBuffer {
+                appendBuffer() {}
+                addEventListener() {}
+                get buffered() { return {length:1, start() { return 0; }, end() { return coverage; }}; }
+            }
+            class ManagedMediaSource {
+                static isTypeSupported() { return true; }
+                addSourceBuffer() { return new FixtureBuffer(); }
+            }
+            class HTMLMediaElement {
+                canPlayType() { return 'probably'; }
+                play() { return Promise.resolve(); }
+            }
+            const video = {duration:100, currentTime:0.5, mediaKeys:null};
+            const document = {addEventListener() {}, querySelector(selector) {
+                return selector === '#movie_player video.html5-main-video' ? video : null;
+            }};
+            const URL = { createObjectURL() { return 'blob:fixture'; } };
+            window.ManagedMediaSource = ManagedMediaSource;
+            window.webkit = webkit;
+            function appendSource(value) {
+                const source = new ManagedMediaSource();
+                video.srcObject = source;
+                source.addSourceBuffer('video/mp4').appendBuffer(new Uint8Array([value]));
+                source.addSourceBuffer('audio/mp4').appendBuffer(new Uint8Array([value + 1]));
+            }
+            """#)
+        context.evaluateScript(YouTubePlaybackDownload.captureScript(duration: 100))
+        context.evaluateScript("appendSource(65); appendSource(67);")
+        XCTAssertNil(context.exception)
+        XCTAssertEqual(context.evaluateScript("messages.map(message => message.type).join(',')").toString(), "chunk")
+        context.evaluateScript("unblockFirstWrite(true);")
+        let sequence = "messages.map(m => m.type === 'chunk' ? `${m.track}:${m.index}:${m.base64}` : m.type).join(',')"
+        XCTAssertEqual(context.evaluateScript(sequence).toString(), "video:0:A,audio:0:B,restart,video:0:C,audio:0:D")
+        context.evaluateScript("video.currentTime = 2; coverage = 10; window.__souloPlaybackDownloadPump(false);")
+        XCTAssertEqual(context.evaluateScript("video.currentTime").toDouble(), 2)
+        context.evaluateScript("coverage = 18; window.__souloPlaybackDownloadPump(false);")
+        XCTAssertEqual(context.evaluateScript("video.currentTime").toDouble(), 15)
+        context.evaluateScript("appendSource(69);")
+        XCTAssertEqual(context.evaluateScript("messages.at(-1).reason").toString(), "source_changed")
+        XCTAssertEqual(context.evaluateScript("messages.filter(m => m.type === 'chunk').length").toInt32(), 4)
     }
 
     func testPageVideoFrameDataURLDecoding() throws {

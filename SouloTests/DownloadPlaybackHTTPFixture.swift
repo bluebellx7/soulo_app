@@ -9,6 +9,7 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
         let path: String
         let headers: [String: String]
         let body: Data
+        let receivedAt = ContinuousClock.now
     }
     private let listener: NWListener
     private let queue = DispatchQueue(label: "soulo.download-playback.fixture")
@@ -18,7 +19,9 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
     private let holdAfterRequestCount: [String: Int]
     private let holdRequest: @Sendable (ReceivedRequest) -> Bool
     private let initialServiceFailures: [String: Int]
+    private let initialRateLimits: [String: Int]
     private let responseHeaders: [String: [String: String]]
+    private let rangeResponseHeaders: @Sendable (Int) -> [String: String]
     private let redirects: [String: (host: String, path: String)]
     private let slowChunkSize: Int
     private let maximumRangeLength: Int?
@@ -28,23 +31,30 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
     private var fullFileBytes = 0
     private var ranges = 0
     private var requests: [ReceivedRequest] = []
+    private var completedResponses: [String] = []
 
     var downloadedBytes: Int { queue.sync { fullFileBytes } }
     var rangeRequests: Int { queue.sync { ranges } }
     var receivedRequests: [ReceivedRequest] { queue.sync { requests } }
+    var completedResponsePaths: [String] { queue.sync { completedResponses } }
 
     init(files: [String: Data], heldPaths: Set<String> = [], requiredCookie: String? = nil,
          responseHeaders: [String: [String: String]] = [:],
          redirects: [String: (host: String, path: String)] = [:],
          slowChunkSize: Int = 1024, holdAfterRequestCount: [String: Int] = [:], initialServiceFailures: [String: Int] = [:],
-         maximumRangeLength: Int? = nil, holdRequest: @escaping @Sendable (ReceivedRequest) -> Bool = { _ in false }) throws {
+         initialRateLimits: [String: Int] = [:],
+         maximumRangeLength: Int? = nil,
+         rangeResponseHeaders: @escaping @Sendable (Int) -> [String: String] = { _ in [:] },
+         holdRequest: @escaping @Sendable (ReceivedRequest) -> Bool = { _ in false }) throws {
         precondition(slowChunkSize > 0)
         precondition(maximumRangeLength.map { $0 > 0 } ?? true)
         self.files = files; self.heldPaths = heldPaths; self.requiredCookie = requiredCookie
         self.holdAfterRequestCount = holdAfterRequestCount
         self.holdRequest = holdRequest
         self.initialServiceFailures = initialServiceFailures
+        self.initialRateLimits = initialRateLimits
         self.responseHeaders = responseHeaders
+        self.rangeResponseHeaders = rangeResponseHeaders
         self.redirects = redirects
         self.slowChunkSize = slowChunkSize
         self.maximumRangeLength = maximumRangeLength
@@ -109,6 +119,9 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
             if let cookie = self.requiredCookie, headers["cookie"]?.contains(cookie) != true {
                 self.sendError(connection, code: 403); return
             }
+            if let delay = self.initialRateLimits[path], self.requests.lazy.filter({ $0.path == path }).count == 1 {
+                self.sendError(connection, code: 429, retryAfter: delay); return
+            }
             if let count = self.initialServiceFailures[path], self.requests.lazy.filter({ $0.path == path }).count <= count {
                 self.sendError(connection, code: 503); return
             }
@@ -119,8 +132,9 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
         }
     }
 
-    private func sendError(_ connection: NWConnection, code: Int) {
-        connection.send(content: Data("HTTP/1.1 \(code) Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8),
+    private func sendError(_ connection: NWConnection, code: Int, retryAfter: Int? = nil) {
+        let retry = retryAfter.map { "Retry-After: \($0)\r\n" } ?? ""
+        connection.send(content: Data("HTTP/1.1 \(code) Error\r\n\(retry)Content-Length: 0\r\nConnection: close\r\n\r\n".utf8),
             contentContext: .finalMessage, completion: .contentProcessed { error in if error != nil { connection.cancel() } })
     }
 
@@ -154,12 +168,14 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
         let body = file.subdata(in: start..<(end + 1))
         let ext = (path as NSString).pathExtension
         let defaultMIME = ext == "mp4" ? "video/mp4" : ext == "ts" ? "video/mp2t" : ext == "m3u8" ? "application/vnd.apple.mpegurl" : "text/html; charset=utf-8"
-        let mime = responseHeaders[path]?.first { $0.key.lowercased() == "content-type" }?.value ?? defaultMIME
-        let declaredRange = responseHeaders[path]?.first { $0.key.lowercased() == "content-range" }?.value
+        var headers = responseHeaders[path] ?? [:]
+        if range != nil { headers.merge(rangeResponseHeaders(start)) { _, new in new } }
+        let mime = headers.first { $0.key.lowercased() == "content-type" }?.value ?? defaultMIME
+        let declaredRange = headers.first { $0.key.lowercased() == "content-range" }?.value
         let partial = range != nil || declaredRange != nil
         var header = "HTTP/1.1 \(partial ? "206 Partial Content" : "200 OK")\r\nContent-Type: \(mime)\r\nContent-Length: \(body.count)\r\nAccept-Ranges: bytes\r\nCache-Control: no-store\r\nConnection: close\r\n"
         if partial { header += "Content-Range: \(declaredRange ?? "bytes \(start)-\(end)/\(file.count)")\r\n" }
-        for (name, value) in responseHeaders[path] ?? [:] where !["content-type", "content-range"].contains(name.lowercased()) {
+        for (name, value) in headers where !["content-type", "content-range"].contains(name.lowercased()) {
             header += "\(name): \(value)\r\n"
         }
         header += "\r\n"
@@ -167,11 +183,11 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
             completion: .contentProcessed { [weak self] error in
             guard let self, error == nil else { connection.cancel(); return }
             guard !isHead else { return }
-            self.sendBody(connection, body: body, offset: 0, slow: ext == "mp4" && range == nil)
+            self.sendBody(connection, path: path, body: body, offset: 0, slow: ext == "mp4" && range == nil)
         })
     }
 
-    private func sendBody(_ connection: NWConnection, body: Data, offset: Int, slow: Bool) {
+    private func sendBody(_ connection: NWConnection, path: String, body: Data, offset: Int, slow: Bool) {
         guard !connections.isEmpty else { connection.cancel(); return }
         let count = slow && !released ? (offset == 0 ? 8192 : slowChunkSize) : body.count - offset
         let end = min(offset + count, body.count)
@@ -180,9 +196,9 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
         connection.send(content: body.subdata(in: offset..<end), contentContext: final ? .finalMessage : .defaultMessage,
             completion: .contentProcessed { [weak self] error in
             guard let self, error == nil else { connection.cancel(); return }
-            guard !final else { return }
+            if final { self.completedResponses.append(path); return }
             self.queue.asyncAfter(deadline: .now() + (slow && !self.released ? 1 : 0)) { [weak self] in
-                self?.sendBody(connection, body: body, offset: end, slow: slow)
+                self?.sendBody(connection, path: path, body: body, offset: end, slow: slow)
             }
         })
     }

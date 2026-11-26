@@ -400,6 +400,8 @@ struct SitePrivacyPanelView: View {
 
     @State private var siteDataCleared = false
     @State private var confirmSiteDataRemoval = false
+    @State private var clearingSiteData = false
+    @State private var siteDataCleanupError: String?
     @State private var requestsExpanded = false
 
     private var host: String {
@@ -551,13 +553,20 @@ struct SitePrivacyPanelView: View {
                         systemImage: siteDataCleared ? "checkmark.circle.fill" : "trash"
                     )
                 }
-                .disabled(host.isEmpty || websiteDataStore == nil)
+                .disabled(host.isEmpty || websiteDataStore == nil || clearingSiteData)
             }
         }
         .confirmationDialog(LanguageManager.shared.localizedString("site_clear_data"), isPresented: $confirmSiteDataRemoval, titleVisibility: .visible) {
             Button(LanguageManager.shared.localizedString("site_clear_data"), role: .destructive) { clearCurrentSiteData() }
         } message: {
             Text(FeatureText.text("Clearing this site's data may sign you out. Sites sharing the same domain can be affected."))
+        }
+        .alert(ToolText.text("error"), isPresented: Binding(
+            get: { siteDataCleanupError != nil }, set: { if !$0 { siteDataCleanupError = nil } }
+        )) {
+            Button(ToolText.text("done")) { siteDataCleanupError = nil }
+        } message: {
+            Text(siteDataCleanupError ?? "")
         }
         .navigationTitle(LanguageManager.shared.localizedString("site_privacy_details"))
         .navigationBarTitleDisplayMode(.inline)
@@ -584,18 +593,17 @@ struct SitePrivacyPanelView: View {
     }
 
     private func clearCurrentSiteData() {
-        guard !host.isEmpty else { return }
-        guard let dataStore = websiteDataStore else { return }
-        dataStore.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
-            let matching = records.filter { record in
-                let recordHost = PrivacyProtectionService.normalizedHost(record.displayName)
-                return recordHost == host || recordHost.hasSuffix(".\(host)") || host.hasSuffix(".\(recordHost)")
-            }
-            dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: matching) {
-                DispatchQueue.main.async {
-                    siteDataCleared = true
-                    onChanged?()
-                }
+        guard !host.isEmpty, let dataStore = websiteDataStore, !clearingSiteData else { return }
+        clearingSiteData = true
+        siteDataCleared = false
+        Task { @MainActor in
+            defer { clearingSiteData = false }
+            do {
+                try await WebsiteStorageService.clearCurrentSite(host: host, in: dataStore)
+                siteDataCleared = true
+                onChanged?()
+            } catch {
+                siteDataCleanupError = error.localizedDescription
             }
         }
     }
