@@ -11,9 +11,9 @@
     "module": "newTab",
     "file": "new-tab/daylight-clock.html",
     "name": "晨昏时钟",
-    "summary": "附带日落芦苇壁纸的白框时钟，搜索和待办入口放在表盘下方。",
+    "summary": "在当前壁纸上显示白框时钟，搜索和待办入口位于表盘下方。",
     "workId": "7420b0ba-4c7e-46d1-99f4-fb22b776c990",
-    "version": 3
+    "version": 4
   },
   {
     "module": "newTab",
@@ -67,9 +67,9 @@
     "module": "home",
     "file": "home/panorama.html",
     "name": "壁纸首页",
-    "summary": "附带九寨沟湖景壁纸，支持切回当前壁纸，搜索与常用工具随手可用。",
+    "summary": "让当前壁纸留在首屏，搜索和常用工具收在底部。",
     "workId": "20ab37ae-70ef-4bee-a670-49a833f87904",
-    "version": 2
+    "version": 3
   },
   {
     "module": "home",

@@ -3,16 +3,6 @@
   const PRODUCTION_API = 'https://api2.dkluge.com/api/soulo/custom-market/v1';
   const APP_STORE = 'https://apps.apple.com/app/id6761165330';
   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  const WALLPAPERS = {
-    lake: ['mist-lake', 'Laughing Zhu', 'https://unsplash.com/photos/jJPzwgjY2hY'],
-    reeds: ['golden-reeds', 'Alexandr Popadin', 'https://unsplash.com/photos/2Et2QxdvuJ0']
-  };
-  const WORK_WALLPAPERS = {
-    '20ab37ae-70ef-4bee-a670-49a833f87904': WALLPAPERS.lake,
-    '7420b0ba-4c7e-46d1-99f4-fb22b776c990': WALLPAPERS.reeds,
-    'd613370e-83b7-42a9-b678-a48904de9e21': WALLPAPERS.lake,
-    '8876f0f2-139f-40da-9963-0014b27d4beb': WALLPAPERS.lake
-  };
   const BLOCKED_KEY = 'soulo-market-blocked-authors';
 
   const list = document.getElementById('market-list');
@@ -68,7 +58,6 @@
     scanShort: ['扫码', 'Scan'],
     scanHint: ['用 iPhone 相机扫码，在 Soulo 中预览并安装。', 'Scan with your iPhone camera to preview and install in Soulo.'],
     scanCode: ['作品安装二维码', 'Work installation QR code'],
-    wallpaper: ['下载壁纸', 'Download wallpaper'],
     sourceLink: ['查看安装来源', 'View original source'],
     storePermissions: ['安装时，Soulo 会显示扩展实际申请的权限。', 'Soulo shows the permissions requested by the downloaded extension before installation.'],
     ratingEveryone: ['全年龄', 'Everyone'],
@@ -502,23 +491,6 @@
       actions.append(link);
     }
     nodes.push(actions);
-
-    const wallpaper = WORK_WALLPAPERS[work.id];
-    if (wallpaper) {
-      const [file, author, source] = wallpaper;
-      const download = el('a', 'catalog-button', say('wallpaper'));
-      download.href = `/images/market/${file}.jpg`;
-      download.download = `soulo-${file}.jpg`;
-      const note = el('p', 'market-inline-note');
-      const credit = el('a', '', author);
-      credit.href = source;
-      credit.target = '_blank';
-      credit.rel = 'noopener noreferrer';
-      note.append(credit, ' / Unsplash');
-      const row = el('div', 'market-wallpaper');
-      row.append(download, note);
-      nodes.push(row);
-    }
 
     // Governance: report + block author
     const gov = el('div', 'market-report-box');

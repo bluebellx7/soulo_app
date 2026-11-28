@@ -67,8 +67,6 @@ html[data-resolved-theme="dark"] .custom-market-page .market-cat[aria-selected="
 .market-qr-dialog .market-dialog-card { text-align:center; }
 .market-qr-code { display:block; width:min(220px,100%); height:auto; margin:0 auto; border-radius:10px; image-rendering:pixelated; }
 .market-qr-link { color:var(--catalog-accent); text-underline-offset:3px; overflow-wrap:anywhere; }
-.market-wallpaper { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; }
-.market-wallpaper .market-inline-note a { color:inherit; }
 .market-dialog-card { padding:20px; display:grid; gap:14px; }
 .market-dialog-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
 .market-dialog-head h2 { margin:0; font-size:21px; line-height:1.3; overflow-wrap:anywhere; }

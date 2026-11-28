@@ -19,7 +19,6 @@ for file in index.html home.css home.js site.css site-ui.js navigation.css sourc
     extensions.html extensions.css extensions.js extensions.json downloads/soulo-search-platform.zip \
     custom-market.html custom-market.css custom-market.js market-admin.html market-admin.css market-admin.js \
     .well-known/apple-app-site-association market-qrcode.js market-qrcode.LICENSE.txt \
-    images/market/mist-lake.jpg images/market/golden-reeds.jpg \
     images/soulo-home-zh.webp images/soulo-home-en.webp \
     images/soulo-home-light-zh.webp images/soulo-home-light-en.webp images/app-store-qr.svg \
     images/web/app-icon-108.webp images/web/search-home.webp \
@@ -124,8 +123,6 @@ custom-market.html text/html
 custom-market.css text/css
 custom-market.js text/javascript|application/javascript
 market-qrcode.js text/javascript|application/javascript
-images/market/mist-lake.jpg image/jpeg
-images/market/golden-reeds.jpg image/jpeg
 market-admin.html text/html
 market-admin.js text/javascript|application/javascript
 downloads/soulo-search-platform.zip application/zip|application/octet-stream
