@@ -6,6 +6,7 @@
   const BLOCKED_KEY = 'soulo-market-blocked-authors';
 
   const list = document.getElementById('market-list');
+  const platformDirectory = document.getElementById('market-platform-directory');
   const status = document.getElementById('market-status');
   const more = document.getElementById('market-more');
   const search = document.getElementById('market-search');
@@ -23,9 +24,8 @@
   const override = local ? queryParams.get('api') : null;
   const API = override && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/api\/soulo\/custom-market\/v1$/.test(override) ? override : PRODUCTION_API;
 
-  const MODULE_ORDER = ['all', 'home', 'newTab', 'widget', 'platform', 'script', 'webExtension'];
+  const MODULE_ORDER = ['home', 'newTab', 'widget', 'platform', 'script', 'webExtension'];
   const MODULE_NAMES = {
-    all: ['全部', 'All'],
     home: ['首页', 'Home'],
     newTab: ['新标签页', 'New Tab'],
     widget: ['小组件', 'Widget'],
@@ -59,6 +59,18 @@
     scanHint: ['用 iPhone 相机扫码，在 Soulo 中预览并安装。', 'Scan with your iPhone camera to preview and install in Soulo.'],
     scanCode: ['作品安装二维码', 'Work installation QR code'],
     sourceLink: ['查看安装来源', 'View original source'],
+    directory: ['搜索源目录', 'Search Directory'],
+    directoryCount: ['{n} 个搜索平台', '{n} search platforms'],
+    categoryUse: ['搜索用途', 'Search use'],
+    anyUse: ['不限', 'Any'],
+    trialSearch: ['试搜', 'Try'],
+    copyConfig: ['复制配置', 'Copy setup'],
+    copyResults: ['复制当前结果', 'Copy results'],
+    copied: ['配置已复制', 'Setup copied'],
+    store: ['官方商店', 'Official store'],
+    archive: ['原始下载', 'Original download'],
+    marketPlatforms: ['市场投稿', 'Market submissions'],
+    testedOn: ['验证版本', 'Tested on'],
     storePermissions: ['安装时，Soulo 会显示扩展实际申请的权限。', 'Soulo shows the permissions requested by the downloaded extension before installation.'],
     ratingEveryone: ['全年龄', 'Everyone'],
     ratingTeen: ['12+ 进阶', '12+ Teen'],
@@ -105,7 +117,7 @@
   }
 
   const state = {
-    module: 'all',
+    module: 'home',
     sort: 'newest',
     visibleModules: ['home', 'newTab', 'widget', 'platform', 'script', 'webExtension'],
     items: [],
@@ -210,8 +222,8 @@
   }
 
   function renderCategories() {
-    const tabs = ['all', ...state.visibleModules];
-    if (!tabs.includes(state.module)) state.module = 'all';
+    const tabs = state.visibleModules;
+    if (!tabs.includes(state.module)) state.module = tabs[0] || 'home';
     categoriesEl.replaceChildren(...tabs.map(mod => {
       const btn = el('button', 'market-cat', modName(mod));
       btn.type = 'button';
@@ -221,7 +233,10 @@
       btn.addEventListener('click', () => {
         if (state.module === mod) return;
         state.module = mod;
-        renderCategories();
+        const url = new URL(location.href);
+        url.searchParams.set('module', mod);
+        url.hash = '';
+        history.replaceState(null, '', url);
         load(false);
       });
       return btn;
@@ -254,38 +269,109 @@
     return wrap;
   }
 
+  let officialExtensions;
+  const sourceCategoriesEN = {
+    ai: 'AI Search', general: 'General Search', academic: 'Academic',
+    social: 'Social & Content', developer: 'Developer', shopping: 'Shopping',
+    comic: 'Comics & Art', video: 'Video & Streaming', book: 'Books & Reading'
+  };
+  const requestedCategory = /^#category-([a-z]+)$/.exec(location.hash)?.[1];
+  let sourceCategory = requestedCategory || '';
+  let sourceCatalog;
+  let sourceRequest;
+
+  function openWorkButton(item, className, text) {
+    const button = el('button', className, text);
+    button.type = 'button';
+    button.dataset.openWork = item.id;
+    button.addEventListener('click', () => openDetail(item.id));
+    return button;
+  }
+
+  function workImage(item) {
+    const url = resolvePreviewURL(item.previewImageUrl);
+    if (!url) return null;
+    const image = el('img', 'market-preview-img');
+    image.src = url;
+    image.alt = '';
+    image.loading = 'lazy';
+    image.decoding = 'async';
+    return image;
+  }
+
+  function storeName(url) {
+    if (!url) return '';
+    const host = new URL(url).hostname;
+    return {
+      'chromewebstore.google.com': 'Chrome', 'chrome.google.com': 'Chrome',
+      'microsoftedge.microsoft.com': 'Edge', 'addons.mozilla.org': 'Firefox',
+      'www.addons.mozilla.org': 'Firefox', 'soulo.dkluge.com': 'Soulo'
+    }[host] || host;
+  }
+
+  function originalLink(url) {
+    const link = el('a', 'catalog-button', say(storeName(url) === 'Soulo' ? 'archive' : 'store'));
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    return link;
+  }
+
   function card(item) {
     const article = el('article', 'extension-card market-card');
     article.dataset.work = item.id;
     article.dataset.module = item.module;
-    if (item.sourceURL) article.dataset.reference = 'true';
+    const landing = ['home', 'newTab'].includes(item.module);
+    const extension = item.module === 'webExtension';
+    const source = httpsSource(item.sourceURL);
+    const cover = workImage(item);
+    const official = source && officialExtensions?.byURL.get(source);
 
-    const previewUrl = resolvePreviewURL(item.previewImageUrl);
-    if (previewUrl) {
-      const frame = el('button', 'market-preview-wrap');
-      frame.type = 'button';
-      frame.setAttribute('aria-label', `${say('detail')} · ${item.name}`);
-      frame.addEventListener('click', () => openDetail(item.id));
-      const img = el('img', 'market-preview-img');
-      img.src = previewUrl;
-      img.alt = '';
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      frame.append(img);
-      article.append(frame);
+    const body = el('div', 'market-card-body');
+    const identity = el('div', 'extension-identity');
+    if (extension) {
+      const avatar = el('span', 'market-extension-icon');
+      avatar.append(el('span', 'market-mark', MODULE_MARKS.webExtension));
+      if (cover) {
+        cover.addEventListener('load', () => { avatar.dataset.loaded = 'true'; });
+        avatar.append(cover);
+        if (cover.complete && cover.naturalWidth) avatar.dataset.loaded = 'true';
+      }
+      identity.append(avatar);
+    }
+    const heading = el('div', 'market-identity-text');
+    const title = el('h2');
+    title.append(openWorkButton(item, 'market-title-button', item.name));
+    const titleLine = el('div', 'extension-heading');
+    titleLine.append(title);
+    if (source) titleLine.append(el('span', 'extension-source', storeName(source)));
+    heading.append(titleLine);
+    const subtitle = official && (zh() ? official.subtitle : official.subtitle_en);
+    if (subtitle) heading.append(el('p', 'extension-subtitle', subtitle));
+    else heading.append(el('p', 'extension-subtitle', `${item.authorName} · v${item.version}`));
+    if (item.contentRating === 'teen') heading.append(el('span', 'market-pill teen', say('ratingTeen')));
+    identity.append(heading);
+    body.append(identity);
+    const summary = official ? (zh() ? official.description : official.description_en) || item.summary : item.summary;
+    if (summary) body.append(el('p', 'extension-description', summary));
+    if (official) {
+      const features = (zh() ? official.tested : official.tested_en) || [];
+      if (features.length) {
+        const checklist = el('ul', 'extension-tested');
+        for (const feature of features) checklist.append(el('li', '', feature));
+        body.append(checklist);
+      }
+      body.append(el('p', 'extension-version', `${say('testedOn')} · ${official.version} / Soulo ${official.souloVersion || officialExtensions.minVersion}`));
     }
 
-    const identity = el('div', 'extension-identity');
-    identity.append(el('span', 'market-mark', MODULE_MARKS[item.module] || ([...String(item.name)][0] || '·')));
-    const heading = el('div', 'extension-heading');
-    heading.append(el('h2', '', item.name));
-    if (item.host) heading.append(el('span', 'extension-source', item.host));
-    const body = el('div');
-    body.append(heading, el('p', 'extension-subtitle', `${say('by')}${item.authorName} · v${item.version}`), badgesFor(item));
-    identity.append(body);
-    article.append(identity);
-
-    if (item.summary) article.append(el('p', 'extension-description', item.summary));
+    if (!extension && cover) {
+      const frame = openWorkButton(item, 'market-preview-wrap', '');
+      frame.setAttribute('aria-label', `${say('detail')} · ${item.name}`);
+      frame.append(cover);
+      article.append(frame);
+      if (landing) article.classList.add('market-card-portrait');
+    }
+    article.append(body);
 
     const actions = el('div', 'extension-actions');
     const link = installLink(item);
@@ -295,15 +381,119 @@
       install.dataset.installWork = item.id;
       actions.append(install);
     }
-    const detailBtn = el('button', 'catalog-button', say('detail'));
-    detailBtn.type = 'button';
-    detailBtn.dataset.openWork = item.id;
-    detailBtn.addEventListener('click', () => openDetail(item.id));
-    actions.append(detailBtn);
-
+    actions.append(source ? originalLink(source) : openWorkButton(item, 'catalog-button', say('detail')));
     if (link) actions.append(scanButton(item));
     article.append(actions);
     return article;
+  }
+
+  async function loadOfficialExtensions() {
+    if (officialExtensions) return officialExtensions;
+    const res = await fetch('extensions.json', {credentials:'omit'});
+    if (!res.ok) return new Map();
+    const catalog = await res.json();
+    const index = new Map(catalog.extensions.map(item => [new URL(item.url, 'https://soulo.dkluge.com/').href, item]));
+    return officialExtensions = {byURL:index, minVersion:catalog.souloVersion};
+  }
+
+  function safeSearchSource(item) {
+    const url = typeof item?.url === 'string' ? item.url : '';
+    return typeof item?.name === 'string' && url.split('%@').length === 2 && httpsSource(url.replace('%@', 'Soulo'));
+  }
+
+  async function loadSourceCatalog() {
+    const response = await fetch('sources.json', {credentials:'omit'});
+    if (!response.ok) throw new Error('Directory unavailable');
+    const data = await response.json();
+    if (!Array.isArray(data.sources) || !Array.isArray(data.categories)) throw new Error('Malformed directory');
+    sourceCatalog = {categories:data.categories, sources:data.sources.filter(safeSearchSource)};
+  }
+
+  async function copySourceConfig(items) {
+    const value = JSON.stringify(items.map(({name,url}) => ({name,url})), null, 2);
+    try {
+      await navigator.clipboard.writeText(value);
+      document.getElementById('market-source-notice').textContent = say('copied');
+    } catch {
+      const output = document.getElementById('market-source-json');
+      output.value = value;
+      output.hidden = false;
+      output.select();
+    }
+  }
+
+  function renderSourceDirectory() {
+    platformDirectory.hidden = state.module !== 'platform';
+    if (platformDirectory.hidden) return;
+    if (!sourceCatalog) {
+      if (!sourceRequest) sourceRequest = loadSourceCatalog().then(renderSourceDirectory).catch(() => {
+        sourceRequest = null;
+        const retry = el('button', 'catalog-button', say('retry'));
+        retry.type = 'button';
+        retry.addEventListener('click', renderSourceDirectory);
+        platformDirectory.replaceChildren(el('p', 'market-inline-note', say('error')), retry);
+      });
+      platformDirectory.replaceChildren(el('p', 'market-inline-note', say('loading')));
+      return;
+    }
+
+    const heading = el('div', 'market-directory-top');
+    const title = el('div');
+    const h2 = el('h2', '', say('directory'));
+    h2.id = 'market-platform-title';
+    title.append(h2);
+    const controls = el('div', 'market-directory-actions');
+    const select = el('select');
+    select.setAttribute('aria-label', say('categoryUse'));
+    select.append(Object.assign(el('option', '', say('anyUse')), {value:''}));
+    for (const category of sourceCatalog.categories) {
+      select.append(Object.assign(el('option', '', zh() ? category.name : sourceCategoriesEN[category.id] || category.name), {value:category.id}));
+    }
+    select.value = sourceCategory;
+    select.addEventListener('change', () => {
+      sourceCategory = select.value;
+      renderSourceDirectory();
+      platformDirectory.querySelector('select').focus({preventScroll:true});
+    });
+    const copy = el('button', 'catalog-button', say('copyResults'));
+    copy.type = 'button';
+    controls.append(select, copy);
+    heading.append(title, controls);
+
+    const terms = state.query.toLowerCase().split(/\s+/).filter(Boolean);
+    const results = sourceCatalog.sources.filter(item => {
+      const category = sourceCatalog.categories.find(c => c.id === item.category);
+      return (!sourceCategory || item.category === sourceCategory)
+        && terms.every(term => `${item.name} ${item.url} ${category?.name || ''} ${sourceCategoriesEN[item.category] || ''}`.toLowerCase().includes(term));
+    });
+    if (state.sort === 'name') results.sort((a,b) => a.name.localeCompare(b.name, zh() ? 'zh-CN' : 'en'));
+    title.append(el('p', 'market-inline-note', say('directoryCount').replace('{n}', String(results.length))));
+    copy.disabled = !results.length;
+    copy.addEventListener('click', () => copySourceConfig(results));
+    const grid = el('div', 'market-sources-grid');
+    for (const source of results) {
+      const trialURL = new URL(source.url.replace('%@', 'Soulo'));
+      const row = el('article', 'market-source-card');
+      const name = el('div', 'market-source-name');
+      name.append(el('h3', '', source.name), el('span', '', trialURL.hostname.replace(/^www\./, '')));
+      const actions = el('div', 'market-source-actions');
+      const trial = el('a', 'catalog-button', say('trialSearch'));
+      trial.href = trialURL.href; trial.target = '_blank'; trial.rel = 'noopener noreferrer';
+      const copyOne = el('button', 'catalog-button', say('copyConfig'));
+      copyOne.type = 'button';
+      copyOne.addEventListener('click', () => copySourceConfig([source]));
+      actions.append(trial,copyOne);
+      row.append(name,actions);
+      grid.append(row);
+    }
+    const notice = el('p', 'market-directory-notice');
+    notice.id = 'market-source-notice';
+    notice.setAttribute('role','status');
+    const output = el('textarea');
+    output.id = 'market-source-json';
+    output.setAttribute('aria-label', say('copyConfig'));
+    output.readOnly = true; output.hidden = true;
+    platformDirectory.replaceChildren(heading, results.length ? grid : el('p', 'market-inline-note', say('noMatch')), notice, output);
   }
 
   function visibleItems() {
@@ -315,6 +505,8 @@
   function render() {
     renderCategories();
     renderBlockedBar();
+    renderSourceDirectory();
+    list.dataset.category = state.module;
     const shown = visibleItems();
     list.replaceChildren(...shown.map(card));
     list.setAttribute('aria-busy', String(state.phase === 'loading'));
@@ -329,7 +521,9 @@
       retry.type = 'button';
       retry.addEventListener('click', () => load(state.items.length > 0));
       status.append(retry);
-    } else if (!shown.length) status.textContent = say(state.query ? 'noMatch' : 'empty');
+    } else if (state.module === 'platform' && shown.length) {
+      status.append(el('h2', 'market-submissions-heading', say('marketPlatforms')));
+    } else if (!shown.length && state.module !== 'platform') status.textContent = say(state.query ? 'noMatch' : 'empty');
   }
 
   async function load(append) {
@@ -346,10 +540,11 @@
       const response = await fetch(`${API}/works?${params}`, { credentials: 'omit', referrerPolicy: 'no-referrer', signal: controller.signal });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
+      if (state.module === 'webExtension') await loadOfficialExtensions().catch(() => {});
       if (request !== state.request) return;
       if (!Array.isArray(data.items)) throw new Error('Malformed response');
       if (Array.isArray(data.visibleModules)) {
-        state.visibleModules = MODULE_ORDER.filter(m => m !== 'all' && data.visibleModules.includes(m));
+        state.visibleModules = MODULE_ORDER.filter(m => data.visibleModules.includes(m));
       }
       state.items = append ? state.items.concat(data.items) : data.items;
       state.cursor = typeof data.nextCursor === 'string' ? data.nextCursor : null;
@@ -377,7 +572,7 @@
     setWorkParam(null);
   }
 
-  async function openDetail(workId) {
+  async function openDetail(workId, selectCategory = false) {
     if (!dialog || !dialogBody || !UUID.test(workId)) return;
     const id = workId.toLowerCase();
     setWorkParam(id);
@@ -393,6 +588,10 @@
       if (res.status === 404) { renderDetailError(say('unavailable')); return; }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const work = await res.json();
+      if (selectCategory && state.visibleModules.includes(work.module) && state.module !== work.module) {
+        state.module = work.module;
+        load(false);
+      }
       state.activeDetail = work;
       renderDetail(work);
     } catch {
@@ -616,8 +815,9 @@
   const initialWork = queryParams.get('work') || (pathMatch ? pathMatch[1] : null);
   const initialModule = queryParams.get('module');
   if (initialModule && MODULE_ORDER.includes(initialModule)) state.module = initialModule;
+  else if (requestedCategory) state.module = 'platform';
 
   applyLanguage();
   load(false);
-  if (initialWork && UUID.test(initialWork)) openDetail(initialWork);
+  if (initialWork && UUID.test(initialWork)) openDetail(initialWork, !initialModule);
 })();

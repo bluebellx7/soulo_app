@@ -36,7 +36,29 @@
 
   let token = '';
   let tab = 'pending', mod = 'all', q = '', cursor = null, items = [], selected = null, busy = false;
+  const storedView = new URLSearchParams(location.search);
+  if (['pending','approved','rejected','unpublished','revoked','reports'].includes(storedView.get('status'))) tab = storedView.get('status');
+  if (Object.hasOwn(modLabels, storedView.get('module'))) mod = storedView.get('module');
+  moduleFilter.value = mod;
+  const tabs = [...document.querySelectorAll('.admin-tabs [role="tab"]')];
+  const queueCount = $('admin-queue-count');
+  let queueRequest = 0;
+  let detailRequest = 0;
   let activeBlobUrls = [];
+
+  function setTab() {
+    for (const button of tabs) {
+      const active = button.dataset.status === tab;
+      button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
+    }
+    const page = new URL(location.href);
+    page.searchParams.set('status', tab);
+    if (mod === 'all') page.searchParams.delete('module');
+    else page.searchParams.set('module', mod);
+    history.replaceState(null, '', page);
+  }
+  setTab();
 
   function clearBlobs() {
     activeBlobUrls.forEach(u => URL.revokeObjectURL(u));
@@ -50,6 +72,7 @@
     if (text !== undefined) node.textContent = text;
     return node;
   }
+  const shortDate = value => value ? new Intl.DateTimeFormat('zh-CN', {month:'numeric', day:'numeric'}).format(new Date(value)) : '';
   const when = value => value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '';
 
   function storeSession(session) {
@@ -69,6 +92,7 @@
 
   function showLogin(message, keepSavedSession = false) {
     clearBlobs();
+    ++queueRequest; ++detailRequest;
     token = ''; items = []; selected = null;
     if (!keepSavedSession) storeSession(null);
     queue.replaceChildren(); detail.replaceChildren();
@@ -163,55 +187,68 @@
   }
 
   async function loadQueue(reset, doneMessage) {
+    const request = ++queueRequest;
     if (reset) {
+      ++detailRequest;
       clearBlobs();
       items = []; cursor = null; selected = null;
       queue.replaceChildren();
-      detail.replaceChildren(el('p', '', '请选择左侧的条目。'));
+      queueCount.textContent = '';
+      detail.replaceChildren(el('p', 'admin-empty', '从队列选择要查看的作品'));
     }
     if (filtersEl) filtersEl.hidden = tab === 'reports';
     if (!doneMessage) say('正在加载…');
+    more.disabled = true;
+    queue.setAttribute('aria-busy', 'true');
     try {
-      if (tab === 'reports') {
-        const params = new URLSearchParams({ status: 'open', limit: '30' });
-        if (!reset && cursor) params.set('cursor', cursor);
-        const data = await api(`/admin/reports?${params}`);
-        items = items.concat(data.items);
-        cursor = data.nextCursor;
-      } else {
-        const params = new URLSearchParams({ status: tab, module: mod, limit: '30' });
-        if (q) params.set('q', q);
-        if (!reset && cursor) params.set('cursor', cursor);
-        const data = await api(`/admin/reviews?${params}`);
-        items = items.concat(data.items);
-        cursor = data.nextCursor;
-      }
+      const reports = tab === 'reports';
+      const params = new URLSearchParams(reports ? {status:'open', limit:'30'} : {status:tab, module:mod, limit:'30'});
+      if (!reports && q) params.set('q', q);
+      if (!reset && cursor) params.set('cursor', cursor);
+      const data = await api(`/admin/${reports ? 'reports' : 'reviews'}?${params}`);
+      if (request !== queueRequest) return;
+      items = items.concat(data.items);
+      cursor = data.nextCursor;
       renderQueue();
-      say(doneMessage || (items.length ? '' : '这里还没有内容。'));
+      say(doneMessage || '');
     } catch (error) {
-      if (error.message !== 'unauthenticated') say(`加载失败：${error.message}`, true);
+      if (request !== queueRequest || error.message === 'unauthenticated') return;
+      say(`加载失败。${error.message}`, true);
+      const retry = el('button', 'admin-button admin-retry', '重试');
+      retry.type = 'button';
+      retry.addEventListener('click', () => loadQueue(reset));
+      statusEl.append(' ', retry);
+    } finally {
+      if (request === queueRequest) {
+        more.disabled = false;
+        queue.setAttribute('aria-busy', 'false');
+      }
     }
   }
 
   function renderQueue() {
+    queueCount.textContent = cursor ? `${items.length}+` : String(items.length);
+    if (!items.length) {
+      queue.replaceChildren(el('li', 'admin-empty', '当前没有条目'));
+      more.hidden = true;
+      return;
+    }
     queue.replaceChildren(...items.map(item => {
       const li = el('li'), button = el('button');
       button.type = 'button';
       if (tab === 'reports') {
         button.setAttribute('aria-current', String(selected && selected.reportId === item.id));
         const top = el('span', 'q-top');
-        top.append(el('span', 'badge mod', modLabels[item.module] || item.module));
-        if (item.hasScript) top.append(el('span', 'badge fail', '含脚本'));
+        top.append(el('span', 'q-category', modLabels[item.module] || item.module));
         top.append(el('span', 'q-title', item.workName || item.workId));
         button.append(top, el('span', 'q-meta', `${reportCatLabels[item.category] || item.category} · v${item.version ?? '?'} · ${when(item.createdAt)}`));
         button.addEventListener('click', () => selectReport(item));
       } else {
         button.setAttribute('aria-current', String(selected && selected.workId === item.workId && selected.version === item.version));
         const top = el('span', 'q-top');
-        top.append(el('span', 'badge mod', modLabels[item.module] || item.module));
-        if (item.hasScript) top.append(el('span', 'badge fail', '含脚本'));
+        top.append(el('span', 'q-category', modLabels[item.module] || item.module));
         top.append(el('span', 'q-title', item.name));
-        button.append(top, el('span', 'q-meta', `v${item.version} · ${item.authorName} · ${when(item.submittedAt)}`));
+        button.append(top, el('span', 'q-meta', `v${item.version} · ${item.authorName} · ${shortDate(item.submittedAt)}`));
         button.addEventListener('click', () => selectVersion(item));
       }
       li.append(button);
@@ -220,14 +257,23 @@
     more.hidden = !cursor;
   }
 
-  document.querySelectorAll('.admin-tabs [role="tab"]').forEach(button => {
+  tabs.forEach((button, index) => {
     button.addEventListener('click', () => {
+      if (tab === button.dataset.status) return;
       tab = button.dataset.status;
-      document.querySelectorAll('.admin-tabs [role="tab"]').forEach(other => other.setAttribute('aria-selected', String(other === button)));
+      setTab();
       loadQueue(true);
     });
+    button.addEventListener('keydown', event => {
+      const direction = {ArrowLeft:-1, ArrowRight:1}[event.key];
+      if (!direction) return;
+      event.preventDefault();
+      const next = tabs[(index + direction + tabs.length) % tabs.length];
+      next.focus();
+      next.click();
+    });
   });
-  moduleFilter?.addEventListener('change', () => { mod = moduleFilter.value; loadQueue(true); });
+  moduleFilter?.addEventListener('change', () => { mod = moduleFilter.value; setTab(); loadQueue(true); });
   let searchTimer;
   searchInput?.addEventListener('input', () => {
     clearTimeout(searchTimer);
@@ -236,14 +282,21 @@
   more.addEventListener('click', () => loadQueue(false));
 
   async function selectVersion(item) {
+    const request = ++detailRequest;
     selected = { workId: item.workId, version: item.version };
     renderQueue();
+    detail.replaceChildren(el('p', 'admin-empty', '正在读取作品…'));
     try {
       const data = await api(`/admin/reviews/${item.workId}/versions/${item.version}`);
+      if (request !== detailRequest) return;
       renderDetail(data);
       detail.focus({ preventScroll: true });
+      if (matchMedia('(max-width: 800px)').matches) detail.scrollIntoView({block:'start'});
     } catch (error) {
-      if (error.message !== 'unauthenticated') say(`无法打开：${error.message}`, true);
+      if (request === detailRequest && error.message !== 'unauthenticated') {
+        detail.replaceChildren(el('p', 'admin-empty', '无法读取作品'));
+        say(`无法打开。${error.message}`, true);
+      }
     }
   }
 
@@ -261,6 +314,7 @@
       });
       if (!res.ok) return;
       const blob = await res.blob();
+      if (!imgEl.isConnected) return;
       const url = URL.createObjectURL(blob);
       activeBlobUrls.push(url);
       imgEl.src = url;
@@ -279,36 +333,44 @@
   function renderDetail(data) {
     clearBlobs();
     const pkg = data.package || {};
+    const overview = el('section', 'admin-pane');
+    const historyPane = el('section', 'admin-pane');
+    const inspection = el('section', 'admin-pane');
     const children = [];
-    const headerBadges = el('div');
-    headerBadges.append(el('span', 'badge mod', modLabels[data.module] || data.module));
-    if (data.hasScript) headerBadges.append(el('span', 'badge fail', '含脚本'));
-    if (data.contentRating === 'teen') headerBadges.append(el('span', 'badge warn', '12+ 进阶'));
-    if (data.openReportsCount > 0) headerBadges.append(el('span', 'badge fail', `待处理举报 ${data.openReportsCount}`));
-    children.push(headerBadges, el('h2', '', data.name), el('p', 'admin-note', `${labels[data.status] || data.status} · v${data.version} · 提交于 ${when(data.submittedAt)}`));
+    const header = el('header', 'admin-detail-head');
+    const headerLine = el('div', 'admin-detail-meta');
+    headerLine.append(el('span', 'q-category', modLabels[data.module] || data.module),
+      el('span', 'admin-state', labels[data.status] || data.status), el('span', '', `v${data.version}`));
+    if (data.openReportsCount > 0) headerLine.append(el('span', 'badge fail', `举报 ${data.openReportsCount}`));
+    header.append(headerLine, el('h2', '', data.name),
+      el('p', 'admin-note', `${data.authorName || '匿名作者'} · ${when(data.submittedAt)}`));
 
+    const summary = el('div', 'admin-overview-card');
+    const metadata = el('div', 'admin-overview-text');
+    if (data.summary) metadata.append(el('p', 'admin-summary', data.summary));
+    const tech = el('details', 'admin-technical');
+    tech.append(el('summary', '', '作品与权限详情'));
     const info = el('dl');
-    row(info, '作者显示名', data.authorName);
     row(info, '作者标识', data.authorUserRef || '账号已删除');
-    row(info, '简介', data.summary || '（无）');
-    row(info, '内容分级', data.contentRating === 'teen' ? '12+ (teen)' : '全年龄 (everyone)');
+    row(info, '内容分级', data.contentRating === 'teen' ? '12+' : '全年龄');
     row(info, '最低 Soulo', pkg.minSouloVersion || '—');
     row(info, '包体积', data.packageBytes ? `${(data.packageBytes / 1024).toFixed(2)} KB` : '—');
     row(info, 'SHA-256', el('code', '', data.packageSha256 || '—'));
     if (data.permissions?.length) row(info, '声明权限', data.permissions.join('、'));
     if (data.sites?.length) row(info, '网站范围', data.sites.join('、'));
-    if (data.rejectReason) row(info, '退回原因', data.rejectReason);
-    if (data.revokedReason) row(info, '停用原因', data.revokedReason);
-    children.push(info);
-
+    tech.append(info);
+    metadata.append(tech);
+    if (data.rejectReason) metadata.append(el('p', 'admin-decision-note', `退回原因 · ${data.rejectReason}`));
+    if (data.revokedReason) metadata.append(el('p', 'admin-decision-note', `停用原因 · ${data.revokedReason}`));
+    summary.append(metadata);
     if (data.previewImageUrl) {
-      children.push(el('h3', '', '预览图'));
       const img = el('img', 'admin-preview-img');
       img.alt = data.name;
       img.hidden = true;
-      children.push(img);
+      summary.append(img);
       void loadProtectedPreview(data.previewImageUrl, img);
     }
+    overview.append(summary);
 
     // Module-specific inspection
     if (data.module === 'platform' && pkg.platform) {
@@ -348,7 +410,7 @@
       children.push(el('h3', '', '扩展安装来源'));
       const source = new URL(pkg.webExtension.installURL);
       if (source.protocol === 'https:' && !source.username && !source.password) {
-        const link = el('a', 'catalog-button', source.hostname);
+        const link = el('a', 'admin-button', source.hostname);
         link.href = source.href;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
@@ -370,30 +432,56 @@
       }
     }
 
-    children.push(el('h3', '', '自动检查'));
+    if (children.length) inspection.append(...children);
     const checks = el('ul', 'admin-checks');
     for (const check of data.checks || []) {
       const li = el('li');
-      li.append(
-        el('span', `badge ${check.level}`, { pass: '通过', warn: '注意', fail: '失败' }[check.level] || check.level),
-        document.createTextNode(checkLabels[check.id] ? `${checkLabels[check.id]}${check.id === 'sensitive-permissions' || check.id === 'broad-site-access' ? ` (${check.message})` : ''}` : check.message)
-      );
+      const level = { pass: '通过', warn: '注意', fail: '失败' }[check.level];
+      const label = checkLabels[check.id] || check.message;
+      const details = ['sensitive-permissions','broad-site-access'].includes(check.id) ? check.message : '';
+      li.append(el('span', `badge ${check.level}`, level || ''), el('span', '', details ? `${label} · ${details}` : label));
       checks.append(li);
     }
-    children.push(checks);
-
+    if (checks.children.length) overview.append(el('h3', '', '自动检查'), checks);
     if (data.published) {
-      children.push(el('h3', '', `与已上架的 v${data.published.version} 相比`));
-      children.push(el('p', '', data.changedFields.length ? `改动：${data.changedFields.join('、')}` : '没有改动。'));
+      overview.append(el('h3', '', `相对已上架的 v${data.published.version}`),
+        el('p', 'admin-note', data.changedFields.length ? data.changedFields.join('、') : '没有改动'));
     }
 
-    children.push(el('h3', '', '审核记录'));
     const history = el('ul', 'admin-history');
     for (const entry of data.history || []) {
-      history.append(el('li', '', `${when(entry.at)} ${actionLabels[entry.action] || entry.action}${entry.reason ? `：${entry.reason}` : ''}`));
+      const record = el('li');
+      record.append(el('time', '', when(entry.at)),
+        el('span', '', actionLabels[entry.action] || entry.action));
+      if (entry.reason) record.append(el('p', '', entry.reason));
+      history.append(record);
     }
-    children.push(history, versionActions(data));
-    detail.replaceChildren(...children);
+    historyPane.append(history.children.length ? history : el('p', 'admin-empty', '暂无审核记录'));
+    const strip = el('div', 'admin-detail-tabs');
+    strip.setAttribute('aria-label','作品详情');
+    strip.setAttribute('role','group');
+    const panes = inspection.children.length
+      ? [['概览', overview], ['源码与配置', inspection], ['审核记录', historyPane]]
+      : [['概览', overview], ['审核记录', historyPane]];
+    const viewport = el('div', 'admin-detail-scroll');
+    const buttons = panes.map(([title,pane], index) => {
+      const button = el('button', '', title);
+      button.type = 'button';
+      button.setAttribute('aria-pressed', String(index === 0));
+      pane.hidden = index !== 0;
+      viewport.append(pane);
+      button.addEventListener('click', () => {
+        panes.forEach(([,other], position) => {
+          other.hidden = position !== index;
+          buttons[position].setAttribute('aria-pressed', String(position === index));
+        });
+        viewport.scrollTop = 0;
+      });
+      return button;
+    });
+    strip.append(...buttons);
+    const actions = versionActions(data);
+    detail.replaceChildren(header, strip, viewport, actions);
   }
 
   function versionActions(data) {
@@ -455,19 +543,19 @@
         })
       );
     }
-    if (!buttons.children.length) { box.append(el('p', 'admin-note', '这个版本不需要操作。')); return box; }
+    if (!buttons.children.length) { box.hidden = true; return box; }
     box.append(reason, buttons);
     return box;
   }
 
   function selectReport(report) {
+    ++detailRequest;
     clearBlobs();
     selected = { reportId: report.id };
     renderQueue();
     const children = [];
     const badges = el('div');
     badges.append(el('span', 'badge mod', modLabels[report.module] || report.module));
-    if (report.hasScript) badges.append(el('span', 'badge fail', '含脚本'));
     badges.append(el('span', 'badge warn', reportCatLabels[report.category] || report.category));
     children.push(badges, el('h2', '', `举报 #${report.id} · ${report.workName || report.workId}`));
     const info = el('dl');
@@ -483,20 +571,25 @@
       const inspectBtn = el('button', 'admin-button', `查看作品 v${report.version} 源码与详情`);
       inspectBtn.type = 'button';
       inspectBtn.addEventListener('click', () => selectVersion({ workId: report.workId, version: report.version }));
-      children.push(el('div', 'admin-actions', ''));
-      children[children.length - 1].append(inspectBtn);
+      children.push(inspectBtn);
     }
 
     const box = el('div', 'admin-actions');
     const note = el('textarea'); note.maxLength = 500; note.placeholder = '处理备注（必填，最多 500 字）';
     const buttons = el('div', 'row');
     const handle = async action => {
-      if (!note.value.trim()) { say('请填写处理备注。', true); return; }
+      if (busy) return;
+      if (!note.value.trim()) { say('请填写处理备注。', true); note.focus(); return; }
+      busy = true;
+      for (const button of buttons.children) button.disabled = true;
       try {
         await api(`/admin/reports/${report.id}/resolve`, { method: 'POST', body: { action, note: note.value.trim() } });
         await loadQueue(true, '举报已处理。');
       } catch (error) {
-        if (error.message !== 'unauthenticated') say(`处理失败：${error.message}`, true);
+        if (error.message !== 'unauthenticated') say(`处理失败。${error.message}`, true);
+      } finally {
+        busy = false;
+        for (const button of buttons.children) button.disabled = false;
       }
     };
     const b1 = el('button', 'admin-button', '忽略举报'); b1.type = 'button'; b1.addEventListener('click', () => handle('dismiss'));
@@ -504,7 +597,11 @@
     const b3 = el('button', 'admin-button danger', '停用该版本'); b3.type = 'button'; b3.addEventListener('click', () => handle('revoke'));
     buttons.append(b1, b2, b3);
     box.append(note, buttons);
-    children.push(box);
-    detail.replaceChildren(...children);
+    const viewport = el('div', 'admin-detail-scroll');
+    const reportPane = el('section', 'admin-pane');
+    reportPane.append(...children);
+    viewport.append(reportPane);
+    detail.replaceChildren(viewport, box);
+    if (matchMedia('(max-width: 800px)').matches) detail.scrollIntoView({block:'start'});
   }
 })();

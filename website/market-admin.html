@@ -8,12 +8,12 @@
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030" />
-    <link rel="stylesheet" href="market-admin.css" />
-    <script src="market-admin.js?v=b5389e7b" defer></script>
+    <link rel="stylesheet" href="market-admin.css?v=b5052f02" />
+    <script src="market-admin.js?v=386ae61f" defer></script>
   </head>
   <body class="market-admin">
     <header class="admin-bar">
-      <h1>Soulo 自定义市场审核</h1>
+      <div class="admin-brand"><span aria-hidden="true">Soulo</span><h1>市场审核</h1></div>
       <div class="admin-bar-tools"><span id="admin-who"></span><button id="admin-logout" type="button" hidden>退出</button></div>
     </header>
     <section class="admin-login" id="admin-login" aria-labelledby="login-title">
@@ -28,11 +28,6 @@
       <p class="admin-note">使用刀刻管理员账号。当前标签页刷新后会恢复有效登录。</p>
     </section>
     <main class="admin-console" id="admin-console" hidden>
-      <section class="admin-toggles" aria-label="市场展示开关">
-        <span class="admin-toggles-title">市场展示开关：</span>
-        <label class="admin-toggle"><input type="checkbox" id="toggle-script" /> 显示用户脚本</label>
-        <label class="admin-toggle"><input type="checkbox" id="toggle-webExtension" /> 显示浏览器扩展</label>
-      </section>
       <div class="admin-toolbar">
         <div class="admin-tabs" role="tablist" aria-label="审核状态">
           <button role="tab" type="button" data-status="pending" aria-selected="true">待审</button>
@@ -54,9 +49,17 @@
           </select>
           <input id="admin-search" type="search" placeholder="搜索名称、作者或域名" aria-label="搜索作品" />
         </div>
+        <details class="admin-settings">
+          <summary>市场展示</summary>
+          <div class="admin-settings-body">
+            <label class="admin-toggle"><input type="checkbox" id="toggle-script" /> 用户脚本</label>
+            <label class="admin-toggle"><input type="checkbox" id="toggle-webExtension" /> 浏览器扩展</label>
+          </div>
+        </details>
       </div>
       <div class="admin-layout">
         <div class="admin-queue-wrap">
+          <header class="admin-queue-heading"><h2>作品队列</h2><span id="admin-queue-count"></span></header>
           <ul class="admin-queue" id="admin-queue" aria-label="审核队列"></ul>
           <button class="admin-button" id="admin-more" type="button" hidden>加载更多</button>
         </div>
