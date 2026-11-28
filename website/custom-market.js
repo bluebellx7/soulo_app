@@ -483,15 +483,17 @@
     const path = sourceIcons.sources?.[domain];
     if (path) {
       const img = el('img');
+      img.hidden = true;
       img.src = path;
       img.alt = '';
       img.loading = 'lazy';
       img.decoding = 'async';
+      img.addEventListener('load', () => { img.hidden = false; });
       img.addEventListener('error', () => img.remove());
       mark.append(img);
     }
     const name = el('div', 'market-source-name');
-    name.append(el('h3', '', source.name), el('span', '', domain));
+    name.append(el('h4', '', source.name), el('span', '', domain));
     identity.append(mark, name);
     const actions = el('div', 'market-source-actions');
     const trial = el('a', 'catalog-button', say('trialSearch'));

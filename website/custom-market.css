@@ -156,7 +156,7 @@ html[data-resolved-theme="dark"] .custom-market-page .market-cat[aria-selected="
   gap:8px; padding:7px 0; border-top:1px solid var(--catalog-line);
 }
 .market-source-name { min-width:0; }
-.market-source-name h3 { font-size:14px; margin:0; overflow-wrap:anywhere; }
+.market-source-name h4 { font-size:14px; margin:0; overflow-wrap:anywhere; }
 .market-source-name span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--catalog-muted); font-size:11px; }
 .market-source-actions .catalog-button { min-height:36px; padding:5px 7px; font-size:11px; }
 .market-source-group + .market-source-group { margin-top:18px; }
