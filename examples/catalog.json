@@ -1,0 +1,194 @@
+[
+  {
+    "module": "home",
+    "file": "home/tidal-desk.html",
+    "name": "潮汐桌面",
+    "summary": "深海色首页，带潮线插画、半透明搜索和常用入口。",
+    "workId": "6ae2c34b-b244-4608-8125-3c776aa81aea",
+    "version": 2
+  },
+  {
+    "module": "newTab",
+    "file": "new-tab/daylight-clock.html",
+    "name": "晨昏时钟",
+    "summary": "壁纸上的白框时钟，底部可打开搜索与待办。",
+    "workId": "7420b0ba-4c7e-46d1-99f4-fb22b776c990",
+    "version": 2
+  },
+  {
+    "module": "newTab",
+    "file": "new-tab/window-seat.html",
+    "name": "窗边小憩",
+    "summary": "Soulo 的猫咪插画与一条搜索框。",
+    "workId": "8e33de16-1021-4e87-9a23-0f9ab18ccf8b",
+    "version": 1
+  },
+  {
+    "module": "home",
+    "file": "home/daily-index.html",
+    "name": "每日索引",
+    "summary": "报刊式首页，左栏收藏、右栏最近搜索。",
+    "workId": "4faba48c-66fa-4bdd-b88d-a3e8b5ddcdb4",
+    "version": 1
+  },
+  {
+    "module": "home",
+    "file": "home/tile-desk.html",
+    "name": "磁贴桌面",
+    "summary": "紧凑的收藏磁贴，可切换最近搜索，底部直达常用工具。",
+    "workId": "44c9297f-36b6-4364-9965-c1cc7a9582cf",
+    "version": 1
+  },
+  {
+    "module": "home",
+    "file": "home/command-line.html",
+    "name": "指令页",
+    "summary": "单色终端布局，支持键盘快捷键、搜索和资料库入口。",
+    "workId": "004e234a-8883-48e5-a1e7-1cd0edf235a8",
+    "version": 1
+  },
+  {
+    "module": "home",
+    "file": "home/reading-room.html",
+    "name": "阅览台",
+    "summary": "面向书签和阅读记录的冷白首页，标题折页保留长链接名称。",
+    "workId": "b470b238-e24d-44b5-8423-18a21afff4d9",
+    "version": 1
+  },
+  {
+    "module": "home",
+    "file": "home/today-list.html",
+    "name": "今日清单",
+    "summary": "消息便签风格，保留搜索，待办可添加、完成和删除。",
+    "workId": "f3681aef-3a75-4d96-a5b0-ffc1b3777289",
+    "version": 1
+  },
+  {
+    "module": "home",
+    "file": "home/panorama.html",
+    "name": "壁纸首页",
+    "summary": "把当前壁纸留在首屏，搜索和常用按钮始终可达。",
+    "workId": "20ab37ae-70ef-4bee-a670-49a833f87904",
+    "version": 1
+  },
+  {
+    "module": "home",
+    "file": "home/pocket-tools.html",
+    "name": "口袋工具箱",
+    "summary": "资料库与访客工具分区，快捷开启文件、传输和无痕搜索。",
+    "workId": "d7a7619b-05b4-44af-8267-1826ed4d707d",
+    "version": 1
+  },
+  {
+    "module": "newTab",
+    "file": "new-tab/focus-session.html",
+    "name": "专注计时",
+    "summary": "可暂停的专注计时器，支持 5、15、25 分钟和搜索。",
+    "workId": "2bb5a50f-9720-41fa-8f54-c8ff38a889e3",
+    "version": 1
+  },
+  {
+    "module": "newTab",
+    "file": "new-tab/single-sheet.html",
+    "name": "一页纸",
+    "summary": "带蓝色边线的笔记页，输入自动保存在当前设备。",
+    "workId": "964c0b7a-ab15-419b-b3e8-d6f8cb9a1c77",
+    "version": 1
+  },
+  {
+    "module": "newTab",
+    "file": "new-tab/color-study.html",
+    "name": "配色主题",
+    "summary": "三套原创页面配色，可即时切换并保存在设备上。",
+    "workId": "23a01b3b-1b80-4a24-a087-2bbced453583",
+    "version": 1
+  },
+  {
+    "module": "newTab",
+    "file": "new-tab/bookmark-drawer.html",
+    "name": "收藏检索",
+    "summary": "按标题或网址筛选收藏，可直接开链接或继续搜索。",
+    "workId": "d7757697-bf68-4d5f-984d-094a09704475",
+    "version": 1
+  },
+  {
+    "module": "newTab",
+    "file": "new-tab/night-window.html",
+    "name": "浅夜窗口",
+    "summary": "低亮度搜索页，常用与最近搜索随手可点。",
+    "workId": "802c78c9-3fec-412a-95ab-2a9dca4c7531",
+    "version": 1
+  },
+  {
+    "module": "newTab",
+    "file": "new-tab/week-card.html",
+    "name": "本周桌签",
+    "summary": "一周日期分栏，每天可各留一条备忘。",
+    "workId": "7f4abf57-22f4-4d60-a8c0-8327a6aee424",
+    "version": 1
+  },
+  {
+    "module": "widget",
+    "file": "widget/quick-scan.json",
+    "name": "指尖扫码",
+    "summary": "立即扫描二维码。",
+    "workId": "8abf4a78-3059-4e6e-b197-2afc3156a826",
+    "version": 1
+  },
+  {
+    "module": "widget",
+    "file": "widget/reading-shelf.json",
+    "name": "随身书架",
+    "summary": "从收藏找回正在读的页。",
+    "workId": "de5ebff4-f77d-4379-984b-e96b46116e8c",
+    "version": 1
+  },
+  {
+    "module": "widget",
+    "file": "widget/transfer-desk.json",
+    "name": "隔空传输台",
+    "summary": "同一网络，手机与电脑互传。",
+    "workId": "7c7ff0fe-e856-446f-b37b-b329ca30cdcb",
+    "version": 1
+  },
+  {
+    "module": "widget",
+    "file": "widget/private-entry.json",
+    "name": "夜间无痕",
+    "summary": "直达 Soulo 无痕搜索。",
+    "workId": "015025c6-1831-4ec4-9c4f-23f11196e658",
+    "version": 1
+  },
+  {
+    "module": "widget",
+    "file": "widget/engine-switch.json",
+    "name": "搜索平台",
+    "summary": "按平台查找内容。",
+    "workId": "0e335a35-99aa-497f-84de-4d994547b2a4",
+    "version": 1
+  },
+  {
+    "module": "widget",
+    "file": "widget/wallpaper-pocket.json",
+    "name": "换张壁纸",
+    "summary": "随时换一张 Soulo 壁纸。",
+    "workId": "d613370e-83b7-42a9-b678-a48904de9e21",
+    "version": 1
+  },
+  {
+    "module": "widget",
+    "file": "widget/download-ticket.json",
+    "name": "下载取件",
+    "summary": "查看下载任务与文件。",
+    "workId": "63472087-9701-47e3-a8d9-300cb883c46e",
+    "version": 1
+  },
+  {
+    "module": "widget",
+    "file": "widget/storage-drawer.json",
+    "name": "设备空间",
+    "summary": "查看并管理 Soulo 占用。",
+    "workId": "8876f0f2-139f-40da-9963-0014b27d4beb",
+    "version": 1
+  }
+]

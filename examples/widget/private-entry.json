@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "title": "夜间无痕",
+  "subtitle": "直达 Soulo 无痕搜索",
+  "palette": "ink",
+  "destination": "privateSearch",
+  "symbol": "eye.slash"
+}

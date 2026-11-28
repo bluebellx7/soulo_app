@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>自定义市场审核 - Soulo</title>
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030" />
+    <link rel="stylesheet" href="market-admin.css" />
+    <script src="market-admin.js?v=0f3b26c8" defer></script>
+  </head>
+  <body class="market-admin">
+    <header class="admin-bar">
+      <h1>Soulo 自定义市场审核</h1>
+      <div class="admin-bar-tools"><span id="admin-who"></span><button id="admin-logout" type="button" hidden>退出</button></div>
+    </header>
+    <section class="admin-login" id="admin-login" aria-labelledby="login-title">
+      <h2 id="login-title">管理员登录</h2>
+      <form id="login-form" autocomplete="on">
+        <label for="login-username">账号</label>
+        <input id="login-username" name="username" autocomplete="username" required />
+        <label for="login-password">密码</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+        <button class="admin-button primary" type="submit">登录</button>
+      </form>
+      <p class="admin-note">使用刀刻管理员账号。当前标签页刷新后会恢复有效登录。</p>
+    </section>
+    <main class="admin-console" id="admin-console" hidden>
+      <section class="admin-toggles" aria-label="市场展示开关">
+        <span class="admin-toggles-title">市场展示开关：</span>
+        <label class="admin-toggle"><input type="checkbox" id="toggle-script" /> 显示用户脚本</label>
+        <label class="admin-toggle"><input type="checkbox" id="toggle-webExtension" /> 显示浏览器扩展</label>
+      </section>
+      <div class="admin-toolbar">
+        <div class="admin-tabs" role="tablist" aria-label="审核状态">
+          <button role="tab" type="button" data-status="pending" aria-selected="true">待审</button>
+          <button role="tab" type="button" data-status="approved" aria-selected="false">已上架</button>
+          <button role="tab" type="button" data-status="rejected" aria-selected="false">已退回</button>
+          <button role="tab" type="button" data-status="unpublished" aria-selected="false">已下架</button>
+          <button role="tab" type="button" data-status="revoked" aria-selected="false">已停用</button>
+          <button role="tab" type="button" data-status="reports" aria-selected="false">举报处理</button>
+        </div>
+        <div class="admin-filters" id="admin-filters">
+          <select id="admin-module" aria-label="筛选分类">
+            <option value="all">全部分类</option>
+            <option value="home">首页</option>
+            <option value="newTab">新标签页</option>
+            <option value="widget">小组件</option>
+            <option value="platform">搜索平台</option>
+            <option value="script">用户脚本</option>
+            <option value="webExtension">浏览器扩展</option>
+          </select>
+          <input id="admin-search" type="search" placeholder="搜索名称、作者或域名" aria-label="搜索作品" />
+        </div>
+      </div>
+      <div class="admin-layout">
+        <div class="admin-queue-wrap">
+          <ul class="admin-queue" id="admin-queue" aria-label="审核队列"></ul>
+          <button class="admin-button" id="admin-more" type="button" hidden>加载更多</button>
+        </div>
+        <section class="admin-detail" id="admin-detail" aria-live="polite" tabindex="-1"></section>
+      </div>
+    </main>
+    <p class="admin-status" id="admin-status" role="status" aria-live="polite" tabindex="-1"></p>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "title": "隔空传输台",
+  "subtitle": "同一网络，手机与电脑互传",
+  "palette": "ink",
+  "destination": "wifiTransfer",
+  "symbol": "wifi",
+  "shortcuts": [
+    {
+      "title": "互传",
+      "destination": "wifiTransfer"
+    },
+    {
+      "title": "文件",
+      "destination": "files"
+    },
+    {
+      "title": "下载",
+      "destination": "downloads"
+    }
+  ]
+}

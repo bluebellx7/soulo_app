@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="soulo-wallpaper" content="current">
+  <title>晨昏时钟</title>
+  <style>
+    :root { color-scheme: dark; }
+    html:not(.soulo-wallpaper) { background: #28372f; }
+    body {
+      margin: 0; min-height: 100dvh; color: white;
+      font: 16px/1.35 system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    .stage {
+      min-height: 100dvh; position: relative; display: grid; place-items: center;
+      padding: env(safe-area-inset-top) 20px max(42px,env(safe-area-inset-bottom));
+      background: linear-gradient(180deg,#00000021,#00000036 60%,#00000066);
+    }
+    .clock {
+      display: inline-grid; grid-auto-flow: column; align-items: baseline;
+      border: 1.5px solid #fffffff2; padding: .10em .29em .15em;
+      font-size: clamp(3rem,16vw,7.1rem); font-weight: 580; line-height: 1.04;
+      font-variant-numeric: tabular-nums; letter-spacing: -.05em;
+      text-shadow: 0 2px 14px #00000066;
+      box-shadow: 0 1px 12px #00000018;
+      translate: 0 -3vh;
+      -webkit-user-select: none; user-select: none;
+    }
+    .colon { margin-inline: .03em; }
+    .tools {
+      display: flex; gap: 4px; position: absolute; inset-inline: 0;
+      bottom: max(12px,env(safe-area-inset-bottom)); justify-content: center;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    :focus-visible { outline: 2px solid #ffdda5; outline-offset: 2px; }
+    .icon {
+      min-width: 44px; min-height: 44px; display: inline-grid; place-items: center;
+      border: 0; border-radius: 10px; background: transparent;
+      font-size: 1.15rem;
+    }
+    .tools button { text-shadow: 0 1px 5px #000; }
+    .icon:active { background: #ffffff23; }
+    .icon img { width: 18px; height: 18px; filter: invert(1); }
+    dialog {
+      border: 1px solid #ffffff34; border-radius: 16px;
+      background: #212523; color: white; width: min(100% - 36px,415px);
+      max-height: 80%; padding: 14px;
+    }
+    dialog::backdrop { background: #0006; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; padding-inline-start: 4px; }
+    h2 { font-size: 1rem; margin: 0; }
+    .field { display: flex; align-items: center; gap: 6px; padding-inline-start: 13px; border: 1px solid #fff5; border-radius: 12px; }
+    .field input { appearance: none; border: 0; outline: none; width: 100%; min-width: 0; background: transparent; }
+    .field:focus-within { border-color: #ffe3b9; }
+    .field input::placeholder { color: #ffffffbb; }
+    #todo-list { padding: 0; margin: 0; list-style: none; }
+    .item { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #fff3; }
+    .item label { display: flex; gap: 8px; align-items: center; min-height: 44px; min-width: 0; overflow-wrap: anywhere; }
+    .item input[type="checkbox"] { width: 16px; height: 16px; flex: none; accent-color: #efd6a7; }
+    .item input:checked + span { text-decoration: line-through; opacity: .69; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <div id="clock" class="clock" role="img" aria-label="当前时间">
+      <span id="hours" aria-hidden="true">00</span><span class="colon" aria-hidden="true">:</span><span id="minutes" aria-hidden="true">00</span>
+    </div>
+    <nav class="tools" aria-label="新标签页工具">
+      <button class="icon" type="button" id="open-search" aria-label="搜索">
+        <img src="soulo-asset://symbol/magnifyingglass" alt=""><span hidden aria-hidden="true">⌕</span>
+      </button>
+      <button class="icon" type="button" id="open-tasks" aria-label="待办">
+        <img src="soulo-asset://symbol/checklist" alt=""><span hidden aria-hidden="true">✓</span>
+      </button>
+    </nav>
+  </main>
+  <dialog id="search-panel" aria-labelledby="search-title">
+    <header class="panel-header"><h2 id="search-title">搜索</h2><button class="icon close" type="button" aria-label="关闭">×</button></header>
+    <form class="field" id="search" role="search">
+      <label class="sr-only" id="search-label" for="query">搜索或输入网址</label>
+      <input id="query" type="search" placeholder="搜索或输入网址" enterkeyhint="search" autocomplete="off" required>
+      <button class="icon" id="search-submit" type="submit" aria-label="搜索">→</button>
+    </form>
+  </dialog>
+  <dialog id="tasks-panel" aria-labelledby="tasks-heading">
+    <header class="panel-header"><h2 id="tasks-heading">待办</h2><button class="icon close" type="button" aria-label="关闭">×</button></header>
+    <form class="field" id="task-form">
+      <label class="sr-only" id="task-label" for="task">添加待办</label>
+      <input type="text" id="task" placeholder="添加待办" enterkeyhint="done" maxlength="150" autocomplete="off" required>
+      <button class="icon" id="task-submit" type="submit" aria-label="添加待办">+</button>
+    </form>
+    <ul id="todo-list"></ul>
+  </dialog>
+  <script>
+    const get = id => document.getElementById(id);
+    const chinese = (navigator.language || 'zh-Hans').startsWith('zh');
+    const words = chinese ? {
+      clock:'当前时间', search:'搜索', query:'搜索或输入网址', plan:'待办', add:'添加待办', remove:'删除', close:'关闭'
+    } : {
+      clock:'Local time', search:'Search', query:'Search or enter a website', plan:'To-do', add:'Add a task', remove:'Delete', close:'Close'
+    };
+    if (!chinese) {
+      document.documentElement.lang = 'en';
+      document.title = 'Daylight Clock';
+    }
+    get('search-label').textContent = words.query;
+    get('search-title').textContent = words.search;
+    get('query').placeholder = words.query;
+    get('search-submit').setAttribute('aria-label',words.search);
+    get('open-search').setAttribute('aria-label',words.search);
+    get('open-tasks').setAttribute('aria-label',words.plan);
+    get('tasks-heading').textContent = words.plan;
+    get('task-label').textContent = words.add;
+    get('task').placeholder = words.add;
+    get('task-submit').setAttribute('aria-label',words.add);
+    get('open-search').addEventListener('click',() => get('search-panel').showModal());
+    get('open-tasks').addEventListener('click',() => get('tasks-panel').showModal());
+    document.querySelectorAll('dialog .close').forEach(button => {
+      button.setAttribute('aria-label',words.close);
+      button.addEventListener('click',() => button.closest('dialog').close());
+    });
+    document.querySelectorAll('.tools img').forEach(img => {
+      const fallback = () => { img.hidden = true; img.nextElementSibling.hidden = false; };
+      img.addEventListener('error',fallback);
+      if (img.complete && !img.naturalWidth) fallback();
+    });
+
+    function updateTime() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2,'0');
+      const minutes = String(now.getMinutes()).padStart(2,'0');
+      if (get('hours').textContent === hours && get('minutes').textContent === minutes) return;
+      get('hours').textContent = hours;
+      get('minutes').textContent = minutes;
+      get('clock').setAttribute('aria-label', words.clock + ' ' + hours + ':' + minutes);
+    }
+    updateTime();
+    setInterval(updateTime,1000);
+    document.addEventListener('visibilitychange',updateTime);
+
+    const storageKey = 'daylight-clock.tasks.v1';
+    const list = get('todo-list');
+    const taskInput = get('task');
+    let tasks = [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      if (Array.isArray(saved)) tasks = saved.filter(task => task && typeof task.text === 'string')
+        .slice(0, 30).map(task => ({text: task.text.slice(0, 150), done: task.done === true}));
+    } catch {}
+    function saveTasks() {
+      try { localStorage.setItem(storageKey, JSON.stringify(tasks)); } catch {}
+      taskInput.disabled = tasks.length >= 30;
+      get('task-submit').disabled = taskInput.disabled;
+    }
+    function addRow(task) {
+      const row = document.createElement('li');
+      row.className = 'item';
+      const label = document.createElement('label');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = task.done;
+      const title = document.createElement('span');
+      title.textContent = task.text;
+      label.append(checkbox, title);
+      const remove = document.createElement('button');
+      remove.className = 'icon';
+      remove.type = 'button';
+      remove.setAttribute('aria-label', words.remove + ' ' + task.text);
+      remove.textContent = '\u00d7';
+      checkbox.addEventListener('change', () => {
+        task.done = checkbox.checked;
+        saveTasks();
+      });
+      remove.addEventListener('click', () => {
+        tasks = tasks.filter(item => item !== task);
+        row.remove();
+        saveTasks();
+        taskInput.focus();
+      });
+      row.append(label, remove);
+      list.append(row);
+    }
+    tasks.forEach(addRow);
+    saveTasks();
+    get('task-form').addEventListener('submit', event => {
+      event.preventDefault();
+      const text = taskInput.value.trim();
+      if (!text || tasks.length >= 30) return;
+      const task = {text, done:false};
+      tasks.push(task);
+      addRow(task);
+      saveTasks();
+      taskInput.value = '';
+    });
+    get('search').addEventListener('submit', event => {
+      event.preventDefault();
+      const query = get('query').value.trim();
+      if (query) {
+        get('search-panel').close();
+        window.Soulo?.search(query);
+      }
+    });
+  </script>
+</body>
+</html>

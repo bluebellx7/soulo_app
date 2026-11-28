@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "title": "下载取件",
+  "subtitle": "查看下载任务与文件",
+  "palette": "forest",
+  "destination": "downloads",
+  "symbol": "arrow.down.circle",
+  "shortcuts": [
+    {
+      "title": "下载",
+      "destination": "downloads"
+    },
+    {
+      "title": "文件",
+      "destination": "files"
+    }
+  ]
+}

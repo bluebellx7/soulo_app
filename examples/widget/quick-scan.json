@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "title": "指尖扫码",
+  "subtitle": "立即扫描二维码",
+  "palette": "paper",
+  "destination": "scan",
+  "symbol": "qrcode.viewfinder",
+  "shortcuts": [
+    {
+      "title": "扫码",
+      "destination": "scan"
+    },
+    {
+      "title": "文件",
+      "destination": "files"
+    }
+  ]
+}

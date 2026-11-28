@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "title": "随身书架",
+  "subtitle": "从收藏找回正在读的页",
+  "palette": "forest",
+  "destination": "bookmarks",
+  "symbol": "book.closed",
+  "shortcuts": [
+    {
+      "title": "收藏",
+      "destination": "bookmarks"
+    },
+    {
+      "title": "历史",
+      "destination": "history"
+    },
+    {
+      "title": "首页",
+      "destination": "home"
+    }
+  ]
+}

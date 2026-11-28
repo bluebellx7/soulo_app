@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>专注计时</title>
+<style>
+
+:root { color-scheme: light; color: var(--ink); background: var(--paper); font: 16px/1.45 system-ui,sans-serif; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; min-height: 100dvh; padding: var(--top) 18px max(22px,env(safe-area-inset-bottom)); color: var(--ink); }
+main { width: min(100%,var(--measure,660px)); margin-inline: auto; }
+button,input,textarea { font:inherit; color:inherit; min-width:0; }
+button { cursor:pointer; }
+a { color:inherit; }
+button:focus-visible,a:focus-visible,textarea:focus-visible { outline: 2px solid var(--accent); outline-offset:3px; }
+h1,h2,p,ul { margin:0; }
+h2 { font-size:1rem; }
+ul { list-style:none; padding:0; }
+.search { display:flex; align-items:center; min-height:50px; gap:8px; min-width:0; }
+.search input { appearance:none; flex:1; width:100%; border:0; padding:10px 0; background:none; outline:none; box-shadow:none; }
+.search input::placeholder { color:var(--muted); }
+.search button { flex:none; min-width:44px; min-height:44px; border:0; background:none; color:var(--accent); }
+.list li { min-width:0; }
+.list a,.list button { display:flex; text-align:start; gap:9px; align-items:center; min-height:44px; width:100%; text-decoration:none; overflow:hidden; }
+.list button { border:0; background:none; padding:0; }
+.list .label { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.list .initial { display:grid; place-items:center; width:30px; height:30px; flex:none; }
+.sr { position:absolute; width:1px; height:1px; clip:rect(0,0,0,0); overflow:hidden; white-space:nowrap; }
+.empty { color:var(--muted); font-size:.86rem; }
+
+:root { --top: max(17px,env(safe-area-inset-top)); }
+
+:root { color-scheme:dark; --paper:#212324; --ink:#fbf4e6; --muted:#c9c2b3; --accent:#f1c287; --measure:420px; }
+main { min-height:calc(100dvh - 60px); display:flex; flex-direction:column; justify-content:center; }
+h1 { font-size:1rem; font-weight:580; padding-bottom:12px; border-bottom:1px solid #fff4; }
+.timer { align-self:center; margin:22px 0 14px; font:400 clamp(3rem,18vw,6.8rem)/1 ui-monospace,monospace; letter-spacing:-.12em; padding-right:.10em; font-variant-numeric:tabular-nums; color:var(--accent); }
+.durations,.controls { display:flex; justify-content:center; gap:6px; }
+.durations button,.controls button { padding:0 9px; min-height:44px; min-width:44px; border:1px solid #fff4; border-radius:6px; background:none; }
+.durations button[aria-pressed=true],.controls .primary { border-color:var(--accent); color:#281d10; background:var(--accent); }
+.controls { margin-top:10px; }
+.search { margin-top:23px; padding-inline:8px 0; border-top:1px solid #fff4; }
+
+</style>
+</head>
+<body>
+<main><h1>专注计时</h1><div class="timer" id="timer" aria-label="剩余时间">25:00</div>
+<div class="durations" aria-label="时长"><button type="button" data-min="5" aria-pressed="false">5 分</button>
+<button type="button" data-min="15" aria-pressed="false">15 分</button><button type="button" data-min="25" aria-pressed="true">25 分</button></div>
+<div class="controls"><button id="toggle" type="button" class="primary">开始</button><button id="reset" type="button">重置</button></div>
+
+<form class="search" role="search"><label class="sr" for="query">搜索或输入网址</label>
+<input id="query" type="search" placeholder="搜索或输入网址" autocomplete="off" enterkeyhint="search" required>
+<button aria-label="搜索">→</button></form>
+</main>
+<script>
+
+const $ = selector => document.querySelector(selector);
+const bridge = window.Soulo;
+const mainSearch = $('.search');
+const query = mainSearch?.querySelector('input');
+mainSearch?.addEventListener('submit', event => {
+  event.preventDefault();
+  const value = query.value.trim();
+  if (value) bridge?.search(value);
+});
+document.addEventListener('pointerdown', event => {
+  if (mainSearch && !mainSearch.contains(event.target)) query.blur();
+});
+document.querySelectorAll('[data-soulo-action]').forEach(button => {
+  button.addEventListener('click', () => bridge?.perform(button.dataset.souloAction));
+});
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function records(kind) {
+  const context = bridge?.getContext() ?? {};
+  const source = kind === 'bookmarks' ? context.bookmarks : context.recentSearches;
+  return Array.isArray(source) ? source : [];
+}
+function fill(selector, kind, options = {}) {
+  const list = $(selector);
+  if (!list) return;
+  const needle = (options.needle ?? '').trim().toLowerCase();
+  const rows = records(kind).flatMap(item => {
+    const bookmark = typeof item !== 'string';
+    if (bookmark && !item) return [];
+    const title = (bookmark ? item.title : item) || (bookmark ? item.url : '');
+    if (typeof title !== 'string' || !title.toLowerCase().includes(needle) && !String(item.url ?? '').toLowerCase().includes(needle)) return [];
+    const action = element(bookmark ? 'a' : 'button');
+    if (bookmark) {
+      let target;
+      try { target = new URL(item.url); } catch { return []; }
+      if (!['https:', 'http:'].includes(target.protocol) || target.username || target.password) return [];
+      action.href = target.href;
+    } else {
+      action.type = 'button';
+      action.addEventListener('click', () => bridge?.search(title));
+    }
+    if (options.initial) action.append(element('span','initial',Array.from(title)[0]?.toUpperCase() ?? '·'));
+    action.append(element('span','label',title));
+    const li = element('li');
+    li.append(action);
+    return [li];
+  }).slice(0, options.limit ?? 8);
+  if (rows.length) list.replaceChildren(...rows);
+  else list.replaceChildren(element('li','empty',needle ? '没有匹配结果' : kind === 'bookmarks' ? '收藏会出现在这里' : '还没有最近搜索'));
+}
+function stored(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? fallback; } catch { return fallback; }
+}
+function save(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+
+
+const timerKey = 'soulo.focus-session.v1';
+const durations = [5,15,25];
+const image = stored(timerKey,{});
+let selected = durations.includes(image.selected) ? image.selected : 25;
+let remaining = Number.isFinite(image.remaining) ? Math.max(0,Math.min(image.remaining,selected*60000)) : selected*60000;
+let deadline = Number.isFinite(image.deadline) ? Math.min(image.deadline,Date.now()+selected*60000) : 0;
+function persist() { save(timerKey,{selected,remaining,deadline}); }
+function render() {
+  if (deadline && deadline <= Date.now()) { deadline = 0; remaining = 0; persist(); }
+  const seconds = Math.ceil((deadline ? deadline-Date.now() : remaining)/1000);
+  const label = String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
+  if ($('#timer').textContent !== label) $('#timer').textContent = label;
+  $('#toggle').textContent = deadline ? '暂停' : remaining ? '开始' : '再计时';
+  document.querySelectorAll('[data-min]').forEach(button => button.setAttribute('aria-pressed',String(Number(button.dataset.min) === selected)));
+}
+document.querySelectorAll('[data-min]').forEach(button => button.addEventListener('click',() => {
+  selected = Number(button.dataset.min); remaining = selected*60000; deadline = 0; persist(); render();
+}));
+$('#toggle').addEventListener('click',() => {
+  if (deadline) { remaining = Math.max(0,deadline-Date.now()); deadline = 0; }
+  else { if (!remaining) remaining = selected*60000; deadline = Date.now()+remaining; }
+  persist(); render();
+});
+$('#reset').addEventListener('click',() => { deadline = 0; remaining = selected*60000; persist(); render(); });
+setInterval(render,1000);
+document.addEventListener('visibilitychange',render);
+render();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "title": "设备空间",
+  "subtitle": "查看并管理 Soulo 占用",
+  "palette": "wallpaper",
+  "destination": "storage",
+  "symbol": "internaldrive",
+  "shortcuts": [
+    {
+      "title": "空间",
+      "destination": "storage"
+    },
+    {
+      "title": "下载",
+      "destination": "downloads"
+    },
+    {
+      "title": "设置",
+      "destination": "settings"
+    }
+  ]
+}

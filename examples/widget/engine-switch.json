@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "title": "搜索平台",
+  "subtitle": "按平台查找内容",
+  "palette": "paper",
+  "destination": "platforms",
+  "symbol": "square.grid.2x2",
+  "shortcuts": [
+    {
+      "title": "平台",
+      "destination": "platforms"
+    },
+    {
+      "title": "搜索",
+      "destination": "search"
+    },
+    {
+      "title": "新标签",
+      "destination": "newTab"
+    }
+  ]
+}

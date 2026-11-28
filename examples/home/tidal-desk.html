@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>潮汐桌面</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #0c1929;
+      --panel: #152b41;
+      --ink: #edf5f2;
+      --muted: #b6c8d0;
+      --sea-glass: #9be0d6;
+      --sunlight: #ffd399;
+      --line: #c4e9e326;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { margin: 0; color: var(--ink); background: var(--background); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: calc(env(safe-area-inset-top) + 52px) 16px max(24px, env(safe-area-inset-bottom));
+      background: radial-gradient(ellipse at 83% -12%, #203d55, transparent 53%), var(--background);
+      font: 15px/1.4 system-ui, -apple-system, sans-serif;
+    }
+    main { width: min(100%, 620px); margin: 0 auto; }
+    button, input { font: inherit; color: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; border: 0; }
+    button:active, a:active { opacity: .72; }
+    :focus-visible { outline: 2px solid var(--sea-glass); outline-offset: 3px; }
+    .cover {
+      isolation: isolate;
+      position: relative;
+      overflow: hidden;
+      border-radius: 25px 25px 10px 10px;
+      background: linear-gradient(128deg, #193a4b, #14293e 56%, #31455b);
+      border: 1px solid #b9deda38;
+      padding: 23px clamp(16px, 4vw, 25px) 18px;
+    }
+    .chart {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+    time { color: var(--sea-glass); font-size: .83rem; }
+    h1 {
+      font: 600 clamp(1.9rem, 7vw, 3.25rem)/1.1 ui-serif, Georgia, "Songti SC", serif;
+      letter-spacing: -.025em;
+      margin: 12px 0 22px;
+    }
+    form {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      border-radius: 100px;
+      padding: 0 3px 0 2px;
+      border: 1px solid #ffffff45;
+      background: #ffffff31;
+    }
+    form:focus-within { border-color: var(--sea-glass); }
+    form input {
+      appearance: none;
+      min-width: 0;
+      flex: 1;
+      padding: 10px 0;
+      color: #fff;
+      border: 0;
+      background: transparent;
+      font-size: 16px;
+      outline: none;
+    }
+    form input::placeholder { color: #f0f7f5d1; }
+    #query:focus, #query:focus-visible { outline: none; box-shadow: none; }
+    form button {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      flex: none;
+      background: transparent;
+      border-radius: 100px;
+    }
+    .symbol { width: 19px; height: 19px; object-fit: contain; filter: invert(1); }
+    .dock {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      padding: 5px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .dock button {
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 5px;
+      min-width: 0;
+      min-height: 55px;
+      background: transparent;
+      color: var(--ink);
+      font-size: .78rem;
+    }
+    .dock .symbol { width: 17px; height: 17px; opacity: .88; }
+    .collections { margin-top: 18px; }
+    section + section { margin-top: 17px; }
+    h2 { margin: 0 0 7px; font-size: .91rem; font-weight: 650; }
+    .empty { margin: 0; color: var(--muted); font-size: .81rem; }
+    .bookmarks, .recents { display: grid; gap: 2px; }
+    .bookmark, .keyword {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      gap: 9px;
+      padding: 4px 0;
+      text-align: start;
+      background: transparent;
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .bookmark + .bookmark, .keyword + .keyword { border-top: 1px solid var(--line); }
+    .initial {
+      flex: 0 0 30px;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--sea-glass);
+      font-size: .88rem;
+    }
+    .entry-copy { flex: 1; min-width: 0; }
+    .entry-copy > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hostname { color: var(--muted); font-size: .75rem; }
+    .keyword .symbol { width: 15px; height: 15px; opacity: .65; }
+    @media (min-width: 620px) {
+      body { padding-inline: 32px; }
+      .cover { padding-block: 28px 22px; }
+      .collections { display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; }
+      section + section { margin-top: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="cover">
+      <canvas class="chart" aria-hidden="true"></canvas>
+      <time id="today"></time>
+      <h1 id="heading">潮汐桌面</h1>
+      <form id="search" role="search">
+        <button type="submit" id="search-submit" aria-label="搜索">
+          <img class="symbol" src="soulo-asset://symbol/magnifyingglass" alt="">
+        </button>
+        <input id="query" type="search" enterkeyhint="search" autocomplete="off"
+               placeholder="搜索或输入网址" aria-label="搜索或输入网址">
+        <button type="button" id="voice" aria-label="语音搜索" hidden>
+          <img class="symbol" src="soulo-asset://symbol/mic" alt="">
+        </button>
+      </form>
+    </header>
+
+    <nav class="dock" id="dock" aria-label="常用工具">
+      <button type="button" data-soulo-action="bookmarks">
+        <img class="symbol" src="soulo-asset://symbol/bookmark" alt=""><span>收藏</span>
+      </button>
+      <button type="button" data-soulo-action="downloads">
+        <img class="symbol" src="soulo-asset://symbol/arrow.down.circle" alt=""><span>下载</span>
+      </button>
+      <button type="button" data-soulo-action="tabs">
+        <img class="symbol" src="soulo-asset://symbol/square.on.square" alt=""><span>标签页</span>
+      </button>
+      <button type="button" data-soulo-action="settings">
+        <img class="symbol" src="soulo-asset://symbol/gearshape" alt=""><span>设置</span>
+      </button>
+    </nav>
+
+    <div class="collections">
+      <section aria-labelledby="bookmarks-heading">
+        <h2 id="bookmarks-heading">收藏</h2>
+        <p class="empty" id="no-bookmarks">收藏的网页会显示在这里。</p>
+        <div class="bookmarks" id="bookmarks"></div>
+      </section>
+      <section aria-labelledby="recents-heading">
+        <h2 id="recents-heading">最近搜索</h2>
+        <p class="empty" id="no-recents">搜索过的关键词会显示在这里。</p>
+        <div class="recents" id="recents"></div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const bridge = window.Soulo;
+    const context = () => bridge?.getContext() ?? {};
+    const language = navigator.language || 'zh-Hans';
+    const isChinese = language.startsWith('zh');
+    const byId = id => document.getElementById(id);
+
+    if (!isChinese) {
+      document.documentElement.lang = 'en';
+      document.title = 'Tidal Desk';
+      const labels = {
+        heading: 'Tidal Desk',
+        'bookmarks-heading': 'Bookmarks',
+        'recents-heading': 'Recent Searches',
+        'no-bookmarks': 'Saved pages appear here.',
+        'no-recents': 'Your searches appear here.'
+      };
+      for (const [id, label] of Object.entries(labels)) byId(id).textContent = label;
+      byId('query').placeholder = 'Search or enter a website';
+      byId('query').setAttribute('aria-label', byId('query').placeholder);
+      byId('search-submit').setAttribute('aria-label', 'Search');
+      byId('voice').setAttribute('aria-label', 'Voice search');
+      byId('dock').setAttribute('aria-label', 'Quick tools');
+    }
+    const today = new Date();
+    byId('today').textContent = new Intl.DateTimeFormat(language, {
+      weekday: 'long', month: 'long', day: 'numeric'
+    }).format(today);
+    byId('today').dateTime = today.toISOString().slice(0, 10);
+
+    function element(tag, className, text = '') {
+      const node = document.createElement(tag);
+      node.className = className;
+      node.textContent = text;
+      return node;
+    }
+
+    function renderLists() {
+      const data = context();
+      const bookmarks = (data.bookmarks ?? []).slice(0, 5);
+      const recents = (data.recentSearches ?? []).slice(0, 5);
+      byId('no-bookmarks').hidden = bookmarks.length > 0;
+      byId('no-recents').hidden = recents.length > 0;
+      byId('bookmarks').replaceChildren(...bookmarks.flatMap(item => {
+        let url;
+        try { url = new URL(item.url); } catch { return []; }
+        if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return [];
+        const title = item.title || url.hostname;
+        const link = element('a', 'bookmark');
+        link.href = url.href;
+        const copy = element('span', 'entry-copy');
+        copy.append(element('span', '', title), element('span', 'hostname', url.hostname));
+        const initial = element('span', 'initial', Array.from(title)[0].toLocaleUpperCase());
+        initial.setAttribute('aria-hidden', 'true');
+        link.append(initial, copy);
+        return [link];
+      }));
+      byId('no-bookmarks').hidden = byId('bookmarks').children.length > 0;
+      byId('recents').replaceChildren(...recents.map(value => {
+        const button = element('button', 'keyword');
+        button.type = 'button';
+        const icon = element('img', 'symbol');
+        icon.alt = '';
+        icon.src = 'soulo-asset://symbol/clock';
+        const copy = element('span', 'entry-copy');
+        copy.append(element('span', '', value));
+        button.append(icon, copy);
+        button.addEventListener('click', () => bridge?.search(value));
+        return button;
+      }));
+    }
+
+    const defaultEnglish = {bookmarks:'Bookmarks', downloads:'Downloads', tabs:'Tabs', settings:'Settings'};
+    document.querySelectorAll('[data-soulo-action]').forEach(button => {
+      const action = button.dataset.souloAction;
+      const label = context().actionLabels?.[action];
+      if (label || !isChinese) button.querySelector('span').textContent = label || defaultEnglish[action];
+      button.addEventListener('click', () => bridge?.perform(action));
+    });
+
+    byId('search').addEventListener('submit', event => {
+      event.preventDefault();
+      const input = byId('query');
+      const query = input.value.trim();
+      if (!query) { input.focus(); return; }
+      bridge?.search(query);
+    });
+    document.addEventListener('pointerdown', event => {
+      if (!byId('search').contains(event.target)) byId('query').blur();
+    });
+    if (typeof bridge?.voiceSearch === 'function') {
+      byId('voice').hidden = false;
+      byId('voice').addEventListener('click', () => bridge.voiceSearch());
+    }
+    document.addEventListener('soulo:contextchange', renderLists);
+    renderLists();
+
+    function drawChart() {
+      const canvas = document.querySelector('.chart');
+      const graphics = canvas.getContext('2d');
+      if (!graphics) return;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      const density = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(width * density);
+      canvas.height = Math.round(height * density);
+      graphics.scale(density, density);
+      const x = width * .79;
+      const y = height * .37;
+      const glow = graphics.createRadialGradient(x, y, 2, x, y, height * .62);
+      glow.addColorStop(0, '#ffcb9246');
+      glow.addColorStop(.62, '#9be0d619');
+      glow.addColorStop(1, '#9be0d600');
+      graphics.fillStyle = glow;
+      graphics.fillRect(0, 0, width, height);
+      graphics.beginPath();
+      graphics.arc(x + height * .1, y - height * .08, height * .13, 0, 2 * Math.PI);
+      graphics.fillStyle = '#eac699a8';
+      graphics.fill();
+      for (let row = 1; row < 17; row++) {
+        graphics.beginPath();
+        for (let i = 0; i <= 72; i++) {
+          const t = i / 72 * 2 * Math.PI;
+          const radius = height * (.115 + .055 * row) *
+            (1 + .17 * Math.sin(t * 2 + row * .21) + .08 * Math.cos(t * 3 - row * .2));
+          const px = x + Math.cos(t) * radius * 1.28;
+          const py = y + Math.sin(t) * radius * .64 + Math.cos(t) * radius * .29;
+          if (i === 0) graphics.moveTo(px, py); else graphics.lineTo(px, py);
+        }
+        graphics.closePath();
+        graphics.strokeStyle = row % 4 === 0 ? '#ffd39965' : '#a4e5d84b';
+        graphics.lineWidth = row % 4 === 0 ? 1 : .65;
+        graphics.stroke();
+      }
+    }
+    drawChart();
+    window.addEventListener('resize', drawChart, {passive: true});
+  </script>
+</body>
+</html>
