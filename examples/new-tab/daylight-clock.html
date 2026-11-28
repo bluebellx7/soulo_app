@@ -63,6 +63,14 @@
     .item input:checked + span { text-decoration: line-through; opacity: .69; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
   </style>
+  <meta name="soulo-zoom" content="disabled">
+  <style>
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input:not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"] {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+    a, img { -webkit-user-drag: none; }
+  </style>
 </head>
 <body>
   <main class="stage">
@@ -138,9 +146,14 @@
       get('minutes').textContent = minutes;
       get('clock').setAttribute('aria-label', words.clock + ' ' + hours + ':' + minutes);
     }
-    updateTime();
-    setInterval(updateTime,1000);
-    document.addEventListener('visibilitychange',updateTime);
+    let clockTick;
+    function scheduleClock() {
+      clearTimeout(clockTick);
+      updateTime();
+      if (!document.hidden) clockTick = setTimeout(scheduleClock, 60000 - Date.now() % 60000);
+    }
+    scheduleClock();
+    document.addEventListener('visibilitychange', scheduleClock);
 
     const storageKey = 'daylight-clock.tasks.v1';
     const list = get('todo-list');
@@ -204,6 +217,13 @@
         window.Soulo?.search(query);
       }
     });
+  </script>
+  <script>
+    document.addEventListener('pointerdown', event => {
+      const field = document.activeElement;
+      const editor = 'input, textarea, [contenteditable="true"]';
+      if (field?.matches(editor) && !event.target.closest(editor + ', label, select')) field.blur();
+    }, {passive: true});
   </script>
 </body>
 </html>

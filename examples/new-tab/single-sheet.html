@@ -41,6 +41,14 @@ textarea:focus-visible { outline:none; }
 .search { margin-top:14px; border-bottom:1px solid #8c9ab1; }
 
 </style>
+  <meta name="soulo-zoom" content="disabled">
+  <style>
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input:not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"] {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+    a, img { -webkit-user-drag: none; }
+  </style>
 </head>
 <body>
 <main><h1>一页纸</h1><div class="note"><label for="note" class="sr">便笺</label><textarea id="note" maxlength="2500" placeholder="写点什么…" spellcheck="false"></textarea></div>
@@ -119,5 +127,12 @@ note.value = typeof saved === 'string' ? saved : '';
 note.addEventListener('input',()=>save(key,note.value));
 
 </script>
+  <script>
+    document.addEventListener('pointerdown', event => {
+      const field = document.activeElement;
+      const editor = 'input, textarea, [contenteditable="true"]';
+      if (field?.matches(editor) && !event.target.closest(editor + ', label, select')) field.blur();
+    }, {passive: true});
+  </script>
 </body>
 </html>

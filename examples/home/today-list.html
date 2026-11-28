@@ -48,6 +48,14 @@ time { font-size:.82rem; color:var(--muted); }
 #task-form input { flex:1; width:100%; border:0; border-bottom:1px solid #b49a83; background:none; }
 
 </style>
+  <meta name="soulo-zoom" content="disabled">
+  <style>
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input:not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"] {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+    a, img { -webkit-user-drag: none; }
+  </style>
 </head>
 <body>
 <main><header><h1>今日清单</h1><time id="today"></time></header>
@@ -148,5 +156,12 @@ $('#task-form').addEventListener('submit', event => {
 render();
 
 </script>
+  <script>
+    document.addEventListener('pointerdown', event => {
+      const field = document.activeElement;
+      const editor = 'input, textarea, [contenteditable="true"]';
+      if (field?.matches(editor) && !event.target.closest(editor + ', label, select')) field.blur();
+    }, {passive: true});
+  </script>
 </body>
 </html>

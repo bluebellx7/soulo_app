@@ -43,6 +43,14 @@ h1 { font-size:1rem; font-weight:580; padding-bottom:12px; border-bottom:1px sol
 .search { margin-top:23px; padding-inline:8px 0; border-top:1px solid #fff4; }
 
 </style>
+  <meta name="soulo-zoom" content="disabled">
+  <style>
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input:not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"] {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+    a, img { -webkit-user-drag: none; }
+  </style>
 </head>
 <body>
 <main><h1>专注计时</h1><div class="timer" id="timer" aria-label="剩余时间">25:00</div>
@@ -125,13 +133,21 @@ let selected = durations.includes(image.selected) ? image.selected : 25;
 let remaining = Number.isFinite(image.remaining) ? Math.max(0,Math.min(image.remaining,selected*60000)) : selected*60000;
 let deadline = Number.isFinite(image.deadline) ? Math.min(image.deadline,Date.now()+selected*60000) : 0;
 function persist() { save(timerKey,{selected,remaining,deadline}); }
+let tick;
 function render() {
+  clearTimeout(tick);
   if (deadline && deadline <= Date.now()) { deadline = 0; remaining = 0; persist(); }
   const seconds = Math.ceil((deadline ? deadline-Date.now() : remaining)/1000);
   const label = String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
   if ($('#timer').textContent !== label) $('#timer').textContent = label;
-  $('#toggle').textContent = deadline ? '暂停' : remaining ? '开始' : '再计时';
-  document.querySelectorAll('[data-min]').forEach(button => button.setAttribute('aria-pressed',String(Number(button.dataset.min) === selected)));
+  const toggle = $('#toggle');
+  const action = deadline ? '暂停' : remaining ? '开始' : '再计时';
+  if (toggle.textContent !== action) toggle.textContent = action;
+  document.querySelectorAll('[data-min]').forEach(button => {
+    const pressed = String(Number(button.dataset.min) === selected);
+    if (button.getAttribute('aria-pressed') !== pressed) button.setAttribute('aria-pressed', pressed);
+  });
+  if (deadline && !document.hidden) tick = setTimeout(render, Math.max(16, (deadline - Date.now()) % 1000 || 1000));
 }
 document.querySelectorAll('[data-min]').forEach(button => button.addEventListener('click',() => {
   selected = Number(button.dataset.min); remaining = selected*60000; deadline = 0; persist(); render();
@@ -142,10 +158,16 @@ $('#toggle').addEventListener('click',() => {
   persist(); render();
 });
 $('#reset').addEventListener('click',() => { deadline = 0; remaining = selected*60000; persist(); render(); });
-setInterval(render,1000);
 document.addEventListener('visibilitychange',render);
 render();
 
 </script>
+  <script>
+    document.addEventListener('pointerdown', event => {
+      const field = document.activeElement;
+      const editor = 'input, textarea, [contenteditable="true"]';
+      if (field?.matches(editor) && !event.target.closest(editor + ', label, select')) field.blur();
+    }, {passive: true});
+  </script>
 </body>
 </html>

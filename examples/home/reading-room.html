@@ -44,7 +44,16 @@ header button { min-height:44px; min-width:44px; padding:0 8px; border:1px solid
 .list li+li { border-top:1px solid #d6d7cb; }
 .empty { padding-block:10px; }
 
-</style>
+ .entry-favicon { display: block; width: 16px; height: 16px; object-fit: contain; border-radius: 3px; }
+  </style>
+  <meta name="soulo-zoom" content="disabled">
+  <style>
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input:not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"] {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+    a, img { -webkit-user-drag: none; }
+  </style>
 </head>
 <body>
 <main><header><h1>阅览台</h1><button type="button" data-soulo-action="history">打开历史</button></header>
@@ -100,7 +109,16 @@ function fill(selector, kind, options = {}) {
       action.type = 'button';
       action.addEventListener('click', () => bridge?.search(title));
     }
-    if (options.initial) action.append(element('span','initial',Array.from(title)[0]?.toUpperCase() ?? '·'));
+    if (options.initial || (bookmark && item.favicon)) {
+      const mark = element('span','initial',Array.from(title)[0]?.toUpperCase() ?? '·');
+      if (bookmark && item.favicon) {
+        const image = element('img','entry-favicon');
+        image.src = item.favicon;
+        image.alt = '';
+        image.addEventListener('load', () => mark.replaceChildren(image), {once: true});
+      }
+      action.append(mark);
+    }
     action.append(element('span','label',title));
     const li = element('li');
     li.append(action);
@@ -122,5 +140,12 @@ render();
 document.addEventListener('soulo:contextchange',render);
 
 </script>
+  <script>
+    document.addEventListener('pointerdown', event => {
+      const field = document.activeElement;
+      const editor = 'input, textarea, [contenteditable="true"]';
+      if (field?.matches(editor) && !event.target.closest(editor + ', label, select')) field.blur();
+    }, {passive: true});
+  </script>
 </body>
 </html>

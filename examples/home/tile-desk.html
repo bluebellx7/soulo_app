@@ -47,6 +47,14 @@ h1 { font-size:clamp(2rem,9vw,3.4rem); line-height:1.08; font-weight:800; letter
 @media(min-width:520px) { .list { grid-template-columns:repeat(3,minmax(0,1fr)); } .tools { grid-template-columns:repeat(4,minmax(0,1fr)); } }
 
 </style>
+  <meta name="soulo-zoom" content="disabled">
+  <style>
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input:not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"] {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+    a, img { -webkit-user-drag: none; }
+  </style>
 </head>
 <body>
 <main><h1>磁贴桌面</h1>
@@ -133,5 +141,12 @@ render();
 document.addEventListener('soulo:contextchange',render);
 
 </script>
+  <script>
+    document.addEventListener('pointerdown', event => {
+      const field = document.activeElement;
+      const editor = 'input, textarea, [contenteditable="true"]';
+      if (field?.matches(editor) && !event.target.closest(editor + ', label, select')) field.blur();
+    }, {passive: true});
+  </script>
 </body>
 </html>

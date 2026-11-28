@@ -47,6 +47,14 @@ nav { margin-top:16px; display:flex; flex-wrap:wrap; gap:6px; }
 nav button { min-height:44px; border:1px solid #536555; background:transparent; padding:0 10px; color:var(--ink); }
 
 </style>
+  <meta name="soulo-zoom" content="disabled">
+  <style>
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input:not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"] {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+    a, img { -webkit-user-drag: none; }
+  </style>
 </head>
 <body>
 <main><header><h1>指令页</h1><kbd>/ 搜索</kbd></header>
@@ -131,5 +139,12 @@ render();
 document.addEventListener('soulo:contextchange',render);
 
 </script>
+  <script>
+    document.addEventListener('pointerdown', event => {
+      const field = document.activeElement;
+      const editor = 'input, textarea, [contenteditable="true"]';
+      if (field?.matches(editor) && !event.target.closest(editor + ', label, select')) field.blur();
+    }, {passive: true});
+  </script>
 </body>
 </html>

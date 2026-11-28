@@ -47,7 +47,16 @@ h2 { font-family:"Songti SC",Georgia,serif; margin-block-end:6px; }
 footer { display:flex; align-items:center; gap:10px; margin-top:15px; border-top:1px solid #27231e; }
 footer button { border:0; background:none; min-height:44px; padding-inline:3px; color:var(--accent); }
 
-</style>
+ .entry-favicon { display: block; width: 16px; height: 16px; object-fit: contain; border-radius: 3px; }
+  </style>
+  <meta name="soulo-zoom" content="disabled">
+  <style>
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input:not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"] {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+    a, img { -webkit-user-drag: none; }
+  </style>
 </head>
 <body>
 <main><header class="mast"><h1>每日索引</h1><time id="today"></time></header>
@@ -105,7 +114,16 @@ function fill(selector, kind, options = {}) {
       action.type = 'button';
       action.addEventListener('click', () => bridge?.search(title));
     }
-    if (options.initial) action.append(element('span','initial',Array.from(title)[0]?.toUpperCase() ?? '·'));
+    if (options.initial || (bookmark && item.favicon)) {
+      const mark = element('span','initial',Array.from(title)[0]?.toUpperCase() ?? '·');
+      if (bookmark && item.favicon) {
+        const image = element('img','entry-favicon');
+        image.src = item.favicon;
+        image.alt = '';
+        image.addEventListener('load', () => mark.replaceChildren(image), {once: true});
+      }
+      action.append(mark);
+    }
     action.append(element('span','label',title));
     const li = element('li');
     li.append(action);
@@ -128,5 +146,12 @@ render();
 document.addEventListener('soulo:contextchange',render);
 
 </script>
+  <script>
+    document.addEventListener('pointerdown', event => {
+      const field = document.activeElement;
+      const editor = 'input, textarea, [contenteditable="true"]';
+      if (field?.matches(editor) && !event.target.closest(editor + ', label, select')) field.blur();
+    }, {passive: true});
+  </script>
 </body>
 </html>

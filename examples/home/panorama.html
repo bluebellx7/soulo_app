@@ -42,6 +42,14 @@ nav { display:flex; flex-wrap:wrap; gap:4px; }
 nav button { min-height:44px; border:0; background:none; padding:0 6px; font-size:.87rem; }
 
 </style>
+  <meta name="soulo-zoom" content="disabled">
+  <style>
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input:not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"] {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+    a, img { -webkit-user-drag: none; }
+  </style>
 </head>
 <body>
 <main><section class="panel" aria-label="搜索和常用工具">
@@ -68,5 +76,12 @@ document.querySelectorAll('[data-soulo-action]').forEach(button => {
   button.addEventListener('click', () => bridge?.perform(button.dataset.souloAction));
 });
 </script>
+  <script>
+    document.addEventListener('pointerdown', event => {
+      const field = document.activeElement;
+      const editor = 'input, textarea, [contenteditable="true"]';
+      if (field?.matches(editor) && !event.target.closest(editor + ', label, select')) field.blur();
+    }, {passive: true});
+  </script>
 </body>
 </html>
