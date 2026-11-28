@@ -3,6 +3,16 @@
   const PRODUCTION_API = 'https://api2.dkluge.com/api/soulo/custom-market/v1';
   const APP_STORE = 'https://apps.apple.com/app/id6761165330';
   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const WALLPAPERS = {
+    lake: ['mist-lake', 'Laughing Zhu', 'https://unsplash.com/photos/jJPzwgjY2hY'],
+    reeds: ['golden-reeds', 'Alexandr Popadin', 'https://unsplash.com/photos/2Et2QxdvuJ0']
+  };
+  const WORK_WALLPAPERS = {
+    '20ab37ae-70ef-4bee-a670-49a833f87904': WALLPAPERS.lake,
+    '7420b0ba-4c7e-46d1-99f4-fb22b776c990': WALLPAPERS.reeds,
+    'd613370e-83b7-42a9-b678-a48904de9e21': WALLPAPERS.lake,
+    '8876f0f2-139f-40da-9963-0014b27d4beb': WALLPAPERS.lake
+  };
   const BLOCKED_KEY = 'soulo-market-blocked-authors';
 
   const list = document.getElementById('market-list');
@@ -13,6 +23,7 @@
   const categoriesEl = document.getElementById('market-categories');
   const blockedBar = document.getElementById('market-blocked-bar');
   const dialog = document.getElementById('market-detail-dialog');
+  const qrDialog = document.getElementById('market-qr-dialog');
   const dialogBody = document.getElementById('market-dialog-body');
   if (!list || !status || !more || !search || !categoriesEl) return;
 
@@ -53,7 +64,13 @@
     getApp: ['获取 / 更新 Soulo', 'Get / Update Soulo'],
     by: ['作者：', 'By '],
     needs: ['需要 Soulo ', 'Requires Soulo '],
-    hasScript: ['含脚本', 'Contains Script'],
+    scan: ['扫码安装', 'Scan to install'],
+    scanShort: ['扫码', 'Scan'],
+    scanHint: ['用 iPhone 相机扫码，在 Soulo 中预览并安装。', 'Scan with your iPhone camera to preview and install in Soulo.'],
+    scanCode: ['作品安装二维码', 'Work installation QR code'],
+    wallpaper: ['下载壁纸', 'Download wallpaper'],
+    sourceLink: ['查看安装来源', 'View original source'],
+    storePermissions: ['安装时，Soulo 会显示扩展实际申请的权限。', 'Soulo shows the permissions requested by the downloaded extension before installation.'],
     ratingEveryone: ['全年龄', 'Everyone'],
     ratingTeen: ['12+ 进阶', '12+ Teen'],
     permissionsTitle: ['适用权限与访问网站范围', 'Permissions & Website Access'],
@@ -126,9 +143,76 @@
     return null;
   }
 
+  function httpsSource(raw) {
+    try {
+      const url = new URL(raw);
+      if (url.protocol === 'https:' && !url.username && !url.password) return url.href;
+    } catch {}
+    return null;
+  }
+
   function installLink(item) {
     if (!UUID.test(item.id) || !Number.isInteger(item.version) || item.version < 1) return null;
     return `soulo://custom-market/work/${item.id.toLowerCase()}?version=${item.version}`;
+  }
+
+  function scanButton(item) {
+    const btn = el('button', 'catalog-button market-scan');
+    btn.type = 'button';
+    btn.title = say('scan');
+    btn.setAttribute('aria-label', say('scan'));
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(icon.namespaceURI, 'path');
+    path.setAttribute('fill-rule', 'evenodd');
+    path.setAttribute('d', 'M2 2h8v8H2zm2 2v4h4V4zm10-2h8v8h-8zm2 2v4h4V4zM2 14h8v8H2zm2 2v4h4v-4zm10-2h3v3h-3zm5 0h3v3h-3zm-5 5h3v3h-3zm5 0h3v3h-3z');
+    icon.append(path);
+    btn.append(icon, el('span', '', say('scanShort')));
+    btn.addEventListener('click', () => showInstallCode(item));
+    return btn;
+  }
+
+  function showInstallCode(item) {
+    const url = new URL(`/custom-market/work/${item.id.toLowerCase()}`, 'https://soulo.dkluge.com');
+    const card = el('div', 'market-dialog-card');
+    const header = el('div', 'market-dialog-head');
+    const title = el('h2', '', say('scan'));
+    title.id = 'market-qr-title';
+    const close = el('button', 'market-dialog-close', '×');
+    close.type = 'button';
+    close.setAttribute('aria-label', say('close'));
+    close.addEventListener('click', () => qrDialog.close());
+    header.append(title, close);
+    card.append(header);
+
+    if (typeof window.qrcode === 'function') {
+      const qr = window.qrcode(0, 'M');
+      qr.addData(url.href);
+      qr.make();
+      const canvas = el('canvas', 'market-qr-code');
+      const count = qr.getModuleCount();
+      const scale = 8;
+      canvas.width = canvas.height = (count + 8) * scale;
+      canvas.setAttribute('role', 'img');
+      canvas.setAttribute('aria-label', say('scanCode'));
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#141321';
+      for (let row = 0; row < count; row++) {
+        for (let col = 0; col < count; col++) {
+          if (qr.isDark(row, col)) context.fillRect((col + 4) * scale, (row + 4) * scale, scale, scale);
+        }
+      }
+      card.append(canvas, el('p', 'market-inline-note', say('scanHint')));
+    }
+
+    const link = el('a', 'market-qr-link', item.name);
+    link.href = url.href;
+    card.append(link);
+    qrDialog.replaceChildren(card);
+    qrDialog.showModal();
   }
 
   function formatBytes(n) {
@@ -177,7 +261,6 @@
   function badgesFor(item) {
     const wrap = el('div', 'market-badges');
     wrap.append(el('span', 'market-pill', modName(item.module)));
-    if (item.hasScript) wrap.append(el('span', 'market-pill script', say('hasScript')));
     if (item.contentRating === 'teen') wrap.append(el('span', 'market-pill teen', say('ratingTeen')));
     return wrap;
   }
@@ -186,13 +269,17 @@
     const article = el('article', 'extension-card market-card');
     article.dataset.work = item.id;
     article.dataset.module = item.module;
+    if (item.sourceURL) article.dataset.reference = 'true';
 
     const previewUrl = resolvePreviewURL(item.previewImageUrl);
     if (previewUrl) {
-      const frame = el('div', 'market-preview-wrap');
+      const frame = el('button', 'market-preview-wrap');
+      frame.type = 'button';
+      frame.setAttribute('aria-label', `${say('detail')} · ${item.name}`);
+      frame.addEventListener('click', () => openDetail(item.id));
       const img = el('img', 'market-preview-img');
       img.src = previewUrl;
-      img.alt = item.name;
+      img.alt = '';
       img.loading = 'lazy';
       img.decoding = 'async';
       frame.append(img);
@@ -210,7 +297,6 @@
     article.append(identity);
 
     if (item.summary) article.append(el('p', 'extension-description', item.summary));
-    article.append(el('p', 'extension-version', `${say('needs')}${item.minSouloVersion}`));
 
     const actions = el('div', 'extension-actions');
     const link = installLink(item);
@@ -226,9 +312,7 @@
     detailBtn.addEventListener('click', () => openDetail(item.id));
     actions.append(detailBtn);
 
-    const app = el('a', 'catalog-button', say('getApp'));
-    app.href = APP_STORE; app.target = '_blank'; app.rel = 'noopener noreferrer';
-    actions.append(app);
+    if (link) actions.append(scanButton(item));
     article.append(actions);
     return article;
   }
@@ -378,7 +462,9 @@
     if (work.hasScript) permBox.append(el('p', 'market-inline-note', say('scriptWarn')));
     const perms = Array.isArray(work.permissions) ? work.permissions : [];
     const sites = Array.isArray(work.sites) ? work.sites : [];
-    if (!perms.length && !sites.length) {
+    if (work.sourceURL) {
+      permBox.append(el('p', 'market-inline-note', say('storePermissions')));
+    } else if (!perms.length && !sites.length) {
       permBox.append(el('p', 'market-inline-note', say('noExtraPerms')));
     } else {
       if (perms.length) {
@@ -402,12 +488,37 @@
       const install = el('a', 'catalog-button primary', say('install'));
       install.href = link;
       install.dataset.installWork = work.id;
-      actions.append(install);
+      actions.append(install, scanButton(work));
     }
     const app = el('a', 'catalog-button', say('getApp'));
     app.href = APP_STORE; app.target = '_blank'; app.rel = 'noopener noreferrer';
     actions.append(app);
+    const source = httpsSource(work.sourceURL || work.package?.script?.sourceURL);
+    if (source) {
+      const link = el('a', 'catalog-button', say('sourceLink'));
+      link.href = source;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      actions.append(link);
+    }
     nodes.push(actions);
+
+    const wallpaper = WORK_WALLPAPERS[work.id];
+    if (wallpaper) {
+      const [file, author, source] = wallpaper;
+      const download = el('a', 'catalog-button', say('wallpaper'));
+      download.href = `/images/market/${file}.jpg`;
+      download.download = `soulo-${file}.jpg`;
+      const note = el('p', 'market-inline-note');
+      const credit = el('a', '', author);
+      credit.href = source;
+      credit.target = '_blank';
+      credit.rel = 'noopener noreferrer';
+      note.append(credit, ' / Unsplash');
+      const row = el('div', 'market-wallpaper');
+      row.append(download, note);
+      nodes.push(row);
+    }
 
     // Governance: report + block author
     const gov = el('div', 'market-report-box');

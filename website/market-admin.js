@@ -29,7 +29,8 @@
     'source-audit': '源码可读性与反混淆/远程加载检查通过',
     'has-script': '包含可执行 JavaScript，需重点审查源码',
     'broad-site-access': '申请了较宽泛的网站访问权限',
-    'sensitive-permissions': '申请了敏感权限'
+    'sensitive-permissions': '申请了敏感权限',
+    'extension-store-link': '核对来源并检查从商店下载的扩展'
   };
   const actionLabels = { submit: '提交', approve: '通过', reject: '退回', unpublish: '下架', revoke: '停用已安装版本', withdraw: '撤回' };
 
@@ -341,7 +342,18 @@
     } else if (data.module === 'widget' && pkg.widget) {
       children.push(el('h3', '', '小组件配置源码'), el('pre', 'admin-source', JSON.stringify(pkg.widget, null, 2)));
     } else if (data.module === 'script' && pkg.script) {
+      if (pkg.script.sourceURL) children.push(el('p', 'admin-note', pkg.script.sourceURL));
       children.push(el('h3', '', '用户脚本完整源码（可审查）'), el('pre', 'admin-source', pkg.script.source));
+    } else if (data.module === 'webExtension' && pkg.webExtension?.installURL) {
+      children.push(el('h3', '', '扩展安装来源'));
+      const source = new URL(pkg.webExtension.installURL);
+      if (source.protocol === 'https:' && !source.username && !source.password) {
+        const link = el('a', 'catalog-button', source.hostname);
+        link.href = source.href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        children.push(link, el('p', 'admin-note', source.href));
+      }
     } else if (data.module === 'webExtension' && pkg.webExtension) {
       children.push(el('h3', '', '扩展 Manifest'), el('pre', 'admin-source', JSON.stringify(pkg.webExtension.manifest, null, 2)));
       children.push(el('h3', '', '扩展全部文件'));

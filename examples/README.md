@@ -7,3 +7,9 @@
 - 发布前使用市场校验器及 Soulo 渲染测试检查源文件、预览与交互。预览不使用个人书签和搜索记录。
 
 布局参考了极简新标签页的主次分配、内容型工作台的快捷入口和壁纸上的对比度处理。[Bonjourr 项目](https://bonjourr.fr/) · [Jason Pepping 的新标签页设计](https://dribbble.com/shots/3568037-Browser-new-tab-dashboard) · [Manganum 设计案例](https://www.jdavydko.com/case-studies/manganum.html)
+
+## 随附壁纸
+
+- `home/panorama.html` 随附 [Laughing Zhu 的九寨沟湖景](https://unsplash.com/photos/jJPzwgjY2hY)。
+- `new-tab/daylight-clock.html` 随附 [Alexandr Popadin 的暮色芦苇](https://unsplash.com/photos/2Et2QxdvuJ0)。
+- 两张照片均使用 [Unsplash License](https://unsplash.com/license)。模板内嵌压缩版并支持切回 Soulo 当前壁纸。市场详情提供较高分辨率的同款下载。使用当前壁纸的小组件在详情里也提供可选下载。

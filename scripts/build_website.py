@@ -11,8 +11,13 @@ from urllib.parse import quote, urljoin, urlparse
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / 'website'
 BASE = 'https://soulo.dkluge.com/'
+# The custom market page is deployed but not announced while this is False: no navigation link, noindex,
+# and no sitemap or llms.txt entry. Set it to True, add the page to website/sitemap.xml, website/llms.txt and
+# website/llms-full.txt (see website/README.md), then rebuild to publish it.
+CUSTOM_MARKET_PUBLIC = False
 ICONS = {
     'puzzle': '<path d="M9 3h6v4a3 3 0 1 1 4 4h2v10H3V11h4a3 3 0 1 0 2-4V3Z"/>',
+    'store': '<path d="M4 9h16l-1.5-5h-13L4 9Z"/><path d="M5 9v11h14V9M9 20v-6h6v6"/>',
     'play': '<path d="m9 5 11 7-11 7V5Z"/>',
     'film': '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4m10 0h4M3 15h4m10 0h4"/>',
     'tv': '<rect x="3" y="7" width="18" height="14" rx="3"/><path d="m8 3 4 4 4-4"/>',
@@ -75,10 +80,14 @@ def jsonld(value):
 
 def navigation(page):
     template = (ROOT/'scripts/templates/navigation.html').read_text().strip()
-    for key, file in [('home', 'index.html'), ('sources', 'sources.html'), ('movies', 'movies.html'), ('resources', 'resources.html'), ('reading', 'reading.html'), ('music', 'music.html'), ('stocks', 'stocks.html'), ('extensions', 'extensions.html')]:
+    for key, file in [('home', 'index.html'), ('sources', 'sources.html'), ('movies', 'movies.html'), ('resources', 'resources.html'), ('reading', 'reading.html'), ('music', 'music.html'), ('stocks', 'stocks.html'), ('extensions', 'extensions.html'), ('custom_market', 'custom-market.html')]:
         template = template.replace('{{'+key+'_current}}', ' aria-current="page"' if page == file else '')
-    for name in ['search', 'play', 'grid', 'book', 'headphones', 'chart', 'wrench', 'puzzle']:
+    for name in ['search', 'play', 'grid', 'book', 'headphones', 'chart', 'wrench', 'puzzle', 'store']:
         template = template.replace('{{nav_'+name+'}}', icon(name))
+    if CUSTOM_MARKET_PUBLIC:
+        template = template.replace('<!-- custom-market-nav:start -->', '').replace('<!-- custom-market-nav:end -->', '')
+    else:
+        template = re.sub(r'<!-- custom-market-nav:start -->.*?<!-- custom-market-nav:end -->', '', template, flags=re.S)
     return template
 
 
@@ -229,6 +238,25 @@ def build_extensions():
     for key, value in tokens.items(): template = template.replace('{{'+key+'}}', value)
     assert not re.search(r'\{\{\w+\}\}', template), 'Unresolved extension template token'
     return finish_page(template, 'extensions.html')
+
+
+def build_custom_market():
+    description = '浏览用户投稿、经人工审核上架的 Soulo 首页、新标签页、小组件、搜索平台、用户脚本与浏览器扩展，在 Soulo 中预览权限并一键安装。'
+    description_en = 'Browse user-created Home pages, New Tab pages, Widgets, Search Platforms, User Scripts and Browser Extensions reviewed by hand and installed natively in Soulo.'
+    title, title_en = 'Soulo 自定义市场 - 首页、小组件、搜索平台与脚本扩展', 'Soulo Custom Market - Home Pages, Widgets, Search Platforms & Extensions'
+    graph = {'@context': 'https://schema.org', '@graph': [
+        {'@type': 'CollectionPage', '@id': BASE+'custom-market.html#webpage', 'url': BASE+'custom-market.html', 'name': 'Soulo 自定义市场', 'description': description, 'inLanguage': ['zh-CN', 'en'], 'isPartOf': {'@id': BASE+'#website'}},
+        {'@type': 'BreadcrumbList', '@id': BASE+'custom-market.html#breadcrumb', 'itemListElement': [{'@type': 'ListItem', 'position': 1, 'name': 'Soulo', 'item': BASE}, {'@type': 'ListItem', 'position': 2, 'name': 'Soulo 自定义市场', 'item': BASE+'custom-market.html'}]}
+    ]}
+    robots = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1' if CUSTOM_MARKET_PUBLIC else 'noindex,nofollow'
+    tokens = {'kind': 'custom-market', 'page_title': title, 'page_description': description, 'robots': robots,
+              'structured_data': jsonld(graph),
+              'page_locales': jsonld({'zh': {'page.title': title, 'page.description': description}, 'en': {'page.title': title_en, 'page.description': description_en}, 'categories': {}}),
+              'navigation': navigation('custom-market.html')}
+    template = (ROOT/'scripts/templates/custom-market.html').read_text()
+    for key, value in tokens.items(): template = template.replace('{{'+key+'}}', value)
+    assert not re.search(r'\{\{\w+\}\}', template), 'Unresolved custom market template token'
+    return finish_page(template, 'custom-market.html')
 
 
 def build_resources():
@@ -417,7 +445,7 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     changed = []
-    for file, content in [('movies.html', build_movies()), ('extensions.html', build_extensions()), ('resources.html', build_resources()), ('stocks.html', build_stocks()), ('magnets.html', build_directory_redirect('magnet', 'engine')), ('pans.html', build_directory_redirect('cloud', 'cloud-engine')), ('reading.html', build_content_directory('reading')), ('music.html', build_content_directory('music')), ('sources.html', build_sources()), ('index.html', build_existing_page('index.html')), ('privacy.html', build_existing_page('privacy.html'))]:
+    for file, content in [('movies.html', build_movies()), ('extensions.html', build_extensions()), ('custom-market.html', build_custom_market()), ('resources.html', build_resources()), ('stocks.html', build_stocks()), ('magnets.html', build_directory_redirect('magnet', 'engine')), ('pans.html', build_directory_redirect('cloud', 'cloud-engine')), ('reading.html', build_content_directory('reading')), ('music.html', build_content_directory('music')), ('sources.html', build_sources()), ('index.html', build_existing_page('index.html')), ('privacy.html', build_existing_page('privacy.html'))]:
         target = SITE/file
         if not target.exists() or target.read_text() != content:
             changed.append(file)

@@ -1,0 +1,17 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "7S2LBJA9VA.com.dkluge.Soulo"
+        ],
+        "components": [
+          {
+            "/": "/custom-market/work/*",
+            "comment": "Open published Soulo Custom Market works in Soulo"
+          }
+        ]
+      }
+    ]
+  }
+}

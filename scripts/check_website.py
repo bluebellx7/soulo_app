@@ -14,7 +14,11 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT/'website'
 BASE = 'https://soulo.dkluge.com/'
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from build_website import CUSTOM_MARKET_PUBLIC
 PAGES = ['index.html', 'sources.html', 'movies.html', 'resources.html', 'stocks.html', 'reading.html', 'music.html', 'privacy.html', 'extensions.html']
+if CUSTOM_MARKET_PUBLIC:
+    PAGES.append('custom-market.html')
 
 
 class Page(HTMLParser):
@@ -120,6 +124,15 @@ def check():
     for file in ['llms.txt','llms-full.txt']:
         text = (SITE/file).read_text()
         assert all(BASE + ('' if p == 'index.html' else p) in text for p in PAGES)
+    if not CUSTOM_MARKET_PUBLIC:
+        # Deployed but unannounced: reachable by address only, never linked, listed or indexed.
+        market = Page((SITE/'custom-market.html').read_text())
+        robots = next(a['content'] for t,a in market.tags if t == 'meta' and a.get('name') == 'robots')
+        assert 'noindex' in robots, 'The hidden market page must be noindex'
+        for file in PAGES:
+            assert not any(t == 'a' and 'custom-market' in a.get('href', '') for t,a in pages[file].tags), (file, 'hidden market linked')
+        for file in ['sitemap.xml', 'llms.txt', 'llms-full.txt']:
+            assert 'custom-market' not in (SITE/file).read_text(), (file, 'hidden market listed')
     print('Directory data, sitemap and site summaries OK')
 
 

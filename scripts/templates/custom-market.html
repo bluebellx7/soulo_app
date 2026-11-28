@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-resolved-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{{page_title}}</title>
+    <meta name="description" content="{{page_description}}" />
+    <meta name="robots" content="{{robots}}" />
+    <meta name="theme-color" content="#111217" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)" />
+    <link rel="canonical" href="https://soulo.dkluge.com/{{kind}}.html" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030" />
+    <link rel="apple-touch-icon" href="app-icon.png?v=1.1.4" />
+    <link rel="alternate" type="text/plain" href="llms.txt" title="Soulo 网站摘要" />
+    <meta property="og:site_name" content="Soulo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:title" content="{{page_title}}" />
+    <meta property="og:description" content="{{page_description}}" />
+    <meta property="og:url" content="https://soulo.dkluge.com/{{kind}}.html" />
+    <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:image:alt" content="Soulo 图标" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="{{page_title}}" />
+    <meta name="twitter:description" content="{{page_description}}" />
+    <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+    <meta name="twitter:image:alt" content="Soulo 图标" />
+    <script>
+      (() => {
+        let theme = 'dark';
+        try { const saved = localStorage.getItem('soulo-theme'); if (saved === 'light' || saved === 'dark') theme = saved; } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.resolvedTheme = theme;
+      })();
+    </script>
+    <link rel="stylesheet" href="home.css" />
+    <link rel="stylesheet" href="extensions.css" />
+    <link rel="stylesheet" href="custom-market.css" />
+    <link rel="stylesheet" href="navigation.css" />
+    <script type="application/ld+json">{{structured_data}}</script>
+    <script id="directory-locales" type="application/json">{{page_locales}}</script>
+    <script src="site-ui.js" defer></script>
+    <script src="market-qrcode.js" defer></script>
+    <script src="custom-market.js" defer></script>
+
+    <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?bdc8ea6c501e6ff0d7b16dc13b09b991";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+      })();
+    </script>
+  </head>
+  <body class="extensions-page custom-market-page">
+    <a class="skip-link" href="#main-content" data-text-zh="跳到作品列表" data-text-en="Skip to works">跳到作品列表</a>
+    {{navigation}}
+    <main class="catalog-wrap" id="main-content">
+      <header class="catalog-intro">
+        <h1 data-text-zh="Soulo 自定义市场" data-text-en="Soulo Custom Market">Soulo 自定义市场</h1>
+        <p data-text-zh="发现适合你的首页、新标签页、小组件和扩展，直接安装或用手机扫码。" data-text-en="Find Home pages, New Tab pages, widgets, and extensions for Soulo. Install here or scan with your phone.">发现适合你的首页、新标签页、小组件和扩展，直接安装或用手机扫码。</p>
+      </header>
+      <div class="market-categories" id="market-categories" role="tablist" aria-label="作品分类" data-label-zh="作品分类" data-label-en="Work categories"></div>
+      <div class="market-controls">
+        <form class="market-search" id="market-search-form" role="search">
+          <label class="market-search-label" for="market-search" data-text-zh="搜索作品" data-text-en="Search works">搜索作品</label>
+          <input id="market-search" type="search" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" data-placeholder-zh="名称、简介、作者或网站" data-placeholder-en="Name, summary, author or site" placeholder="名称、简介、作者或网站" />
+        </form>
+        <div class="market-sort-wrap">
+          <label class="market-search-label" for="market-sort" data-text-zh="排序" data-text-en="Sort">排序</label>
+          <select id="market-sort">
+            <option value="newest" data-text-zh="最新上架" data-text-en="Newest">最新上架</option>
+            <option value="updated" data-text-zh="最近更新" data-text-en="Recently updated">最近更新</option>
+            <option value="name" data-text-zh="名称" data-text-en="Name">名称</option>
+          </select>
+        </div>
+      </div>
+      <div class="market-blocked-bar" id="market-blocked-bar" hidden></div>
+      <p class="market-status" id="market-status" role="status" aria-live="polite" tabindex="-1"></p>
+      <div class="extension-list market-list" id="market-list" aria-busy="true"></div>
+      <div class="market-more"><button class="catalog-button" id="market-more" type="button" hidden data-text-zh="加载更多" data-text-en="Load more">加载更多</button></div>
+      <noscript><p class="market-noscript">市场列表需要启用 JavaScript。 The market list needs JavaScript.</p></noscript>
+      <aside class="install-help">
+        <h2 data-text-zh="在 Soulo 中安装与投稿" data-text-en="Install &amp; Publish in Soulo">在 Soulo 中安装与投稿</h2>
+        <p data-text-zh="点击「在 Soulo 中安装」会拉起 Soulo 原生确认页，展示预览、版本、完整性校验及适用权限。需要 Soulo 1.2.23 或更高版本。" data-text-en="“Install in Soulo” opens a native confirmation screen showing the preview, version, integrity check and permissions. Requires Soulo 1.2.23 or later.">点击「在 Soulo 中安装」会拉起 Soulo 原生确认页，展示预览、版本、完整性校验及适用权限。需要 Soulo 1.2.23 或更高版本。</p>
+        <p><span data-text-zh="尚未安装或版本过旧？" data-text-en="Need Soulo or an update?">尚未安装或版本过旧？</span> <a href="https://apps.apple.com/app/id6761165330" target="_blank" rel="noopener noreferrer" data-text-zh="前往 App Store 获取或更新 Soulo" data-text-en="Get or update Soulo on the App Store">前往 App Store 获取或更新 Soulo</a></p>
+        <p data-text-zh="想投稿自己的作品？在 Soulo 的「设置 → 个性化 → 自定义」中编辑并预览作品，点击「发布到市场」。脚本与扩展可从「脚本与扩展」长按项目推荐。审核状态见「我的投稿」。" data-text-en="Want to share your own work? Create and preview it in Soulo under Settings → Personalization → Customize, tap Publish to Market. To recommend a script or extension, long-press it in Scripts &amp; Extensions. Track reviews under My Submissions.">想投稿自己的作品？在 Soulo 的「设置 → 个性化 → 自定义」中编辑并预览作品，点击「发布到市场」。脚本与扩展可从「脚本与扩展」长按项目推荐。审核状态见「我的投稿」。</p>
+      </aside>
+      <p class="catalog-attribution" data-text-zh="作品由用户提供，经人工审核后上架，但不代表 Soulo 或 DKluge 对第三方网站或内容负责。如发现违规或异常作品，可在作品详情页提交举报。" data-text-en="Works are contributed by users and listed after manual review. Soulo and DKluge are not responsible for third-party sites or content. Use Report inside any work’s detail view to flag issues.">作品由用户提供，经人工审核后上架，但不代表 Soulo 或 DKluge 对第三方网站或内容负责。如发现违规或异常作品，可在作品详情页提交举报。</p>
+    </main>
+    <dialog class="market-dialog" id="market-detail-dialog" aria-labelledby="market-dialog-title">
+      <div class="market-dialog-card" id="market-dialog-body"></div>
+    </dialog>
+    <dialog class="market-dialog market-qr-dialog" id="market-qr-dialog" aria-labelledby="market-qr-title"></dialog>
+    <footer class="site-footer wrap"><div><a class="footer-brand" href="./">Soulo</a><span>© 2026 DKluge</span></div><div class="footer-links"></div></footer>
+  </body>
+</html>

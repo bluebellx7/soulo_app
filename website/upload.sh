@@ -17,6 +17,9 @@ fi
 for file in index.html home.css home.js site.css site-ui.js navigation.css sources.html sources.css sources.js sources.json privacy.html \
     movies.html movies.css movies.js movies.json resources.html magnets.html magnets.json pans.html pans.json stocks.html stocks.json reading.html reading.json music.html music.json content-directories.css navigation.js favicon.svg robots.txt sitemap.xml llms.txt llms-full.txt \
     extensions.html extensions.css extensions.js extensions.json downloads/soulo-search-platform.zip \
+    custom-market.html custom-market.css custom-market.js market-admin.html market-admin.css market-admin.js \
+    .well-known/apple-app-site-association market-qrcode.js market-qrcode.LICENSE.txt \
+    images/market/mist-lake.jpg images/market/golden-reeds.jpg \
     images/soulo-home-zh.webp images/soulo-home-en.webp \
     images/soulo-home-light-zh.webp images/soulo-home-light-en.webp images/app-store-qr.svg \
     images/web/app-icon-108.webp images/web/search-home.webp \
@@ -40,12 +43,13 @@ fi
 "$git_bin" -C "$LOCAL_DIR" ls-files --cached --deduplicate -z > "$work_dir/tracked"
 while IFS= read -r -d '' file; do
     case "$file" in
+        .well-known/apple-app-site-association) ;;
         .*|*/.*) continue ;;
         images/*|favicons/*|downloads/*.zip) ;;
         */*) continue ;;
     esac
     case "$file" in
-        downloads/*.zip|*.html|*.css|*.js|*.json|*.png|*.webp|*.jpeg|*.jpg|*.svg|*.ico|*.txt|*.xml) ;;
+        .well-known/apple-app-site-association|downloads/*.zip|*.html|*.css|*.js|*.json|*.png|*.webp|*.jpeg|*.jpg|*.svg|*.ico|*.txt|*.xml) ;;
         *) continue ;;
     esac
     if [[ ! -f "$LOCAL_DIR/$file" || -L "$LOCAL_DIR/$file" ]]; then
@@ -116,6 +120,14 @@ images/web/illustration-bookmarks.webp image/webp
 privacy_policy.html text/html
 extensions.html text/html
 extensions.json application/json
+custom-market.html text/html
+custom-market.css text/css
+custom-market.js text/javascript|application/javascript
+market-qrcode.js text/javascript|application/javascript
+images/market/mist-lake.jpg image/jpeg
+images/market/golden-reeds.jpg image/jpeg
+market-admin.html text/html
+market-admin.js text/javascript|application/javascript
 downloads/soulo-search-platform.zip application/zip|application/octet-stream
 movies.html text/html
 resources.html text/html
