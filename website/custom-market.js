@@ -56,7 +56,10 @@
     needs: ['需要 Soulo ', 'Requires Soulo '],
     scan: ['扫码安装', 'Scan to install'],
     scanShort: ['扫码', 'Scan'],
-    scanHint: ['用 iPhone 相机扫码，在 Soulo 中预览并安装。', 'Scan with your iPhone camera to preview and install in Soulo.'],
+    scanHint: ['打开 Soulo 的扫码功能，扫描后即可预览并安装。', 'Scan this code in Soulo to preview and install.'],
+    copyPrompt: ['复制 AI 提示词', 'Copy AI Prompt'],
+    manualCopy: ['请选择并复制以下内容', 'Select and copy the text below'],
+    applyPlatform: ['添加到 Soulo', 'Add to Soulo'],
     scanCode: ['作品安装二维码', 'Work installation QR code'],
     sourceLink: ['查看安装来源', 'View original source'],
     directory: ['搜索源目录', 'Search Directory'],
@@ -409,17 +412,105 @@
     sourceCatalog = {categories:data.categories, sources:data.sources.filter(safeSearchSource)};
   }
 
-  async function copySourceConfig(items) {
-    const value = JSON.stringify(items.map(({name,url}) => ({name,url})), null, 2);
+  const sourceIcons = JSON.parse(document.getElementById('market-platform-icons')?.textContent || '{}');
+  const copyTimers = new WeakMap();
+
+  async function copyText(value, button) {
+    let copied = false;
     try {
       await navigator.clipboard.writeText(value);
-      document.getElementById('market-source-notice').textContent = say('copied');
+      copied = true;
     } catch {
-      const output = document.getElementById('market-source-json');
-      output.value = value;
-      output.hidden = false;
-      output.select();
+      const field = el('textarea', 'market-copy-buffer');
+      const parent = button.closest('dialog') || document.body;
+      field.readOnly = true;
+      field.value = value;
+      parent.append(field);
+      field.select();
+      try { copied = document.execCommand('copy'); } catch {}
+      field.remove();
+      button.focus({preventScroll:true});
     }
+    if (copied) {
+      const label = button.dataset.copyLabel || button.textContent;
+      button.dataset.copyLabel = label;
+      button.textContent = say('copied');
+      clearTimeout(copyTimers.get(button));
+      copyTimers.set(button, setTimeout(() => { button.textContent = label; }, 1800));
+      return;
+    }
+    const sheet = el('dialog', 'market-dialog');
+    const panel = el('div', 'market-dialog-card');
+    const header = el('div', 'market-dialog-head');
+    const title = el('h2', '', say('manualCopy'));
+    const close = el('button', 'market-dialog-close', '×');
+    close.type = 'button';
+    close.setAttribute('aria-label', say('close'));
+    close.addEventListener('click', () => sheet.close());
+    header.append(title, close);
+    const field = el('textarea', 'market-copy-field');
+    field.readOnly = true;
+    field.value = value;
+    field.setAttribute('aria-label', say('manualCopy'));
+    sheet.setAttribute('aria-label', say('manualCopy'));
+    panel.append(header, field);
+    sheet.append(panel);
+    document.body.append(sheet);
+    sheet.addEventListener('close', () => {
+      sheet.remove();
+      button.focus({preventScroll:true});
+    }, {once:true});
+    sheet.showModal();
+    field.select();
+  }
+
+  function copySourceConfig(items, button) {
+    return copyText(JSON.stringify(items.map(({name,url}) => ({name,url})), null, 2), button);
+  }
+
+  function sourceCategoryName(category) {
+    return zh() ? category.name : sourceCategoriesEN[category.id] || category.name;
+  }
+
+  function renderSourceCard(source) {
+    const trialURL = new URL(source.url.replace('%@', 'Soulo'));
+    const domain = trialURL.hostname.replace(/^www\./, '');
+    const row = el('article', 'market-source-card');
+    const identity = el('div', 'market-source-identity');
+    const firstLetters = source.name.match(/[A-Za-z]+/g)?.slice(0, 2).map(word => word[0]).join('').toUpperCase();
+    const mark = el('span', 'market-source-mark', firstLetters || Array.from(source.name)[0]);
+    mark.setAttribute('aria-hidden', 'true');
+    const path = sourceIcons.sources?.[domain];
+    if (path) {
+      const img = el('img');
+      img.src = path;
+      img.alt = '';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.addEventListener('error', () => img.remove());
+      mark.append(img);
+    }
+    const name = el('div', 'market-source-name');
+    name.append(el('h3', '', source.name), el('span', '', domain));
+    identity.append(mark, name);
+    const actions = el('div', 'market-source-actions');
+    const trial = el('a', 'catalog-button', say('trialSearch'));
+    trial.href = trialURL.href;
+    trial.target = '_blank';
+    trial.rel = 'noopener noreferrer';
+    actions.append(trial);
+    if (window.souloCanAddSearchPlatform === true) {
+      const apply = el('a', 'catalog-button', say('applyPlatform'));
+      apply.href = `soulo://add-search-platform?template=${encodeURIComponent(source.url)}&name=${encodeURIComponent(source.name)}`;
+      actions.append(apply);
+    } else {
+      const copy = el('button', 'catalog-button', say('copyConfig'));
+      copy.type = 'button';
+      copy.addEventListener('click', () => copySourceConfig([source], copy));
+      actions.append(copy);
+    }
+    row.append(identity, actions);
+    return row;
   }
 
   function renderSourceDirectory() {
@@ -447,7 +538,7 @@
     select.setAttribute('aria-label', say('categoryUse'));
     select.append(Object.assign(el('option', '', say('anyUse')), {value:''}));
     for (const category of sourceCatalog.categories) {
-      select.append(Object.assign(el('option', '', zh() ? category.name : sourceCategoriesEN[category.id] || category.name), {value:category.id}));
+      select.append(Object.assign(el('option', '', sourceCategoryName(category)), {value:category.id}));
     }
     select.value = sourceCategory;
     select.addEventListener('change', () => {
@@ -469,31 +560,25 @@
     if (state.sort === 'name') results.sort((a,b) => a.name.localeCompare(b.name, zh() ? 'zh-CN' : 'en'));
     title.append(el('p', 'market-inline-note', say('directoryCount').replace('{n}', String(results.length))));
     copy.disabled = !results.length;
-    copy.addEventListener('click', () => copySourceConfig(results));
-    const grid = el('div', 'market-sources-grid');
-    for (const source of results) {
-      const trialURL = new URL(source.url.replace('%@', 'Soulo'));
-      const row = el('article', 'market-source-card');
-      const name = el('div', 'market-source-name');
-      name.append(el('h3', '', source.name), el('span', '', trialURL.hostname.replace(/^www\./, '')));
-      const actions = el('div', 'market-source-actions');
-      const trial = el('a', 'catalog-button', say('trialSearch'));
-      trial.href = trialURL.href; trial.target = '_blank'; trial.rel = 'noopener noreferrer';
-      const copyOne = el('button', 'catalog-button', say('copyConfig'));
-      copyOne.type = 'button';
-      copyOne.addEventListener('click', () => copySourceConfig([source]));
-      actions.append(trial,copyOne);
-      row.append(name,actions);
-      grid.append(row);
+    copy.addEventListener('click', () => copySourceConfig(results, copy));
+    const sections = [];
+    for (const category of sourceCatalog.categories) {
+      const items = results.filter(source => source.category === category.id);
+      if (!items.length) continue;
+      const section = el('section', 'market-source-group');
+      const heading = el('h3', 'market-source-group-title');
+      heading.id = `market-sources-${category.id}`;
+      section.setAttribute('aria-labelledby', heading.id);
+      const symbol = el('span', 'market-source-group-icon');
+      symbol.innerHTML = sourceIcons.categories?.[category.id] || '';
+      heading.append(symbol, document.createTextNode(sourceCategoryName(category)));
+      const grid = el('div', 'market-sources-grid');
+      grid.append(...items.map(renderSourceCard));
+      section.append(heading, grid);
+      sections.push(section);
     }
-    const notice = el('p', 'market-directory-notice');
-    notice.id = 'market-source-notice';
-    notice.setAttribute('role','status');
-    const output = el('textarea');
-    output.id = 'market-source-json';
-    output.setAttribute('aria-label', say('copyConfig'));
-    output.readOnly = true; output.hidden = true;
-    platformDirectory.replaceChildren(heading, results.length ? grid : el('p', 'market-inline-note', say('noMatch')), notice, output);
+    platformDirectory.replaceChildren(heading, ...sections);
+    if (!sections.length) platformDirectory.append(el('p', 'market-inline-note', say('noMatch')));
   }
 
   function visibleItems() {
@@ -610,6 +695,30 @@
     dialogBody.replaceChildren(head, el('p', 'market-inline-note error', message));
   }
 
+  function workPrompt(work) {
+    const pkg = work.package;
+    const content = pkg?.[work.module];
+    const text = work.module === 'home' || work.module === 'newTab'
+      ? content?.html
+      : work.module === 'script'
+        ? content?.source || (content?.sourceURL && JSON.stringify(content, null, 2))
+        : content && JSON.stringify(content, null, 2);
+    if (!text) return null;
+    const reference = (work.module === 'webExtension' && !content.manifest)
+      || (work.module === 'script' && !content.source && content.sourceURL);
+    const intro = zh()
+      ? `请帮我修改 Soulo 的${modName(work.module)}「${work.name}」。先问我想改什么，再给我一份完整、可导入 Soulo 的结果。保留原格式、Soulo 接口和所需权限。`
+      : `Help me edit the Soulo ${modName(work.module)} “${work.name}”. Ask what I want to change, then return a complete result I can import into Soulo. Preserve the format, Soulo interfaces and required permissions.`;
+    const scope = reference
+      ? (zh() ? '这份配置指向原始安装地址。修改源码需要我提供有权分享的源文件。' : 'This configuration links to the original install source. Ask me for source files I can share before editing the code.')
+      : (zh() ? '以下是作品的源内容。' : 'Here is the original source.');
+    return `${intro}
+
+${scope}
+
+${text}`;
+  }
+
   function renderDetail(work) {
     const nodes = [];
     const head = el('div', 'market-dialog-head');
@@ -670,7 +779,7 @@
     }
     nodes.push(permBox);
 
-    const actions = el('div', 'extension-actions');
+    const actions = el('div', 'market-detail-actions');
     const link = installLink(work);
     if (link) {
       const install = el('a', 'catalog-button primary', say('install'));
@@ -681,15 +790,22 @@
     const app = el('a', 'catalog-button', say('getApp'));
     app.href = APP_STORE; app.target = '_blank'; app.rel = 'noopener noreferrer';
     actions.append(app);
+    const prompt = workPrompt(work);
+    if (prompt) {
+      const copy = el('button', 'catalog-button', say('copyPrompt'));
+      copy.type = 'button';
+      copy.addEventListener('click', () => copyText(prompt, copy));
+      actions.append(copy);
+    }
+    nodes.push(actions);
     const source = httpsSource(work.sourceURL || work.package?.script?.sourceURL);
     if (source) {
-      const link = el('a', 'catalog-button', say('sourceLink'));
+      const link = el('a', 'market-qr-link', say('sourceLink'));
       link.href = source;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
-      actions.append(link);
+      nodes.push(link);
     }
-    nodes.push(actions);
 
     // Governance: report + block author
     const gov = el('div', 'market-report-box');

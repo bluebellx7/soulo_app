@@ -249,9 +249,14 @@ def build_custom_market():
         {'@type': 'BreadcrumbList', '@id': BASE+'custom-market.html#breadcrumb', 'itemListElement': [{'@type': 'ListItem', 'position': 1, 'name': 'Soulo', 'item': BASE}, {'@type': 'ListItem', 'position': 2, 'name': 'Soulo 自定义市场', 'item': BASE+'custom-market.html'}]}
     ]}
     robots = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1' if CUSTOM_MARKET_PUBLIC else 'noindex,nofollow'
+    sources = json.loads((SITE/'sources.json').read_text())
+    domains = sorted({urlparse(source['url']).netloc.removeprefix('www.') for source in sources['sources']})
+    source_icons = {domain: path for domain in domains if (path := search_source_icon(domain))}
+    category_icons = {category['id']: icon(category['icon']) for category in sources['categories']}
     tokens = {'kind': 'custom-market', 'page_title': title, 'page_description': description, 'robots': robots,
               'structured_data': jsonld(graph),
               'page_locales': jsonld({'zh': {'page.title': title, 'page.description': description}, 'en': {'page.title': title_en, 'page.description': description_en}, 'categories': {}}),
+              'market_platform_icons': jsonld({'sources': source_icons, 'categories': category_icons}),
               'navigation': navigation('custom-market.html')}
     template = (ROOT/'scripts/templates/custom-market.html').read_text()
     for key, value in tokens.items(): template = template.replace('{{'+key+'}}', value)
@@ -396,6 +401,13 @@ def build_content_directory(kind):
     return build_directory(data, 'content-directory.html', kind+'.html', 'Soulo '+name, name, name+'目录', summary, extra)
 
 
+def search_source_icon(domain):
+    candidates = [f'images/source-icons/{domain}.png', *(f'favicons/{domain}.{ext}' for ext in ['png', 'ico'])]
+    path = next((path for path in candidates if (SITE/path).is_file()), SOURCE_ICONS.get(domain))
+    # This cached ICO is a solid white placeholder.
+    return path if path != 'favicons/pianbs.com.ico' else None
+
+
 def build_sources():
     data = json.loads((SITE/'sources.json').read_text())
     entries, categories = data['sources'], data['categories']
@@ -411,12 +423,7 @@ def build_sources():
         for index, source in items:
             n, u = source['name'], source['url']
             domain = urlparse(u).netloc.removeprefix('www.')
-            icon_candidates = [f'images/source-icons/{domain}.png', *(f'favicons/{domain}.{ext}' for ext in ['png', 'ico'])]
-            local_icon = next((path for path in icon_candidates if (SITE/path).is_file()), SOURCE_ICONS.get(domain))
-            # This site's cached ICO is a solid white placeholder. Prefer a
-            # readable label until a page-specific or PNG favicon is supplied.
-            if local_icon == 'favicons/pianbs.com.ico':
-                local_icon = None
+            local_icon = search_source_icon(domain)
             words = re.findall(r'[A-Za-z]+', n)
             mark = ''.join(word[0] for word in words[:2]).upper() if words else n[0]
             if local_icon:
